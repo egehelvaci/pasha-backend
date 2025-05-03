@@ -1,0 +1,82 @@
+import { CollectionService } from './collection-service'
+
+const collectionService = new CollectionService()
+
+async function testCollectionService() {
+  try {
+    console.log('Koleksiyon Servisi Testi Başlatılıyor...')
+    
+    // Örnek koleksiyonlar oluştur
+    const collection1 = await collectionService.createCollection({
+      name: 'Yaz Koleksiyonu 2025',
+      description: 'Yaz mevsimi için özel tasarımlar',
+      code: 'YAZ2025',
+      coverImageUrl: 'https://example.com/yaz2025.jpg',
+      catalogOrder: 1,
+      price: 299.99
+    })
+    console.log('Koleksiyon 1 oluşturuldu:', collection1)
+    
+    const collection2 = await collectionService.createCollection({
+      name: 'Kış Koleksiyonu 2025',
+      description: 'Kış mevsimi için özel tasarımlar',
+      code: 'KIS2025',
+      coverImageUrl: 'https://example.com/kis2025.jpg',
+      catalogOrder: 2,
+      price: 399.99,
+      currency: 'USD'
+    })
+    console.log('Koleksiyon 2 oluşturuldu:', collection2)
+    
+    // Tüm koleksiyonları listele
+    console.log('\nTüm koleksiyonlar:')
+    const allCollections = await collectionService.getAllCollections()
+    console.log(allCollections)
+    
+    // ID ile koleksiyon getir
+    console.log('\nID ile koleksiyon getirme:')
+    const collectionById = await collectionService.getCollectionById(collection1.collectionId)
+    console.log(collectionById)
+    
+    // Kod ile koleksiyon getir
+    console.log('\nKod ile koleksiyon getirme:')
+    const collectionByCode = await collectionService.getCollectionByCode('KIS2025')
+    console.log(collectionByCode)
+    
+    // Koleksiyon güncelle
+    console.log('\nKoleksiyon güncelleme:')
+    const updatedCollection = await collectionService.updateCollection(collection1.collectionId, {
+      price: 349.99,
+      description: 'Yaz mevsimi için yenilenen özel tasarımlar'
+    })
+    console.log(updatedCollection)
+    
+    // Koleksiyonları yeniden sırala
+    console.log('\nKoleksiyonları yeniden sıralama:')
+    const reorderedCollections = await collectionService.reorderCollections([
+      collection2.collectionId,  // Kış koleksiyonu artık 1. sırada
+      collection1.collectionId   // Yaz koleksiyonu artık 2. sırada
+    ])
+    console.log(reorderedCollections)
+    
+    // Güncellenmiş koleksiyon listesi
+    console.log('\nGüncellenmiş koleksiyon listesi:')
+    const updatedCollections = await collectionService.getAllCollections()
+    console.log(updatedCollections)
+    
+    // Bir koleksiyonu deaktif et
+    console.log('\nKoleksiyon deaktif etme:')
+    const deactivatedCollection = await collectionService.deactivateCollection(collection2.collectionId)
+    console.log(deactivatedCollection)
+    
+    // Sadece aktif koleksiyonları listele
+    console.log('\nSadece aktif koleksiyonlar:')
+    const activeCollections = await collectionService.getAllCollections(true)
+    console.log(activeCollections)
+    
+  } catch (error) {
+    console.error('Test sırasında hata oluştu:', error)
+  }
+}
+
+testCollectionService() 
