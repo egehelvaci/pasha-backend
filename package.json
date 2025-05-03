@@ -22,7 +22,7 @@
     "@strapi/plugin-cloud": "5.12.7",
     "@strapi/plugin-users-permissions": "5.12.7",
     "@strapi/strapi": "5.12.7",
-    "@types/express": "^5.0.1",
+    "@types/express": "^4.17.21",
     "bcryptjs": "^3.0.2",
     "better-sqlite3": "11.3.0",
     "express": "^5.1.0",

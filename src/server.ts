@@ -10,7 +10,7 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
 // CORS ayarları
-app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+const corsMiddleware = (req: any, res: any, next: any) => {
   res.header('Access-Control-Allow-Origin', '*')
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization')
   
@@ -20,7 +20,9 @@ app.use((req: express.Request, res: express.Response, next: express.NextFunction
   }
   
   next()
-})
+}
+
+app.use(corsMiddleware)
 
 // Routes
 app.use('/api/auth', authRoutes)
@@ -34,12 +36,14 @@ app.get('/', (req, res) => {
 })
 
 // Tanımsız route'ları yakala
-app.use((_req: express.Request, res: express.Response) => {
+const notFoundHandler = (req: any, res: any) => {
   res.status(404).json({
     success: false,
     message: 'İstenen sayfa bulunamadı'
   })
-})
+}
+
+app.use(notFoundHandler)
 
 // Sunucuyu başlat
 app.listen(PORT, () => {

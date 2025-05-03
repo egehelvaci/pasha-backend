@@ -4,6 +4,11 @@ import { AuthService } from './auth-service'
 const authService = new AuthService()
 
 export class AuthController {
+  constructor() {
+    // Metodu this bağlamına bağla
+    this.login = this.login.bind(this)
+  }
+
   /**
    * Login işlemi
    */
