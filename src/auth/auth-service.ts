@@ -1,5 +1,5 @@
 import { PrismaClient } from '../../generated/prisma'
-import jwt, { Secret } from 'jsonwebtoken'
+import jwt, { Secret, SignOptions } from 'jsonwebtoken'
 
 const prisma = new PrismaClient()
 
@@ -53,11 +53,8 @@ export class AuthService {
       }
 
       // JWT token oluştur
-      const token = jwt.sign(
-        payload, 
-        this.jwtSecret, 
-        { expiresIn: this.jwtExpiresIn }
-      )
+      const options: SignOptions = { expiresIn: this.jwtExpiresIn }
+      const token = jwt.sign(payload, this.jwtSecret, options)
 
       return {
         token,
