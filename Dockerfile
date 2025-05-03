@@ -14,6 +14,7 @@ RUN npm ci
 FROM deps AS builder
 WORKDIR /app
 COPY . .
+RUN npx prisma generate
 RUN npm run api:build
 
 # Production için
