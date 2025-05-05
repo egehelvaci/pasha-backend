@@ -4,7 +4,7 @@ import collectionRoutes from './routes/collectionRoutes'
 
 // Express uygulaması oluştur
 const app = express()
-const PORT = process.env.PORT || 3001
+const PORT = parseInt(process.env.PORT || '3001', 10)
 
 // Ortam değişkenlerini logla
 console.log("Çevre Değişkenleri:")
@@ -66,8 +66,8 @@ app.use((err: Error, req: any, res: any, next: any) => {
 
 // Sunucuyu başlat
 try {
-  app.listen(PORT, () => {
-    console.log(`Sunucu ${process.env.PUBLIC_URL || `http://localhost:${PORT}`} adresinde çalışıyor (port: ${PORT})`)
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Sunucu ${process.env.PUBLIC_URL || `http://0.0.0.0:${PORT}`} adresinde çalışıyor (port: ${PORT})`)
   })
 } catch (error) {
   console.error('Sunucu başlatılamadı:', error)
