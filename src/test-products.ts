@@ -13,8 +13,7 @@ async function testProductsWithCollections() {
       name: 'Test Koleksiyonu',
       description: 'Test koleksiyonu açıklaması',
       code: 'TEST-KOL',
-      catalogOrder: 1,
-      price: 0
+      catalogOrder: 1
     })
     console.log('Test koleksiyonu oluşturuldu:', collection)
     
@@ -73,8 +72,7 @@ async function testProductsWithCollections() {
       name: 'Yeni Koleksiyon',
       description: 'Yeni test koleksiyonu',
       code: 'YENI-KOL',
-      catalogOrder: 2,
-      price: 0
+      catalogOrder: 2
     })
     console.log('\nYeni koleksiyon oluşturuldu:', newCollection)
     
