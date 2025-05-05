@@ -126,19 +126,19 @@ exports.Prisma.UserTypeScalarFieldEnum = {
 };
 
 exports.Prisma.UserScalarFieldEnum = {
-  userId: 'userId',
-  userTypeId: 'userTypeId',
-  username: 'username',
-  name: 'name',
-  surname: 'surname',
   email: 'email',
-  phoneNumber: 'phoneNumber',
-  isActive: 'isActive',
-  createdAt: 'createdAt',
-  password: 'password',
+  name: 'name',
   avatar: 'avatar',
+  createdAt: 'createdAt',
   credit: 'credit',
-  debit: 'debit'
+  debit: 'debit',
+  isActive: 'isActive',
+  password: 'password',
+  phoneNumber: 'phoneNumber',
+  surname: 'surname',
+  userId: 'userId',
+  username: 'username',
+  userTypeId: 'userTypeId'
 };
 
 exports.Prisma.CollectionScalarFieldEnum = {
@@ -146,9 +146,7 @@ exports.Prisma.CollectionScalarFieldEnum = {
   name: 'name',
   description: 'description',
   code: 'code',
-  coverImageUrl: 'coverImageUrl',
   catalogOrder: 'catalogOrder',
-  price: 'price',
   currency: 'currency',
   isActive: 'isActive',
   createdAt: 'createdAt',
@@ -168,6 +166,7 @@ exports.Prisma.ProductScalarFieldEnum = {
   cut: 'cut',
   customWeight: 'customWeight',
   customHeight: 'customHeight',
+  productImage: 'productImage',
   collectionId: 'collectionId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'

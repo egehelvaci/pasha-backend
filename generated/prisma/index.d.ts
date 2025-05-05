@@ -2299,125 +2299,125 @@ export namespace Prisma {
   }
 
   export type UserAvgAggregateOutputType = {
-    userTypeId: number | null
     credit: Decimal | null
     debit: Decimal | null
+    userTypeId: number | null
   }
 
   export type UserSumAggregateOutputType = {
-    userTypeId: number | null
     credit: Decimal | null
     debit: Decimal | null
+    userTypeId: number | null
   }
 
   export type UserMinAggregateOutputType = {
-    userId: string | null
-    userTypeId: number | null
-    username: string | null
-    name: string | null
-    surname: string | null
     email: string | null
-    phoneNumber: string | null
-    isActive: boolean | null
-    createdAt: Date | null
-    password: string | null
+    name: string | null
     avatar: string | null
+    createdAt: Date | null
     credit: Decimal | null
     debit: Decimal | null
+    isActive: boolean | null
+    password: string | null
+    phoneNumber: string | null
+    surname: string | null
+    userId: string | null
+    username: string | null
+    userTypeId: number | null
   }
 
   export type UserMaxAggregateOutputType = {
-    userId: string | null
-    userTypeId: number | null
-    username: string | null
-    name: string | null
-    surname: string | null
     email: string | null
-    phoneNumber: string | null
-    isActive: boolean | null
-    createdAt: Date | null
-    password: string | null
+    name: string | null
     avatar: string | null
+    createdAt: Date | null
     credit: Decimal | null
     debit: Decimal | null
+    isActive: boolean | null
+    password: string | null
+    phoneNumber: string | null
+    surname: string | null
+    userId: string | null
+    username: string | null
+    userTypeId: number | null
   }
 
   export type UserCountAggregateOutputType = {
-    userId: number
-    userTypeId: number
-    username: number
-    name: number
-    surname: number
     email: number
-    phoneNumber: number
-    isActive: number
-    createdAt: number
-    password: number
+    name: number
     avatar: number
+    createdAt: number
     credit: number
     debit: number
+    isActive: number
+    password: number
+    phoneNumber: number
+    surname: number
+    userId: number
+    username: number
+    userTypeId: number
     _all: number
   }
 
 
   export type UserAvgAggregateInputType = {
-    userTypeId?: true
     credit?: true
     debit?: true
+    userTypeId?: true
   }
 
   export type UserSumAggregateInputType = {
-    userTypeId?: true
     credit?: true
     debit?: true
+    userTypeId?: true
   }
 
   export type UserMinAggregateInputType = {
-    userId?: true
-    userTypeId?: true
-    username?: true
-    name?: true
-    surname?: true
     email?: true
-    phoneNumber?: true
-    isActive?: true
-    createdAt?: true
-    password?: true
+    name?: true
     avatar?: true
+    createdAt?: true
     credit?: true
     debit?: true
+    isActive?: true
+    password?: true
+    phoneNumber?: true
+    surname?: true
+    userId?: true
+    username?: true
+    userTypeId?: true
   }
 
   export type UserMaxAggregateInputType = {
-    userId?: true
-    userTypeId?: true
-    username?: true
-    name?: true
-    surname?: true
     email?: true
-    phoneNumber?: true
-    isActive?: true
-    createdAt?: true
-    password?: true
+    name?: true
     avatar?: true
+    createdAt?: true
     credit?: true
     debit?: true
+    isActive?: true
+    password?: true
+    phoneNumber?: true
+    surname?: true
+    userId?: true
+    username?: true
+    userTypeId?: true
   }
 
   export type UserCountAggregateInputType = {
-    userId?: true
-    userTypeId?: true
-    username?: true
-    name?: true
-    surname?: true
     email?: true
-    phoneNumber?: true
-    isActive?: true
-    createdAt?: true
-    password?: true
+    name?: true
     avatar?: true
+    createdAt?: true
     credit?: true
     debit?: true
+    isActive?: true
+    password?: true
+    phoneNumber?: true
+    surname?: true
+    userId?: true
+    username?: true
+    userTypeId?: true
     _all?: true
   }
 
@@ -2508,19 +2508,19 @@ export namespace Prisma {
   }
 
   export type UserGroupByOutputType = {
-    userId: string
-    userTypeId: number
-    username: string
-    name: string
-    surname: string
     email: string
-    phoneNumber: string | null
-    isActive: boolean
-    createdAt: Date
-    password: string
+    name: string
     avatar: string | null
+    createdAt: Date
     credit: Decimal
     debit: Decimal
+    isActive: boolean
+    password: string
+    phoneNumber: string | null
+    surname: string
+    userId: string
+    username: string
+    userTypeId: number
     _count: UserCountAggregateOutputType | null
     _avg: UserAvgAggregateOutputType | null
     _sum: UserSumAggregateOutputType | null
@@ -2543,73 +2543,73 @@ export namespace Prisma {
 
 
   export type UserSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    userId?: boolean
-    userTypeId?: boolean
-    username?: boolean
-    name?: boolean
-    surname?: boolean
     email?: boolean
-    phoneNumber?: boolean
-    isActive?: boolean
-    createdAt?: boolean
-    password?: boolean
+    name?: boolean
     avatar?: boolean
+    createdAt?: boolean
     credit?: boolean
     debit?: boolean
+    isActive?: boolean
+    password?: boolean
+    phoneNumber?: boolean
+    surname?: boolean
+    userId?: boolean
+    username?: boolean
+    userTypeId?: boolean
     userType?: boolean | UserTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
   export type UserSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    userId?: boolean
-    userTypeId?: boolean
-    username?: boolean
-    name?: boolean
-    surname?: boolean
     email?: boolean
-    phoneNumber?: boolean
-    isActive?: boolean
-    createdAt?: boolean
-    password?: boolean
+    name?: boolean
     avatar?: boolean
+    createdAt?: boolean
     credit?: boolean
     debit?: boolean
+    isActive?: boolean
+    password?: boolean
+    phoneNumber?: boolean
+    surname?: boolean
+    userId?: boolean
+    username?: boolean
+    userTypeId?: boolean
     userType?: boolean | UserTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
   export type UserSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    userId?: boolean
-    userTypeId?: boolean
-    username?: boolean
-    name?: boolean
-    surname?: boolean
     email?: boolean
-    phoneNumber?: boolean
-    isActive?: boolean
-    createdAt?: boolean
-    password?: boolean
+    name?: boolean
     avatar?: boolean
+    createdAt?: boolean
     credit?: boolean
     debit?: boolean
+    isActive?: boolean
+    password?: boolean
+    phoneNumber?: boolean
+    surname?: boolean
+    userId?: boolean
+    username?: boolean
+    userTypeId?: boolean
     userType?: boolean | UserTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
   export type UserSelectScalar = {
-    userId?: boolean
-    userTypeId?: boolean
-    username?: boolean
-    name?: boolean
-    surname?: boolean
     email?: boolean
-    phoneNumber?: boolean
-    isActive?: boolean
-    createdAt?: boolean
-    password?: boolean
+    name?: boolean
     avatar?: boolean
+    createdAt?: boolean
     credit?: boolean
     debit?: boolean
+    isActive?: boolean
+    password?: boolean
+    phoneNumber?: boolean
+    surname?: boolean
+    userId?: boolean
+    username?: boolean
+    userTypeId?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"userId" | "userTypeId" | "username" | "name" | "surname" | "email" | "phoneNumber" | "isActive" | "createdAt" | "password" | "avatar" | "credit" | "debit", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"email" | "name" | "avatar" | "createdAt" | "credit" | "debit" | "isActive" | "password" | "phoneNumber" | "surname" | "userId" | "username" | "userTypeId", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     userType?: boolean | UserTypeDefaultArgs<ExtArgs>
   }
@@ -2626,19 +2626,19 @@ export namespace Prisma {
       userType: Prisma.$UserTypePayload<ExtArgs>
     }
     scalars: $Extensions.GetPayloadResult<{
-      userId: string
-      userTypeId: number
-      username: string
-      name: string
-      surname: string
       email: string
-      phoneNumber: string | null
-      isActive: boolean
-      createdAt: Date
-      password: string
+      name: string
       avatar: string | null
+      createdAt: Date
       credit: Prisma.Decimal
       debit: Prisma.Decimal
+      isActive: boolean
+      password: string
+      phoneNumber: string | null
+      surname: string
+      userId: string
+      username: string
+      userTypeId: number
     }, ExtArgs["result"]["user"]>
     composites: {}
   }
@@ -2722,8 +2722,8 @@ export namespace Prisma {
      * // Get first 10 Users
      * const users = await prisma.user.findMany({ take: 10 })
      * 
-     * // Only select the `userId`
-     * const userWithUserIdOnly = await prisma.user.findMany({ select: { userId: true } })
+     * // Only select the `email`
+     * const userWithEmailOnly = await prisma.user.findMany({ select: { email: true } })
      * 
      */
     findMany<T extends UserFindManyArgs>(args?: SelectSubset<T, UserFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
@@ -2767,9 +2767,9 @@ export namespace Prisma {
      *   ]
      * })
      * 
-     * // Create many Users and only return the `userId`
-     * const userWithUserIdOnly = await prisma.user.createManyAndReturn({
-     *   select: { userId: true },
+     * // Create many Users and only return the `email`
+     * const userWithEmailOnly = await prisma.user.createManyAndReturn({
+     *   select: { email: true },
      *   data: [
      *     // ... provide data here
      *   ]
@@ -2858,9 +2858,9 @@ export namespace Prisma {
      *   ]
      * })
      * 
-     * // Update zero or more Users and only return the `userId`
-     * const userWithUserIdOnly = await prisma.user.updateManyAndReturn({
-     *   select: { userId: true },
+     * // Update zero or more Users and only return the `email`
+     * const userWithEmailOnly = await prisma.user.updateManyAndReturn({
+     *   select: { email: true },
      *   where: {
      *     // ... provide filter here
      *   },
@@ -3063,19 +3063,19 @@ export namespace Prisma {
    * Fields of the User model
    */
   interface UserFieldRefs {
-    readonly userId: FieldRef<"User", 'String'>
-    readonly userTypeId: FieldRef<"User", 'Int'>
-    readonly username: FieldRef<"User", 'String'>
-    readonly name: FieldRef<"User", 'String'>
-    readonly surname: FieldRef<"User", 'String'>
     readonly email: FieldRef<"User", 'String'>
-    readonly phoneNumber: FieldRef<"User", 'String'>
-    readonly isActive: FieldRef<"User", 'Boolean'>
-    readonly createdAt: FieldRef<"User", 'DateTime'>
-    readonly password: FieldRef<"User", 'String'>
+    readonly name: FieldRef<"User", 'String'>
     readonly avatar: FieldRef<"User", 'String'>
+    readonly createdAt: FieldRef<"User", 'DateTime'>
     readonly credit: FieldRef<"User", 'Decimal'>
     readonly debit: FieldRef<"User", 'Decimal'>
+    readonly isActive: FieldRef<"User", 'Boolean'>
+    readonly password: FieldRef<"User", 'String'>
+    readonly phoneNumber: FieldRef<"User", 'String'>
+    readonly surname: FieldRef<"User", 'String'>
+    readonly userId: FieldRef<"User", 'String'>
+    readonly username: FieldRef<"User", 'String'>
+    readonly userTypeId: FieldRef<"User", 'Int'>
   }
     
 
@@ -3504,12 +3504,10 @@ export namespace Prisma {
 
   export type CollectionAvgAggregateOutputType = {
     catalogOrder: number | null
-    price: Decimal | null
   }
 
   export type CollectionSumAggregateOutputType = {
     catalogOrder: number | null
-    price: Decimal | null
   }
 
   export type CollectionMinAggregateOutputType = {
@@ -3517,9 +3515,7 @@ export namespace Prisma {
     name: string | null
     description: string | null
     code: string | null
-    coverImageUrl: string | null
     catalogOrder: number | null
-    price: Decimal | null
     currency: $Enums.Currency | null
     isActive: boolean | null
     createdAt: Date | null
@@ -3531,9 +3527,7 @@ export namespace Prisma {
     name: string | null
     description: string | null
     code: string | null
-    coverImageUrl: string | null
     catalogOrder: number | null
-    price: Decimal | null
     currency: $Enums.Currency | null
     isActive: boolean | null
     createdAt: Date | null
@@ -3545,9 +3539,7 @@ export namespace Prisma {
     name: number
     description: number
     code: number
-    coverImageUrl: number
     catalogOrder: number
-    price: number
     currency: number
     isActive: number
     createdAt: number
@@ -3558,12 +3550,10 @@ export namespace Prisma {
 
   export type CollectionAvgAggregateInputType = {
     catalogOrder?: true
-    price?: true
   }
 
   export type CollectionSumAggregateInputType = {
     catalogOrder?: true
-    price?: true
   }
 
   export type CollectionMinAggregateInputType = {
@@ -3571,9 +3561,7 @@ export namespace Prisma {
     name?: true
     description?: true
     code?: true
-    coverImageUrl?: true
     catalogOrder?: true
-    price?: true
     currency?: true
     isActive?: true
     createdAt?: true
@@ -3585,9 +3573,7 @@ export namespace Prisma {
     name?: true
     description?: true
     code?: true
-    coverImageUrl?: true
     catalogOrder?: true
-    price?: true
     currency?: true
     isActive?: true
     createdAt?: true
@@ -3599,9 +3585,7 @@ export namespace Prisma {
     name?: true
     description?: true
     code?: true
-    coverImageUrl?: true
     catalogOrder?: true
-    price?: true
     currency?: true
     isActive?: true
     createdAt?: true
@@ -3700,9 +3684,7 @@ export namespace Prisma {
     name: string
     description: string | null
     code: string
-    coverImageUrl: string | null
     catalogOrder: number
-    price: Decimal
     currency: $Enums.Currency
     isActive: boolean
     createdAt: Date
@@ -3733,9 +3715,7 @@ export namespace Prisma {
     name?: boolean
     description?: boolean
     code?: boolean
-    coverImageUrl?: boolean
     catalogOrder?: boolean
-    price?: boolean
     currency?: boolean
     isActive?: boolean
     createdAt?: boolean
@@ -3749,9 +3729,7 @@ export namespace Prisma {
     name?: boolean
     description?: boolean
     code?: boolean
-    coverImageUrl?: boolean
     catalogOrder?: boolean
-    price?: boolean
     currency?: boolean
     isActive?: boolean
     createdAt?: boolean
@@ -3763,9 +3741,7 @@ export namespace Prisma {
     name?: boolean
     description?: boolean
     code?: boolean
-    coverImageUrl?: boolean
     catalogOrder?: boolean
-    price?: boolean
     currency?: boolean
     isActive?: boolean
     createdAt?: boolean
@@ -3777,16 +3753,14 @@ export namespace Prisma {
     name?: boolean
     description?: boolean
     code?: boolean
-    coverImageUrl?: boolean
     catalogOrder?: boolean
-    price?: boolean
     currency?: boolean
     isActive?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type CollectionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"collectionId" | "name" | "description" | "code" | "coverImageUrl" | "catalogOrder" | "price" | "currency" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["collection"]>
+  export type CollectionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"collectionId" | "name" | "description" | "code" | "catalogOrder" | "currency" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["collection"]>
   export type CollectionInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     products?: boolean | Collection$productsArgs<ExtArgs>
     _count?: boolean | CollectionCountOutputTypeDefaultArgs<ExtArgs>
@@ -3804,9 +3778,7 @@ export namespace Prisma {
       name: string
       description: string | null
       code: string
-      coverImageUrl: string | null
       catalogOrder: number
-      price: Prisma.Decimal
       currency: $Enums.Currency
       isActive: boolean
       createdAt: Date
@@ -4239,9 +4211,7 @@ export namespace Prisma {
     readonly name: FieldRef<"Collection", 'String'>
     readonly description: FieldRef<"Collection", 'String'>
     readonly code: FieldRef<"Collection", 'String'>
-    readonly coverImageUrl: FieldRef<"Collection", 'String'>
     readonly catalogOrder: FieldRef<"Collection", 'Int'>
-    readonly price: FieldRef<"Collection", 'Decimal'>
     readonly currency: FieldRef<"Collection", 'Currency'>
     readonly isActive: FieldRef<"Collection", 'Boolean'>
     readonly createdAt: FieldRef<"Collection", 'DateTime'>
@@ -4719,6 +4689,7 @@ export namespace Prisma {
     cut: boolean | null
     customWeight: number | null
     customHeight: number | null
+    productImage: string | null
     collectionId: string | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -4737,6 +4708,7 @@ export namespace Prisma {
     cut: boolean | null
     customWeight: number | null
     customHeight: number | null
+    productImage: string | null
     collectionId: string | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -4755,6 +4727,7 @@ export namespace Prisma {
     cut: number
     customWeight: number
     customHeight: number
+    productImage: number
     collectionId: number
     createdAt: number
     updatedAt: number
@@ -4793,6 +4766,7 @@ export namespace Prisma {
     cut?: true
     customWeight?: true
     customHeight?: true
+    productImage?: true
     collectionId?: true
     createdAt?: true
     updatedAt?: true
@@ -4811,6 +4785,7 @@ export namespace Prisma {
     cut?: true
     customWeight?: true
     customHeight?: true
+    productImage?: true
     collectionId?: true
     createdAt?: true
     updatedAt?: true
@@ -4829,6 +4804,7 @@ export namespace Prisma {
     cut?: true
     customWeight?: true
     customHeight?: true
+    productImage?: true
     collectionId?: true
     createdAt?: true
     updatedAt?: true
@@ -4934,6 +4910,7 @@ export namespace Prisma {
     cut: boolean
     customWeight: number | null
     customHeight: number | null
+    productImage: string | null
     collectionId: string
     createdAt: Date
     updatedAt: Date
@@ -4971,6 +4948,7 @@ export namespace Prisma {
     cut?: boolean
     customWeight?: boolean
     customHeight?: boolean
+    productImage?: boolean
     collectionId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -4990,6 +4968,7 @@ export namespace Prisma {
     cut?: boolean
     customWeight?: boolean
     customHeight?: boolean
+    productImage?: boolean
     collectionId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -5009,6 +4988,7 @@ export namespace Prisma {
     cut?: boolean
     customWeight?: boolean
     customHeight?: boolean
+    productImage?: boolean
     collectionId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -5028,12 +5008,13 @@ export namespace Prisma {
     cut?: boolean
     customWeight?: boolean
     customHeight?: boolean
+    productImage?: boolean
     collectionId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type ProductOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"productId" | "name" | "description" | "price" | "stock" | "barcode" | "quality" | "width" | "height" | "cut" | "customWeight" | "customHeight" | "collectionId" | "createdAt" | "updatedAt", ExtArgs["result"]["product"]>
+  export type ProductOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"productId" | "name" | "description" | "price" | "stock" | "barcode" | "quality" | "width" | "height" | "cut" | "customWeight" | "customHeight" | "productImage" | "collectionId" | "createdAt" | "updatedAt", ExtArgs["result"]["product"]>
   export type ProductInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     collection?: boolean | CollectionDefaultArgs<ExtArgs>
   }
@@ -5062,6 +5043,7 @@ export namespace Prisma {
       cut: boolean
       customWeight: number | null
       customHeight: number | null
+      productImage: string | null
       collectionId: string
       createdAt: Date
       updatedAt: Date
@@ -5501,6 +5483,7 @@ export namespace Prisma {
     readonly cut: FieldRef<"Product", 'Boolean'>
     readonly customWeight: FieldRef<"Product", 'Float'>
     readonly customHeight: FieldRef<"Product", 'Float'>
+    readonly productImage: FieldRef<"Product", 'String'>
     readonly collectionId: FieldRef<"Product", 'String'>
     readonly createdAt: FieldRef<"Product", 'DateTime'>
     readonly updatedAt: FieldRef<"Product", 'DateTime'>
@@ -5941,19 +5924,19 @@ export namespace Prisma {
 
 
   export const UserScalarFieldEnum: {
-    userId: 'userId',
-    userTypeId: 'userTypeId',
-    username: 'username',
-    name: 'name',
-    surname: 'surname',
     email: 'email',
-    phoneNumber: 'phoneNumber',
-    isActive: 'isActive',
-    createdAt: 'createdAt',
-    password: 'password',
+    name: 'name',
     avatar: 'avatar',
+    createdAt: 'createdAt',
     credit: 'credit',
-    debit: 'debit'
+    debit: 'debit',
+    isActive: 'isActive',
+    password: 'password',
+    phoneNumber: 'phoneNumber',
+    surname: 'surname',
+    userId: 'userId',
+    username: 'username',
+    userTypeId: 'userTypeId'
   };
 
   export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
@@ -5964,9 +5947,7 @@ export namespace Prisma {
     name: 'name',
     description: 'description',
     code: 'code',
-    coverImageUrl: 'coverImageUrl',
     catalogOrder: 'catalogOrder',
-    price: 'price',
     currency: 'currency',
     isActive: 'isActive',
     createdAt: 'createdAt',
@@ -5989,6 +5970,7 @@ export namespace Prisma {
     cut: 'cut',
     customWeight: 'customWeight',
     customHeight: 'customHeight',
+    productImage: 'productImage',
     collectionId: 'collectionId',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
@@ -6055,13 +6037,6 @@ export namespace Prisma {
 
 
   /**
-   * Reference to a field of type 'Boolean'
-   */
-  export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
-    
-
-
-  /**
    * Reference to a field of type 'DateTime'
    */
   export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
@@ -6086,6 +6061,13 @@ export namespace Prisma {
    * Reference to a field of type 'Decimal[]'
    */
   export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'Boolean'
+   */
+  export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 
@@ -6166,73 +6148,73 @@ export namespace Prisma {
     AND?: UserWhereInput | UserWhereInput[]
     OR?: UserWhereInput[]
     NOT?: UserWhereInput | UserWhereInput[]
-    userId?: StringFilter<"User"> | string
-    userTypeId?: IntFilter<"User"> | number
-    username?: StringFilter<"User"> | string
-    name?: StringFilter<"User"> | string
-    surname?: StringFilter<"User"> | string
     email?: StringFilter<"User"> | string
-    phoneNumber?: StringNullableFilter<"User"> | string | null
-    isActive?: BoolFilter<"User"> | boolean
-    createdAt?: DateTimeFilter<"User"> | Date | string
-    password?: StringFilter<"User"> | string
+    name?: StringFilter<"User"> | string
     avatar?: StringNullableFilter<"User"> | string | null
+    createdAt?: DateTimeFilter<"User"> | Date | string
     credit?: DecimalFilter<"User"> | Decimal | DecimalJsLike | number | string
     debit?: DecimalFilter<"User"> | Decimal | DecimalJsLike | number | string
+    isActive?: BoolFilter<"User"> | boolean
+    password?: StringFilter<"User"> | string
+    phoneNumber?: StringNullableFilter<"User"> | string | null
+    surname?: StringFilter<"User"> | string
+    userId?: StringFilter<"User"> | string
+    username?: StringFilter<"User"> | string
+    userTypeId?: IntFilter<"User"> | number
     userType?: XOR<UserTypeScalarRelationFilter, UserTypeWhereInput>
   }
 
   export type UserOrderByWithRelationInput = {
-    userId?: SortOrder
-    userTypeId?: SortOrder
-    username?: SortOrder
-    name?: SortOrder
-    surname?: SortOrder
     email?: SortOrder
-    phoneNumber?: SortOrderInput | SortOrder
-    isActive?: SortOrder
-    createdAt?: SortOrder
-    password?: SortOrder
+    name?: SortOrder
     avatar?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
     credit?: SortOrder
     debit?: SortOrder
+    isActive?: SortOrder
+    password?: SortOrder
+    phoneNumber?: SortOrderInput | SortOrder
+    surname?: SortOrder
+    userId?: SortOrder
+    username?: SortOrder
+    userTypeId?: SortOrder
     userType?: UserTypeOrderByWithRelationInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
+    email?: string
     userId?: string
     username?: string
-    email?: string
     AND?: UserWhereInput | UserWhereInput[]
     OR?: UserWhereInput[]
     NOT?: UserWhereInput | UserWhereInput[]
-    userTypeId?: IntFilter<"User"> | number
     name?: StringFilter<"User"> | string
-    surname?: StringFilter<"User"> | string
-    phoneNumber?: StringNullableFilter<"User"> | string | null
-    isActive?: BoolFilter<"User"> | boolean
-    createdAt?: DateTimeFilter<"User"> | Date | string
-    password?: StringFilter<"User"> | string
     avatar?: StringNullableFilter<"User"> | string | null
+    createdAt?: DateTimeFilter<"User"> | Date | string
     credit?: DecimalFilter<"User"> | Decimal | DecimalJsLike | number | string
     debit?: DecimalFilter<"User"> | Decimal | DecimalJsLike | number | string
+    isActive?: BoolFilter<"User"> | boolean
+    password?: StringFilter<"User"> | string
+    phoneNumber?: StringNullableFilter<"User"> | string | null
+    surname?: StringFilter<"User"> | string
+    userTypeId?: IntFilter<"User"> | number
     userType?: XOR<UserTypeScalarRelationFilter, UserTypeWhereInput>
-  }, "userId" | "username" | "email">
+  }, "userId" | "email" | "username">
 
   export type UserOrderByWithAggregationInput = {
-    userId?: SortOrder
-    userTypeId?: SortOrder
-    username?: SortOrder
-    name?: SortOrder
-    surname?: SortOrder
     email?: SortOrder
-    phoneNumber?: SortOrderInput | SortOrder
-    isActive?: SortOrder
-    createdAt?: SortOrder
-    password?: SortOrder
+    name?: SortOrder
     avatar?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
     credit?: SortOrder
     debit?: SortOrder
+    isActive?: SortOrder
+    password?: SortOrder
+    phoneNumber?: SortOrderInput | SortOrder
+    surname?: SortOrder
+    userId?: SortOrder
+    username?: SortOrder
+    userTypeId?: SortOrder
     _count?: UserCountOrderByAggregateInput
     _avg?: UserAvgOrderByAggregateInput
     _max?: UserMaxOrderByAggregateInput
@@ -6244,19 +6226,19 @@ export namespace Prisma {
     AND?: UserScalarWhereWithAggregatesInput | UserScalarWhereWithAggregatesInput[]
     OR?: UserScalarWhereWithAggregatesInput[]
     NOT?: UserScalarWhereWithAggregatesInput | UserScalarWhereWithAggregatesInput[]
-    userId?: StringWithAggregatesFilter<"User"> | string
-    userTypeId?: IntWithAggregatesFilter<"User"> | number
-    username?: StringWithAggregatesFilter<"User"> | string
-    name?: StringWithAggregatesFilter<"User"> | string
-    surname?: StringWithAggregatesFilter<"User"> | string
     email?: StringWithAggregatesFilter<"User"> | string
-    phoneNumber?: StringNullableWithAggregatesFilter<"User"> | string | null
-    isActive?: BoolWithAggregatesFilter<"User"> | boolean
-    createdAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
-    password?: StringWithAggregatesFilter<"User"> | string
+    name?: StringWithAggregatesFilter<"User"> | string
     avatar?: StringNullableWithAggregatesFilter<"User"> | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
     credit?: DecimalWithAggregatesFilter<"User"> | Decimal | DecimalJsLike | number | string
     debit?: DecimalWithAggregatesFilter<"User"> | Decimal | DecimalJsLike | number | string
+    isActive?: BoolWithAggregatesFilter<"User"> | boolean
+    password?: StringWithAggregatesFilter<"User"> | string
+    phoneNumber?: StringNullableWithAggregatesFilter<"User"> | string | null
+    surname?: StringWithAggregatesFilter<"User"> | string
+    userId?: StringWithAggregatesFilter<"User"> | string
+    username?: StringWithAggregatesFilter<"User"> | string
+    userTypeId?: IntWithAggregatesFilter<"User"> | number
   }
 
   export type CollectionWhereInput = {
@@ -6267,9 +6249,7 @@ export namespace Prisma {
     name?: StringFilter<"Collection"> | string
     description?: StringNullableFilter<"Collection"> | string | null
     code?: StringFilter<"Collection"> | string
-    coverImageUrl?: StringNullableFilter<"Collection"> | string | null
     catalogOrder?: IntFilter<"Collection"> | number
-    price?: DecimalFilter<"Collection"> | Decimal | DecimalJsLike | number | string
     currency?: EnumCurrencyFilter<"Collection"> | $Enums.Currency
     isActive?: BoolFilter<"Collection"> | boolean
     createdAt?: DateTimeFilter<"Collection"> | Date | string
@@ -6282,9 +6262,7 @@ export namespace Prisma {
     name?: SortOrder
     description?: SortOrderInput | SortOrder
     code?: SortOrder
-    coverImageUrl?: SortOrderInput | SortOrder
     catalogOrder?: SortOrder
-    price?: SortOrder
     currency?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
@@ -6300,9 +6278,7 @@ export namespace Prisma {
     NOT?: CollectionWhereInput | CollectionWhereInput[]
     name?: StringFilter<"Collection"> | string
     description?: StringNullableFilter<"Collection"> | string | null
-    coverImageUrl?: StringNullableFilter<"Collection"> | string | null
     catalogOrder?: IntFilter<"Collection"> | number
-    price?: DecimalFilter<"Collection"> | Decimal | DecimalJsLike | number | string
     currency?: EnumCurrencyFilter<"Collection"> | $Enums.Currency
     isActive?: BoolFilter<"Collection"> | boolean
     createdAt?: DateTimeFilter<"Collection"> | Date | string
@@ -6315,9 +6291,7 @@ export namespace Prisma {
     name?: SortOrder
     description?: SortOrderInput | SortOrder
     code?: SortOrder
-    coverImageUrl?: SortOrderInput | SortOrder
     catalogOrder?: SortOrder
-    price?: SortOrder
     currency?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
@@ -6337,9 +6311,7 @@ export namespace Prisma {
     name?: StringWithAggregatesFilter<"Collection"> | string
     description?: StringNullableWithAggregatesFilter<"Collection"> | string | null
     code?: StringWithAggregatesFilter<"Collection"> | string
-    coverImageUrl?: StringNullableWithAggregatesFilter<"Collection"> | string | null
     catalogOrder?: IntWithAggregatesFilter<"Collection"> | number
-    price?: DecimalWithAggregatesFilter<"Collection"> | Decimal | DecimalJsLike | number | string
     currency?: EnumCurrencyWithAggregatesFilter<"Collection"> | $Enums.Currency
     isActive?: BoolWithAggregatesFilter<"Collection"> | boolean
     createdAt?: DateTimeWithAggregatesFilter<"Collection"> | Date | string
@@ -6362,6 +6334,7 @@ export namespace Prisma {
     cut?: BoolFilter<"Product"> | boolean
     customWeight?: FloatNullableFilter<"Product"> | number | null
     customHeight?: FloatNullableFilter<"Product"> | number | null
+    productImage?: StringNullableFilter<"Product"> | string | null
     collectionId?: StringFilter<"Product"> | string
     createdAt?: DateTimeFilter<"Product"> | Date | string
     updatedAt?: DateTimeFilter<"Product"> | Date | string
@@ -6381,6 +6354,7 @@ export namespace Prisma {
     cut?: SortOrder
     customWeight?: SortOrderInput | SortOrder
     customHeight?: SortOrderInput | SortOrder
+    productImage?: SortOrderInput | SortOrder
     collectionId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -6403,6 +6377,7 @@ export namespace Prisma {
     cut?: BoolFilter<"Product"> | boolean
     customWeight?: FloatNullableFilter<"Product"> | number | null
     customHeight?: FloatNullableFilter<"Product"> | number | null
+    productImage?: StringNullableFilter<"Product"> | string | null
     collectionId?: StringFilter<"Product"> | string
     createdAt?: DateTimeFilter<"Product"> | Date | string
     updatedAt?: DateTimeFilter<"Product"> | Date | string
@@ -6422,6 +6397,7 @@ export namespace Prisma {
     cut?: SortOrder
     customWeight?: SortOrderInput | SortOrder
     customHeight?: SortOrderInput | SortOrder
+    productImage?: SortOrderInput | SortOrder
     collectionId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -6448,6 +6424,7 @@ export namespace Prisma {
     cut?: BoolWithAggregatesFilter<"Product"> | boolean
     customWeight?: FloatNullableWithAggregatesFilter<"Product"> | number | null
     customHeight?: FloatNullableWithAggregatesFilter<"Product"> | number | null
+    productImage?: StringNullableWithAggregatesFilter<"Product"> | string | null
     collectionId?: StringWithAggregatesFilter<"Product"> | string
     createdAt?: DateTimeWithAggregatesFilter<"Product"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Product"> | Date | string
@@ -6490,114 +6467,114 @@ export namespace Prisma {
   }
 
   export type UserCreateInput = {
-    userId?: string
-    username: string
-    name: string
-    surname: string
     email: string
-    phoneNumber?: string | null
-    isActive?: boolean
-    createdAt?: Date | string
-    password: string
+    name: string
     avatar?: string | null
+    createdAt?: Date | string
     credit?: Decimal | DecimalJsLike | number | string
     debit?: Decimal | DecimalJsLike | number | string
+    isActive?: boolean
+    password: string
+    phoneNumber?: string | null
+    surname: string
+    userId?: string
+    username: string
     userType: UserTypeCreateNestedOneWithoutUsersInput
   }
 
   export type UserUncheckedCreateInput = {
-    userId?: string
-    userTypeId: number
-    username: string
-    name: string
-    surname: string
     email: string
-    phoneNumber?: string | null
-    isActive?: boolean
-    createdAt?: Date | string
-    password: string
+    name: string
     avatar?: string | null
+    createdAt?: Date | string
     credit?: Decimal | DecimalJsLike | number | string
     debit?: Decimal | DecimalJsLike | number | string
+    isActive?: boolean
+    password: string
+    phoneNumber?: string | null
+    surname: string
+    userId?: string
+    username: string
+    userTypeId: number
   }
 
   export type UserUpdateInput = {
-    userId?: StringFieldUpdateOperationsInput | string
-    username?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    surname?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    phoneNumber?: NullableStringFieldUpdateOperationsInput | string | null
-    isActive?: BoolFieldUpdateOperationsInput | boolean
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    password?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     credit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     debit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    password?: StringFieldUpdateOperationsInput | string
+    phoneNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    surname?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    username?: StringFieldUpdateOperationsInput | string
     userType?: UserTypeUpdateOneRequiredWithoutUsersNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
-    userId?: StringFieldUpdateOperationsInput | string
-    userTypeId?: IntFieldUpdateOperationsInput | number
-    username?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    surname?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    phoneNumber?: NullableStringFieldUpdateOperationsInput | string | null
-    isActive?: BoolFieldUpdateOperationsInput | boolean
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    password?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     credit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     debit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    password?: StringFieldUpdateOperationsInput | string
+    phoneNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    surname?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    username?: StringFieldUpdateOperationsInput | string
+    userTypeId?: IntFieldUpdateOperationsInput | number
   }
 
   export type UserCreateManyInput = {
-    userId?: string
-    userTypeId: number
-    username: string
-    name: string
-    surname: string
     email: string
-    phoneNumber?: string | null
-    isActive?: boolean
-    createdAt?: Date | string
-    password: string
+    name: string
     avatar?: string | null
+    createdAt?: Date | string
     credit?: Decimal | DecimalJsLike | number | string
     debit?: Decimal | DecimalJsLike | number | string
+    isActive?: boolean
+    password: string
+    phoneNumber?: string | null
+    surname: string
+    userId?: string
+    username: string
+    userTypeId: number
   }
 
   export type UserUpdateManyMutationInput = {
-    userId?: StringFieldUpdateOperationsInput | string
-    username?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    surname?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    phoneNumber?: NullableStringFieldUpdateOperationsInput | string | null
-    isActive?: BoolFieldUpdateOperationsInput | boolean
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    password?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     credit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     debit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    password?: StringFieldUpdateOperationsInput | string
+    phoneNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    surname?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    username?: StringFieldUpdateOperationsInput | string
   }
 
   export type UserUncheckedUpdateManyInput = {
-    userId?: StringFieldUpdateOperationsInput | string
-    userTypeId?: IntFieldUpdateOperationsInput | number
-    username?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    surname?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    phoneNumber?: NullableStringFieldUpdateOperationsInput | string | null
-    isActive?: BoolFieldUpdateOperationsInput | boolean
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    password?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     credit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     debit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    password?: StringFieldUpdateOperationsInput | string
+    phoneNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    surname?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    username?: StringFieldUpdateOperationsInput | string
+    userTypeId?: IntFieldUpdateOperationsInput | number
   }
 
   export type CollectionCreateInput = {
@@ -6605,9 +6582,7 @@ export namespace Prisma {
     name: string
     description?: string | null
     code: string
-    coverImageUrl?: string | null
     catalogOrder: number
-    price?: Decimal | DecimalJsLike | number | string
     currency?: $Enums.Currency
     isActive?: boolean
     createdAt?: Date | string
@@ -6620,9 +6595,7 @@ export namespace Prisma {
     name: string
     description?: string | null
     code: string
-    coverImageUrl?: string | null
     catalogOrder: number
-    price?: Decimal | DecimalJsLike | number | string
     currency?: $Enums.Currency
     isActive?: boolean
     createdAt?: Date | string
@@ -6635,9 +6608,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     code?: StringFieldUpdateOperationsInput | string
-    coverImageUrl?: NullableStringFieldUpdateOperationsInput | string | null
     catalogOrder?: IntFieldUpdateOperationsInput | number
-    price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6650,9 +6621,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     code?: StringFieldUpdateOperationsInput | string
-    coverImageUrl?: NullableStringFieldUpdateOperationsInput | string | null
     catalogOrder?: IntFieldUpdateOperationsInput | number
-    price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6665,9 +6634,7 @@ export namespace Prisma {
     name: string
     description?: string | null
     code: string
-    coverImageUrl?: string | null
     catalogOrder: number
-    price?: Decimal | DecimalJsLike | number | string
     currency?: $Enums.Currency
     isActive?: boolean
     createdAt?: Date | string
@@ -6679,9 +6646,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     code?: StringFieldUpdateOperationsInput | string
-    coverImageUrl?: NullableStringFieldUpdateOperationsInput | string | null
     catalogOrder?: IntFieldUpdateOperationsInput | number
-    price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6693,9 +6658,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     code?: StringFieldUpdateOperationsInput | string
-    coverImageUrl?: NullableStringFieldUpdateOperationsInput | string | null
     catalogOrder?: IntFieldUpdateOperationsInput | number
-    price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6715,6 +6678,7 @@ export namespace Prisma {
     cut: boolean
     customWeight?: number | null
     customHeight?: number | null
+    productImage?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     collection: CollectionCreateNestedOneWithoutProductsInput
@@ -6733,6 +6697,7 @@ export namespace Prisma {
     cut: boolean
     customWeight?: number | null
     customHeight?: number | null
+    productImage?: string | null
     collectionId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -6751,6 +6716,7 @@ export namespace Prisma {
     cut?: BoolFieldUpdateOperationsInput | boolean
     customWeight?: NullableFloatFieldUpdateOperationsInput | number | null
     customHeight?: NullableFloatFieldUpdateOperationsInput | number | null
+    productImage?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     collection?: CollectionUpdateOneRequiredWithoutProductsNestedInput
@@ -6769,6 +6735,7 @@ export namespace Prisma {
     cut?: BoolFieldUpdateOperationsInput | boolean
     customWeight?: NullableFloatFieldUpdateOperationsInput | number | null
     customHeight?: NullableFloatFieldUpdateOperationsInput | number | null
+    productImage?: NullableStringFieldUpdateOperationsInput | string | null
     collectionId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6787,6 +6754,7 @@ export namespace Prisma {
     cut: boolean
     customWeight?: number | null
     customHeight?: number | null
+    productImage?: string | null
     collectionId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -6805,6 +6773,7 @@ export namespace Prisma {
     cut?: BoolFieldUpdateOperationsInput | boolean
     customWeight?: NullableFloatFieldUpdateOperationsInput | number | null
     customHeight?: NullableFloatFieldUpdateOperationsInput | number | null
+    productImage?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -6822,6 +6791,7 @@ export namespace Prisma {
     cut?: BoolFieldUpdateOperationsInput | boolean
     customWeight?: NullableFloatFieldUpdateOperationsInput | number | null
     customHeight?: NullableFloatFieldUpdateOperationsInput | number | null
+    productImage?: NullableStringFieldUpdateOperationsInput | string | null
     collectionId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6935,11 +6905,6 @@ export namespace Prisma {
     not?: NestedStringNullableFilter<$PrismaModel> | string | null
   }
 
-  export type BoolFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolFilter<$PrismaModel> | boolean
-  }
-
   export type DateTimeFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -6962,6 +6927,11 @@ export namespace Prisma {
     not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
   }
 
+  export type BoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
   export type UserTypeScalarRelationFilter = {
     is?: UserTypeWhereInput
     isNot?: UserTypeWhereInput
@@ -6973,63 +6943,63 @@ export namespace Prisma {
   }
 
   export type UserCountOrderByAggregateInput = {
-    userId?: SortOrder
-    userTypeId?: SortOrder
-    username?: SortOrder
-    name?: SortOrder
-    surname?: SortOrder
     email?: SortOrder
-    phoneNumber?: SortOrder
-    isActive?: SortOrder
-    createdAt?: SortOrder
-    password?: SortOrder
+    name?: SortOrder
     avatar?: SortOrder
+    createdAt?: SortOrder
     credit?: SortOrder
     debit?: SortOrder
+    isActive?: SortOrder
+    password?: SortOrder
+    phoneNumber?: SortOrder
+    surname?: SortOrder
+    userId?: SortOrder
+    username?: SortOrder
+    userTypeId?: SortOrder
   }
 
   export type UserAvgOrderByAggregateInput = {
-    userTypeId?: SortOrder
     credit?: SortOrder
     debit?: SortOrder
+    userTypeId?: SortOrder
   }
 
   export type UserMaxOrderByAggregateInput = {
-    userId?: SortOrder
-    userTypeId?: SortOrder
-    username?: SortOrder
-    name?: SortOrder
-    surname?: SortOrder
     email?: SortOrder
-    phoneNumber?: SortOrder
-    isActive?: SortOrder
-    createdAt?: SortOrder
-    password?: SortOrder
+    name?: SortOrder
     avatar?: SortOrder
+    createdAt?: SortOrder
     credit?: SortOrder
     debit?: SortOrder
+    isActive?: SortOrder
+    password?: SortOrder
+    phoneNumber?: SortOrder
+    surname?: SortOrder
+    userId?: SortOrder
+    username?: SortOrder
+    userTypeId?: SortOrder
   }
 
   export type UserMinOrderByAggregateInput = {
-    userId?: SortOrder
-    userTypeId?: SortOrder
-    username?: SortOrder
-    name?: SortOrder
-    surname?: SortOrder
     email?: SortOrder
-    phoneNumber?: SortOrder
-    isActive?: SortOrder
-    createdAt?: SortOrder
-    password?: SortOrder
+    name?: SortOrder
     avatar?: SortOrder
+    createdAt?: SortOrder
     credit?: SortOrder
     debit?: SortOrder
+    isActive?: SortOrder
+    password?: SortOrder
+    phoneNumber?: SortOrder
+    surname?: SortOrder
+    userId?: SortOrder
+    username?: SortOrder
+    userTypeId?: SortOrder
   }
 
   export type UserSumOrderByAggregateInput = {
-    userTypeId?: SortOrder
     credit?: SortOrder
     debit?: SortOrder
+    userTypeId?: SortOrder
   }
 
   export type StringNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -7048,14 +7018,6 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedStringNullableFilter<$PrismaModel>
     _max?: NestedStringNullableFilter<$PrismaModel>
-  }
-
-  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedBoolFilter<$PrismaModel>
-    _max?: NestedBoolFilter<$PrismaModel>
   }
 
   export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
@@ -7088,6 +7050,14 @@ export namespace Prisma {
     _max?: NestedDecimalFilter<$PrismaModel>
   }
 
+  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
+  }
+
   export type EnumCurrencyFilter<$PrismaModel = never> = {
     equals?: $Enums.Currency | EnumCurrencyFieldRefInput<$PrismaModel>
     in?: $Enums.Currency[] | ListEnumCurrencyFieldRefInput<$PrismaModel>
@@ -7110,9 +7080,7 @@ export namespace Prisma {
     name?: SortOrder
     description?: SortOrder
     code?: SortOrder
-    coverImageUrl?: SortOrder
     catalogOrder?: SortOrder
-    price?: SortOrder
     currency?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
@@ -7121,7 +7089,6 @@ export namespace Prisma {
 
   export type CollectionAvgOrderByAggregateInput = {
     catalogOrder?: SortOrder
-    price?: SortOrder
   }
 
   export type CollectionMaxOrderByAggregateInput = {
@@ -7129,9 +7096,7 @@ export namespace Prisma {
     name?: SortOrder
     description?: SortOrder
     code?: SortOrder
-    coverImageUrl?: SortOrder
     catalogOrder?: SortOrder
-    price?: SortOrder
     currency?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
@@ -7143,9 +7108,7 @@ export namespace Prisma {
     name?: SortOrder
     description?: SortOrder
     code?: SortOrder
-    coverImageUrl?: SortOrder
     catalogOrder?: SortOrder
-    price?: SortOrder
     currency?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
@@ -7154,7 +7117,6 @@ export namespace Prisma {
 
   export type CollectionSumOrderByAggregateInput = {
     catalogOrder?: SortOrder
-    price?: SortOrder
   }
 
   export type EnumCurrencyWithAggregatesFilter<$PrismaModel = never> = {
@@ -7207,6 +7169,7 @@ export namespace Prisma {
     cut?: SortOrder
     customWeight?: SortOrder
     customHeight?: SortOrder
+    productImage?: SortOrder
     collectionId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -7234,6 +7197,7 @@ export namespace Prisma {
     cut?: SortOrder
     customWeight?: SortOrder
     customHeight?: SortOrder
+    productImage?: SortOrder
     collectionId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -7252,6 +7216,7 @@ export namespace Prisma {
     cut?: SortOrder
     customWeight?: SortOrder
     customHeight?: SortOrder
+    productImage?: SortOrder
     collectionId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -7362,10 +7327,6 @@ export namespace Prisma {
     set?: string | null
   }
 
-  export type BoolFieldUpdateOperationsInput = {
-    set?: boolean
-  }
-
   export type DateTimeFieldUpdateOperationsInput = {
     set?: Date | string
   }
@@ -7376,6 +7337,10 @@ export namespace Prisma {
     decrement?: Decimal | DecimalJsLike | number | string
     multiply?: Decimal | DecimalJsLike | number | string
     divide?: Decimal | DecimalJsLike | number | string
+  }
+
+  export type BoolFieldUpdateOperationsInput = {
+    set?: boolean
   }
 
   export type UserTypeUpdateOneRequiredWithoutUsersNestedInput = {
@@ -7545,11 +7510,6 @@ export namespace Prisma {
     not?: NestedStringNullableFilter<$PrismaModel> | string | null
   }
 
-  export type NestedBoolFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolFilter<$PrismaModel> | boolean
-  }
-
   export type NestedDateTimeFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -7570,6 +7530,11 @@ export namespace Prisma {
     gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
     gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
     not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
+  }
+
+  export type NestedBoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
   }
 
   export type NestedStringNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -7600,14 +7565,6 @@ export namespace Prisma {
     not?: NestedIntNullableFilter<$PrismaModel> | number | null
   }
 
-  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedBoolFilter<$PrismaModel>
-    _max?: NestedBoolFilter<$PrismaModel>
-  }
-
   export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -7636,6 +7593,14 @@ export namespace Prisma {
     _sum?: NestedDecimalFilter<$PrismaModel>
     _min?: NestedDecimalFilter<$PrismaModel>
     _max?: NestedDecimalFilter<$PrismaModel>
+  }
+
+  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
   }
 
   export type NestedEnumCurrencyFilter<$PrismaModel = never> = {
@@ -7699,33 +7664,33 @@ export namespace Prisma {
   }
 
   export type UserCreateWithoutUserTypeInput = {
-    userId?: string
-    username: string
-    name: string
-    surname: string
     email: string
-    phoneNumber?: string | null
-    isActive?: boolean
-    createdAt?: Date | string
-    password: string
+    name: string
     avatar?: string | null
+    createdAt?: Date | string
     credit?: Decimal | DecimalJsLike | number | string
     debit?: Decimal | DecimalJsLike | number | string
+    isActive?: boolean
+    password: string
+    phoneNumber?: string | null
+    surname: string
+    userId?: string
+    username: string
   }
 
   export type UserUncheckedCreateWithoutUserTypeInput = {
-    userId?: string
-    username: string
-    name: string
-    surname: string
     email: string
-    phoneNumber?: string | null
-    isActive?: boolean
-    createdAt?: Date | string
-    password: string
+    name: string
     avatar?: string | null
+    createdAt?: Date | string
     credit?: Decimal | DecimalJsLike | number | string
     debit?: Decimal | DecimalJsLike | number | string
+    isActive?: boolean
+    password: string
+    phoneNumber?: string | null
+    surname: string
+    userId?: string
+    username: string
   }
 
   export type UserCreateOrConnectWithoutUserTypeInput = {
@@ -7758,19 +7723,19 @@ export namespace Prisma {
     AND?: UserScalarWhereInput | UserScalarWhereInput[]
     OR?: UserScalarWhereInput[]
     NOT?: UserScalarWhereInput | UserScalarWhereInput[]
-    userId?: StringFilter<"User"> | string
-    userTypeId?: IntFilter<"User"> | number
-    username?: StringFilter<"User"> | string
-    name?: StringFilter<"User"> | string
-    surname?: StringFilter<"User"> | string
     email?: StringFilter<"User"> | string
-    phoneNumber?: StringNullableFilter<"User"> | string | null
-    isActive?: BoolFilter<"User"> | boolean
-    createdAt?: DateTimeFilter<"User"> | Date | string
-    password?: StringFilter<"User"> | string
+    name?: StringFilter<"User"> | string
     avatar?: StringNullableFilter<"User"> | string | null
+    createdAt?: DateTimeFilter<"User"> | Date | string
     credit?: DecimalFilter<"User"> | Decimal | DecimalJsLike | number | string
     debit?: DecimalFilter<"User"> | Decimal | DecimalJsLike | number | string
+    isActive?: BoolFilter<"User"> | boolean
+    password?: StringFilter<"User"> | string
+    phoneNumber?: StringNullableFilter<"User"> | string | null
+    surname?: StringFilter<"User"> | string
+    userId?: StringFilter<"User"> | string
+    username?: StringFilter<"User"> | string
+    userTypeId?: IntFilter<"User"> | number
   }
 
   export type UserTypeCreateWithoutUsersInput = {
@@ -7820,6 +7785,7 @@ export namespace Prisma {
     cut: boolean
     customWeight?: number | null
     customHeight?: number | null
+    productImage?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -7837,6 +7803,7 @@ export namespace Prisma {
     cut: boolean
     customWeight?: number | null
     customHeight?: number | null
+    productImage?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -7883,6 +7850,7 @@ export namespace Prisma {
     cut?: BoolFilter<"Product"> | boolean
     customWeight?: FloatNullableFilter<"Product"> | number | null
     customHeight?: FloatNullableFilter<"Product"> | number | null
+    productImage?: StringNullableFilter<"Product"> | string | null
     collectionId?: StringFilter<"Product"> | string
     createdAt?: DateTimeFilter<"Product"> | Date | string
     updatedAt?: DateTimeFilter<"Product"> | Date | string
@@ -7893,9 +7861,7 @@ export namespace Prisma {
     name: string
     description?: string | null
     code: string
-    coverImageUrl?: string | null
     catalogOrder: number
-    price?: Decimal | DecimalJsLike | number | string
     currency?: $Enums.Currency
     isActive?: boolean
     createdAt?: Date | string
@@ -7907,9 +7873,7 @@ export namespace Prisma {
     name: string
     description?: string | null
     code: string
-    coverImageUrl?: string | null
     catalogOrder: number
-    price?: Decimal | DecimalJsLike | number | string
     currency?: $Enums.Currency
     isActive?: boolean
     createdAt?: Date | string
@@ -7937,9 +7901,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     code?: StringFieldUpdateOperationsInput | string
-    coverImageUrl?: NullableStringFieldUpdateOperationsInput | string | null
     catalogOrder?: IntFieldUpdateOperationsInput | number
-    price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -7951,9 +7913,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     code?: StringFieldUpdateOperationsInput | string
-    coverImageUrl?: NullableStringFieldUpdateOperationsInput | string | null
     catalogOrder?: IntFieldUpdateOperationsInput | number
-    price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -7961,63 +7921,63 @@ export namespace Prisma {
   }
 
   export type UserCreateManyUserTypeInput = {
-    userId?: string
-    username: string
-    name: string
-    surname: string
     email: string
-    phoneNumber?: string | null
-    isActive?: boolean
-    createdAt?: Date | string
-    password: string
+    name: string
     avatar?: string | null
+    createdAt?: Date | string
     credit?: Decimal | DecimalJsLike | number | string
     debit?: Decimal | DecimalJsLike | number | string
+    isActive?: boolean
+    password: string
+    phoneNumber?: string | null
+    surname: string
+    userId?: string
+    username: string
   }
 
   export type UserUpdateWithoutUserTypeInput = {
-    userId?: StringFieldUpdateOperationsInput | string
-    username?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    surname?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    phoneNumber?: NullableStringFieldUpdateOperationsInput | string | null
-    isActive?: BoolFieldUpdateOperationsInput | boolean
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    password?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     credit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     debit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    password?: StringFieldUpdateOperationsInput | string
+    phoneNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    surname?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    username?: StringFieldUpdateOperationsInput | string
   }
 
   export type UserUncheckedUpdateWithoutUserTypeInput = {
-    userId?: StringFieldUpdateOperationsInput | string
-    username?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    surname?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    phoneNumber?: NullableStringFieldUpdateOperationsInput | string | null
-    isActive?: BoolFieldUpdateOperationsInput | boolean
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    password?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     credit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     debit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    password?: StringFieldUpdateOperationsInput | string
+    phoneNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    surname?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    username?: StringFieldUpdateOperationsInput | string
   }
 
   export type UserUncheckedUpdateManyWithoutUserTypeInput = {
-    userId?: StringFieldUpdateOperationsInput | string
-    username?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    surname?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    phoneNumber?: NullableStringFieldUpdateOperationsInput | string | null
-    isActive?: BoolFieldUpdateOperationsInput | boolean
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    password?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     credit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     debit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    password?: StringFieldUpdateOperationsInput | string
+    phoneNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    surname?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    username?: StringFieldUpdateOperationsInput | string
   }
 
   export type ProductCreateManyCollectionInput = {
@@ -8033,6 +7993,7 @@ export namespace Prisma {
     cut: boolean
     customWeight?: number | null
     customHeight?: number | null
+    productImage?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -8050,6 +8011,7 @@ export namespace Prisma {
     cut?: BoolFieldUpdateOperationsInput | boolean
     customWeight?: NullableFloatFieldUpdateOperationsInput | number | null
     customHeight?: NullableFloatFieldUpdateOperationsInput | number | null
+    productImage?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -8067,6 +8029,7 @@ export namespace Prisma {
     cut?: BoolFieldUpdateOperationsInput | boolean
     customWeight?: NullableFloatFieldUpdateOperationsInput | number | null
     customHeight?: NullableFloatFieldUpdateOperationsInput | number | null
+    productImage?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -8084,6 +8047,7 @@ export namespace Prisma {
     cut?: BoolFieldUpdateOperationsInput | boolean
     customWeight?: NullableFloatFieldUpdateOperationsInput | number | null
     customHeight?: NullableFloatFieldUpdateOperationsInput | number | null
+    productImage?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }

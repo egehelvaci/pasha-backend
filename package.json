@@ -48,5 +48,8 @@
   "strapi": {
     "uuid": "981e5cd3-694d-4912-8cd3-1d1ea0707255",
     "installId": "bdc5fe4db17c71eaacccee4aaae211675eee11ba3dbc9a2ea2f79900ad428452"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   }
 }
