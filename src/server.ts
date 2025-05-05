@@ -44,6 +44,15 @@ app.get('/', (req, res) => {
   })
 })
 
+// Railway için Api Healthcheck
+app.get('/api', (req, res) => {
+  res.status(200).json({
+    message: 'Pasha Backend API Sağlık Kontrolü',
+    status: 'OK',
+    timestamp: new Date().toISOString()
+  })
+})
+
 // Tanımsız route'ları yakala
 const notFoundHandler = (req: any, res: any) => {
   res.status(404).json({
@@ -66,8 +75,25 @@ app.use((err: Error, req: any, res: any, next: any) => {
 
 // Sunucuyu başlat
 try {
-  app.listen(PORT, '0.0.0.0', () => {
+  const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`Sunucu ${process.env.PUBLIC_URL || `http://0.0.0.0:${PORT}`} adresinde çalışıyor (port: ${PORT})`)
+  })
+  
+  // İşlem sonlandırma sinyallerini yakala
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM sinyali alındı, sunucu kapatılıyor...')
+    server.close(() => {
+      console.log('Sunucu kapatıldı')
+      process.exit(0)
+    })
+  })
+  
+  process.on('SIGINT', () => {
+    console.log('SIGINT sinyali alındı, sunucu kapatılıyor...')
+    server.close(() => {
+      console.log('Sunucu kapatıldı')
+      process.exit(0)
+    })
   })
 } catch (error) {
   console.error('Sunucu başlatılamadı:', error)

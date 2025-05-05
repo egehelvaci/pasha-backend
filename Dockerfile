@@ -6,19 +6,22 @@ WORKDIR /app
 # Bağımlılık dosyalarını kopyala
 COPY package.json package-lock.json ./
 
-# Sadece gerekli bağımlılıkları yükle
-RUN npm install --production --frozen-lockfile
+# Daha basit ve hızlı kurulum
+RUN npm install --omit=dev
 
-# Uygulama dosyalarını kopyala
-COPY . .
+# Uygulama kodlarını kopyala
+COPY tsconfig.json ./
+COPY prisma ./prisma
+COPY src ./src
 
-# Prisma client oluştur ve TypeScript'i derle
+# Prisma client oluştur 
 RUN npx prisma generate
+
+# TypeScript'i derle
 RUN npm run api:build
 
 # Çalışma ortamını ayarla
 ENV NODE_ENV=production
-ENV PORT=3001
 
 # Portu aç
 EXPOSE 3001
