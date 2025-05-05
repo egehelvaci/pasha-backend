@@ -6,8 +6,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Yarn kullanarak bağımlılıkları yükle
-RUN npm install -g yarn && \
-    yarn install --frozen-lockfile
+RUN yarn install
 
 # Kaynak kodları kopyala
 COPY . .
