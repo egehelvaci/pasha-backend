@@ -49,7 +49,7 @@ app.use(notFoundHandler)
 
 // Sunucuyu başlat
 app.listen(PORT, () => {
-  console.log(`Sunucu http://localhost:${PORT} adresinde çalışıyor`)
+  console.log(`Sunucu ${process.env.PUBLIC_URL || `http://localhost:${PORT}`} adresinde çalışıyor`)
 })
 
 export default app 
