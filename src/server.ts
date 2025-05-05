@@ -38,9 +38,13 @@ app.use('/api/collections', collectionRoutes)
 
 // Base route
 app.get('/', (req, res) => {
+  // Railway healthcheck kontrolü için basit yanıt
+  console.log('Kök dizin isteği alındı:', new Date().toISOString())
   res.status(200).json({
     message: 'Pasha Backend API v1.0',
-    status: 'Çalışıyor'
+    status: 'Çalışıyor',
+    ping: 'pong',
+    timestamp: new Date().toISOString()
   })
 })
 

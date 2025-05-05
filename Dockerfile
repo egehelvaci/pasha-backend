@@ -22,9 +22,10 @@ RUN npm run api:build
 
 # Çalışma ortamını ayarla
 ENV NODE_ENV=production
+# PORT değişkenini kullanma - Railway'in sağladığını kullan
 
-# Portu aç
-EXPOSE 3001
+# Portu aç - Railway'in sağladığı portu kullan
+# EXPOSE 3001
 
 # Uygulamayı başlat
 CMD ["node", "dist/server.js"] 
