@@ -49,7 +49,8 @@ app.use(notFoundHandler)
 
 // Sunucuyu başlat
 app.listen(PORT, () => {
-  console.log(`Sunucu http://localhost:${PORT} adresinde çalışıyor`)
+  console.log(`Sunucu http://0.0.0.0:${PORT} adresinde çalışıyor`)
+  console.log(`PORT ortam değişkeni: ${process.env.PORT || 'tanımlanmamış, varsayılan port 3001 kullanılıyor'}`)
 })
 
 export default app 
