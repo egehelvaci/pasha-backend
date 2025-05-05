@@ -4,9 +4,9 @@ buildCommand = "npm run api:build"
 
 [deploy]
 startCommand = "npm run api:start"
-healthcheckPath = "/"
+healthcheckPath = "/healthz"
 healthcheckTimeout = 300
-healthcheckDisabled = true
+healthcheckDisabled = false
 restartPolicyType = "on_failure"
 
 [postgres]

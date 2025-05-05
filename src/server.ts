@@ -17,67 +17,71 @@ console.log(`NODE_ENV: ${process.env.NODE_ENV || 'Tanımlı değil'}`)
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
-// CORS ayarları
-const corsMiddleware = (req: any, res: any, next: any) => {
-  res.header('Access-Control-Allow-Origin', '*')
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization')
+// CORS ayarları - tüm domainlerden gelen isteklere izin ver
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization')
   
+  // OPTIONS isteklerini hemen yanıtla
   if (req.method === 'OPTIONS') {
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH')
-    return res.status(200).json({})
+    return res.status(200).end()
   }
   
   next()
-}
-
-app.use(corsMiddleware)
+})
 
 // Routes
 app.use('/api/auth', authRoutes)
 app.use('/api/collections', collectionRoutes)
 
-// Base route
+// Kök rota - Railway proxy için basit yanıt
 app.get('/', (req, res) => {
-  // Railway healthcheck kontrolü için basit yanıt
   console.log('Kök dizin isteği alındı:', new Date().toISOString())
-  res.status(200).json({
+  return res.status(200).send({
     message: 'Pasha Backend API v1.0',
-    status: 'Çalışıyor',
-    ping: 'pong',
-    timestamp: new Date().toISOString()
-  })
-})
-
-// Railway için Api Healthcheck
-app.get('/api', (req, res) => {
-  res.status(200).json({
-    message: 'Pasha Backend API Sağlık Kontrolü',
     status: 'OK',
     timestamp: new Date().toISOString()
   })
 })
 
-// Tanımsız route'ları yakala
-const notFoundHandler = (req: any, res: any) => {
-  res.status(404).json({
-    success: false,
-    message: 'İstenen sayfa bulunamadı'
+// Railway healthcheck için ek endpoint
+app.get('/healthz', (req, res) => {
+  console.log('Health check isteği alındı:', new Date().toISOString())
+  return res.status(200).send('OK')
+})
+
+// API rota kontrolü
+app.get('/api', (req, res) => {
+  console.log('API isteği alındı:', new Date().toISOString())
+  return res.status(200).send({
+    message: 'Pasha Backend API Gateway',
+    status: 'OK',
+    timestamp: new Date().toISOString()
   })
-}
+})
 
-app.use(notFoundHandler)
+// 404 handler - en sonda
+app.use((req, res) => {
+  console.log('404 - İstenen sayfa bulunamadı:', req.originalUrl)
+  return res.status(404).send({
+    success: false,
+    message: 'İstenen sayfa bulunamadı',
+    path: req.originalUrl
+  })
+})
 
-// Hata yakalama middleware'i
-app.use((err: Error, req: any, res: any, next: any) => {
-  console.error('Sunucu hatası:', err);
-  res.status(500).json({
+// Error handler - tüm hataları yakala
+app.use((err: any, req: any, res: any, next: any) => {
+  console.error('Sunucu hatası:', err)
+  return res.status(500).send({
     success: false,
     message: 'Sunucu hatası',
     error: process.env.NODE_ENV === 'production' ? {} : err
-  });
-});
+  })
+})
 
-// Sunucuyu başlat
+// Sunucuyu başlat - PORT'a dikkat et
 try {
   const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`Sunucu ${process.env.PUBLIC_URL || `http://0.0.0.0:${PORT}`} adresinde çalışıyor (port: ${PORT})`)
