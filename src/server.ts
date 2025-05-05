@@ -1,5 +1,6 @@
 import express from 'express'
 import authRoutes from './auth/auth-routes'
+import collectionRoutes from './routes/collectionRoutes'
 
 // Express uygulaması oluştur
 const app = express()
@@ -26,6 +27,7 @@ app.use(corsMiddleware)
 
 // Routes
 app.use('/api/auth', authRoutes)
+app.use('/api/collections', collectionRoutes)
 
 // Base route
 app.get('/', (req, res) => {
