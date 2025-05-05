@@ -1,19 +1,20 @@
-FROM node:18-alpine
+FROM node:16-alpine
 
 WORKDIR /app
 
-# Önce package.json ve package-lock.json kopyala
+# package.json dosyalarını kopyala
 COPY package*.json ./
 
-# Bağımlılıkları yükle
-RUN npm install
+# Yarn kullanarak bağımlılıkları yükle
+RUN npm install -g yarn && \
+    yarn install --frozen-lockfile
 
 # Kaynak kodları kopyala
 COPY . .
 
-# Prisma client'ı oluştur ve API'yi derle
-RUN npx prisma generate
-RUN npm run api:build
+# Prisma client oluştur ve API'yi derle
+RUN yarn prisma generate && \
+    yarn api:build
 
 # Çalışma zamanı yapılandırması
 ENV NODE_ENV=production
@@ -22,4 +23,4 @@ ENV PORT=3001
 EXPOSE ${PORT}
 
 # Uygulamayı başlat
-CMD ["npm", "run", "api:start"] 
+CMD ["yarn", "api:start"] 
