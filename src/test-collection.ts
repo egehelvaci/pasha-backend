@@ -11,9 +11,7 @@ async function testCollectionService() {
       name: 'Yaz Koleksiyonu 2025',
       description: 'Yaz mevsimi için özel tasarımlar',
       code: 'YAZ2025',
-      coverImageUrl: 'https://example.com/yaz2025.jpg',
-      catalogOrder: 1,
-      price: 299.99
+      catalogOrder: 1
     })
     console.log('Koleksiyon 1 oluşturuldu:', collection1)
     
@@ -21,9 +19,7 @@ async function testCollectionService() {
       name: 'Kış Koleksiyonu 2025',
       description: 'Kış mevsimi için özel tasarımlar',
       code: 'KIS2025',
-      coverImageUrl: 'https://example.com/kis2025.jpg',
       catalogOrder: 2,
-      price: 399.99,
       currency: 'USD'
     })
     console.log('Koleksiyon 2 oluşturuldu:', collection2)
@@ -46,7 +42,6 @@ async function testCollectionService() {
     // Koleksiyon güncelle
     console.log('\nKoleksiyon güncelleme:')
     const updatedCollection = await collectionService.updateCollection(collection1.collectionId, {
-      price: 349.99,
       description: 'Yaz mevsimi için yenilenen özel tasarımlar'
     })
     console.log(updatedCollection)

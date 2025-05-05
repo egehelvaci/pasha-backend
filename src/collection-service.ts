@@ -10,9 +10,7 @@ export class CollectionService {
     name: string
     description?: string
     code: string
-    coverImageUrl?: string
     catalogOrder: number
-    price?: number
     currency?: Currency
   }) {
     try {
@@ -21,9 +19,7 @@ export class CollectionService {
           name: data.name,
           description: data.description,
           code: data.code,
-          coverImageUrl: data.coverImageUrl,
           catalogOrder: data.catalogOrder,
-          price: data.price || 0,
           currency: data.currency || 'TRY'
         }
       })
@@ -92,9 +88,7 @@ export class CollectionService {
     name?: string
     description?: string
     code?: string
-    coverImageUrl?: string
     catalogOrder?: number
-    price?: number
     currency?: Currency
     isActive?: boolean
   }) {
