@@ -1,33 +1,27 @@
-FROM node:18-alpine AS base
+FROM node:18-alpine
 
-# Base image setup
+# Çalışma dizini ayarla
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci
 
-# Development dependencies için
-FROM base AS deps
-WORKDIR /app
-RUN npm ci
+# Bağımlılık dosyalarını kopyala
+COPY package.json package-lock.json ./
 
-# Build için
-FROM deps AS builder
-WORKDIR /app
+# Sadece gerekli bağımlılıkları yükle
+RUN npm install --production --frozen-lockfile
+
+# Uygulama dosyalarını kopyala
 COPY . .
+
+# Prisma client oluştur ve TypeScript'i derle
+RUN npx prisma generate
 RUN npm run api:build
 
-# Production için
-FROM node:18-alpine AS runner
-WORKDIR /app
+# Çalışma ortamını ayarla
+ENV NODE_ENV=production
+ENV PORT=3001
 
-ENV NODE_ENV production
-
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/generated ./generated
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/prisma ./prisma
-
+# Portu aç
 EXPOSE 3001
 
-CMD ["npm", "run", "api:start"] 
+# Uygulamayı başlat
+CMD ["node", "dist/server.js"] 
