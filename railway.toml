@@ -5,7 +5,7 @@ buildCommand = "npm run api:build"
 [deploy]
 startCommand = "npm run api:start"
 healthcheckPath = "/"
-healthcheckTimeout = 100
+healthcheckTimeout = 300
 
 [postgres]
 database = "railway" 

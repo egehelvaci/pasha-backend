@@ -6,6 +6,13 @@ import collectionRoutes from './routes/collectionRoutes'
 const app = express()
 const PORT = process.env.PORT || 3001
 
+// Ortam değişkenlerini logla
+console.log("Çevre Değişkenleri:")
+console.log(`PORT: ${process.env.PORT}`)
+console.log(`DATABASE_URL: ${process.env.DATABASE_URL ? 'Mevcut' : 'Tanımlı değil'}`)
+console.log(`PUBLIC_URL: ${process.env.PUBLIC_URL || 'Tanımlı değil'}`)
+console.log(`NODE_ENV: ${process.env.NODE_ENV || 'Tanımlı değil'}`)
+
 // Middleware'ler
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
@@ -47,9 +54,23 @@ const notFoundHandler = (req: any, res: any) => {
 
 app.use(notFoundHandler)
 
+// Hata yakalama middleware'i
+app.use((err: Error, req: any, res: any, next: any) => {
+  console.error('Sunucu hatası:', err);
+  res.status(500).json({
+    success: false,
+    message: 'Sunucu hatası',
+    error: process.env.NODE_ENV === 'production' ? {} : err
+  });
+});
+
 // Sunucuyu başlat
-app.listen(PORT, () => {
-  console.log(`Sunucu ${process.env.PUBLIC_URL || `http://localhost:${PORT}`} adresinde çalışıyor`)
-})
+try {
+  app.listen(PORT, () => {
+    console.log(`Sunucu ${process.env.PUBLIC_URL || `http://localhost:${PORT}`} adresinde çalışıyor (port: ${PORT})`)
+  })
+} catch (error) {
+  console.error('Sunucu başlatılamadı:', error)
+}
 
 export default app 
