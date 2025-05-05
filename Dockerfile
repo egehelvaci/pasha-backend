@@ -1,25 +1,34 @@
-FROM node:16-alpine
+FROM node:18-alpine AS base
 
+# Base image setup
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+
+# Development dependencies için
+FROM base AS deps
+WORKDIR /app
+RUN npm ci
+
+# Build için
+FROM deps AS builder
+WORKDIR /app
+COPY . .
+RUN npx prisma generate
+RUN npm run api:build
+
+# Production için
+FROM node:18-alpine AS runner
 WORKDIR /app
 
-# package.json dosyalarını kopyala
-COPY package*.json ./
+ENV NODE_ENV production
 
-# Yarn kullanarak bağımlılıkları yükle
-RUN yarn install
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/generated ./generated
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/prisma ./prisma
 
-# Kaynak kodları kopyala
-COPY . .
+EXPOSE 3001
 
-# Prisma client oluştur ve API'yi derle
-RUN yarn prisma generate && \
-    yarn api:build
-
-# Çalışma zamanı yapılandırması
-ENV NODE_ENV=production
-ENV PORT=3001
-
-EXPOSE ${PORT}
-
-# Uygulamayı başlat
-CMD ["yarn", "api:start"] 
+CMD ["node", "dist/server.js"] 
