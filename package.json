@@ -14,8 +14,8 @@
     "upgrade": "npx @strapi/upgrade latest",
     "upgrade:dry": "npx @strapi/upgrade latest --dry",
     "api:dev": "nodemon --exec ts-node src/server.ts",
-    "api:build": "tsc -p tsconfig.json",
-    "api:start": "node dist/server.js"
+    "api:build": "npx prisma generate && tsc -p tsconfig.json",
+    "api:start": "npx prisma db push --accept-data-loss && node dist/server.js"
   },
   "dependencies": {
     "@prisma/client": "^6.7.0",

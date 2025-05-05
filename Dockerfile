@@ -14,7 +14,6 @@ RUN npm ci
 FROM deps AS builder
 WORKDIR /app
 COPY . .
-RUN npx prisma generate
 RUN npm run api:build
 
 # Production için
@@ -31,4 +30,4 @@ COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 3001
 
-CMD ["node", "dist/server.js"] 
+CMD ["npm", "run", "api:start"] 
