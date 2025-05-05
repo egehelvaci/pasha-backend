@@ -67,7 +67,14 @@ export class AuthService {
           name: user.name,
           surname: user.surname,
           email: user.email,
-          userType: user.userType.name
+          phoneNumber: user.phoneNumber,  // Eklendi
+          isActive: user.isActive,        // Eklendi
+          createdAt: user.createdAt,      // Eklendi
+          avatar: user.avatar,            // Eklendi
+          credit: user.credit,            // Eklendi
+          debit: user.debit,              // Eklendi
+          userType: user.userType.name,
+          userTypeId: user.userTypeId     // Eklendi
         }
       }
     } catch (error) {

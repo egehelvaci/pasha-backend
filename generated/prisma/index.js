@@ -194,6 +194,10 @@ const config = {
         "fromEnvVar": null,
         "value": "windows",
         "native": true
+      },
+      {
+        "fromEnvVar": null,
+        "value": "linux-musl-openssl-3.0.x"
       }
     ],
     "previewFeatures": [],
@@ -220,8 +224,8 @@ const config = {
       }
     }
   },
-  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider = \"prisma-client-js\"\n  output   = \"../generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = \"postgresql://postgres:JQFOWXIpEnSvchuIMXpPpGHvCYVOSUdx@yamabiko.proxy.rlwy.net:17072/railway\"\n}\n\nenum Currency {\n  TRY\n  USD\n  EUR\n}\n\nmodel UserType {\n  id    Int    @id @default(autoincrement())\n  name  String @unique\n  users User[]\n}\n\nmodel User {\n  userId      String   @id @default(uuid()) @map(\"user_id\")\n  userTypeId  Int      @map(\"user_type_id\")\n  userType    UserType @relation(fields: [userTypeId], references: [id])\n  username    String   @unique\n  name        String\n  surname     String\n  email       String   @unique\n  phoneNumber String?  @map(\"phone_number\")\n  isActive    Boolean  @default(true) @map(\"is_active\")\n  createdAt   DateTime @default(now()) @map(\"created_at\")\n  password    String\n  avatar      String?\n  credit      Decimal  @default(0) @db.Decimal(10, 2)\n  debit       Decimal  @default(0) @db.Decimal(10, 2)\n}\n\nmodel Collection {\n  collectionId  String    @id @default(uuid()) @map(\"collection_id\")\n  name          String\n  description   String?\n  code          String    @unique\n  coverImageUrl String?   @map(\"cover_image_url\")\n  catalogOrder  Int       @map(\"catalog_order\")\n  price         Decimal   @default(0) @db.Decimal(10, 2)\n  currency      Currency  @default(TRY)\n  isActive      Boolean   @default(true) @map(\"is_active\")\n  createdAt     DateTime  @default(now()) @map(\"created_at\")\n  updatedAt     DateTime  @updatedAt @map(\"updated_at\")\n  products      Product[] // Koleksiyona ait ürünler\n}\n\nmodel Product {\n  productId    String     @id @default(uuid()) @map(\"product_id\")\n  name         String\n  description  String\n  price        Decimal    @db.Decimal(10, 2)\n  stock        Int\n  barcode      String\n  quality      String\n  width        Float\n  height       Float\n  cut          Boolean\n  customWeight Float?     @map(\"custom_weight\")\n  customHeight Float?     @map(\"custom_height\")\n  collectionId String     @map(\"collection_id\")\n  collection   Collection @relation(fields: [collectionId], references: [collectionId])\n  createdAt    DateTime   @default(now()) @map(\"created_at\")\n  updatedAt    DateTime   @updatedAt @map(\"updated_at\")\n}\n",
-  "inlineSchemaHash": "1786b5f1160b6fc3b9309b206bbea266061b4d0b941f3e3cbd638ef434d1d572",
+  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider      = \"prisma-client-js\"\n  output        = \"../generated/prisma\"\n  binaryTargets = [\"native\", \"linux-musl-openssl-3.0.x\"]\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = \"postgresql://postgres:JQFOWXIpEnSvchuIMXpPpGHvCYVOSUdx@yamabiko.proxy.rlwy.net:17072/railway\"\n}\n\nenum Currency {\n  TRY\n  USD\n  EUR\n}\n\nmodel UserType {\n  id    Int    @id @default(autoincrement())\n  name  String @unique\n  users User[]\n}\n\nmodel User {\n  userId      String   @id @default(uuid()) @map(\"user_id\")\n  userTypeId  Int      @map(\"user_type_id\")\n  userType    UserType @relation(fields: [userTypeId], references: [id])\n  username    String   @unique\n  name        String\n  surname     String\n  email       String   @unique\n  phoneNumber String?  @map(\"phone_number\")\n  isActive    Boolean  @default(true) @map(\"is_active\")\n  createdAt   DateTime @default(now()) @map(\"created_at\")\n  password    String\n  avatar      String?\n  credit      Decimal  @default(0) @db.Decimal(10, 2)\n  debit       Decimal  @default(0) @db.Decimal(10, 2)\n}\n\nmodel Collection {\n  collectionId  String    @id @default(uuid()) @map(\"collection_id\")\n  name          String\n  description   String?\n  code          String    @unique\n  coverImageUrl String?   @map(\"cover_image_url\")\n  catalogOrder  Int       @map(\"catalog_order\")\n  price         Decimal   @default(0) @db.Decimal(10, 2)\n  currency      Currency  @default(TRY)\n  isActive      Boolean   @default(true) @map(\"is_active\")\n  createdAt     DateTime  @default(now()) @map(\"created_at\")\n  updatedAt     DateTime  @updatedAt @map(\"updated_at\")\n  products      Product[] // Koleksiyona ait ürünler\n}\n\nmodel Product {\n  productId    String     @id @default(uuid()) @map(\"product_id\")\n  name         String\n  description  String\n  price        Decimal    @db.Decimal(10, 2)\n  stock        Int\n  barcode      String\n  quality      String\n  width        Float\n  height       Float\n  cut          Boolean\n  customWeight Float?     @map(\"custom_weight\")\n  customHeight Float?     @map(\"custom_height\")\n  collectionId String     @map(\"collection_id\")\n  collection   Collection @relation(fields: [collectionId], references: [collectionId])\n  createdAt    DateTime   @default(now()) @map(\"created_at\")\n  updatedAt    DateTime   @updatedAt @map(\"updated_at\")\n}\n",
+  "inlineSchemaHash": "fdc752cb3bfd612096990fe6ce277eca8d74d37e495f9891991f8287e957d934",
   "copyEngine": true
 }
 
@@ -262,6 +266,10 @@ Object.assign(exports, Prisma)
 // file annotations for bundling tools to include these files
 path.join(__dirname, "query_engine-windows.dll.node");
 path.join(process.cwd(), "generated/prisma/query_engine-windows.dll.node")
+
+// file annotations for bundling tools to include these files
+path.join(__dirname, "libquery_engine-linux-musl-openssl-3.0.x.so.node");
+path.join(process.cwd(), "generated/prisma/libquery_engine-linux-musl-openssl-3.0.x.so.node")
 // file annotations for bundling tools to include these files
 path.join(__dirname, "schema.prisma");
 path.join(process.cwd(), "generated/prisma/schema.prisma")
