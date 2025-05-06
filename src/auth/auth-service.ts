@@ -1,5 +1,6 @@
 import { PrismaClient } from '../../generated/prisma'
 import jwt, { Secret, SignOptions } from 'jsonwebtoken'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
@@ -32,11 +33,10 @@ export class AuthService {
    */
   async login(credentials: LoginCredentials) {
     try {
-      // Şimdilik şifre hashlemesi olmadan kullanıcı kontrolü
+      // Kullanıcıyı bul (şifre kontrolü olmadan)
       const user = await prisma.user.findFirst({
         where: {
           username: credentials.username,
-          password: credentials.password, // Normalde bu şekilde plain text saklanmamalı
           isActive: true
         },
         include: {
@@ -45,6 +45,12 @@ export class AuthService {
       })
 
       if (!user) {
+        throw new Error('Kullanıcı adı veya şifre hatalı')
+      }
+
+      // Şifre kontrolü - bcrypt ile karşılaştırma
+      const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
+      if (!isPasswordValid) {
         throw new Error('Kullanıcı adı veya şifre hatalı')
       }
 
@@ -67,14 +73,14 @@ export class AuthService {
           name: user.name,
           surname: user.surname,
           email: user.email,
-          phoneNumber: user.phoneNumber,  // Eklendi
-          isActive: user.isActive,        // Eklendi
-          createdAt: user.createdAt,      // Eklendi
-          avatar: user.avatar,            // Eklendi
-          credit: user.credit,            // Eklendi
-          debit: user.debit,              // Eklendi
+          phoneNumber: user.phoneNumber,
+          isActive: user.isActive,
+          createdAt: user.createdAt,
+          avatar: user.avatar,
+          credit: user.credit,
+          debit: user.debit,
           userType: user.userType.name,
-          userTypeId: user.userTypeId     // Eklendi
+          userTypeId: user.userTypeId
         }
       }
     } catch (error) {
