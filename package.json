@@ -15,7 +15,8 @@
     "upgrade:dry": "npx @strapi/upgrade latest --dry",
     "api:dev": "nodemon --exec ts-node src/server.ts",
     "api:build": "tsc -p tsconfig.json",
-    "api:start": "node dist/server.js"
+    "api:start": "node dist/server.js",
+    "create-admin": "ts-node src/tools/create-admin-user.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.496.0",

@@ -316,6 +316,168 @@
   }
   ```
 
+## Admin Kullanıcı Yönetimi API'leri
+
+### 1. Tüm Kullanıcıları Listeleme
+- **HTTP Metodu**: GET
+- **Endpoint**: `/api/admin/users`
+- **Açıklama**: Sisteme kayıtlı tüm aktif kullanıcıları listeler.
+- **Query Parametreleri**: 
+  - `userType` (opsiyonel): Belirli bir kullanıcı tipine göre filtreleme
+- **Yetkilendirme**: Sadece "admin" tipindeki kullanıcılar
+- **Cevap**:
+  ```json
+  {
+    "success": true,
+    "count": 3,
+    "data": [
+      {
+        "userId": "1234abcd",
+        "username": "admin",
+        "fullName": "Admin Kullanıcı",
+        "email": "admin@example.com",
+        "isActive": true,
+        "credit": 0,
+        "debit": 0,
+        "userType": {
+          "id": 1,
+          "name": "admin",
+          "description": "Yönetici"
+        }
+      }
+    ]
+  }
+  ```
+
+### 2. Belirli Bir Kullanıcıyı Görüntüleme
+- **HTTP Metodu**: GET
+- **Endpoint**: `/api/admin/users/:userId`
+- **Açıklama**: Belirli bir kullanıcının detaylarını görüntüler.
+- **Parametreler**: `userId` (URL Parametresi) - Kullanıcı ID'si
+- **Yetkilendirme**: Sadece "admin" tipindeki kullanıcılar
+- **Cevap**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "userId": "1234abcd",
+      "username": "someuser",
+      "fullName": "Example User",
+      "email": "user@example.com",
+      "isActive": true,
+      "credit": 100,
+      "debit": 50,
+      "userType": {
+        "id": 2,
+        "name": "editor",
+        "description": "Editör"
+      }
+    }
+  }
+  ```
+
+### 3. Yeni Kullanıcı Oluşturma
+- **HTTP Metodu**: POST
+- **Endpoint**: `/api/admin/users`
+- **Açıklama**: Sisteme yeni bir kullanıcı ekler.
+- **Yetkilendirme**: Sadece "admin" tipindeki kullanıcılar
+- **İstek Gövdesi**:
+  ```json
+  {
+    "username": "newuser",
+    "password": "securepassword",
+    "name": "Yeni",
+    "surname": "Kullanıcı",
+    "email": "newuser@example.com",
+    "userTypeName": "editor"
+  }
+  ```
+- **Cevap**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "userId": "5678efgh",
+      "username": "newuser",
+      "name": "Yeni",
+      "surname": "Kullanıcı",
+      "email": "newuser@example.com",
+      "isActive": true,
+      "credit": 0,
+      "debit": 0,
+      "userType": {
+        "id": 2,
+        "name": "editor"
+      }
+    }
+  }
+  ```
+
+### 4. Kullanıcı Bilgilerini Güncelleme
+- **HTTP Metodu**: PUT
+- **Endpoint**: `/api/admin/users/:userId`
+- **Açıklama**: Belirli bir kullanıcının bilgilerini günceller.
+- **Parametreler**: `userId` (URL Parametresi) - Kullanıcı ID'si
+- **Yetkilendirme**: Sadece "admin" tipindeki kullanıcılar
+- **İstek Gövdesi**:
+  ```json
+  {
+    "name": "Güncellenmiş",
+    "surname": "Ad",
+    "email": "updated@example.com",
+    "userTypeName": "viewer",
+    "isActive": true,
+    "password": "yenisifre"
+  }
+  ```
+- **Cevap**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "userId": "1234abcd",
+      "username": "someuser",
+      "name": "Güncellenmiş",
+      "surname": "Ad",
+      "email": "updated@example.com",
+      "isActive": true,
+      "credit": 100,
+      "debit": 50,
+      "userType": {
+        "id": 3,
+        "name": "viewer"
+      }
+    }
+  }
+  ```
+
+### 5. Kullanıcıyı Silme/Deaktif Etme
+- **HTTP Metodu**: DELETE
+- **Endpoint**: `/api/admin/users/:userId`
+- **Açıklama**: Belirli bir kullanıcıyı kalıcı olarak siler veya deaktif eder.
+- **Parametreler**: `userId` (URL Parametresi) - Kullanıcı ID'si
+- **Yetkilendirme**: Sadece "admin" tipindeki kullanıcılar
+- **İstek Gövdesi (opsiyonel)**:
+  ```json
+  {
+    "permanently": true
+  }
+  ```
+- **Cevap**:
+  ```json
+  {
+    "success": true,
+    "message": "Kullanıcı kalıcı olarak silindi"
+  }
+  ```
+  veya
+  ```json
+  {
+    "success": true,
+    "message": "Kullanıcı deaktif edildi"
+  }
+  ```
+
 ---
 
 Not: Bu dokümantasyon, Prisma şemasındaki mevcut modellere dayanarak oluşturulmuştur. API endpoint'lerinin tam yolları (örn. `/api/v1/collections`) projenin route yapılandırmasına göre değişebilir. 
