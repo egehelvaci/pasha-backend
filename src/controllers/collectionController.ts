@@ -127,26 +127,22 @@ export const deleteCollection = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Koleksiyon bulunamadı' });
     }
     
-    // Koleksiyona bağlı ürünleri kontrol et
-    const productsCount = await prisma.product.count({
-      where: { collectionId: id },
-    });
-    
-    if (productsCount > 0) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Bu koleksiyona bağlı ürünler var. Önce ürünleri silmelisiniz.' 
+    // Prisma transaction kullanarak koleksiyon ve bağlı ürünleri sil
+    await prisma.$transaction(async (prismaClient) => {
+      // Önce koleksiyona bağlı tüm ürünleri sil
+      await prismaClient.product.deleteMany({
+        where: { collectionId: id },
       });
-    }
-    
-    // Koleksiyonu sil
-    await prisma.collection.delete({
-      where: { collectionId: id },
+      
+      // Sonra koleksiyonu sil
+      await prismaClient.collection.delete({
+        where: { collectionId: id },
+      });
     });
     
     return res.status(200).json({ 
       success: true, 
-      message: 'Koleksiyon başarıyla silindi' 
+      message: 'Koleksiyon ve bağlı tüm ürünler başarıyla silindi' 
     });
   } catch (error) {
     console.error('Koleksiyon silinirken hata oluştu:', error);
