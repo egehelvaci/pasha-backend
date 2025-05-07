@@ -1,0 +1,321 @@
+# API Endpoint Dokümantasyonu
+
+## Koleksiyon (Collection) API Endpoints
+
+### 1. Tüm Koleksiyonları Getir
+- **HTTP Metodu**: GET
+- **Endpoint**: `/collections`
+- **Açıklama**: Sistemdeki tüm koleksiyonları ürünleriyle birlikte getirir.
+- **Cevap**: 
+  ```json
+  {
+    "success": true,
+    "data": [
+      {
+        "collectionId": "...",
+        "name": "...",
+        "description": "...",
+        "code": "...",
+        "isActive": true,
+        "createdAt": "...",
+        "updatedAt": "...",
+        "products": [...]
+      }
+    ]
+  }
+  ```
+
+### 2. ID'ye Göre Koleksiyon Getir
+- **HTTP Metodu**: GET
+- **Endpoint**: `/collections/:id`
+- **Açıklama**: Belirtilen ID'ye sahip koleksiyonu getirir.
+- **Parametreler**: `id` (URL Parametresi) - Koleksiyon ID'si
+- **Cevap**: 
+  ```json
+  {
+    "success": true,
+    "data": {
+      "collectionId": "...",
+      "name": "...",
+      "description": "...",
+      "code": "...",
+      "isActive": true,
+      "createdAt": "...",
+      "updatedAt": "...",
+      "products": [...]
+    }
+  }
+  ```
+
+### 3. Koleksiyon Oluştur
+- **HTTP Metodu**: POST
+- **Endpoint**: `/collections`
+- **Açıklama**: Yeni bir koleksiyon oluşturur.
+- **İstek Gövdesi**:
+  ```json
+  {
+    "name": "Koleksiyon Adı",
+    "description": "Koleksiyon Açıklaması",
+    "code": "benzersiz-kod"
+  }
+  ```
+- **Cevap**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "collectionId": "...",
+      "name": "Koleksiyon Adı",
+      "description": "Koleksiyon Açıklaması",
+      "code": "benzersiz-kod",
+      "isActive": true,
+      "createdAt": "...",
+      "updatedAt": "..."
+    }
+  }
+  ```
+
+### 4. Koleksiyon Güncelle
+- **HTTP Metodu**: PUT
+- **Endpoint**: `/collections/:id`
+- **Açıklama**: Mevcut bir koleksiyonu günceller.
+- **Parametreler**: `id` (URL Parametresi) - Koleksiyon ID'si
+- **İstek Gövdesi**:
+  ```json
+  {
+    "name": "Güncellenmiş Koleksiyon Adı",
+    "description": "Güncellenmiş Açıklama",
+    "code": "yeni-kod",
+    "isActive": false
+  }
+  ```
+- **Cevap**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "collectionId": "...",
+      "name": "Güncellenmiş Koleksiyon Adı",
+      "description": "Güncellenmiş Açıklama",
+      "code": "yeni-kod",
+      "isActive": false,
+      "createdAt": "...",
+      "updatedAt": "..."
+    }
+  }
+  ```
+
+### 5. Koleksiyon Sil
+- **HTTP Metodu**: DELETE
+- **Endpoint**: `/collections/:id`
+- **Açıklama**: Belirtilen ID'ye sahip koleksiyonu ve bağlı tüm ürünleri siler.
+- **Parametreler**: `id` (URL Parametresi) - Koleksiyon ID'si
+- **Cevap**:
+  ```json
+  {
+    "success": true,
+    "message": "Koleksiyon ve bağlı tüm ürünler başarıyla silindi"
+  }
+  ```
+
+## Ürün (Product) API Endpoints
+
+### 1. Tüm Ürünleri Getir
+- **HTTP Metodu**: GET
+- **Endpoint**: `/products`
+- **Açıklama**: Sistemdeki tüm ürünleri koleksiyon bilgileriyle birlikte getirir.
+- **Cevap**:
+  ```json
+  [
+    {
+      "productId": "...",
+      "name": "Ürün Adı",
+      "description": "Ürün Açıklaması",
+      "price": 100.00,
+      "stock": 50,
+      "width": 10.5,
+      "height": 20.0,
+      "cut": true,
+      "productImage": "https://...",
+      "collectionId": "...",
+      "createdAt": "...",
+      "updatedAt": "...",
+      "currency": "TRY",
+      "collection_name": "Koleksiyon Adı",
+      "collection": {...}
+    }
+  ]
+  ```
+
+### 2. ID'ye Göre Ürün Getir
+- **HTTP Metodu**: GET
+- **Endpoint**: `/products/:id`
+- **Açıklama**: Belirtilen ID'ye sahip ürünü getirir.
+- **Parametreler**: `id` (URL Parametresi) - Ürün ID'si
+- **Cevap**:
+  ```json
+  {
+    "productId": "...",
+    "name": "Ürün Adı",
+    "description": "Ürün Açıklaması",
+    "price": 100.00,
+    "stock": 50,
+    "width": 10.5,
+    "height": 20.0,
+    "cut": true,
+    "productImage": "https://...",
+    "collectionId": "...",
+    "createdAt": "...",
+    "updatedAt": "...",
+    "currency": "TRY",
+    "collection_name": "Koleksiyon Adı",
+    "collection": {...}
+  }
+  ```
+
+### 3. Koleksiyona Göre Ürünleri Getir
+- **HTTP Metodu**: GET
+- **Endpoint**: `/collections/:collectionId/products`
+- **Açıklama**: Belirli bir koleksiyona ait tüm ürünleri getirir.
+- **Parametreler**: `collectionId` (URL Parametresi) - Koleksiyon ID'si
+- **Cevap**:
+  ```json
+  [
+    {
+      "productId": "...",
+      "name": "Ürün Adı",
+      "description": "Ürün Açıklaması",
+      "price": 100.00,
+      "stock": 50,
+      "width": 10.5,
+      "height": 20.0,
+      "cut": true,
+      "productImage": "https://...",
+      "collectionId": "...",
+      "createdAt": "...",
+      "updatedAt": "...",
+      "currency": "TRY",
+      "collection_name": "Koleksiyon Adı",
+      "collection": {...}
+    }
+  ]
+  ```
+
+### 4. Görselli Ürün Oluştur
+- **HTTP Metodu**: POST
+- **Endpoint**: `/products`
+- **Açıklama**: Görsel ile birlikte yeni bir ürün oluşturur.
+- **İstek Türü**: `multipart/form-data`
+- **İstek Alanları**:
+  - `name`: Ürün adı (text)
+  - `description`: Ürün açıklaması (text)
+  - `price`: Ürün fiyatı (text, sayısal değer)
+  - `stock`: Stok miktarı (text, tamsayı)
+  - `width`: Genişlik (text, ondalıklı sayı)
+  - `height`: Yükseklik (text, ondalıklı sayı)
+  - `cut`: Kesim özelliği (text, "true" veya "false")
+  - `collectionId`: Koleksiyon ID'si (text)
+  - `currency`: Para birimi (text, "TRY", "USD" veya "EUR")
+  - `productImage`: Ürün görseli (file)
+- **Cevap**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "productId": "...",
+      "name": "Yeni Ürün",
+      "description": "Ürün Açıklaması",
+      "price": 150.00,
+      "stock": 25,
+      "width": 15.0,
+      "height": 25.0,
+      "cut": false,
+      "productImage": "https://pashahome.s3.tebi.io/products/...",
+      "collectionId": "...",
+      "createdAt": "...",
+      "updatedAt": "...",
+      "currency": "TRY",
+      "collection_name": "Koleksiyon Adı",
+      "collection": {...}
+    }
+  }
+  ```
+
+### 5. Ürün Güncelle
+- **HTTP Metodu**: PUT
+- **Endpoint**: `/products/:id`
+- **Açıklama**: Mevcut bir ürünü günceller.
+- **Parametreler**: `id` (URL Parametresi) - Ürün ID'si
+- **İstek Türü**: `multipart/form-data`
+- **İstek Alanları**:
+  - `name`: Ürün adı (text, opsiyonel)
+  - `description`: Ürün açıklaması (text, opsiyonel)
+  - `price`: Ürün fiyatı (text, sayısal değer, opsiyonel)
+  - `stock`: Stok miktarı (text, tamsayı, opsiyonel)
+  - `width`: Genişlik (text, ondalıklı sayı, opsiyonel)
+  - `height`: Yükseklik (text, ondalıklı sayı, opsiyonel)
+  - `cut`: Kesim özelliği (text, "true" veya "false", opsiyonel)
+  - `collectionId`: Koleksiyon ID'si (text, opsiyonel)
+  - `currency`: Para birimi (text, "TRY", "USD" veya "EUR", opsiyonel)
+  - `productImage`: Ürün görseli (file, opsiyonel)
+- **Cevap**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "productId": "...",
+      "name": "Güncellenmiş Ürün Adı",
+      "description": "Güncellenmiş Açıklama",
+      "price": 200.00,
+      "stock": 30,
+      "width": 12.0,
+      "height": 22.0,
+      "cut": true,
+      "productImage": "https://pashahome.s3.tebi.io/products/...",
+      "collectionId": "...",
+      "createdAt": "...",
+      "updatedAt": "...",
+      "currency": "USD",
+      "collection_name": "Koleksiyon Adı",
+      "collection": {...}
+    }
+  }
+  ```
+
+### 6. Ürün Sil
+- **HTTP Metodu**: DELETE
+- **Endpoint**: `/products/:id`
+- **Açıklama**: Belirtilen ID'ye sahip ürünü siler.
+- **Parametreler**: `id` (URL Parametresi) - Ürün ID'si
+- **Cevap**:
+  ```json
+  {
+    "success": true,
+    "message": "Ürün başarıyla silindi"
+  }
+  ```
+
+### 7. Stok Güncelle
+- **HTTP Metodu**: PATCH
+- **Endpoint**: `/products/:id/stock`
+- **Açıklama**: Belirtilen ürünün stok miktarını günceller.
+- **Parametreler**: `id` (URL Parametresi) - Ürün ID'si
+- **İstek Gövdesi**:
+  ```json
+  {
+    "quantity": 10  // Pozitif değer ekler, negatif değer çıkarır
+  }
+  ```
+- **Cevap**:
+  ```json
+  {
+    "productId": "...",
+    "name": "Ürün Adı",
+    "stock": 60,  // Güncellenmiş stok değeri
+    ...
+  }
+  ```
+
+---
+
+Not: Bu dokümantasyon, Prisma şemasındaki mevcut modellere dayanarak oluşturulmuştur. API endpoint'lerinin tam yolları (örn. `/api/v1/collections`) projenin route yapılandırmasına göre değişebilir. 
