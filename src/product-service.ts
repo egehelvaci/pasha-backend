@@ -11,14 +11,12 @@ export class ProductService {
     description: string
     price: number
     stock: number
-    barcode: string
-    quality: string
     width: number
     height: number
     cut: boolean
-    customWeight?: number
-    customHeight?: number
+    productImage?: string
     collectionId: string
+    currency?: 'TRY' | 'USD' | 'EUR'
   }) {
     try {
       // Önce koleksiyonun var olup olmadığını kontrol et
@@ -36,14 +34,13 @@ export class ProductService {
           description: data.description,
           price: data.price,
           stock: data.stock,
-          barcode: data.barcode,
-          quality: data.quality,
           width: data.width,
           height: data.height,
           cut: data.cut,
-          customWeight: data.customWeight,
-          customHeight: data.customHeight,
-          collectionId: data.collectionId
+          productImage: data.productImage,
+          collectionId: data.collectionId,
+          currency: data.currency || 'TRY',
+          collection_name: collection.name
         },
         include: {
           collection: true // Ürün ile birlikte koleksiyon bilgilerini de getir
@@ -113,14 +110,12 @@ export class ProductService {
     description?: string
     price?: number
     stock?: number
-    barcode?: string
-    quality?: string
     width?: number
     height?: number
     cut?: boolean
-    customWeight?: number
-    customHeight?: number
+    productImage?: string
     collectionId?: string
+    currency?: 'TRY' | 'USD' | 'EUR'
   }) {
     try {
       // Eğer koleksiyon ID'si değiştiriliyorsa, yeni koleksiyonun varlığını kontrol et
@@ -132,6 +127,9 @@ export class ProductService {
         if (!collection) {
           throw new Error(`${data.collectionId} ID'li koleksiyon bulunamadı`)
         }
+        
+        // Koleksiyon adını da güncelle
+        data.collection_name = collection.name
       }
       
       return await prisma.product.update({

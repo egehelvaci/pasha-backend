@@ -44,20 +44,21 @@ model Collection {
 }
 
 model Product {
-  productId    String     @id @default(uuid()) @map("product_id")
-  name         String
-  description  String
-  price        Decimal    @db.Decimal(10, 2)
-  stock        Int
-  width        Float
-  height       Float
-  cut          Boolean
-  productImage String?    @map("product_imageurl")
-  collectionId String     @map("collection_id")
-  createdAt    DateTime   @default(now()) @map("created_at")
-  updatedAt    DateTime   @updatedAt @map("updated_at")
-  currency     Currency?  @default(TRY)
-  collection   Collection @relation(fields: [collectionId], references: [collectionId])
+  productId       String     @id @default(uuid()) @map("product_id")
+  name            String
+  description     String
+  price           Decimal    @db.Decimal(10, 2)
+  stock           Int
+  width           Float
+  height          Float
+  cut             Boolean
+  productImage    String?    @map("product_imageurl")
+  collectionId    String     @map("collection_id")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  currency        Currency?  @default(TRY)
+  collection_name String?    @db.VarChar(255)
+  collection      Collection @relation(fields: [collectionId], references: [collectionId])
 }
 
 enum Currency {

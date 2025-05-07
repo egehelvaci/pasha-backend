@@ -1,4 +1,4 @@
-import { PrismaClient } from '../generated/prisma'
+import { PrismaClient, Currency } from '../generated/prisma'
 
 const prisma = new PrismaClient()
 
@@ -10,6 +10,8 @@ export class CollectionService {
     name: string
     description?: string
     code: string
+    catalogOrder: number
+    currency?: Currency
   }) {
     try {
       return await prisma.collection.create({
@@ -17,6 +19,8 @@ export class CollectionService {
           name: data.name,
           description: data.description,
           code: data.code,
+          catalogOrder: data.catalogOrder,
+          currency: data.currency || 'TRY'
         }
       })
     } catch (error) {
@@ -32,6 +36,7 @@ export class CollectionService {
     try {
       return await prisma.collection.findMany({
         where: onlyActive ? { isActive: true } : undefined,
+        orderBy: { catalogOrder: 'asc' },
         include: {
           products: includeProducts // Koleksiyona ait ürünleri de getir
         }
@@ -83,6 +88,8 @@ export class CollectionService {
     name?: string
     description?: string
     code?: string
+    catalogOrder?: number
+    currency?: Currency
     isActive?: boolean
   }) {
     try {
@@ -108,6 +115,25 @@ export class CollectionService {
     } catch (error) {
       console.error('Koleksiyon deaktif etme hatası:', error)
       throw new Error('Koleksiyon deaktif edilemedi')
+    }
+  }
+  
+  /**
+   * Koleksiyonları katalog sırasına göre yeniden düzenle
+   */
+  async reorderCollections(collectionIds: string[]) {
+    try {
+      const updates = collectionIds.map((id, index) => {
+        return prisma.collection.update({
+          where: { collectionId: id },
+          data: { catalogOrder: index + 1 }
+        })
+      })
+      
+      return await prisma.$transaction(updates)
+    } catch (error) {
+      console.error('Koleksiyon sıralama hatası:', error)
+      throw new Error('Koleksiyonlar yeniden sıralanamadı')
     }
   }
   

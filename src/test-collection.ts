@@ -11,6 +11,7 @@ async function testCollectionService() {
       name: 'Yaz Koleksiyonu 2025',
       description: 'Yaz mevsimi için özel tasarımlar',
       code: 'YAZ2025',
+      catalogOrder: 1
     })
     console.log('Koleksiyon 1 oluşturuldu:', collection1)
     
@@ -18,6 +19,8 @@ async function testCollectionService() {
       name: 'Kış Koleksiyonu 2025',
       description: 'Kış mevsimi için özel tasarımlar',
       code: 'KIS2025',
+      catalogOrder: 2,
+      currency: 'USD'
     })
     console.log('Koleksiyon 2 oluşturuldu:', collection2)
     
@@ -42,6 +45,14 @@ async function testCollectionService() {
       description: 'Yaz mevsimi için yenilenen özel tasarımlar'
     })
     console.log(updatedCollection)
+    
+    // Koleksiyonları yeniden sırala
+    console.log('\nKoleksiyonları yeniden sıralama:')
+    const reorderedCollections = await collectionService.reorderCollections([
+      collection2.collectionId,  // Kış koleksiyonu artık 1. sırada
+      collection1.collectionId   // Yaz koleksiyonu artık 2. sırada
+    ])
+    console.log(reorderedCollections)
     
     // Güncellenmiş koleksiyon listesi
     console.log('\nGüncellenmiş koleksiyon listesi:')

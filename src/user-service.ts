@@ -91,6 +91,23 @@ export class UserService {
   }
   
   /**
+   * Kullanıcı borcunu güncelle
+   */
+  async updateDebit(userId: string, amount: number) {
+    return prisma.user.update({
+      where: { userId },
+      data: {
+        debit: {
+          increment: amount
+        }
+      },
+      include: {
+        userType: true
+      }
+    })
+  }
+  
+  /**
    * Kullanıcı tipini değiştir
    */
   async changeUserType(userId: string, newUserTypeName: string) {
@@ -111,5 +128,28 @@ export class UserService {
         userType: true
       }
     })
+  }
+  
+  /**
+   * Kullanıcı hesap bakiyesini getir
+   */
+  async getUserBalance(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { userId },
+      select: {
+        credit: true,
+        debit: true
+      }
+    })
+    
+    if (!user) {
+      throw new Error(`${userId} ID'li kullanıcı bulunamadı`)
+    }
+    
+    return {
+      credit: user.credit,
+      debit: user.debit,
+      balance: Number(user.credit) - Number(user.debit)
+    }
   }
 } 
