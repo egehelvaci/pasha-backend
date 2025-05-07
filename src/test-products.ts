@@ -12,8 +12,7 @@ async function testProductsWithCollections() {
     const collection = await collectionService.createCollection({
       name: 'Test Koleksiyonu',
       description: 'Test koleksiyonu açıklaması',
-      code: 'TEST-KOL',
-      catalogOrder: 1
+      code: 'TEST-KOL'
     })
     console.log('Test koleksiyonu oluşturuldu:', collection)
     
@@ -23,13 +22,12 @@ async function testProductsWithCollections() {
       description: 'Birinci test ürün açıklaması',
       price: 149.99,
       stock: 100,
-      barcode: 'PRD-001',
-      quality: 'A+',
       width: 10.5,
       height: 20.5,
       cut: true,
-      customWeight: 1.2,
-      collectionId: collection.collectionId
+      productImage: 'https://example.com/urun1.jpg',
+      collectionId: collection.collectionId,
+      currency: 'TRY'
     })
     console.log('Ürün 1 oluşturuldu:', product1)
     
@@ -38,13 +36,12 @@ async function testProductsWithCollections() {
       description: 'İkinci test ürün açıklaması',
       price: 249.99,
       stock: 50,
-      barcode: 'PRD-002',
-      quality: 'A',
       width: 15.0,
       height: 25.0,
       cut: false,
-      customHeight: 2.5,
-      collectionId: collection.collectionId
+      productImage: 'https://example.com/urun2.jpg',
+      collectionId: collection.collectionId,
+      currency: 'USD'
     })
     console.log('Ürün 2 oluşturuldu:', product2)
     
@@ -58,7 +55,7 @@ async function testProductsWithCollections() {
     const updatedProduct = await productService.updateProduct(product1.productId, {
       price: 159.99,
       stock: 95,
-      quality: 'A++'
+      productImage: 'https://example.com/urun1-updated.jpg'
     })
     console.log('Güncellenmiş ürün 1:', updatedProduct)
     
@@ -71,8 +68,7 @@ async function testProductsWithCollections() {
     const newCollection = await collectionService.createCollection({
       name: 'Yeni Koleksiyon',
       description: 'Yeni test koleksiyonu',
-      code: 'YENI-KOL',
-      catalogOrder: 2
+      code: 'YENI-KOL'
     })
     console.log('\nYeni koleksiyon oluşturuldu:', newCollection)
     

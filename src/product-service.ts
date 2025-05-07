@@ -116,6 +116,7 @@ export class ProductService {
     productImage?: string
     collectionId?: string
     currency?: 'TRY' | 'USD' | 'EUR'
+    collection_name?: string
   }) {
     try {
       // Eğer koleksiyon ID'si değiştiriliyorsa, yeni koleksiyonun varlığını kontrol et
