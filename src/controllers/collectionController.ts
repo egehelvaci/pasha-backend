@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '../../generated/prisma';
+import { PrismaClient, Prisma } from '../../generated/prisma';
 
 const prisma = new PrismaClient();
 
@@ -92,14 +92,16 @@ export const updateCollection = async (req: Request, res: Response) => {
       }
     }
     
+    const updateData: Prisma.CollectionUpdateInput = {};
+    
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (code !== undefined) updateData.code = code;
+    if (isActive !== undefined) updateData.isActive = isActive;
+    
     const updatedCollection = await prisma.collection.update({
       where: { collectionId: id },
-      data: {
-        name,
-        description,
-        code,
-        isActive,
-      },
+      data: updateData,
     });
     
     return res.status(200).json({ success: true, data: updatedCollection });

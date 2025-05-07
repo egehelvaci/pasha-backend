@@ -1,6 +1,7 @@
 import express from 'express'
 import authRoutes from './auth/auth-routes'
 import collectionRoutes from './routes/collectionRoutes'
+import productRoutes from './routes/productRoutes'
 
 // Express uygulaması oluştur
 const app = express()
@@ -12,6 +13,9 @@ console.log(`PORT: ${process.env.PORT}`)
 console.log(`DATABASE_URL: ${process.env.DATABASE_URL ? 'Mevcut' : 'Tanımlı değil'}`)
 console.log(`PUBLIC_URL: ${process.env.PUBLIC_URL || 'Tanımlı değil'}`)
 console.log(`NODE_ENV: ${process.env.NODE_ENV || 'Tanımlı değil'}`)
+console.log(`TEBI_ACCESS_KEY: ${process.env.TEBI_ACCESS_KEY ? 'Mevcut' : 'Tanımlı değil'}`)
+console.log(`TEBI_SECRET_KEY: ${process.env.TEBI_SECRET_KEY ? 'Mevcut' : 'Tanımlı değil'}`)
+console.log(`TEBI_BUCKET_NAME: ${process.env.TEBI_BUCKET_NAME || 'pashahome'}`)
 
 // Middleware'ler
 app.use(express.json())
@@ -34,6 +38,7 @@ app.use((req, res, next) => {
 // Routes
 app.use('/api/auth', authRoutes)
 app.use('/api/collections', collectionRoutes)
+app.use('/api/products', productRoutes)
 
 // Kök rota - Railway proxy için basit yanıt
 app.get('/', (req, res) => {

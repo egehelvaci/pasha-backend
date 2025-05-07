@@ -6,7 +6,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://postgres:JQFOWXIpEnSvchuIMXpPpGHvCYVOSUdx@yamabiko.proxy.rlwy.net:17072/railway"
+  url      = env("DATABASE_URL")
 }
 
 model UserType {
@@ -37,8 +37,6 @@ model Collection {
   name         String
   description  String?
   code         String    @unique
-  catalogOrder Int       @map("catalog_order")
-  currency     Currency  @default(TRY)
   isActive     Boolean   @default(true) @map("is_active")
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
@@ -46,23 +44,21 @@ model Collection {
 }
 
 model Product {
-  productId    String     @id @default(uuid()) @map("product_id")
-  name         String
-  description  String
-  price        Decimal    @db.Decimal(10, 2)
-  stock        Int
-  barcode      String
-  quality      String
-  width        Float
-  height       Float
-  cut          Boolean
-  customWeight Float?     @map("custom_weight")
-  customHeight Float?     @map("custom_height")
-  productImage String?    @map("product_imageurl")
-  collectionId String     @map("collection_id")
-  createdAt    DateTime   @default(now()) @map("created_at")
-  updatedAt    DateTime   @updatedAt @map("updated_at")
-  collection   Collection @relation(fields: [collectionId], references: [collectionId])
+  productId       String     @id @default(uuid()) @map("product_id")
+  name            String
+  description     String
+  price           Decimal    @db.Decimal(10, 2)
+  stock           Int
+  width           Float
+  height          Float
+  cut             Boolean
+  productImage    String?    @map("product_imageurl")
+  collectionId    String     @map("collection_id")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  currency        Currency?  @default(TRY)
+  collection_name String?    @db.VarChar(255)
+  collection      Collection @relation(fields: [collectionId], references: [collectionId])
 }
 
 enum Currency {

@@ -3496,18 +3496,8 @@ export namespace Prisma {
 
   export type AggregateCollection = {
     _count: CollectionCountAggregateOutputType | null
-    _avg: CollectionAvgAggregateOutputType | null
-    _sum: CollectionSumAggregateOutputType | null
     _min: CollectionMinAggregateOutputType | null
     _max: CollectionMaxAggregateOutputType | null
-  }
-
-  export type CollectionAvgAggregateOutputType = {
-    catalogOrder: number | null
-  }
-
-  export type CollectionSumAggregateOutputType = {
-    catalogOrder: number | null
   }
 
   export type CollectionMinAggregateOutputType = {
@@ -3515,8 +3505,6 @@ export namespace Prisma {
     name: string | null
     description: string | null
     code: string | null
-    catalogOrder: number | null
-    currency: $Enums.Currency | null
     isActive: boolean | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -3527,8 +3515,6 @@ export namespace Prisma {
     name: string | null
     description: string | null
     code: string | null
-    catalogOrder: number | null
-    currency: $Enums.Currency | null
     isActive: boolean | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -3539,8 +3525,6 @@ export namespace Prisma {
     name: number
     description: number
     code: number
-    catalogOrder: number
-    currency: number
     isActive: number
     createdAt: number
     updatedAt: number
@@ -3548,21 +3532,11 @@ export namespace Prisma {
   }
 
 
-  export type CollectionAvgAggregateInputType = {
-    catalogOrder?: true
-  }
-
-  export type CollectionSumAggregateInputType = {
-    catalogOrder?: true
-  }
-
   export type CollectionMinAggregateInputType = {
     collectionId?: true
     name?: true
     description?: true
     code?: true
-    catalogOrder?: true
-    currency?: true
     isActive?: true
     createdAt?: true
     updatedAt?: true
@@ -3573,8 +3547,6 @@ export namespace Prisma {
     name?: true
     description?: true
     code?: true
-    catalogOrder?: true
-    currency?: true
     isActive?: true
     createdAt?: true
     updatedAt?: true
@@ -3585,8 +3557,6 @@ export namespace Prisma {
     name?: true
     description?: true
     code?: true
-    catalogOrder?: true
-    currency?: true
     isActive?: true
     createdAt?: true
     updatedAt?: true
@@ -3631,18 +3601,6 @@ export namespace Prisma {
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
-     * Select which fields to average
-    **/
-    _avg?: CollectionAvgAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to sum
-    **/
-    _sum?: CollectionSumAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
      * Select which fields to find the minimum value
     **/
     _min?: CollectionMinAggregateInputType
@@ -3673,8 +3631,6 @@ export namespace Prisma {
     take?: number
     skip?: number
     _count?: CollectionCountAggregateInputType | true
-    _avg?: CollectionAvgAggregateInputType
-    _sum?: CollectionSumAggregateInputType
     _min?: CollectionMinAggregateInputType
     _max?: CollectionMaxAggregateInputType
   }
@@ -3684,14 +3640,10 @@ export namespace Prisma {
     name: string
     description: string | null
     code: string
-    catalogOrder: number
-    currency: $Enums.Currency
     isActive: boolean
     createdAt: Date
     updatedAt: Date
     _count: CollectionCountAggregateOutputType | null
-    _avg: CollectionAvgAggregateOutputType | null
-    _sum: CollectionSumAggregateOutputType | null
     _min: CollectionMinAggregateOutputType | null
     _max: CollectionMaxAggregateOutputType | null
   }
@@ -3715,8 +3667,6 @@ export namespace Prisma {
     name?: boolean
     description?: boolean
     code?: boolean
-    catalogOrder?: boolean
-    currency?: boolean
     isActive?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -3729,8 +3679,6 @@ export namespace Prisma {
     name?: boolean
     description?: boolean
     code?: boolean
-    catalogOrder?: boolean
-    currency?: boolean
     isActive?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -3741,8 +3689,6 @@ export namespace Prisma {
     name?: boolean
     description?: boolean
     code?: boolean
-    catalogOrder?: boolean
-    currency?: boolean
     isActive?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -3753,14 +3699,12 @@ export namespace Prisma {
     name?: boolean
     description?: boolean
     code?: boolean
-    catalogOrder?: boolean
-    currency?: boolean
     isActive?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type CollectionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"collectionId" | "name" | "description" | "code" | "catalogOrder" | "currency" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["collection"]>
+  export type CollectionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"collectionId" | "name" | "description" | "code" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["collection"]>
   export type CollectionInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     products?: boolean | Collection$productsArgs<ExtArgs>
     _count?: boolean | CollectionCountOutputTypeDefaultArgs<ExtArgs>
@@ -3778,8 +3722,6 @@ export namespace Prisma {
       name: string
       description: string | null
       code: string
-      catalogOrder: number
-      currency: $Enums.Currency
       isActive: boolean
       createdAt: Date
       updatedAt: Date
@@ -4211,8 +4153,6 @@ export namespace Prisma {
     readonly name: FieldRef<"Collection", 'String'>
     readonly description: FieldRef<"Collection", 'String'>
     readonly code: FieldRef<"Collection", 'String'>
-    readonly catalogOrder: FieldRef<"Collection", 'Int'>
-    readonly currency: FieldRef<"Collection", 'Currency'>
     readonly isActive: FieldRef<"Collection", 'Boolean'>
     readonly createdAt: FieldRef<"Collection", 'DateTime'>
     readonly updatedAt: FieldRef<"Collection", 'DateTime'>
@@ -4663,8 +4603,6 @@ export namespace Prisma {
     stock: number | null
     width: number | null
     height: number | null
-    customWeight: number | null
-    customHeight: number | null
   }
 
   export type ProductSumAggregateOutputType = {
@@ -4672,8 +4610,6 @@ export namespace Prisma {
     stock: number | null
     width: number | null
     height: number | null
-    customWeight: number | null
-    customHeight: number | null
   }
 
   export type ProductMinAggregateOutputType = {
@@ -4682,17 +4618,15 @@ export namespace Prisma {
     description: string | null
     price: Decimal | null
     stock: number | null
-    barcode: string | null
-    quality: string | null
     width: number | null
     height: number | null
     cut: boolean | null
-    customWeight: number | null
-    customHeight: number | null
     productImage: string | null
     collectionId: string | null
     createdAt: Date | null
     updatedAt: Date | null
+    currency: $Enums.Currency | null
+    collection_name: string | null
   }
 
   export type ProductMaxAggregateOutputType = {
@@ -4701,17 +4635,15 @@ export namespace Prisma {
     description: string | null
     price: Decimal | null
     stock: number | null
-    barcode: string | null
-    quality: string | null
     width: number | null
     height: number | null
     cut: boolean | null
-    customWeight: number | null
-    customHeight: number | null
     productImage: string | null
     collectionId: string | null
     createdAt: Date | null
     updatedAt: Date | null
+    currency: $Enums.Currency | null
+    collection_name: string | null
   }
 
   export type ProductCountAggregateOutputType = {
@@ -4720,17 +4652,15 @@ export namespace Prisma {
     description: number
     price: number
     stock: number
-    barcode: number
-    quality: number
     width: number
     height: number
     cut: number
-    customWeight: number
-    customHeight: number
     productImage: number
     collectionId: number
     createdAt: number
     updatedAt: number
+    currency: number
+    collection_name: number
     _all: number
   }
 
@@ -4740,8 +4670,6 @@ export namespace Prisma {
     stock?: true
     width?: true
     height?: true
-    customWeight?: true
-    customHeight?: true
   }
 
   export type ProductSumAggregateInputType = {
@@ -4749,8 +4677,6 @@ export namespace Prisma {
     stock?: true
     width?: true
     height?: true
-    customWeight?: true
-    customHeight?: true
   }
 
   export type ProductMinAggregateInputType = {
@@ -4759,17 +4685,15 @@ export namespace Prisma {
     description?: true
     price?: true
     stock?: true
-    barcode?: true
-    quality?: true
     width?: true
     height?: true
     cut?: true
-    customWeight?: true
-    customHeight?: true
     productImage?: true
     collectionId?: true
     createdAt?: true
     updatedAt?: true
+    currency?: true
+    collection_name?: true
   }
 
   export type ProductMaxAggregateInputType = {
@@ -4778,17 +4702,15 @@ export namespace Prisma {
     description?: true
     price?: true
     stock?: true
-    barcode?: true
-    quality?: true
     width?: true
     height?: true
     cut?: true
-    customWeight?: true
-    customHeight?: true
     productImage?: true
     collectionId?: true
     createdAt?: true
     updatedAt?: true
+    currency?: true
+    collection_name?: true
   }
 
   export type ProductCountAggregateInputType = {
@@ -4797,17 +4719,15 @@ export namespace Prisma {
     description?: true
     price?: true
     stock?: true
-    barcode?: true
-    quality?: true
     width?: true
     height?: true
     cut?: true
-    customWeight?: true
-    customHeight?: true
     productImage?: true
     collectionId?: true
     createdAt?: true
     updatedAt?: true
+    currency?: true
+    collection_name?: true
     _all?: true
   }
 
@@ -4903,17 +4823,15 @@ export namespace Prisma {
     description: string
     price: Decimal
     stock: number
-    barcode: string
-    quality: string
     width: number
     height: number
     cut: boolean
-    customWeight: number | null
-    customHeight: number | null
     productImage: string | null
     collectionId: string
     createdAt: Date
     updatedAt: Date
+    currency: $Enums.Currency | null
+    collection_name: string | null
     _count: ProductCountAggregateOutputType | null
     _avg: ProductAvgAggregateOutputType | null
     _sum: ProductSumAggregateOutputType | null
@@ -4941,17 +4859,15 @@ export namespace Prisma {
     description?: boolean
     price?: boolean
     stock?: boolean
-    barcode?: boolean
-    quality?: boolean
     width?: boolean
     height?: boolean
     cut?: boolean
-    customWeight?: boolean
-    customHeight?: boolean
     productImage?: boolean
     collectionId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    currency?: boolean
+    collection_name?: boolean
     collection?: boolean | CollectionDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["product"]>
 
@@ -4961,17 +4877,15 @@ export namespace Prisma {
     description?: boolean
     price?: boolean
     stock?: boolean
-    barcode?: boolean
-    quality?: boolean
     width?: boolean
     height?: boolean
     cut?: boolean
-    customWeight?: boolean
-    customHeight?: boolean
     productImage?: boolean
     collectionId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    currency?: boolean
+    collection_name?: boolean
     collection?: boolean | CollectionDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["product"]>
 
@@ -4981,17 +4895,15 @@ export namespace Prisma {
     description?: boolean
     price?: boolean
     stock?: boolean
-    barcode?: boolean
-    quality?: boolean
     width?: boolean
     height?: boolean
     cut?: boolean
-    customWeight?: boolean
-    customHeight?: boolean
     productImage?: boolean
     collectionId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    currency?: boolean
+    collection_name?: boolean
     collection?: boolean | CollectionDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["product"]>
 
@@ -5001,20 +4913,18 @@ export namespace Prisma {
     description?: boolean
     price?: boolean
     stock?: boolean
-    barcode?: boolean
-    quality?: boolean
     width?: boolean
     height?: boolean
     cut?: boolean
-    customWeight?: boolean
-    customHeight?: boolean
     productImage?: boolean
     collectionId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    currency?: boolean
+    collection_name?: boolean
   }
 
-  export type ProductOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"productId" | "name" | "description" | "price" | "stock" | "barcode" | "quality" | "width" | "height" | "cut" | "customWeight" | "customHeight" | "productImage" | "collectionId" | "createdAt" | "updatedAt", ExtArgs["result"]["product"]>
+  export type ProductOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"productId" | "name" | "description" | "price" | "stock" | "width" | "height" | "cut" | "productImage" | "collectionId" | "createdAt" | "updatedAt" | "currency" | "collection_name", ExtArgs["result"]["product"]>
   export type ProductInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     collection?: boolean | CollectionDefaultArgs<ExtArgs>
   }
@@ -5036,17 +4946,15 @@ export namespace Prisma {
       description: string
       price: Prisma.Decimal
       stock: number
-      barcode: string
-      quality: string
       width: number
       height: number
       cut: boolean
-      customWeight: number | null
-      customHeight: number | null
       productImage: string | null
       collectionId: string
       createdAt: Date
       updatedAt: Date
+      currency: $Enums.Currency | null
+      collection_name: string | null
     }, ExtArgs["result"]["product"]>
     composites: {}
   }
@@ -5476,17 +5384,15 @@ export namespace Prisma {
     readonly description: FieldRef<"Product", 'String'>
     readonly price: FieldRef<"Product", 'Decimal'>
     readonly stock: FieldRef<"Product", 'Int'>
-    readonly barcode: FieldRef<"Product", 'String'>
-    readonly quality: FieldRef<"Product", 'String'>
     readonly width: FieldRef<"Product", 'Float'>
     readonly height: FieldRef<"Product", 'Float'>
     readonly cut: FieldRef<"Product", 'Boolean'>
-    readonly customWeight: FieldRef<"Product", 'Float'>
-    readonly customHeight: FieldRef<"Product", 'Float'>
     readonly productImage: FieldRef<"Product", 'String'>
     readonly collectionId: FieldRef<"Product", 'String'>
     readonly createdAt: FieldRef<"Product", 'DateTime'>
     readonly updatedAt: FieldRef<"Product", 'DateTime'>
+    readonly currency: FieldRef<"Product", 'Currency'>
+    readonly collection_name: FieldRef<"Product", 'String'>
   }
     
 
@@ -5947,8 +5853,6 @@ export namespace Prisma {
     name: 'name',
     description: 'description',
     code: 'code',
-    catalogOrder: 'catalogOrder',
-    currency: 'currency',
     isActive: 'isActive',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
@@ -5963,17 +5867,15 @@ export namespace Prisma {
     description: 'description',
     price: 'price',
     stock: 'stock',
-    barcode: 'barcode',
-    quality: 'quality',
     width: 'width',
     height: 'height',
     cut: 'cut',
-    customWeight: 'customWeight',
-    customHeight: 'customHeight',
     productImage: 'productImage',
     collectionId: 'collectionId',
     createdAt: 'createdAt',
-    updatedAt: 'updatedAt'
+    updatedAt: 'updatedAt',
+    currency: 'currency',
+    collection_name: 'collection_name'
   };
 
   export type ProductScalarFieldEnum = (typeof ProductScalarFieldEnum)[keyof typeof ProductScalarFieldEnum]
@@ -6072,20 +5974,6 @@ export namespace Prisma {
 
 
   /**
-   * Reference to a field of type 'Currency'
-   */
-  export type EnumCurrencyFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Currency'>
-    
-
-
-  /**
-   * Reference to a field of type 'Currency[]'
-   */
-  export type ListEnumCurrencyFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Currency[]'>
-    
-
-
-  /**
    * Reference to a field of type 'Float'
    */
   export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -6096,6 +5984,20 @@ export namespace Prisma {
    * Reference to a field of type 'Float[]'
    */
   export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'Currency'
+   */
+  export type EnumCurrencyFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Currency'>
+    
+
+
+  /**
+   * Reference to a field of type 'Currency[]'
+   */
+  export type ListEnumCurrencyFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Currency[]'>
     
   /**
    * Deep Input Types
@@ -6249,8 +6151,6 @@ export namespace Prisma {
     name?: StringFilter<"Collection"> | string
     description?: StringNullableFilter<"Collection"> | string | null
     code?: StringFilter<"Collection"> | string
-    catalogOrder?: IntFilter<"Collection"> | number
-    currency?: EnumCurrencyFilter<"Collection"> | $Enums.Currency
     isActive?: BoolFilter<"Collection"> | boolean
     createdAt?: DateTimeFilter<"Collection"> | Date | string
     updatedAt?: DateTimeFilter<"Collection"> | Date | string
@@ -6262,8 +6162,6 @@ export namespace Prisma {
     name?: SortOrder
     description?: SortOrderInput | SortOrder
     code?: SortOrder
-    catalogOrder?: SortOrder
-    currency?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -6278,8 +6176,6 @@ export namespace Prisma {
     NOT?: CollectionWhereInput | CollectionWhereInput[]
     name?: StringFilter<"Collection"> | string
     description?: StringNullableFilter<"Collection"> | string | null
-    catalogOrder?: IntFilter<"Collection"> | number
-    currency?: EnumCurrencyFilter<"Collection"> | $Enums.Currency
     isActive?: BoolFilter<"Collection"> | boolean
     createdAt?: DateTimeFilter<"Collection"> | Date | string
     updatedAt?: DateTimeFilter<"Collection"> | Date | string
@@ -6291,16 +6187,12 @@ export namespace Prisma {
     name?: SortOrder
     description?: SortOrderInput | SortOrder
     code?: SortOrder
-    catalogOrder?: SortOrder
-    currency?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: CollectionCountOrderByAggregateInput
-    _avg?: CollectionAvgOrderByAggregateInput
     _max?: CollectionMaxOrderByAggregateInput
     _min?: CollectionMinOrderByAggregateInput
-    _sum?: CollectionSumOrderByAggregateInput
   }
 
   export type CollectionScalarWhereWithAggregatesInput = {
@@ -6311,8 +6203,6 @@ export namespace Prisma {
     name?: StringWithAggregatesFilter<"Collection"> | string
     description?: StringNullableWithAggregatesFilter<"Collection"> | string | null
     code?: StringWithAggregatesFilter<"Collection"> | string
-    catalogOrder?: IntWithAggregatesFilter<"Collection"> | number
-    currency?: EnumCurrencyWithAggregatesFilter<"Collection"> | $Enums.Currency
     isActive?: BoolWithAggregatesFilter<"Collection"> | boolean
     createdAt?: DateTimeWithAggregatesFilter<"Collection"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Collection"> | Date | string
@@ -6327,17 +6217,15 @@ export namespace Prisma {
     description?: StringFilter<"Product"> | string
     price?: DecimalFilter<"Product"> | Decimal | DecimalJsLike | number | string
     stock?: IntFilter<"Product"> | number
-    barcode?: StringFilter<"Product"> | string
-    quality?: StringFilter<"Product"> | string
     width?: FloatFilter<"Product"> | number
     height?: FloatFilter<"Product"> | number
     cut?: BoolFilter<"Product"> | boolean
-    customWeight?: FloatNullableFilter<"Product"> | number | null
-    customHeight?: FloatNullableFilter<"Product"> | number | null
     productImage?: StringNullableFilter<"Product"> | string | null
     collectionId?: StringFilter<"Product"> | string
     createdAt?: DateTimeFilter<"Product"> | Date | string
     updatedAt?: DateTimeFilter<"Product"> | Date | string
+    currency?: EnumCurrencyNullableFilter<"Product"> | $Enums.Currency | null
+    collection_name?: StringNullableFilter<"Product"> | string | null
     collection?: XOR<CollectionScalarRelationFilter, CollectionWhereInput>
   }
 
@@ -6347,17 +6235,15 @@ export namespace Prisma {
     description?: SortOrder
     price?: SortOrder
     stock?: SortOrder
-    barcode?: SortOrder
-    quality?: SortOrder
     width?: SortOrder
     height?: SortOrder
     cut?: SortOrder
-    customWeight?: SortOrderInput | SortOrder
-    customHeight?: SortOrderInput | SortOrder
     productImage?: SortOrderInput | SortOrder
     collectionId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    currency?: SortOrderInput | SortOrder
+    collection_name?: SortOrderInput | SortOrder
     collection?: CollectionOrderByWithRelationInput
   }
 
@@ -6370,17 +6256,15 @@ export namespace Prisma {
     description?: StringFilter<"Product"> | string
     price?: DecimalFilter<"Product"> | Decimal | DecimalJsLike | number | string
     stock?: IntFilter<"Product"> | number
-    barcode?: StringFilter<"Product"> | string
-    quality?: StringFilter<"Product"> | string
     width?: FloatFilter<"Product"> | number
     height?: FloatFilter<"Product"> | number
     cut?: BoolFilter<"Product"> | boolean
-    customWeight?: FloatNullableFilter<"Product"> | number | null
-    customHeight?: FloatNullableFilter<"Product"> | number | null
     productImage?: StringNullableFilter<"Product"> | string | null
     collectionId?: StringFilter<"Product"> | string
     createdAt?: DateTimeFilter<"Product"> | Date | string
     updatedAt?: DateTimeFilter<"Product"> | Date | string
+    currency?: EnumCurrencyNullableFilter<"Product"> | $Enums.Currency | null
+    collection_name?: StringNullableFilter<"Product"> | string | null
     collection?: XOR<CollectionScalarRelationFilter, CollectionWhereInput>
   }, "productId">
 
@@ -6390,17 +6274,15 @@ export namespace Prisma {
     description?: SortOrder
     price?: SortOrder
     stock?: SortOrder
-    barcode?: SortOrder
-    quality?: SortOrder
     width?: SortOrder
     height?: SortOrder
     cut?: SortOrder
-    customWeight?: SortOrderInput | SortOrder
-    customHeight?: SortOrderInput | SortOrder
     productImage?: SortOrderInput | SortOrder
     collectionId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    currency?: SortOrderInput | SortOrder
+    collection_name?: SortOrderInput | SortOrder
     _count?: ProductCountOrderByAggregateInput
     _avg?: ProductAvgOrderByAggregateInput
     _max?: ProductMaxOrderByAggregateInput
@@ -6417,17 +6299,15 @@ export namespace Prisma {
     description?: StringWithAggregatesFilter<"Product"> | string
     price?: DecimalWithAggregatesFilter<"Product"> | Decimal | DecimalJsLike | number | string
     stock?: IntWithAggregatesFilter<"Product"> | number
-    barcode?: StringWithAggregatesFilter<"Product"> | string
-    quality?: StringWithAggregatesFilter<"Product"> | string
     width?: FloatWithAggregatesFilter<"Product"> | number
     height?: FloatWithAggregatesFilter<"Product"> | number
     cut?: BoolWithAggregatesFilter<"Product"> | boolean
-    customWeight?: FloatNullableWithAggregatesFilter<"Product"> | number | null
-    customHeight?: FloatNullableWithAggregatesFilter<"Product"> | number | null
     productImage?: StringNullableWithAggregatesFilter<"Product"> | string | null
     collectionId?: StringWithAggregatesFilter<"Product"> | string
     createdAt?: DateTimeWithAggregatesFilter<"Product"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Product"> | Date | string
+    currency?: EnumCurrencyNullableWithAggregatesFilter<"Product"> | $Enums.Currency | null
+    collection_name?: StringNullableWithAggregatesFilter<"Product"> | string | null
   }
 
   export type UserTypeCreateInput = {
@@ -6582,8 +6462,6 @@ export namespace Prisma {
     name: string
     description?: string | null
     code: string
-    catalogOrder: number
-    currency?: $Enums.Currency
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -6595,8 +6473,6 @@ export namespace Prisma {
     name: string
     description?: string | null
     code: string
-    catalogOrder: number
-    currency?: $Enums.Currency
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -6608,8 +6484,6 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     code?: StringFieldUpdateOperationsInput | string
-    catalogOrder?: IntFieldUpdateOperationsInput | number
-    currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6621,8 +6495,6 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     code?: StringFieldUpdateOperationsInput | string
-    catalogOrder?: IntFieldUpdateOperationsInput | number
-    currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6634,8 +6506,6 @@ export namespace Prisma {
     name: string
     description?: string | null
     code: string
-    catalogOrder: number
-    currency?: $Enums.Currency
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -6646,8 +6516,6 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     code?: StringFieldUpdateOperationsInput | string
-    catalogOrder?: IntFieldUpdateOperationsInput | number
-    currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6658,8 +6526,6 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     code?: StringFieldUpdateOperationsInput | string
-    catalogOrder?: IntFieldUpdateOperationsInput | number
-    currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6671,16 +6537,14 @@ export namespace Prisma {
     description: string
     price: Decimal | DecimalJsLike | number | string
     stock: number
-    barcode: string
-    quality: string
     width: number
     height: number
     cut: boolean
-    customWeight?: number | null
-    customHeight?: number | null
     productImage?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    currency?: $Enums.Currency | null
+    collection_name?: string | null
     collection: CollectionCreateNestedOneWithoutProductsInput
   }
 
@@ -6690,17 +6554,15 @@ export namespace Prisma {
     description: string
     price: Decimal | DecimalJsLike | number | string
     stock: number
-    barcode: string
-    quality: string
     width: number
     height: number
     cut: boolean
-    customWeight?: number | null
-    customHeight?: number | null
     productImage?: string | null
     collectionId: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    currency?: $Enums.Currency | null
+    collection_name?: string | null
   }
 
   export type ProductUpdateInput = {
@@ -6709,16 +6571,14 @@ export namespace Prisma {
     description?: StringFieldUpdateOperationsInput | string
     price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     stock?: IntFieldUpdateOperationsInput | number
-    barcode?: StringFieldUpdateOperationsInput | string
-    quality?: StringFieldUpdateOperationsInput | string
     width?: FloatFieldUpdateOperationsInput | number
     height?: FloatFieldUpdateOperationsInput | number
     cut?: BoolFieldUpdateOperationsInput | boolean
-    customWeight?: NullableFloatFieldUpdateOperationsInput | number | null
-    customHeight?: NullableFloatFieldUpdateOperationsInput | number | null
     productImage?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currency?: NullableEnumCurrencyFieldUpdateOperationsInput | $Enums.Currency | null
+    collection_name?: NullableStringFieldUpdateOperationsInput | string | null
     collection?: CollectionUpdateOneRequiredWithoutProductsNestedInput
   }
 
@@ -6728,17 +6588,15 @@ export namespace Prisma {
     description?: StringFieldUpdateOperationsInput | string
     price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     stock?: IntFieldUpdateOperationsInput | number
-    barcode?: StringFieldUpdateOperationsInput | string
-    quality?: StringFieldUpdateOperationsInput | string
     width?: FloatFieldUpdateOperationsInput | number
     height?: FloatFieldUpdateOperationsInput | number
     cut?: BoolFieldUpdateOperationsInput | boolean
-    customWeight?: NullableFloatFieldUpdateOperationsInput | number | null
-    customHeight?: NullableFloatFieldUpdateOperationsInput | number | null
     productImage?: NullableStringFieldUpdateOperationsInput | string | null
     collectionId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currency?: NullableEnumCurrencyFieldUpdateOperationsInput | $Enums.Currency | null
+    collection_name?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type ProductCreateManyInput = {
@@ -6747,17 +6605,15 @@ export namespace Prisma {
     description: string
     price: Decimal | DecimalJsLike | number | string
     stock: number
-    barcode: string
-    quality: string
     width: number
     height: number
     cut: boolean
-    customWeight?: number | null
-    customHeight?: number | null
     productImage?: string | null
     collectionId: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    currency?: $Enums.Currency | null
+    collection_name?: string | null
   }
 
   export type ProductUpdateManyMutationInput = {
@@ -6766,16 +6622,14 @@ export namespace Prisma {
     description?: StringFieldUpdateOperationsInput | string
     price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     stock?: IntFieldUpdateOperationsInput | number
-    barcode?: StringFieldUpdateOperationsInput | string
-    quality?: StringFieldUpdateOperationsInput | string
     width?: FloatFieldUpdateOperationsInput | number
     height?: FloatFieldUpdateOperationsInput | number
     cut?: BoolFieldUpdateOperationsInput | boolean
-    customWeight?: NullableFloatFieldUpdateOperationsInput | number | null
-    customHeight?: NullableFloatFieldUpdateOperationsInput | number | null
     productImage?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currency?: NullableEnumCurrencyFieldUpdateOperationsInput | $Enums.Currency | null
+    collection_name?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type ProductUncheckedUpdateManyInput = {
@@ -6784,17 +6638,15 @@ export namespace Prisma {
     description?: StringFieldUpdateOperationsInput | string
     price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     stock?: IntFieldUpdateOperationsInput | number
-    barcode?: StringFieldUpdateOperationsInput | string
-    quality?: StringFieldUpdateOperationsInput | string
     width?: FloatFieldUpdateOperationsInput | number
     height?: FloatFieldUpdateOperationsInput | number
     cut?: BoolFieldUpdateOperationsInput | boolean
-    customWeight?: NullableFloatFieldUpdateOperationsInput | number | null
-    customHeight?: NullableFloatFieldUpdateOperationsInput | number | null
     productImage?: NullableStringFieldUpdateOperationsInput | string | null
     collectionId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currency?: NullableEnumCurrencyFieldUpdateOperationsInput | $Enums.Currency | null
+    collection_name?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type IntFilter<$PrismaModel = never> = {
@@ -7058,13 +6910,6 @@ export namespace Prisma {
     _max?: NestedBoolFilter<$PrismaModel>
   }
 
-  export type EnumCurrencyFilter<$PrismaModel = never> = {
-    equals?: $Enums.Currency | EnumCurrencyFieldRefInput<$PrismaModel>
-    in?: $Enums.Currency[] | ListEnumCurrencyFieldRefInput<$PrismaModel>
-    notIn?: $Enums.Currency[] | ListEnumCurrencyFieldRefInput<$PrismaModel>
-    not?: NestedEnumCurrencyFilter<$PrismaModel> | $Enums.Currency
-  }
-
   export type ProductListRelationFilter = {
     every?: ProductWhereInput
     some?: ProductWhereInput
@@ -7080,15 +6925,9 @@ export namespace Prisma {
     name?: SortOrder
     description?: SortOrder
     code?: SortOrder
-    catalogOrder?: SortOrder
-    currency?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
-  }
-
-  export type CollectionAvgOrderByAggregateInput = {
-    catalogOrder?: SortOrder
   }
 
   export type CollectionMaxOrderByAggregateInput = {
@@ -7096,8 +6935,6 @@ export namespace Prisma {
     name?: SortOrder
     description?: SortOrder
     code?: SortOrder
-    catalogOrder?: SortOrder
-    currency?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -7108,25 +6945,9 @@ export namespace Prisma {
     name?: SortOrder
     description?: SortOrder
     code?: SortOrder
-    catalogOrder?: SortOrder
-    currency?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
-  }
-
-  export type CollectionSumOrderByAggregateInput = {
-    catalogOrder?: SortOrder
-  }
-
-  export type EnumCurrencyWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.Currency | EnumCurrencyFieldRefInput<$PrismaModel>
-    in?: $Enums.Currency[] | ListEnumCurrencyFieldRefInput<$PrismaModel>
-    notIn?: $Enums.Currency[] | ListEnumCurrencyFieldRefInput<$PrismaModel>
-    not?: NestedEnumCurrencyWithAggregatesFilter<$PrismaModel> | $Enums.Currency
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumCurrencyFilter<$PrismaModel>
-    _max?: NestedEnumCurrencyFilter<$PrismaModel>
   }
 
   export type FloatFilter<$PrismaModel = never> = {
@@ -7140,15 +6961,11 @@ export namespace Prisma {
     not?: NestedFloatFilter<$PrismaModel> | number
   }
 
-  export type FloatNullableFilter<$PrismaModel = never> = {
-    equals?: number | FloatFieldRefInput<$PrismaModel> | null
-    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
-    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
-    lt?: number | FloatFieldRefInput<$PrismaModel>
-    lte?: number | FloatFieldRefInput<$PrismaModel>
-    gt?: number | FloatFieldRefInput<$PrismaModel>
-    gte?: number | FloatFieldRefInput<$PrismaModel>
-    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
+  export type EnumCurrencyNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.Currency | EnumCurrencyFieldRefInput<$PrismaModel> | null
+    in?: $Enums.Currency[] | ListEnumCurrencyFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.Currency[] | ListEnumCurrencyFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumCurrencyNullableFilter<$PrismaModel> | $Enums.Currency | null
   }
 
   export type CollectionScalarRelationFilter = {
@@ -7162,17 +6979,15 @@ export namespace Prisma {
     description?: SortOrder
     price?: SortOrder
     stock?: SortOrder
-    barcode?: SortOrder
-    quality?: SortOrder
     width?: SortOrder
     height?: SortOrder
     cut?: SortOrder
-    customWeight?: SortOrder
-    customHeight?: SortOrder
     productImage?: SortOrder
     collectionId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    currency?: SortOrder
+    collection_name?: SortOrder
   }
 
   export type ProductAvgOrderByAggregateInput = {
@@ -7180,8 +6995,6 @@ export namespace Prisma {
     stock?: SortOrder
     width?: SortOrder
     height?: SortOrder
-    customWeight?: SortOrder
-    customHeight?: SortOrder
   }
 
   export type ProductMaxOrderByAggregateInput = {
@@ -7190,17 +7003,15 @@ export namespace Prisma {
     description?: SortOrder
     price?: SortOrder
     stock?: SortOrder
-    barcode?: SortOrder
-    quality?: SortOrder
     width?: SortOrder
     height?: SortOrder
     cut?: SortOrder
-    customWeight?: SortOrder
-    customHeight?: SortOrder
     productImage?: SortOrder
     collectionId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    currency?: SortOrder
+    collection_name?: SortOrder
   }
 
   export type ProductMinOrderByAggregateInput = {
@@ -7209,17 +7020,15 @@ export namespace Prisma {
     description?: SortOrder
     price?: SortOrder
     stock?: SortOrder
-    barcode?: SortOrder
-    quality?: SortOrder
     width?: SortOrder
     height?: SortOrder
     cut?: SortOrder
-    customWeight?: SortOrder
-    customHeight?: SortOrder
     productImage?: SortOrder
     collectionId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    currency?: SortOrder
+    collection_name?: SortOrder
   }
 
   export type ProductSumOrderByAggregateInput = {
@@ -7227,8 +7036,6 @@ export namespace Prisma {
     stock?: SortOrder
     width?: SortOrder
     height?: SortOrder
-    customWeight?: SortOrder
-    customHeight?: SortOrder
   }
 
   export type FloatWithAggregatesFilter<$PrismaModel = never> = {
@@ -7247,20 +7054,14 @@ export namespace Prisma {
     _max?: NestedFloatFilter<$PrismaModel>
   }
 
-  export type FloatNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: number | FloatFieldRefInput<$PrismaModel> | null
-    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
-    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
-    lt?: number | FloatFieldRefInput<$PrismaModel>
-    lte?: number | FloatFieldRefInput<$PrismaModel>
-    gt?: number | FloatFieldRefInput<$PrismaModel>
-    gte?: number | FloatFieldRefInput<$PrismaModel>
-    not?: NestedFloatNullableWithAggregatesFilter<$PrismaModel> | number | null
+  export type EnumCurrencyNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.Currency | EnumCurrencyFieldRefInput<$PrismaModel> | null
+    in?: $Enums.Currency[] | ListEnumCurrencyFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.Currency[] | ListEnumCurrencyFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumCurrencyNullableWithAggregatesFilter<$PrismaModel> | $Enums.Currency | null
     _count?: NestedIntNullableFilter<$PrismaModel>
-    _avg?: NestedFloatNullableFilter<$PrismaModel>
-    _sum?: NestedFloatNullableFilter<$PrismaModel>
-    _min?: NestedFloatNullableFilter<$PrismaModel>
-    _max?: NestedFloatNullableFilter<$PrismaModel>
+    _min?: NestedEnumCurrencyNullableFilter<$PrismaModel>
+    _max?: NestedEnumCurrencyNullableFilter<$PrismaModel>
   }
 
   export type UserCreateNestedManyWithoutUserTypeInput = {
@@ -7365,10 +7166,6 @@ export namespace Prisma {
     connect?: ProductWhereUniqueInput | ProductWhereUniqueInput[]
   }
 
-  export type EnumCurrencyFieldUpdateOperationsInput = {
-    set?: $Enums.Currency
-  }
-
   export type ProductUpdateManyWithoutCollectionNestedInput = {
     create?: XOR<ProductCreateWithoutCollectionInput, ProductUncheckedCreateWithoutCollectionInput> | ProductCreateWithoutCollectionInput[] | ProductUncheckedCreateWithoutCollectionInput[]
     connectOrCreate?: ProductCreateOrConnectWithoutCollectionInput | ProductCreateOrConnectWithoutCollectionInput[]
@@ -7411,12 +7208,8 @@ export namespace Prisma {
     divide?: number
   }
 
-  export type NullableFloatFieldUpdateOperationsInput = {
-    set?: number | null
-    increment?: number
-    decrement?: number
-    multiply?: number
-    divide?: number
+  export type NullableEnumCurrencyFieldUpdateOperationsInput = {
+    set?: $Enums.Currency | null
   }
 
   export type CollectionUpdateOneRequiredWithoutProductsNestedInput = {
@@ -7603,32 +7396,11 @@ export namespace Prisma {
     _max?: NestedBoolFilter<$PrismaModel>
   }
 
-  export type NestedEnumCurrencyFilter<$PrismaModel = never> = {
-    equals?: $Enums.Currency | EnumCurrencyFieldRefInput<$PrismaModel>
-    in?: $Enums.Currency[] | ListEnumCurrencyFieldRefInput<$PrismaModel>
-    notIn?: $Enums.Currency[] | ListEnumCurrencyFieldRefInput<$PrismaModel>
-    not?: NestedEnumCurrencyFilter<$PrismaModel> | $Enums.Currency
-  }
-
-  export type NestedEnumCurrencyWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.Currency | EnumCurrencyFieldRefInput<$PrismaModel>
-    in?: $Enums.Currency[] | ListEnumCurrencyFieldRefInput<$PrismaModel>
-    notIn?: $Enums.Currency[] | ListEnumCurrencyFieldRefInput<$PrismaModel>
-    not?: NestedEnumCurrencyWithAggregatesFilter<$PrismaModel> | $Enums.Currency
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumCurrencyFilter<$PrismaModel>
-    _max?: NestedEnumCurrencyFilter<$PrismaModel>
-  }
-
-  export type NestedFloatNullableFilter<$PrismaModel = never> = {
-    equals?: number | FloatFieldRefInput<$PrismaModel> | null
-    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
-    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
-    lt?: number | FloatFieldRefInput<$PrismaModel>
-    lte?: number | FloatFieldRefInput<$PrismaModel>
-    gt?: number | FloatFieldRefInput<$PrismaModel>
-    gte?: number | FloatFieldRefInput<$PrismaModel>
-    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
+  export type NestedEnumCurrencyNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.Currency | EnumCurrencyFieldRefInput<$PrismaModel> | null
+    in?: $Enums.Currency[] | ListEnumCurrencyFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.Currency[] | ListEnumCurrencyFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumCurrencyNullableFilter<$PrismaModel> | $Enums.Currency | null
   }
 
   export type NestedFloatWithAggregatesFilter<$PrismaModel = never> = {
@@ -7647,20 +7419,14 @@ export namespace Prisma {
     _max?: NestedFloatFilter<$PrismaModel>
   }
 
-  export type NestedFloatNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: number | FloatFieldRefInput<$PrismaModel> | null
-    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
-    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
-    lt?: number | FloatFieldRefInput<$PrismaModel>
-    lte?: number | FloatFieldRefInput<$PrismaModel>
-    gt?: number | FloatFieldRefInput<$PrismaModel>
-    gte?: number | FloatFieldRefInput<$PrismaModel>
-    not?: NestedFloatNullableWithAggregatesFilter<$PrismaModel> | number | null
+  export type NestedEnumCurrencyNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.Currency | EnumCurrencyFieldRefInput<$PrismaModel> | null
+    in?: $Enums.Currency[] | ListEnumCurrencyFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.Currency[] | ListEnumCurrencyFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumCurrencyNullableWithAggregatesFilter<$PrismaModel> | $Enums.Currency | null
     _count?: NestedIntNullableFilter<$PrismaModel>
-    _avg?: NestedFloatNullableFilter<$PrismaModel>
-    _sum?: NestedFloatNullableFilter<$PrismaModel>
-    _min?: NestedFloatNullableFilter<$PrismaModel>
-    _max?: NestedFloatNullableFilter<$PrismaModel>
+    _min?: NestedEnumCurrencyNullableFilter<$PrismaModel>
+    _max?: NestedEnumCurrencyNullableFilter<$PrismaModel>
   }
 
   export type UserCreateWithoutUserTypeInput = {
@@ -7778,16 +7544,14 @@ export namespace Prisma {
     description: string
     price: Decimal | DecimalJsLike | number | string
     stock: number
-    barcode: string
-    quality: string
     width: number
     height: number
     cut: boolean
-    customWeight?: number | null
-    customHeight?: number | null
     productImage?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    currency?: $Enums.Currency | null
+    collection_name?: string | null
   }
 
   export type ProductUncheckedCreateWithoutCollectionInput = {
@@ -7796,16 +7560,14 @@ export namespace Prisma {
     description: string
     price: Decimal | DecimalJsLike | number | string
     stock: number
-    barcode: string
-    quality: string
     width: number
     height: number
     cut: boolean
-    customWeight?: number | null
-    customHeight?: number | null
     productImage?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    currency?: $Enums.Currency | null
+    collection_name?: string | null
   }
 
   export type ProductCreateOrConnectWithoutCollectionInput = {
@@ -7843,17 +7605,15 @@ export namespace Prisma {
     description?: StringFilter<"Product"> | string
     price?: DecimalFilter<"Product"> | Decimal | DecimalJsLike | number | string
     stock?: IntFilter<"Product"> | number
-    barcode?: StringFilter<"Product"> | string
-    quality?: StringFilter<"Product"> | string
     width?: FloatFilter<"Product"> | number
     height?: FloatFilter<"Product"> | number
     cut?: BoolFilter<"Product"> | boolean
-    customWeight?: FloatNullableFilter<"Product"> | number | null
-    customHeight?: FloatNullableFilter<"Product"> | number | null
     productImage?: StringNullableFilter<"Product"> | string | null
     collectionId?: StringFilter<"Product"> | string
     createdAt?: DateTimeFilter<"Product"> | Date | string
     updatedAt?: DateTimeFilter<"Product"> | Date | string
+    currency?: EnumCurrencyNullableFilter<"Product"> | $Enums.Currency | null
+    collection_name?: StringNullableFilter<"Product"> | string | null
   }
 
   export type CollectionCreateWithoutProductsInput = {
@@ -7861,8 +7621,6 @@ export namespace Prisma {
     name: string
     description?: string | null
     code: string
-    catalogOrder: number
-    currency?: $Enums.Currency
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -7873,8 +7631,6 @@ export namespace Prisma {
     name: string
     description?: string | null
     code: string
-    catalogOrder: number
-    currency?: $Enums.Currency
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -7901,8 +7657,6 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     code?: StringFieldUpdateOperationsInput | string
-    catalogOrder?: IntFieldUpdateOperationsInput | number
-    currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -7913,8 +7667,6 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     code?: StringFieldUpdateOperationsInput | string
-    catalogOrder?: IntFieldUpdateOperationsInput | number
-    currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -7986,16 +7738,14 @@ export namespace Prisma {
     description: string
     price: Decimal | DecimalJsLike | number | string
     stock: number
-    barcode: string
-    quality: string
     width: number
     height: number
     cut: boolean
-    customWeight?: number | null
-    customHeight?: number | null
     productImage?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    currency?: $Enums.Currency | null
+    collection_name?: string | null
   }
 
   export type ProductUpdateWithoutCollectionInput = {
@@ -8004,16 +7754,14 @@ export namespace Prisma {
     description?: StringFieldUpdateOperationsInput | string
     price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     stock?: IntFieldUpdateOperationsInput | number
-    barcode?: StringFieldUpdateOperationsInput | string
-    quality?: StringFieldUpdateOperationsInput | string
     width?: FloatFieldUpdateOperationsInput | number
     height?: FloatFieldUpdateOperationsInput | number
     cut?: BoolFieldUpdateOperationsInput | boolean
-    customWeight?: NullableFloatFieldUpdateOperationsInput | number | null
-    customHeight?: NullableFloatFieldUpdateOperationsInput | number | null
     productImage?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currency?: NullableEnumCurrencyFieldUpdateOperationsInput | $Enums.Currency | null
+    collection_name?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type ProductUncheckedUpdateWithoutCollectionInput = {
@@ -8022,16 +7770,14 @@ export namespace Prisma {
     description?: StringFieldUpdateOperationsInput | string
     price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     stock?: IntFieldUpdateOperationsInput | number
-    barcode?: StringFieldUpdateOperationsInput | string
-    quality?: StringFieldUpdateOperationsInput | string
     width?: FloatFieldUpdateOperationsInput | number
     height?: FloatFieldUpdateOperationsInput | number
     cut?: BoolFieldUpdateOperationsInput | boolean
-    customWeight?: NullableFloatFieldUpdateOperationsInput | number | null
-    customHeight?: NullableFloatFieldUpdateOperationsInput | number | null
     productImage?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currency?: NullableEnumCurrencyFieldUpdateOperationsInput | $Enums.Currency | null
+    collection_name?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type ProductUncheckedUpdateManyWithoutCollectionInput = {
@@ -8040,16 +7786,14 @@ export namespace Prisma {
     description?: StringFieldUpdateOperationsInput | string
     price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     stock?: IntFieldUpdateOperationsInput | number
-    barcode?: StringFieldUpdateOperationsInput | string
-    quality?: StringFieldUpdateOperationsInput | string
     width?: FloatFieldUpdateOperationsInput | number
     height?: FloatFieldUpdateOperationsInput | number
     cut?: BoolFieldUpdateOperationsInput | boolean
-    customWeight?: NullableFloatFieldUpdateOperationsInput | number | null
-    customHeight?: NullableFloatFieldUpdateOperationsInput | number | null
     productImage?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currency?: NullableEnumCurrencyFieldUpdateOperationsInput | $Enums.Currency | null
+    collection_name?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
 

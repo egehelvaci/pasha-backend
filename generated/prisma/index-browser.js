@@ -146,8 +146,6 @@ exports.Prisma.CollectionScalarFieldEnum = {
   name: 'name',
   description: 'description',
   code: 'code',
-  catalogOrder: 'catalogOrder',
-  currency: 'currency',
   isActive: 'isActive',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -159,17 +157,15 @@ exports.Prisma.ProductScalarFieldEnum = {
   description: 'description',
   price: 'price',
   stock: 'stock',
-  barcode: 'barcode',
-  quality: 'quality',
   width: 'width',
   height: 'height',
   cut: 'cut',
-  customWeight: 'customWeight',
-  customHeight: 'customHeight',
   productImage: 'productImage',
   collectionId: 'collectionId',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  currency: 'currency',
+  collection_name: 'collection_name'
 };
 
 exports.Prisma.SortOrder = {
