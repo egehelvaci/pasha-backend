@@ -33,16 +33,14 @@ model User {
 }
 
 model Collection {
-  collectionId  String    @id @default(uuid()) @map("collection_id")
-  name          String
-  description   String?
-  code          String    @unique
-  catalogOrder  Int       @map("catalog_order")
-  currency      Currency  @default(TRY)
-  isActive      Boolean   @default(true) @map("is_active")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
-  products      Product[]
+  collectionId String    @id @default(uuid()) @map("collection_id")
+  name         String
+  description  String?
+  code         String    @unique
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  products     Product[]
 }
 
 model Product {
@@ -51,17 +49,14 @@ model Product {
   description  String
   price        Decimal    @db.Decimal(10, 2)
   stock        Int
-  barcode      String
-  quality      String
   width        Float
   height       Float
   cut          Boolean
-  customWeight Float?     @map("custom_weight")
-  customHeight Float?     @map("custom_height")
   productImage String?    @map("product_imageurl")
   collectionId String     @map("collection_id")
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
+  currency     Currency?  @default(TRY)
   collection   Collection @relation(fields: [collectionId], references: [collectionId])
 }
 

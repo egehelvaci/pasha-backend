@@ -40,7 +40,7 @@ export const getCollectionById = async (req: Request, res: Response) => {
 // Koleksiyon oluştur
 export const createCollection = async (req: Request, res: Response) => {
   try {
-    const { name, description, code, catalogOrder, currency } = req.body;
+    const { name, description, code } = req.body;
     
     // Kod benzersiz olmalı, kontrol edelim
     const existingCollection = await prisma.collection.findUnique({
@@ -56,8 +56,6 @@ export const createCollection = async (req: Request, res: Response) => {
         name,
         description,
         code,
-        catalogOrder,
-        currency: currency || 'TRY',
       },
     });
     
@@ -72,7 +70,7 @@ export const createCollection = async (req: Request, res: Response) => {
 export const updateCollection = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, description, code, catalogOrder, currency, isActive } = req.body;
+    const { name, description, code, isActive } = req.body;
     
     // Koleksiyonun var olup olmadığını kontrol et
     const existingCollection = await prisma.collection.findUnique({
@@ -100,8 +98,6 @@ export const updateCollection = async (req: Request, res: Response) => {
         name,
         description,
         code,
-        catalogOrder,
-        currency,
         isActive,
       },
     });
