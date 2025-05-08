@@ -128,7 +128,6 @@ exports.Prisma.UserTypeScalarFieldEnum = {
 exports.Prisma.UserScalarFieldEnum = {
   email: 'email',
   name: 'name',
-  avatar: 'avatar',
   createdAt: 'createdAt',
   credit: 'credit',
   debit: 'debit',
