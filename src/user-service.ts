@@ -1,6 +1,8 @@
 import { PrismaClient } from '../generated/prisma'
+import * as bcrypt from 'bcrypt'
 
 const prisma = new PrismaClient()
+const SALT_ROUNDS = 10 // Şifre hash'leme için tuz değeri
 
 export class UserService {
   /**
@@ -14,16 +16,28 @@ export class UserService {
       const user = await prisma.user.findFirst({
         where: {
           username,
-          password,
           isActive: true
         }
       })
       
-      return !!user // Kullanıcı bulundu ise true, bulunamadı ise false döner
+      if (!user) return false
+      
+      // Şifre hash kontrolü
+      const passwordMatch = await bcrypt.compare(password, user.password)
+      return passwordMatch
     } catch (error) {
       console.error('Kullanıcı kimlik doğrulama hatası:', error)
       return false
     }
+  }
+  
+  /**
+   * Şifreyi hashle
+   * @param password Plain text şifre
+   * @returns Hashlenmiş şifre
+   */
+  async hashPassword(password: string): Promise<string> {
+    return bcrypt.hash(password, SALT_ROUNDS)
   }
   
   /**
@@ -116,7 +130,7 @@ export class UserService {
     return prisma.user.create({
       data: {
         username: userData.username,
-        password: userData.password,
+        password: await this.hashPassword(userData.password),
         name: userData.name,
         surname: userData.surname,
         email: userData.email,
@@ -215,6 +229,11 @@ export class UserService {
    * Kullanıcı bilgilerini güncelle
    */
   async updateUser(userId: string, updateData: any) {
+    // Şifre güncellenmişse hashleyelim
+    if (updateData.password) {
+      updateData.password = await this.hashPassword(updateData.password)
+    }
+    
     return prisma.user.update({
       where: { userId },
       data: updateData,

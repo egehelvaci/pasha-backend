@@ -127,11 +127,14 @@ export class AdminController {
         })
       }
       
+      // Şifreyi hashle
+      const hashedPassword = await userService.hashPassword(password)
+      
       // Yeni kullanıcı oluştur
       const newUser = await prisma.user.create({
         data: {
           username,
-          password,
+          password: hashedPassword,
           name,
           surname,
           email,
@@ -188,7 +191,12 @@ export class AdminController {
       if (surname !== undefined) updateData.surname = surname
       if (email !== undefined) updateData.email = email
       if (isActive !== undefined) updateData.isActive = isActive
-      if (password !== undefined) updateData.password = password
+      
+      // Şifre değiştirilecekse hashle
+      if (password !== undefined) {
+        updateData.password = await userService.hashPassword(password)
+      }
+      
       if (credit !== undefined) updateData.credit = parseFloat(credit)
       if (debit !== undefined) updateData.debit = parseFloat(debit)
       if (phoneNumber !== undefined) updateData.phoneNumber = phoneNumber
