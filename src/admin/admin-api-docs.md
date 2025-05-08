@@ -95,7 +95,9 @@ Bu dokümantasyon, admin kullanıcılarının kullanıcı yönetimi işlemleri i
   "email": "newuser@example.com",
   "userTypeName": "editor",
   "credit": 100,
-  "debit": 50
+  "debit": 50,
+  "phoneNumber": "+90 555 123 4567",
+  "avatar": "https://example.com/avatars/default.png"
 }
 ```
 
@@ -110,6 +112,8 @@ Bu dokümantasyon, admin kullanıcılarının kullanıcı yönetimi işlemleri i
 **Opsiyonel Alanlar:**
 - `credit`: Kullanıcı kredisi (varsayılan: 0)
 - `debit`: Kullanıcı borcu (varsayılan: 0)
+- `phoneNumber`: Telefon numarası
+- `avatar`: Profil resmi URL'i
 
 **Başarılı Yanıt (201):**
 ```json
@@ -156,7 +160,9 @@ Bu dokümantasyon, admin kullanıcılarının kullanıcı yönetimi işlemleri i
   "isActive": true,
   "password": "yenisifre",
   "credit": 200,
-  "debit": 75
+  "debit": 75,
+  "phoneNumber": "+90 555 987 6543",
+  "avatar": "https://example.com/avatars/user123.png"
 }
 ```
 
@@ -270,7 +276,9 @@ fetch('/api/admin/users', {
     email: 'editor@example.com',
     userTypeName: 'editor',
     credit: 150,
-    debit: 50
+    debit: 50,
+    phoneNumber: '+90 555 123 4567',
+    avatar: 'https://example.com/avatars/editor.png'
   })
 })
 .then(response => response.json())

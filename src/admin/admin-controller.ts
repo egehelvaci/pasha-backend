@@ -93,7 +93,7 @@ export class AdminController {
    */
   async createUser(req: Request, res: Response) {
     try {
-      const { username, password, name, surname, email, userTypeName, credit = 0, debit = 0 } = req.body
+      const { username, password, name, surname, email, userTypeName, credit = 0, debit = 0, phoneNumber, avatar } = req.body
       
       // Zorunlu alanların kontrolü
       if (!username || !password || !userTypeName || !name || !surname || !email) {
@@ -138,7 +138,9 @@ export class AdminController {
           isActive: true,
           credit: parseFloat(credit),
           debit: parseFloat(debit),
-          userTypeId: userType.id
+          userTypeId: userType.id,
+          phoneNumber,
+          avatar
         },
         include: {
           userType: true
@@ -165,7 +167,7 @@ export class AdminController {
   async updateUser(req: Request, res: Response) {
     try {
       const { userId } = req.params
-      const { name, surname, email, userTypeName, isActive, password, credit, debit } = req.body
+      const { name, surname, email, userTypeName, isActive, password, credit, debit, phoneNumber, avatar } = req.body
       
       // Güncellenecek kullanıcının var olup olmadığını kontrol et
       const existingUser = await prisma.user.findUnique({
@@ -189,6 +191,8 @@ export class AdminController {
       if (password !== undefined) updateData.password = password
       if (credit !== undefined) updateData.credit = parseFloat(credit)
       if (debit !== undefined) updateData.debit = parseFloat(debit)
+      if (phoneNumber !== undefined) updateData.phoneNumber = phoneNumber
+      if (avatar !== undefined) updateData.avatar = avatar
       
       // Kullanıcı tipi değiştirilecekse
       if (userTypeName) {
