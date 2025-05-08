@@ -41,7 +41,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background-image: url('{{backgroundImage}}');
+      background-image: url('https://raw.githubusercontent.com/egehelvaci/pasha-backend/master/src/assets/images/catalog-bg.jpg');
       background-size: cover;
       background-position: center center;
       background-repeat: no-repeat;
@@ -158,7 +158,7 @@
 </head>
 <body>
   <div class="debug-info">
-    Background: {{#if backgroundImage}}Loaded ({{backgroundImage.length}} chars){{else}}Not loaded{{/if}}
+    Background: Loaded from GitHub
   </div>
   
   <div class="catalog-header">
@@ -192,11 +192,5 @@
   <div class="footer">
     © {{companyName}} - {{currentYear}}
   </div>
-
-  <script>
-    // Hata ayıklama bilgilerini göster
-    document.querySelector('.debug-info').style.display = 'block';
-    console.log('Background image:', '{{backgroundImage ? backgroundImage.substring(0, 50) + "..." : "Not loaded"}}');
-  </script>
 </body>
 </html> 
