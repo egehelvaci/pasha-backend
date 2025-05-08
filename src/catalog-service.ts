@@ -41,7 +41,7 @@ export class CatalogService {
   private productService = new ProductService();
   private collectionService = new CollectionService();
   private templatePath = path.resolve(__dirname, 'templates/catalog.hbs');
-  private backgroundImagePath = path.resolve(__dirname, 'assets/images/catalog-bg.jpg');
+  private backgroundImagePath = path.join(process.cwd(), 'src', 'assets', 'images', 'catalog-bg.jpg');
   private robotoRegularFontPath = path.resolve(__dirname, 'assets/fonts/Roboto-Regular.ttf');
   private robotoBoldFontPath = path.resolve(__dirname, 'assets/fonts/Roboto-Bold.ttf');
 
@@ -54,6 +54,11 @@ export class CatalogService {
     handlebars.registerHelper('currentYear', () => {
       return new Date().getFullYear();
     });
+    
+    // Konsol loglarına çalışma dizinini ekle
+    console.log('Çalışma dizini (CWD):', process.cwd());
+    console.log('Arka plan görsel yolu:', this.backgroundImagePath);
+    console.log('Görsel dizini mevcut mu:', fs.existsSync(path.dirname(this.backgroundImagePath)));
   }
 
   async generateCatalog(options: {
@@ -469,11 +474,56 @@ export class CatalogService {
    */
   private async loadCatalogBackgroundImage(): Promise<string> {
     try {
+      console.log('Arka plan resmini yüklüyorum:', this.backgroundImagePath);
+      
       if (fs.existsSync(this.backgroundImagePath)) {
+        console.log('Arka plan resmi bulundu, okunuyor...');
         const imageBuffer = fs.readFileSync(this.backgroundImagePath);
-        return `data:image/jpeg;base64,${imageBuffer.toString('base64')}`;
+        const base64Image = imageBuffer.toString('base64');
+        
+        console.log(`Arka plan resmi başarıyla okundu: ${Math.floor(base64Image.length / 1024)} KB`);
+        
+        // Test: Arka plan görselini debug klasörüne kopyala
+        try {
+          const debugDir = path.join(__dirname, '..', 'debug');
+          if (!fs.existsSync(debugDir)) {
+            fs.mkdirSync(debugDir, { recursive: true });
+          }
+          fs.copyFileSync(this.backgroundImagePath, path.join(debugDir, 'catalog-bg-copy.jpg'));
+          console.log('Arka plan resmi debug klasörüne kopyalandı');
+        } catch (copyError) {
+          console.error('Debug için kopya oluşturma hatası:', copyError);
+        }
+        
+        return `data:image/jpeg;base64,${base64Image}`;
       } else {
-        // Eğer resim dosyası yoksa varsayılan bir renk döndür
+        console.error('Arka plan resim dosyası bulunamadı:', this.backgroundImagePath);
+        // Proje klasöründe mevcut resimleri listele
+        try {
+          const assetsDir = path.join(__dirname, 'assets');
+          if (fs.existsSync(assetsDir)) {
+            console.log('Assets klasörü içeriği:');
+            const listFiles = (dir: string, depth = 0) => {
+              const files = fs.readdirSync(dir);
+              files.forEach(file => {
+                const filePath = path.join(dir, file);
+                const stats = fs.statSync(filePath);
+                const relativePath = path.relative(path.join(__dirname, '..'), filePath);
+                console.log(`${' '.repeat(depth * 2)}${stats.isDirectory() ? '📁' : '📄'} ${relativePath}`);
+                if (stats.isDirectory()) {
+                  listFiles(filePath, depth + 1);
+                }
+              });
+            };
+            listFiles(assetsDir);
+          } else {
+            console.log('Assets klasörü bulunamadı');
+          }
+        } catch (listError) {
+          console.error('Dosya listeleme hatası:', listError);
+        }
+        
+        // Varsayılan gradient döndür
         return 'linear-gradient(135deg, #0f2027, #203a43, #2c5364)';
       }
     } catch (error) {
