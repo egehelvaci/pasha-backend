@@ -120,7 +120,6 @@ export class AuthService {
           phoneNumber: user.phoneNumber,
           isActive: user.isActive,
           createdAt: user.createdAt,
-          avatar: user.avatar,
           credit: user.credit,
           debit: user.debit,
           userType: user.userType.name,

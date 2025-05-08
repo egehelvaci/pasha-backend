@@ -28,7 +28,6 @@ async function main() {
         email: 'test@example.com',
         phoneNumber: '5551234567',
         password: 'gizli123',
-        avatar: 'https://example.com/avatar.jpg',
         credit: 100.00,
         debit: 0.00
       },
