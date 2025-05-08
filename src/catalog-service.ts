@@ -92,7 +92,10 @@ export class CatalogService {
         companyName: templateData.companyName,
         formatDate: templateData.formatDate,
         currentYear: templateData.currentYear,
-        collections: templateData.collections
+        collections: templateData.collections,
+        backgroundImage: templateData.backgroundImage,
+        robotoRegularFont: templateData.robotoRegularFont,
+        robotoBoldFont: templateData.robotoBoldFont
       });
       
       // Test için HTML dosyasını diske yaz (hata ayıklama)
