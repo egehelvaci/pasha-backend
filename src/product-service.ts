@@ -1,6 +1,13 @@
 import { PrismaClient, Prisma } from '../generated/prisma'
+import { TebiService } from './utils/tebi-service';
+
+// Ürün veri modelini tipini genişlet
+interface Product extends Prisma.ProductGetPayload<{include: {collection: true}}> {
+  presignedImageUrl?: string; // Görsel için presigned URL'ı saklamak üzere opsiyonel alan
+}
 
 const prisma = new PrismaClient()
+const tebiService = new TebiService();
 
 export class ProductService {
   /**
@@ -63,11 +70,26 @@ export class ProductService {
    */
   async getAllProducts() {
     try {
-      return await prisma.product.findMany({
+      const products = await prisma.product.findMany({
         include: {
           collection: true
         }
-      })
+      });
+      
+      // Ürün görsellerine presigned URL ekle
+      for (const product of products as Product[]) {
+        if (product.productImage && product.productImage.includes('tebi.io')) {
+          try {
+            // Görseller için presigned URL oluştur
+            product.presignedImageUrl = await this.getPresignedImageUrl(product.productImage);
+          } catch (imageError) {
+            console.error(`Ürün ID ${product.productId} için presigned URL oluşturulamadı:`, imageError);
+            // Hatayı yutarak işleme devam et
+          }
+        }
+      }
+      
+      return products as Product[];
     } catch (error) {
       console.error('Ürünleri getirme hatası:', error)
       throw new Error('Ürünler getirilemedi')
@@ -79,12 +101,24 @@ export class ProductService {
    */
   async getProductById(productId: string) {
     try {
-      return await prisma.product.findUnique({
+      const product = await prisma.product.findUnique({
         where: { productId },
         include: {
           collection: true
         }
-      })
+      }) as Product | null;
+      
+      if (product && product.productImage && product.productImage.includes('tebi.io')) {
+        try {
+          // Görsel için presigned URL oluştur
+          product.presignedImageUrl = await this.getPresignedImageUrl(product.productImage);
+        } catch (imageError) {
+          console.error(`Ürün ID ${product.productId} için presigned URL oluşturulamadı:`, imageError);
+          // Hatayı yutarak işleme devam et
+        }
+      }
+      
+      return product;
     } catch (error) {
       console.error('Ürün getirme hatası:', error)
       throw new Error('Ürün bulunamadı')
@@ -96,15 +130,42 @@ export class ProductService {
    */
   async getProductsByCollection(collectionId: string) {
     try {
-      return await prisma.product.findMany({
+      const products = await prisma.product.findMany({
         where: { collectionId },
         include: {
           collection: true
         }
-      })
+      });
+      
+      // Ürün görsellerine presigned URL ekle
+      for (const product of products as Product[]) {
+        if (product.productImage && product.productImage.includes('tebi.io')) {
+          try {
+            // Görseller için presigned URL oluştur
+            product.presignedImageUrl = await this.getPresignedImageUrl(product.productImage);
+          } catch (imageError) {
+            console.error(`Ürün ID ${product.productId} için presigned URL oluşturulamadı:`, imageError);
+            // Hatayı yutarak işleme devam et
+          }
+        }
+      }
+      
+      return products as Product[];
     } catch (error) {
       console.error('Koleksiyon ürünlerini getirme hatası:', error)
       throw new Error('Koleksiyon ürünleri getirilemedi')
+    }
+  }
+  
+  /**
+   * Ürün görseli için presigned URL oluştur
+   */
+  private async getPresignedImageUrl(imageUrl: string): Promise<string> {
+    try {
+      return await tebiService.getPresignedUrlFromProductImage(imageUrl);
+    } catch (error) {
+      console.error('Presigned URL oluşturma hatası:', error);
+      throw error;
     }
   }
   
@@ -151,13 +212,26 @@ export class ProductService {
         updateData.collection_name = collection.name; // Koleksiyon adını güncelle
       }
       
-      return await prisma.product.update({
+      const updatedProduct = await prisma.product.update({
         where: { productId },
         data: updateData,
         include: {
           collection: true
         }
-      })
+      }) as Product;
+      
+      // Ürün görsellerine presigned URL ekle
+      if (updatedProduct.productImage && updatedProduct.productImage.includes('tebi.io')) {
+        try {
+          // Görsel için presigned URL oluştur
+          updatedProduct.presignedImageUrl = await this.getPresignedImageUrl(updatedProduct.productImage);
+        } catch (imageError) {
+          console.error(`Güncellenmiş ürün ID ${updatedProduct.productId} için presigned URL oluşturulamadı:`, imageError);
+          // Hatayı yutarak işleme devam et
+        }
+      }
+      
+      return updatedProduct;
     } catch (error) {
       console.error('Ürün güncelleme hatası:', error)
       throw error

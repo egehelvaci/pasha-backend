@@ -316,6 +316,24 @@
   }
   ```
 
+## Katalog API Endpoints
+
+### 1. PDF Katalog Oluştur
+- **HTTP Metodu**: POST
+- **Endpoint**: `/api/catalog/generate`
+- **Açıklama**: Ürünlerden bir PDF katalog oluşturur. Katalog, koleksiyon başlıkları altında ürün görselleri ve isimlerini içerir.
+- **İstek Gövdesi**:
+  ```json
+  {
+    "productIds": ["id1", "id2", ...],  // Opsiyonel - Belirli ürünleri kataloglamak için
+    "companyName": "Şirket Adı",        // Opsiyonel - Şirket adı
+    "companyLogoUrl": "https://example.com/logo.png" // Opsiyonel - Şirket logosu URL'i
+  }
+  ```
+- **Cevap**: Binary (PDF dosyası)
+- **İçerik-Türü**: `application/pdf`
+- **İçerik-Yönlendirme**: `attachment; filename=urun-katalogu.pdf`
+
 ## Admin Kullanıcı Yönetimi API'leri
 
 ### 1. Tüm Kullanıcıları Listeleme

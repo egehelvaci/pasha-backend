@@ -27,8 +27,8 @@ export class UploadService {
       // Yükleme komutunu çalıştır
       await s3Client.send(new PutObjectCommand(uploadParams));
 
-      // Dosya URL'sini oluştur
-      return `https://${BUCKET_NAME}.s3.tebi.io/${key}`;
+      // Dosya URL'sini oluştur - Doğru formatı kullan (s3.tebi.io/bucketname/key)
+      return `https://s3.tebi.io/${BUCKET_NAME}/${key}`;
     } catch (error) {
       console.error('Dosya yükleme hatası:', error);
       throw new Error('Dosya yüklenirken bir hata oluştu');

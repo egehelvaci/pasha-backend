@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>{{companyName}} - Ürün Kataloğu</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 40px; }
+    h1, h2 { text-align: center; }
+    .collection { page-break-before: always; margin-top: 50px; }
+    .collection h2 { margin-bottom: 20px; font-size: 24px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+    .product-list { display: flex; flex-wrap: wrap; justify-content: space-between; }
+    .product { width: 48%; border: 1px solid #ccc; padding: 10px; margin-bottom: 20px; box-sizing: border-box; position: relative; }
+    .product-image { width: 100%; height: 200px; background-color: #f5f5f5; display: flex; justify-content: center; align-items: center; margin-bottom: 10px; }
+    .product-image img { max-width: 100%; max-height: 200px; object-fit: contain; }
+    .product h3 { font-size: 16px; text-align: center; margin: 10px 0; }
+    .no-image-text { text-align: center; color: #999; }
+    .footer { text-align: center; font-size: 12px; margin-top: 40px; color: gray; }
+  </style>
+</head>
+<body>
+  <h1>{{companyName}} Ürün Kataloğu</h1>
+  <p style="text-align:center">Tarih: {{formatDate}}</p>
+
+  {{#each collections}}
+    <div class="collection">
+      <h2>{{collectionName}}</h2>
+      <div class="product-list">
+        {{#each products}}
+          <div class="product">
+            <div class="product-image">
+              {{#if productImage}}
+                <img src="{{productImage}}" alt="{{name}}">
+              {{else}}
+                <div class="no-image-text">[Ürün Görseli Mevcut Değil]</div>
+              {{/if}}
+            </div>
+            <h3>{{name}}</h3>
+            {{#if description}}
+              <p>{{description}}</p>
+            {{/if}}
+          </div>
+        {{/each}}
+      </div>
+    </div>
+  {{/each}}
+
+  <div class="footer">
+    © {{companyName}} - {{currentYear}}
+  </div>
+</body>
+</html> 
