@@ -158,6 +158,7 @@ export class CatalogService {
       page.on('request', request => {
         // Tebi üzerindeki görsel isteklerinde özel başlıkları ayarla
         if (request.url().includes('tebi.io')) {
+          console.log('Tebi.io isteği yakalandı:', request.url());
           request.continue({
             headers: {
               ...request.headers(),
