@@ -24,9 +24,20 @@ export class AdminController {
       
       let users
       if (userType) {
-        users = await userService.getUsersByType(userType as string)
+        // Kullanıcı tipine göre filtrele, ancak isActive şartını kaldır
+        users = await prisma.user.findMany({
+          where: {
+            userType: {
+              name: userType as string
+            }
+          },
+          include: {
+            userType: true
+          }
+        })
       } else {
-        users = await userService.getAllActiveUsers()
+        // Tüm kullanıcıları getir (pasif olanlar dahil)
+        users = await userService.getAllUsers()
       }
       
       return res.status(200).json({
@@ -82,7 +93,7 @@ export class AdminController {
    */
   async createUser(req: Request, res: Response) {
     try {
-      const { username, password, name, surname, email, userTypeName } = req.body
+      const { username, password, name, surname, email, userTypeName, credit = 0, debit = 0 } = req.body
       
       // Zorunlu alanların kontrolü
       if (!username || !password || !userTypeName || !name || !surname || !email) {
@@ -125,8 +136,8 @@ export class AdminController {
           surname,
           email,
           isActive: true,
-          credit: 0,
-          debit: 0,
+          credit: parseFloat(credit),
+          debit: parseFloat(debit),
           userTypeId: userType.id
         },
         include: {
@@ -154,7 +165,7 @@ export class AdminController {
   async updateUser(req: Request, res: Response) {
     try {
       const { userId } = req.params
-      const { name, surname, email, userTypeName, isActive, password } = req.body
+      const { name, surname, email, userTypeName, isActive, password, credit, debit } = req.body
       
       // Güncellenecek kullanıcının var olup olmadığını kontrol et
       const existingUser = await prisma.user.findUnique({
@@ -176,6 +187,8 @@ export class AdminController {
       if (email !== undefined) updateData.email = email
       if (isActive !== undefined) updateData.isActive = isActive
       if (password !== undefined) updateData.password = password
+      if (credit !== undefined) updateData.credit = parseFloat(credit)
+      if (debit !== undefined) updateData.debit = parseFloat(debit)
       
       // Kullanıcı tipi değiştirilecekse
       if (userTypeName) {

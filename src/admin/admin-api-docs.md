@@ -14,7 +14,7 @@ Bu dokümantasyon, admin kullanıcılarının kullanıcı yönetimi işlemleri i
 
 **Endpoint:** `GET /api/admin/users`
 
-**Açıklama:** Sisteme kayıtlı tüm aktif kullanıcıları listeler.
+**Açıklama:** Sisteme kayıtlı tüm kullanıcıları (aktif ve pasif) listeler.
 
 **Query Parametreleri:**
 - `userType` (opsiyonel): Belirli bir kullanıcı tipine göre filtreleme yapar (örn: "admin", "editor", "viewer")
@@ -93,7 +93,9 @@ Bu dokümantasyon, admin kullanıcılarının kullanıcı yönetimi işlemleri i
   "name": "Yeni",
   "surname": "Kullanıcı",
   "email": "newuser@example.com",
-  "userTypeName": "editor"
+  "userTypeName": "editor",
+  "credit": 100,
+  "debit": 50
 }
 ```
 
@@ -104,6 +106,10 @@ Bu dokümantasyon, admin kullanıcılarının kullanıcı yönetimi işlemleri i
 - `surname`: Soyad
 - `email`: E-posta adresi (benzersiz olmalı)
 - `userTypeName`: Kullanıcı tipi adı ("admin", "editor", "viewer" vb.)
+
+**Opsiyonel Alanlar:**
+- `credit`: Kullanıcı kredisi (varsayılan: 0)
+- `debit`: Kullanıcı borcu (varsayılan: 0)
 
 **Başarılı Yanıt (201):**
 ```json
@@ -116,8 +122,8 @@ Bu dokümantasyon, admin kullanıcılarının kullanıcı yönetimi işlemleri i
     "surname": "Kullanıcı",
     "email": "newuser@example.com",
     "isActive": true,
-    "credit": 0,
-    "debit": 0,
+    "credit": 100,
+    "debit": 50,
     "userType": {
       "id": 2,
       "name": "editor"
@@ -148,7 +154,9 @@ Bu dokümantasyon, admin kullanıcılarının kullanıcı yönetimi işlemleri i
   "email": "updated@example.com",
   "userTypeName": "viewer",
   "isActive": true,
-  "password": "yenisifre"
+  "password": "yenisifre",
+  "credit": 200,
+  "debit": 75
 }
 ```
 
@@ -165,8 +173,8 @@ Bu dokümantasyon, admin kullanıcılarının kullanıcı yönetimi işlemleri i
     "surname": "Ad",
     "email": "updated@example.com",
     "isActive": true,
-    "credit": 100,
-    "debit": 50,
+    "credit": 200,
+    "debit": 75,
     "userType": {
       "id": 3,
       "name": "viewer"
@@ -260,7 +268,25 @@ fetch('/api/admin/users', {
     name: 'Yeni',
     surname: 'Editör',
     email: 'editor@example.com',
-    userTypeName: 'editor'
+    userTypeName: 'editor',
+    credit: 150,
+    debit: 50
+  })
+})
+.then(response => response.json())
+.then(data => console.log(data))
+.catch(error => console.error('Hata:', error));
+
+// Örnek: Kullanıcı bilgilerini güncelle
+fetch('/api/admin/users/user123', {
+  method: 'PUT',
+  headers: {
+    'Authorization': 'Bearer JWT_TOKEN_HERE',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    credit: 300,
+    debit: 100
   })
 })
 .then(response => response.json())

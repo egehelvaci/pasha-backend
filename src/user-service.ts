@@ -75,8 +75,7 @@ export class UserService {
       where: {
         userType: {
           name: typeName
-        },
-        isActive: true
+        }
       },
       include: {
         userType: true
