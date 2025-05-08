@@ -1,5 +1,5 @@
 import { PrismaClient } from '../generated/prisma'
-import * as bcrypt from 'bcrypt'
+import bcrypt from 'bcrypt'
 
 const prisma = new PrismaClient()
 const SALT_ROUNDS = 10 // Şifre hash'leme için tuz değeri
