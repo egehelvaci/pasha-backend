@@ -32,12 +32,18 @@ interface CatalogTemplateData {
   formatDate: string;
   currentYear: number;
   collections: CollectionProducts[];
+  backgroundImage: string;
+  robotoRegularFont: string;
+  robotoBoldFont: string;
 }
 
 export class CatalogService {
   private productService = new ProductService();
   private collectionService = new CollectionService();
   private templatePath = path.resolve(__dirname, 'templates/catalog.hbs');
+  private backgroundImagePath = path.resolve(__dirname, 'assets/images/catalog-bg.jpg');
+  private robotoRegularFontPath = path.resolve(__dirname, 'assets/fonts/Roboto-Regular.ttf');
+  private robotoBoldFontPath = path.resolve(__dirname, 'assets/fonts/Roboto-Bold.ttf');
 
   constructor() {
     // Handlebars yardımcı fonksiyonları
@@ -286,12 +292,8 @@ export class CatalogService {
     // Ürünleri koleksiyonlara göre grupla
     const productsByCollection: ProductsByCollection = {};
     
-    // Her ürün için görsel yükleme işlemlerini hazırla
-    const imageLoadPromises: Promise<void>[] = [];
-    
-    products.forEach(product => {
-      if (!product) return;
-      
+    // Ürünleri koleksiyonlara göre grupla
+    for (const product of products) {
       const collectionId = product.collectionId || 'uncategorized';
       const collectionName = product.collection_name || 'Kategorisiz Ürünler';
       
@@ -299,74 +301,46 @@ export class CatalogService {
         productsByCollection[collectionId] = {
           collectionName,
           products: [],
-          pageNumber: 0,
+          pageNumber: 0
         };
       }
       
-      // Katalogda görüntülenecek ürün kopyasını oluşturalım
-      const catalogProduct = { ...product };
-      
-      // Ürün resmi işleme
+      // Ürün resmini düzenle
       if (product.productImage) {
-        // Konsola ham URL'yi yazdır
-        console.log(`${product.name} için ham resim URL:`, product.productImage);
-        
-        // Tebi URL'lerini işle
-        if (product.productImage.includes('tebi.io')) {
-          // Görseli yükleyip Data URL'ye dönüştürme promise'ini ekle
-          const imagePromise = this.loadImageAsDataUrl(product.productImage)
-            .then(dataUrl => {
-              console.log(`✅ ${product.name} için görsel data URL'ye dönüştürüldü`);
-              catalogProduct.productImage = dataUrl;
-            })
-            .catch(error => {
-              console.error(`❌ ${product.name} için görsel yüklenemedi:`, error.message);
-              catalogProduct.productImage = null;
-            });
-          
-          imageLoadPromises.push(imagePromise);
-        }
-        // Strapi URL'lerini işle
-        else if (product.productImage.startsWith('/uploads/') && process.env.STRAPI_URL) {
-          const fullUrl = `${process.env.STRAPI_URL}${product.productImage}`;
-          
-          // Görseli yükleyip Data URL'ye dönüştürme promise'ini ekle
-          const imagePromise = this.loadImageAsDataUrl(fullUrl)
-            .then(dataUrl => {
-              console.log(`✅ ${product.name} için görsel data URL'ye dönüştürüldü`);
-              catalogProduct.productImage = dataUrl;
-            })
-            .catch(error => {
-              console.error(`❌ ${product.name} için görsel yüklenemedi:`, error.message);
-              catalogProduct.productImage = null;
-            });
-          
-          imageLoadPromises.push(imagePromise);
-        } else {
-          catalogProduct.productImage = null;
+        try {
+          // Tebi.io linkleri için özel işlem yap
+          if (product.productImage.includes('tebi.io')) {
+            const presignedUrl = await this.getPresignedUrl(product.productImage);
+            if (presignedUrl) {
+              product.productImage = await this.loadImageAsDataUrl(presignedUrl);
+            } else {
+              // Ön imzalı URL alınamazsa orijinal URL'yi kullan
+              product.productImage = await this.loadImageAsDataUrl(product.productImage);
+            }
+          } else {
+            // Diğer tüm linkler için normal işlem
+            product.productImage = await this.loadImageAsDataUrl(product.productImage);
+          }
+        } catch (error) {
+          console.error(`Ürün resmi yüklenirken hata: ${product.productImage}`, error);
+          product.productImage = this.getDefaultImageDataUrl();
         }
       } else {
-        console.log(`${product.name} için resim yok`);
-        catalogProduct.productImage = null;
+        product.productImage = this.getDefaultImageDataUrl();
       }
       
-      productsByCollection[collectionId].products.push(catalogProduct);
-    });
-    
-    // Tüm görsel yükleme işlemlerinin tamamlanmasını bekle
-    if (imageLoadPromises.length > 0) {
-      console.log(`${imageLoadPromises.length} görsel indiriliyor ve işleniyor...`);
-      await Promise.all(imageLoadPromises);
+      productsByCollection[collectionId].products.push(product);
     }
     
-    // Koleksiyonları sırala ve sayfa numaralarını ata
-    const collections = Object.values(productsByCollection).map((collection, index) => {
-      return {
-        collectionName: collection.collectionName,
-        products: collection.products,
-        pageNumber: index + 1
-      };
-    });
+    // Koleksiyonları diziye dönüştür
+    const collections = Object.values(productsByCollection)
+      .filter(collection => collection.products.length > 0)
+      .sort((a, b) => a.collectionName.localeCompare(b.collectionName, 'tr'));
+    
+    // Arka plan resmini ve fontları yükle
+    const backgroundImage = await this.loadCatalogBackgroundImage();
+    const robotoRegularFont = await this.loadFontAsBase64(this.robotoRegularFontPath);
+    const robotoBoldFont = await this.loadFontAsBase64(this.robotoBoldFontPath);
     
     const now = new Date();
     
@@ -375,7 +349,10 @@ export class CatalogService {
       companyLogoUrl,
       formatDate: now.toLocaleDateString('tr-TR'),
       currentYear: now.getFullYear(),
-      collections
+      collections,
+      backgroundImage,
+      robotoRegularFont,
+      robotoBoldFont
     };
   }
   
@@ -482,5 +459,41 @@ export class CatalogService {
   private getDefaultImageDataUrl(): string {
     // Basit 1x1 şeffaf PNG
     return 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
+  }
+
+  /**
+   * Katalog arka plan resmini yükler
+   */
+  private async loadCatalogBackgroundImage(): Promise<string> {
+    try {
+      if (fs.existsSync(this.backgroundImagePath)) {
+        const imageBuffer = fs.readFileSync(this.backgroundImagePath);
+        return `data:image/jpeg;base64,${imageBuffer.toString('base64')}`;
+      } else {
+        // Eğer resim dosyası yoksa varsayılan bir renk döndür
+        return 'linear-gradient(135deg, #0f2027, #203a43, #2c5364)';
+      }
+    } catch (error) {
+      console.error('Arka plan resmi yüklenirken hata:', error);
+      return 'linear-gradient(135deg, #0f2027, #203a43, #2c5364)';
+    }
+  }
+  
+  /**
+   * Font dosyasını base64 formatında kodlar
+   */
+  private async loadFontAsBase64(fontPath: string): Promise<string> {
+    try {
+      if (fs.existsSync(fontPath)) {
+        const fontBuffer = fs.readFileSync(fontPath);
+        return fontBuffer.toString('base64');
+      } else {
+        console.error(`Font dosyası bulunamadı: ${fontPath}`);
+        return '';
+      }
+    } catch (error) {
+      console.error('Font dosyası yüklenirken hata:', error);
+      return '';
+    }
   }
 }
