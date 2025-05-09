@@ -20,18 +20,6 @@ router.use(authMiddleware);
 // Tüm fiyat listelerini getir
 router.get('/', getAllPriceLists);
 
-// Fiyat listesi detaylarını getir
-router.get('/:id', getPriceList);
-
-// Yeni fiyat listesi oluştur (sadece admin)
-router.post('/', authorizeRoles('admin'), createPriceList);
-
-// Fiyat listesi güncelle (sadece admin)
-router.put('/:id', authorizeRoles('admin'), updatePriceList);
-
-// Fiyat listesi sil (sadece admin)
-router.delete('/:id', authorizeRoles('admin'), deletePriceList);
-
 // Fiyat listesi oluştururken kullanılacak koleksiyonları getir
 router.get('/collections/available', getCollectionsForPriceList);
 
@@ -43,5 +31,17 @@ router.get('/user-assignments/:userId', getUserPriceLists);
 
 // Kullanıcı fiyat listesi atamasını kaldır (sadece admin)
 router.delete('/user-assignments/:id', authorizeRoles('admin'), removeUserPriceList);
+
+// Yeni fiyat listesi oluştur (sadece admin)
+router.post('/', authorizeRoles('admin'), createPriceList);
+
+// Fiyat listesi detaylarını getir
+router.get('/:id', getPriceList);
+
+// Fiyat listesi güncelle (sadece admin)
+router.put('/:id', authorizeRoles('admin'), updatePriceList);
+
+// Fiyat listesi sil (sadece admin)
+router.delete('/:id', authorizeRoles('admin'), deletePriceList);
 
 export default router; 
