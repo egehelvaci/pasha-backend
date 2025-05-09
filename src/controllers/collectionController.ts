@@ -42,6 +42,14 @@ export const createCollection = async (req: Request, res: Response) => {
   try {
     const { name, description, code } = req.body;
     
+    // Gerekli alanları kontrol et
+    if (!name || !code) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'İsim ve kod alanları zorunludur' 
+      });
+    }
+
     // Kod benzersiz olmalı, kontrol edelim
     const existingCollection = await prisma.collection.findUnique({
       where: {
@@ -56,7 +64,7 @@ export const createCollection = async (req: Request, res: Response) => {
     const newCollection = await prisma.collection.create({
       data: {
         name,
-        description,
+        description: description || null,
         code,
       },
     });
@@ -73,6 +81,14 @@ export const updateCollection = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { name, description, code, isActive } = req.body;
+
+    // En az bir güncelleme alanı olmalı
+    if (!name && !description && !code && isActive === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: 'En az bir alan güncellenmelidir'
+      });
+    }
     
     // Koleksiyonun var olup olmadığını kontrol et
     const existingCollection = await prisma.collection.findUnique({
@@ -84,7 +100,7 @@ export const updateCollection = async (req: Request, res: Response) => {
     }
     
     // Kod değişmişse ve yeni kod zaten kullanımdaysa kontrol et
-    if (code !== existingCollection.code) {
+    if (code && code !== existingCollection.code) {
       const codeExists = await prisma.collection.findUnique({
         where: { code },
       });
