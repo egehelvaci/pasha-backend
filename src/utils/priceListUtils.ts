@@ -20,7 +20,7 @@ export const calculateUserSpending = async (userId: string): Promise<number> => 
  */
 export const getActivePriceListForUser = async (userId: string) => {
   // Kullanıcıya özel atanmış fiyat listesini kontrol et
-  const userPriceList = await prisma.UserPriceList.findFirst({
+  const userPriceList = await prisma.userPriceList.findFirst({
     where: { user_id: userId },
     include: { PriceList: true }
   });
@@ -61,7 +61,7 @@ export const getActivePriceListForUser = async (userId: string) => {
  * @returns Varsayılan fiyat listesi
  */
 export const getDefaultPriceList = async () => {
-  return await prisma.PriceList.findFirst({
+  return await prisma.priceList.findFirst({
     where: { is_default: true },
     include: { 
       PriceListDetail: {
@@ -81,7 +81,7 @@ export const getDefaultPriceList = async () => {
  */
 export const calculateProductPrice = async (productId: string, priceListId?: string) => {
   // Ürünü getir
-  const product = await prisma.Product.findUnique({
+  const product = await prisma.product.findUnique({
     where: { productId },
     include: { collection: true }
   });
@@ -93,7 +93,7 @@ export const calculateProductPrice = async (productId: string, priceListId?: str
   // Fiyat listesini belirle
   let priceList;
   if (priceListId) {
-    priceList = await prisma.PriceList.findUnique({
+    priceList = await prisma.priceList.findUnique({
       where: { price_list_id: priceListId },
       include: {
         PriceListDetail: true
@@ -113,7 +113,7 @@ export const calculateProductPrice = async (productId: string, priceListId?: str
   
   // Ürünün ait olduğu koleksiyonun fiyat detayını bul
   const priceDetail = priceList.PriceListDetail.find(
-    detail => detail.collection_id === product.collectionId
+    (detail: any) => detail.collection_id === product.collectionId
   );
   
   if (!priceDetail) {
