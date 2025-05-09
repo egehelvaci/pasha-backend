@@ -25,11 +25,11 @@ interface PriceListDetail {
 interface User {
   user_id: number;
   email: string;
-  user_type_id: number;
+  userTypeId: number;
 }
 
 interface UserType {
-  user_type_id: number;
+  id: number;
   name: string;
 }
 
@@ -394,31 +394,25 @@ export const assignPriceListToUser = async (req: Request, res: Response) => {
     const { userId, priceListId } = req.body;
     
     // Kullanıcı ve fiyat listesinin varlığını kontrol et
-    const userResult = await prisma.$queryRaw<User[]>`
-      SELECT * FROM "User" WHERE user_id = ${userId}
-    `;
+    const user = await prisma.user.findUnique({
+      where: { userId },
+      include: { userType: true }
+    });
     
-    const user = userResult[0];
     if (!user) {
       return res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı' });
     }
     
-    const priceListResult = await prisma.$queryRaw<PriceList[]>`
-      SELECT * FROM "PriceList" WHERE price_list_id = ${priceListId}
-    `;
+    const priceList = await prisma.priceList.findUnique({
+      where: { price_list_id: priceListId }
+    });
     
-    const priceList = priceListResult[0];
     if (!priceList) {
       return res.status(404).json({ success: false, message: 'Fiyat listesi bulunamadı' });
     }
     
     // Kullanıcının "viewer" tipinde olup olmadığını kontrol et
-    const userTypeResult = await prisma.$queryRaw<UserType[]>`
-      SELECT * FROM "UserType" WHERE user_type_id = ${user.user_type_id}
-    `;
-    
-    const userType = userTypeResult[0];
-    if (userType?.name !== 'viewer') {
+    if (user.userType?.name !== 'viewer') {
       return res.status(400).json({ 
         success: false, 
         message: 'Fiyat listesi sadece viewer tipindeki kullanıcılara atanabilir' 
@@ -426,36 +420,31 @@ export const assignPriceListToUser = async (req: Request, res: Response) => {
     }
     
     // Kullanıcıya zaten bir fiyat listesi atanmış mı kontrol et
-    const existingAssignmentResult = await prisma.$queryRaw<UserPriceList[]>`
-      SELECT * FROM "UserPriceList" 
-      WHERE user_id = ${userId} AND price_list_id = ${priceListId}
-    `;
-    
-    const existingAssignment = existingAssignmentResult[0];
+    const existingAssignment = await prisma.userPriceList.findFirst({
+      where: {
+        user_id: userId,
+        price_list_id: priceListId
+      }
+    });
     
     // Eğer zaten bir atama varsa güncelle, yoksa yeni oluştur
     let userPriceList;
+    
     if (existingAssignment) {
-      await prisma.$executeRaw`
-        UPDATE "UserPriceList" 
-        SET price_list_id = ${priceListId}, updated_at = NOW()
-        WHERE user_price_list_id = ${existingAssignment.user_price_list_id}
-      `;
-      
-      userPriceList = await prisma.$queryRaw`
-        SELECT * FROM "UserPriceList" WHERE user_price_list_id = ${existingAssignment.user_price_list_id}
-      `;
+      userPriceList = await prisma.userPriceList.update({
+        where: { user_price_list_id: existingAssignment.user_price_list_id },
+        data: {
+          price_list_id: priceListId,
+          updated_at: new Date()
+        }
+      });
     } else {
-      await prisma.$executeRaw`
-        INSERT INTO "UserPriceList"(user_id, price_list_id)
-        VALUES (${userId}, ${priceListId})
-      `;
-      
-      userPriceList = await prisma.$queryRaw`
-        SELECT * FROM "UserPriceList" 
-        WHERE user_id = ${userId} AND price_list_id = ${priceListId}
-        ORDER BY created_at DESC LIMIT 1
-      `;
+      userPriceList = await prisma.userPriceList.create({
+        data: {
+          user_id: userId,
+          price_list_id: priceListId
+        }
+      });
     }
     
     return res.status(200).json({ success: true, data: userPriceList });
