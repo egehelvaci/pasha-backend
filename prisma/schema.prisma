@@ -54,7 +54,6 @@ model Product {
   collectionId    String     @map("collection_id")
   createdAt       DateTime   @default(now()) @map("created_at")
   updatedAt       DateTime   @updatedAt @map("updated_at")
-  currency        Currency?  @default(TRY)
   collection_name String?    @db.VarChar(255)
   collection      Collection @relation(fields: [collectionId], references: [collectionId])
 }

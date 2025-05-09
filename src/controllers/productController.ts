@@ -59,10 +59,10 @@ export const getProductById = async (req: Request, res: Response) => {
 // Yeni ürün oluştur (resim yükleme ile)
 export const createProduct = async (req: Request, res: Response) => {
   try {
-    const { name, description, price, stock, width, height, cut, collectionId, currency } = req.body;
+    const { name, description, stock, width, height, cut, collectionId } = req.body;
     
     // Zorunlu alanları kontrol et
-    if (!name || !description || !price || stock === undefined || 
+    if (!name || !description || stock === undefined || 
         !width || !height || cut === undefined || !collectionId) {
       return res.status(400).json({
         success: false,
@@ -71,7 +71,7 @@ export const createProduct = async (req: Request, res: Response) => {
     }
     
     // Sayısal değerleri kontrol et
-    if (isNaN(parseFloat(price)) || isNaN(parseInt(stock)) || 
+    if (isNaN(parseInt(stock)) || 
         isNaN(parseFloat(width)) || isNaN(parseFloat(height))) {
       return res.status(400).json({
         success: false,
@@ -94,14 +94,12 @@ export const createProduct = async (req: Request, res: Response) => {
     const product = await productService.createProduct({
       name,
       description,
-      price: parseFloat(price),
       stock: parseInt(stock),
       width: parseFloat(width),
       height: parseFloat(height),
       cut: Boolean(cut),
       productImage: productImageUrl,
-      collectionId,
-      currency: currency as 'TRY' | 'USD' | 'EUR'
+      collectionId
     });
     
     return res.status(201).json({
@@ -124,7 +122,6 @@ export const updateProduct = async (req: Request, res: Response) => {
     const updateData: any = { ...req.body };
     
     // Sayısal değerleri dönüştür
-    if (updateData.price) updateData.price = parseFloat(updateData.price);
     if (updateData.stock) updateData.stock = parseInt(updateData.stock);
     if (updateData.width) updateData.width = parseFloat(updateData.width);
     if (updateData.height) updateData.height = parseFloat(updateData.height);

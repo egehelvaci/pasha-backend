@@ -131,7 +131,6 @@
       "productId": "...",
       "name": "Ürün Adı",
       "description": "Ürün Açıklaması",
-      "price": 100.00,
       "stock": 50,
       "width": 10.5,
       "height": 20.0,
@@ -140,7 +139,6 @@
       "collectionId": "...",
       "createdAt": "...",
       "updatedAt": "...",
-      "currency": "TRY",
       "collection_name": "Koleksiyon Adı",
       "collection": {...}
     }
@@ -158,7 +156,6 @@
     "productId": "...",
     "name": "Ürün Adı",
     "description": "Ürün Açıklaması",
-    "price": 100.00,
     "stock": 50,
     "width": 10.5,
     "height": 20.0,
@@ -167,7 +164,6 @@
     "collectionId": "...",
     "createdAt": "...",
     "updatedAt": "...",
-    "currency": "TRY",
     "collection_name": "Koleksiyon Adı",
     "collection": {...}
   }
@@ -185,7 +181,6 @@
       "productId": "...",
       "name": "Ürün Adı",
       "description": "Ürün Açıklaması",
-      "price": 100.00,
       "stock": 50,
       "width": 10.5,
       "height": 20.0,
@@ -194,7 +189,6 @@
       "collectionId": "...",
       "createdAt": "...",
       "updatedAt": "...",
-      "currency": "TRY",
       "collection_name": "Koleksiyon Adı",
       "collection": {...}
     }
@@ -209,13 +203,11 @@
 - **İstek Alanları**:
   - `name`: Ürün adı (text)
   - `description`: Ürün açıklaması (text)
-  - `price`: Ürün fiyatı (text, sayısal değer)
   - `stock`: Stok miktarı (text, tamsayı)
   - `width`: Genişlik (text, ondalıklı sayı)
   - `height`: Yükseklik (text, ondalıklı sayı)
   - `cut`: Kesim özelliği (text, "true" veya "false")
   - `collectionId`: Koleksiyon ID'si (text)
-  - `currency`: Para birimi (text, "TRY", "USD" veya "EUR")
   - `productImage`: Ürün görseli (file)
 - **Cevap**:
   ```json
@@ -225,7 +217,6 @@
       "productId": "...",
       "name": "Yeni Ürün",
       "description": "Ürün Açıklaması",
-      "price": 150.00,
       "stock": 25,
       "width": 15.0,
       "height": 25.0,
@@ -234,7 +225,6 @@
       "collectionId": "...",
       "createdAt": "...",
       "updatedAt": "...",
-      "currency": "TRY",
       "collection_name": "Koleksiyon Adı",
       "collection": {...}
     }
@@ -250,13 +240,11 @@
 - **İstek Alanları**:
   - `name`: Ürün adı (text, opsiyonel)
   - `description`: Ürün açıklaması (text, opsiyonel)
-  - `price`: Ürün fiyatı (text, sayısal değer, opsiyonel)
   - `stock`: Stok miktarı (text, tamsayı, opsiyonel)
   - `width`: Genişlik (text, ondalıklı sayı, opsiyonel)
   - `height`: Yükseklik (text, ondalıklı sayı, opsiyonel)
   - `cut`: Kesim özelliği (text, "true" veya "false", opsiyonel)
   - `collectionId`: Koleksiyon ID'si (text, opsiyonel)
-  - `currency`: Para birimi (text, "TRY", "USD" veya "EUR", opsiyonel)
   - `productImage`: Ürün görseli (file, opsiyonel)
 - **Cevap**:
   ```json
@@ -266,7 +254,6 @@
       "productId": "...",
       "name": "Güncellenmiş Ürün Adı",
       "description": "Güncellenmiş Açıklama",
-      "price": 200.00,
       "stock": 30,
       "width": 12.0,
       "height": 22.0,
@@ -275,7 +262,6 @@
       "collectionId": "...",
       "createdAt": "...",
       "updatedAt": "...",
-      "currency": "USD",
       "collection_name": "Koleksiyon Adı",
       "collection": {...}
     }

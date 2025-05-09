@@ -22,7 +22,6 @@ export class ProductService {
     cut: boolean
     productImage?: string
     collectionId: string
-    currency?: 'TRY' | 'USD' | 'EUR'
   }) {
     try {
       // Önce koleksiyonun var olup olmadığını kontrol et
@@ -34,7 +33,7 @@ export class ProductService {
         throw new Error(`${data.collectionId} ID'li koleksiyon bulunamadı`)
       }
       
-      // ProductCreateInput tipine uygun nesne oluştur
+      // Prisma ProductCreateInput tipine uygun nesne oluştur
       const productData: Prisma.ProductUncheckedCreateInput = {
         name: data.name,
         description: data.description,
@@ -46,10 +45,6 @@ export class ProductService {
         collectionId: data.collectionId,
         collection_name: collection.name // Koleksiyon adını otomatik olarak ekle
       };
-      
-      if (data.currency) {
-        productData.currency = data.currency;
-      }
       
       return await prisma.product.create({
         data: productData,
@@ -179,7 +174,6 @@ export class ProductService {
     cut?: boolean
     productImage?: string
     collectionId?: string
-    currency?: 'TRY' | 'USD' | 'EUR'
   }) {
     try {
       const updateData: Prisma.ProductUncheckedUpdateInput = {};
@@ -192,7 +186,6 @@ export class ProductService {
       if (data.height !== undefined) updateData.height = data.height;
       if (data.cut !== undefined) updateData.cut = data.cut;
       if (data.productImage !== undefined) updateData.productImage = data.productImage;
-      if (data.currency !== undefined) updateData.currency = data.currency;
       
       // Eğer koleksiyon ID'si değiştiriliyorsa, yeni koleksiyonun varlığını kontrol et
       if (data.collectionId) {

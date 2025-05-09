@@ -154,7 +154,6 @@ exports.Prisma.ProductScalarFieldEnum = {
   productId: 'productId',
   name: 'name',
   description: 'description',
-  price: 'price',
   stock: 'stock',
   width: 'width',
   height: 'height',
@@ -163,64 +162,7 @@ exports.Prisma.ProductScalarFieldEnum = {
   collectionId: 'collectionId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
-  currency: 'currency',
   collection_name: 'collection_name'
-};
-
-exports.Prisma.CartScalarFieldEnum = {
-  cart_id: 'cart_id',
-  user_id: 'user_id',
-  created_at: 'created_at',
-  updated_at: 'updated_at',
-  is_active: 'is_active'
-};
-
-exports.Prisma.Cart_itemScalarFieldEnum = {
-  cart_item_id: 'cart_item_id',
-  cart_id: 'cart_id',
-  product_id: 'product_id',
-  quantity: 'quantity',
-  price: 'price'
-};
-
-exports.Prisma.InvoiceScalarFieldEnum = {
-  invoice_id: 'invoice_id',
-  invoice_no: 'invoice_no',
-  order_id: 'order_id',
-  name: 'name',
-  surname: 'surname',
-  issue_date: 'issue_date',
-  due_date: 'due_date',
-  total_amount: 'total_amount',
-  status: 'status',
-  pdf: 'pdf'
-};
-
-exports.Prisma.OrderScalarFieldEnum = {
-  order_id: 'order_id',
-  user_id: 'user_id',
-  user_name: 'user_name',
-  name: 'name',
-  surname: 'surname',
-  order_date: 'order_date',
-  total_amount: 'total_amount',
-  status: 'status',
-  address: 'address',
-  phone_number: 'phone_number',
-  invoice_no: 'invoice_no',
-  approved_at: 'approved_at',
-  delivered_at: 'delivered_at',
-  notes: 'notes'
-};
-
-exports.Prisma.Order_itemScalarFieldEnum = {
-  order_item_id: 'order_item_id',
-  order_id: 'order_id',
-  product_id: 'product_id',
-  product_name: 'product_name',
-  quantity: 'quantity',
-  price: 'price',
-  barcode_code: 'barcode_code'
 };
 
 exports.Prisma.SortOrder = {
@@ -237,35 +179,13 @@ exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
 };
-exports.Currency = exports.$Enums.Currency = {
-  TRY: 'TRY',
-  USD: 'USD',
-  EUR: 'EUR'
-};
 
-exports.invoice_status = exports.$Enums.invoice_status = {
-  ISSUED: 'ISSUED',
-  PAID: 'PAID',
-  CANCELLED: 'CANCELLED'
-};
-
-exports.order_status = exports.$Enums.order_status = {
-  PENDING: 'PENDING',
-  APPROVED: 'APPROVED',
-  DELIVERED: 'DELIVERED',
-  CANCELLED: 'CANCELLED'
-};
 
 exports.Prisma.ModelName = {
   UserType: 'UserType',
   User: 'User',
   Collection: 'Collection',
-  Product: 'Product',
-  cart: 'cart',
-  cart_item: 'cart_item',
-  invoice: 'invoice',
-  order: 'order',
-  order_item: 'order_item'
+  Product: 'Product'
 };
 
 /**
