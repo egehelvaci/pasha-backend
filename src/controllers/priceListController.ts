@@ -80,6 +80,17 @@ export const getPriceList = async (req: Request, res: Response) => {
 // Yeni fiyat listesi oluştur
 export const createPriceList = async (req: Request, res: Response) => {
   try {
+    // Token'dan kullanıcı bilgilerini al
+    const user = req.user;
+    
+    // Kullanıcı admin değilse işlemi reddet
+    if (!user || user.userType !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Bu işlem için admin yetkisi gereklidir'
+      });
+    }
+
     const { 
       name, 
       description, 
@@ -87,15 +98,38 @@ export const createPriceList = async (req: Request, res: Response) => {
       validTo, 
       limitAmount, 
       currency, 
-      collectionPrices
+      collectionPrices,
+      isDefault
     } = req.body;
     
-    // Default olarak oluşturulmasını engelle
-    if (req.body.isDefault === true) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Yeni bir varsayılan fiyat listesi oluşturulamaz'
+    // Gerekli alanları kontrol et
+    if (!name || !currency || !collectionPrices || !Array.isArray(collectionPrices) || collectionPrices.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'İsim, para birimi ve en az bir koleksiyon fiyatı gereklidir'
       });
+    }
+
+    // Para birimi kontrolü
+    if (!['TRY', 'USD', 'EUR'].includes(currency)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Geçersiz para birimi. TRY, USD veya EUR kullanılabilir'
+      });
+    }
+
+    // Varsayılan fiyat listesi varsa kontrol et
+    if (isDefault) {
+      const defaultPriceList = await prisma.$queryRaw<PriceList[]>`
+        SELECT * FROM "PriceList" WHERE is_default = true
+      `;
+
+      if (defaultPriceList.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Sistemde zaten bir varsayılan fiyat listesi mevcut'
+        });
+      }
     }
     
     // Oluşturma işlemini transaction ile yap
@@ -103,7 +137,7 @@ export const createPriceList = async (req: Request, res: Response) => {
       // Fiyat listesini oluştur
       const priceList = await tx.$executeRaw`
         INSERT INTO "PriceList"(name, description, valid_from, valid_to, limit_amount, currency, is_default)
-        VALUES (${name}, ${description}, ${validFrom ? new Date(validFrom) : null}, ${validTo ? new Date(validTo) : null}, ${limitAmount}, ${currency}, false)
+        VALUES (${name}, ${description}, ${validFrom ? new Date(validFrom) : null}, ${validTo ? new Date(validTo) : null}, ${limitAmount}, ${currency}, ${isDefault || false})
         RETURNING *
       `;
       
@@ -116,6 +150,20 @@ export const createPriceList = async (req: Request, res: Response) => {
       // Koleksiyon fiyatlarını oluştur
       if (collectionPrices && collectionPrices.length > 0) {
         for (const item of collectionPrices) {
+          // Fiyat kontrolü
+          if (!item.pricePerSquareMeter || item.pricePerSquareMeter <= 0) {
+            throw new Error('Metrekare fiyatı pozitif bir sayı olmalıdır');
+          }
+
+          // Koleksiyonun varlığını kontrol et
+          const collection = await tx.$queryRaw`
+            SELECT * FROM "Collection" WHERE collection_id = ${item.collectionId}
+          `;
+
+          if (!collection || (Array.isArray(collection) && collection.length === 0)) {
+            throw new Error(`${item.collectionId} ID'li koleksiyon bulunamadı`);
+          }
+
           await tx.$executeRaw`
             INSERT INTO "PriceListDetail"(price_list_id, collection_id, price_per_square_meter)
             VALUES (${priceListId}, ${item.collectionId}, ${item.pricePerSquareMeter})
@@ -138,7 +186,10 @@ export const createPriceList = async (req: Request, res: Response) => {
     return res.status(201).json({ success: true, data: result });
   } catch (error) {
     console.error('Fiyat listesi oluşturulurken hata oluştu:', error);
-    return res.status(500).json({ success: false, message: 'Sunucu hatası' });
+    return res.status(500).json({ 
+      success: false, 
+      message: error instanceof Error ? error.message : 'Sunucu hatası' 
+    });
   }
 };
 
