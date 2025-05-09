@@ -46,7 +46,6 @@ model Product {
   productId       String     @id @default(uuid()) @map("product_id")
   name            String
   description     String
-  price           Decimal    @db.Decimal(10, 2)
   stock           Int
   width           Float
   height          Float

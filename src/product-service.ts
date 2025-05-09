@@ -16,7 +16,6 @@ export class ProductService {
   async createProduct(data: {
     name: string
     description: string
-    price: number
     stock: number
     width: number
     height: number
@@ -39,7 +38,6 @@ export class ProductService {
       const productData: Prisma.ProductUncheckedCreateInput = {
         name: data.name,
         description: data.description,
-        price: data.price,
         stock: data.stock,
         width: data.width,
         height: data.height,
@@ -175,7 +173,6 @@ export class ProductService {
   async updateProduct(productId: string, data: {
     name?: string
     description?: string
-    price?: number
     stock?: number
     width?: number
     height?: number
@@ -190,7 +187,6 @@ export class ProductService {
       // Sadece belirtilen alanları güncelle
       if (data.name !== undefined) updateData.name = data.name;
       if (data.description !== undefined) updateData.description = data.description;
-      if (data.price !== undefined) updateData.price = data.price;
       if (data.stock !== undefined) updateData.stock = data.stock;
       if (data.width !== undefined) updateData.width = data.width;
       if (data.height !== undefined) updateData.height = data.height;
