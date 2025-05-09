@@ -320,6 +320,288 @@
 - **İçerik-Türü**: `application/pdf`
 - **İçerik-Yönlendirme**: `attachment; filename=urun-katalogu.pdf`
 
+## Fiyat Listesi (PriceList) API Endpoints
+
+### 1. Tüm Fiyat Listelerini Getir
+- **HTTP Metodu**: GET
+- **Endpoint**: `/api/price-lists`
+- **Açıklama**: Sistemdeki tüm fiyat listelerini detaylarıyla birlikte getirir.
+- **Cevap**: 
+  ```json
+  {
+    "success": true,
+    "data": [
+      {
+        "price_list_id": "...",
+        "name": "Standart Fiyat Listesi",
+        "description": "Standart müşteri fiyatları",
+        "is_default": true,
+        "valid_from": null,
+        "valid_to": null,
+        "limit_amount": null,
+        "currency": "TRY",
+        "is_active": true,
+        "created_at": "...",
+        "updated_at": "...",
+        "PriceListDetail": [...]
+      }
+    ]
+  }
+  ```
+
+### 2. ID'ye Göre Fiyat Listesi Getir
+- **HTTP Metodu**: GET
+- **Endpoint**: `/api/price-lists/:id`
+- **Açıklama**: Belirtilen ID'ye sahip fiyat listesini detaylarıyla getirir.
+- **Parametreler**: `id` (URL Parametresi) - Fiyat Listesi ID'si
+- **Cevap**: 
+  ```json
+  {
+    "success": true,
+    "data": {
+      "price_list_id": "...",
+      "name": "Standart Fiyat Listesi",
+      "description": "Standart müşteri fiyatları",
+      "is_default": true,
+      "valid_from": null,
+      "valid_to": null,
+      "limit_amount": null,
+      "currency": "TRY",
+      "is_active": true,
+      "created_at": "...",
+      "updated_at": "...",
+      "PriceListDetail": [
+        {
+          "price_list_detail_id": "...",
+          "price_list_id": "...",
+          "collection_id": "...",
+          "price_per_square_meter": 125.50,
+          "created_at": "...",
+          "updated_at": "...",
+          "Collection": {
+            "collectionId": "...",
+            "name": "Premium Koleksiyon",
+            "code": "premium-001",
+            "description": "Premium ürünler koleksiyonu"
+          }
+        }
+      ]
+    }
+  }
+  ```
+
+### 3. Fiyat Listesi Oluştur
+- **HTTP Metodu**: POST
+- **Endpoint**: `/api/price-lists`
+- **Açıklama**: Yeni bir fiyat listesi oluşturur. Varsayılan (default) fiyat listesi oluşturulamaz.
+- **İstek Gövdesi**:
+  ```json
+  {
+    "name": "Toptan Satış Listesi",
+    "description": "Toptan satış müşterileri için fiyat listesi",
+    "validFrom": "2023-05-01T00:00:00Z",
+    "validTo": "2023-12-31T23:59:59Z",
+    "limitAmount": 10000,
+    "currency": "TRY",
+    "collectionPrices": [
+      {
+        "collectionId": "koleksiyon-id-1",
+        "pricePerSquareMeter": 90.50
+      },
+      {
+        "collectionId": "koleksiyon-id-2",
+        "pricePerSquareMeter": 110.75
+      }
+    ]
+  }
+  ```
+- **Cevap**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "price_list_id": "...",
+      "name": "Toptan Satış Listesi",
+      "description": "Toptan satış müşterileri için fiyat listesi",
+      "is_default": false,
+      "valid_from": "2023-05-01T00:00:00Z",
+      "valid_to": "2023-12-31T23:59:59Z",
+      "limit_amount": 10000,
+      "currency": "TRY",
+      "is_active": true,
+      "created_at": "...",
+      "updated_at": "...",
+      "PriceListDetail": [...]
+    }
+  }
+  ```
+
+### 4. Fiyat Listesi Güncelle
+- **HTTP Metodu**: PUT
+- **Endpoint**: `/api/price-lists/:id`
+- **Açıklama**: Mevcut bir fiyat listesini günceller. Varsayılan listede validFrom, validTo ve limitAmount alanları güncellenemez.
+- **Parametreler**: `id` (URL Parametresi) - Fiyat Listesi ID'si
+- **İstek Gövdesi**:
+  ```json
+  {
+    "name": "Güncellenmiş Fiyat Listesi",
+    "description": "Güncellenmiş açıklama",
+    "validFrom": "2023-06-01T00:00:00Z",
+    "validTo": "2023-12-31T23:59:59Z",
+    "limitAmount": 15000,
+    "currency": "TRY",
+    "collectionPrices": [
+      {
+        "collectionId": "koleksiyon-id-1",
+        "pricePerSquareMeter": 95.50
+      },
+      {
+        "collectionId": "koleksiyon-id-2",
+        "pricePerSquareMeter": 115.75
+      }
+    ]
+  }
+  ```
+- **Cevap**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "price_list_id": "...",
+      "name": "Güncellenmiş Fiyat Listesi",
+      "description": "Güncellenmiş açıklama",
+      "is_default": false,
+      "valid_from": "2023-06-01T00:00:00Z",
+      "valid_to": "2023-12-31T23:59:59Z",
+      "limit_amount": 15000,
+      "currency": "TRY",
+      "is_active": true,
+      "created_at": "...",
+      "updated_at": "...",
+      "PriceListDetail": [...]
+    }
+  }
+  ```
+
+### 5. Fiyat Listesi Sil
+- **HTTP Metodu**: DELETE
+- **Endpoint**: `/api/price-lists/:id`
+- **Açıklama**: Belirtilen ID'ye sahip fiyat listesini siler. Varsayılan fiyat listesi silinemez.
+- **Parametreler**: `id` (URL Parametresi) - Fiyat Listesi ID'si
+- **Cevap**:
+  ```json
+  {
+    "success": true,
+    "message": "Fiyat listesi başarıyla silindi"
+  }
+  ```
+
+### 6. Fiyat Listesi Oluşturma İçin Kullanılabilir Koleksiyonlar
+- **HTTP Metodu**: GET
+- **Endpoint**: `/api/price-lists/collections/available`
+- **Açıklama**: Fiyat listesi oluşturulurken kullanılabilecek aktif koleksiyonları getirir.
+- **Cevap**:
+  ```json
+  {
+    "success": true,
+    "data": [
+      {
+        "collectionId": "...",
+        "name": "Koleksiyon Adı",
+        "code": "koleksiyon-kodu"
+      }
+    ]
+  }
+  ```
+
+### 7. Kullanıcıya Fiyat Listesi Ata
+- **HTTP Metodu**: POST
+- **Endpoint**: `/api/price-lists/user-assignments`
+- **Açıklama**: Belirli bir kullanıcıya özel fiyat listesi atar. Sadece "viewer" tipindeki kullanıcılara atanabilir.
+- **İstek Gövdesi**:
+  ```json
+  {
+    "userId": "kullanici-id",
+    "priceListId": "fiyat-listesi-id"
+  }
+  ```
+- **Cevap**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "user_price_list_id": "...",
+      "user_id": "kullanici-id",
+      "price_list_id": "fiyat-listesi-id",
+      "created_at": "...",
+      "updated_at": "..."
+    }
+  }
+  ```
+
+### 8. Kullanıcının Fiyat Listesi Atamalarını Getir
+- **HTTP Metodu**: GET
+- **Endpoint**: `/api/price-lists/user-assignments/:userId`
+- **Açıklama**: Belirli bir kullanıcıya atanmış fiyat listelerini getirir.
+- **Parametreler**: `userId` (URL Parametresi) - Kullanıcı ID'si
+- **Cevap**:
+  ```json
+  {
+    "success": true,
+    "data": [
+      {
+        "user_price_list_id": "...",
+        "user_id": "kullanici-id",
+        "price_list_id": "fiyat-listesi-id",
+        "created_at": "...",
+        "updated_at": "...",
+        "PriceList": {
+          "price_list_id": "...",
+          "name": "Özel Müşteri Listesi",
+          "description": "Özel müşteriler için indirimli fiyatlar"
+        }
+      }
+    ]
+  }
+  ```
+
+### 9. Kullanıcı Fiyat Listesi Atamasını Kaldır
+- **HTTP Metodu**: DELETE
+- **Endpoint**: `/api/price-lists/user-assignments/:id`
+- **Açıklama**: Kullanıcı fiyat listesi atamasını kaldırır.
+- **Parametreler**: `id` (URL Parametresi) - Kullanıcı Fiyat Listesi Atama ID'si
+- **Cevap**:
+  ```json
+  {
+    "success": true,
+    "message": "Kullanıcı fiyat listesi ataması başarıyla kaldırıldı"
+  }
+  ```
+
+## Ürün Fiyat Hesaplama API
+
+### 1. Ürün Fiyatını Hesapla
+- **HTTP Metodu**: GET
+- **Endpoint**: `/api/products/:id/price`
+- **Açıklama**: Belirli bir ürünün fiyatını hesaplar. Fiyat listesi ID'si belirtilmezse varsayılan fiyat listesi kullanılır.
+- **Parametreler**: 
+  - `id` (URL Parametresi) - Ürün ID'si
+  - `priceListId` (Query Parametresi, opsiyonel) - Hesaplamada kullanılacak fiyat listesi ID'si
+- **Cevap**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "price": 125.75,
+      "currency": "TRY",
+      "areaInSquareMeters": 1.05,
+      "pricePerSquareMeter": 119.76,
+      "priceListId": "...",
+      "priceListName": "Standart Fiyat Listesi"
+    }
+  }
+  ```
+
 ## Admin Kullanıcı Yönetimi API'leri
 
 ### 1. Tüm Kullanıcıları Listeleme

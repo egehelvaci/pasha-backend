@@ -5,7 +5,8 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
-  uploadProductImage
+  uploadProductImage,
+  getProductPrice
 } from '../controllers/productController';
 
 const router = express.Router();
@@ -24,5 +25,8 @@ router.put('/:id', uploadProductImage, updateProduct);
 
 // Ürün sil
 router.delete('/:id', deleteProduct);
+
+// Ürün fiyatını hesapla
+router.get('/:id/price', getProductPrice);
 
 export default router; 

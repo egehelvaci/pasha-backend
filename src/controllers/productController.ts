@@ -3,6 +3,7 @@ import { ProductService } from '../product-service';
 import { UploadService } from '../utils/upload-service';
 import multer from 'multer';
 import { Readable } from 'stream';
+import { calculateProductPrice } from '../utils/priceListUtils';
 
 // Multer konfigürasyonu
 const storage = multer.memoryStorage();
@@ -166,5 +167,27 @@ export const deleteProduct = async (req: Request, res: Response) => {
       success: false,
       message: error.message || 'Ürün silinemedi'
     });
+  }
+};
+
+// Ürün fiyatını hesapla
+export const getProductPrice = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { priceListId, userId } = req.query;
+    
+    try {
+      const priceInfo = await calculateProductPrice(
+        id, 
+        priceListId ? String(priceListId) : undefined
+      );
+      
+      return res.status(200).json({ success: true, data: priceInfo });
+    } catch (error: any) {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+  } catch (error) {
+    console.error('Ürün fiyatı hesaplanırken hata oluştu:', error);
+    return res.status(500).json({ success: false, message: 'Sunucu hatası' });
   }
 }; 

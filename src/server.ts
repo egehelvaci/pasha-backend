@@ -4,6 +4,7 @@ import collectionRoutes from './routes/collectionRoutes'
 import productRoutes from './routes/productRoutes'
 import adminRoutes from './admin/admin-routes'
 import catalogRoutes from './routes/catalogRoutes'
+import priceListRoutes from './routes/priceListRoutes'
 
 // Express uygulaması oluştur
 const app = express()
@@ -43,6 +44,7 @@ app.use('/api/collections', collectionRoutes)
 app.use('/api/products', productRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/catalog', catalogRoutes)
+app.use('/api/price-lists', priceListRoutes)
 
 // Kök rota - Railway proxy için basit yanıt
 app.get('/', (req, res) => {
