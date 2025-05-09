@@ -165,6 +165,37 @@ exports.Prisma.ProductScalarFieldEnum = {
   collection_name: 'collection_name'
 };
 
+exports.Prisma.PriceListScalarFieldEnum = {
+  price_list_id: 'price_list_id',
+  name: 'name',
+  description: 'description',
+  is_default: 'is_default',
+  valid_from: 'valid_from',
+  valid_to: 'valid_to',
+  limit_amount: 'limit_amount',
+  currency: 'currency',
+  is_active: 'is_active',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+};
+
+exports.Prisma.PriceListDetailScalarFieldEnum = {
+  price_list_detail_id: 'price_list_detail_id',
+  price_list_id: 'price_list_id',
+  collection_id: 'collection_id',
+  price_per_square_meter: 'price_per_square_meter',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+};
+
+exports.Prisma.UserPriceListScalarFieldEnum = {
+  user_price_list_id: 'user_price_list_id',
+  user_id: 'user_id',
+  price_list_id: 'price_list_id',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -185,7 +216,10 @@ exports.Prisma.ModelName = {
   UserType: 'UserType',
   User: 'User',
   Collection: 'Collection',
-  Product: 'Product'
+  Product: 'Product',
+  PriceList: 'PriceList',
+  PriceListDetail: 'PriceListDetail',
+  UserPriceList: 'UserPriceList'
 };
 
 /**

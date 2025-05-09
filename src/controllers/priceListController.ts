@@ -1,16 +1,50 @@
 import { Request, Response } from 'express';
-import { PrismaClient, Prisma } from '../../generated/prisma';
+import { PrismaClient } from '../../generated/prisma';
+
+// Tip tanımlamaları
+interface PriceList {
+  price_list_id: number;
+  name: string;
+  description: string | null;
+  valid_from: Date | null;
+  valid_to: Date | null;
+  limit_amount: number | null;
+  currency: string;
+  is_default: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+interface PriceListDetail {
+  price_list_detail_id: number;
+  price_list_id: number;
+  collection_id: number;
+  price_per_square_meter: number;
+}
+
+interface User {
+  user_id: number;
+  email: string;
+  user_type_id: number;
+}
+
+interface UserType {
+  user_type_id: number;
+  name: string;
+}
+
+interface UserPriceList {
+  user_price_list_id: number;
+  user_id: number;
+  price_list_id: number;
+}
 
 const prisma = new PrismaClient();
 
 // Tüm fiyat listelerini getir
 export const getAllPriceLists = async (req: Request, res: Response) => {
   try {
-    const priceLists = await prisma.priceList.findMany({
-      include: {
-        PriceListDetail: true
-      }
-    });
+    const priceLists = await prisma.$queryRaw`SELECT * FROM "PriceList"`;
     
     return res.status(200).json({ success: true, data: priceLists });
   } catch (error) {
@@ -24,18 +58,15 @@ export const getPriceList = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     
-    const priceList = await prisma.priceList.findUnique({
-      where: { price_list_id: id },
-      include: {
-        PriceListDetail: {
-          include: {
-            Collection: true
-          }
-        }
-      }
-    });
+    const priceList = await prisma.$queryRaw`
+      SELECT pl.*, pld.*
+      FROM "PriceList" pl
+      LEFT JOIN "PriceListDetail" pld ON pl.price_list_id = pld.price_list_id
+      LEFT JOIN "Collection" c ON pld.collection_id = c.collection_id
+      WHERE pl.price_list_id = ${id}
+    `;
     
-    if (!priceList) {
+    if (!priceList || (Array.isArray(priceList) && priceList.length === 0)) {
       return res.status(404).json({ success: false, message: 'Fiyat listesi bulunamadı' });
     }
     
@@ -68,46 +99,40 @@ export const createPriceList = async (req: Request, res: Response) => {
     }
     
     // Oluşturma işlemini transaction ile yap
-    const result = await prisma.$transaction(async (prismaClient) => {
+    const result = await prisma.$transaction(async (tx) => {
       // Fiyat listesini oluştur
-      const priceList = await prismaClient.priceList.create({
-        data: {
-          name,
-          description,
-          valid_from: validFrom ? new Date(validFrom) : null,
-          valid_to: validTo ? new Date(validTo) : null,
-          limit_amount: limitAmount,
-          currency,
-          is_default: false
-        }
-      });
+      const priceList = await tx.$executeRaw`
+        INSERT INTO "PriceList"(name, description, valid_from, valid_to, limit_amount, currency, is_default)
+        VALUES (${name}, ${description}, ${validFrom ? new Date(validFrom) : null}, ${validTo ? new Date(validTo) : null}, ${limitAmount}, ${currency}, false)
+        RETURNING *
+      `;
+      
+      const createdPriceList = await tx.$queryRaw<PriceList[]>`
+        SELECT * FROM "PriceList" WHERE name = ${name} ORDER BY created_at DESC LIMIT 1
+      `;
+      
+      const priceListId = createdPriceList[0].price_list_id;
       
       // Koleksiyon fiyatlarını oluştur
       if (collectionPrices && collectionPrices.length > 0) {
-        await Promise.all(
-          collectionPrices.map((item: any) => 
-            prismaClient.priceListDetail.create({
-              data: {
-                price_list_id: priceList.price_list_id,
-                collection_id: item.collectionId,
-                price_per_square_meter: item.pricePerSquareMeter
-              }
-            })
-          )
-        );
+        for (const item of collectionPrices) {
+          await tx.$executeRaw`
+            INSERT INTO "PriceListDetail"(price_list_id, collection_id, price_per_square_meter)
+            VALUES (${priceListId}, ${item.collectionId}, ${item.pricePerSquareMeter})
+          `;
+        }
       }
       
       // Oluşturulan fiyat listesini tüm detaylarıyla getir
-      return await prismaClient.priceList.findUnique({
-        where: { price_list_id: priceList.price_list_id },
-        include: {
-          PriceListDetail: {
-            include: {
-              Collection: true
-            }
-          }
-        }
-      });
+      const result = await tx.$queryRaw`
+        SELECT pl.*, pld.*
+        FROM "PriceList" pl
+        LEFT JOIN "PriceListDetail" pld ON pl.price_list_id = pld.price_list_id
+        LEFT JOIN "Collection" c ON pld.collection_id = c.collection_id
+        WHERE pl.price_list_id = ${priceListId}
+      `;
+      
+      return result;
     });
     
     return res.status(201).json({ success: true, data: result });
@@ -132,9 +157,11 @@ export const updatePriceList = async (req: Request, res: Response) => {
     } = req.body;
     
     // Fiyat listesini kontrol et
-    const existingPriceList = await prisma.priceList.findUnique({
-      where: { price_list_id: id }
-    });
+    const existingPriceListResult = await prisma.$queryRaw<PriceList[]>`
+      SELECT * FROM "PriceList" WHERE price_list_id = ${id}
+    `;
+    
+    const existingPriceList = existingPriceListResult[0];
     
     if (!existingPriceList) {
       return res.status(404).json({ success: false, message: 'Fiyat listesi bulunamadı' });
@@ -159,56 +186,82 @@ export const updatePriceList = async (req: Request, res: Response) => {
     }
     
     // Güncelleme işlemini transaction ile yap
-    const result = await prisma.$transaction(async (prismaClient) => {
+    const result = await prisma.$transaction(async (tx) => {
       // Fiyat listesini güncelle
-      const updateData: any = {};
+      let updateQuery = 'UPDATE "PriceList" SET ';
+      const updateValues = [];
+      let paramIndex = 1;
       
-      if (name !== undefined) updateData.name = name;
-      if (description !== undefined) updateData.description = description;
-      if (!existingPriceList.is_default) {
-        if (validFrom !== undefined) updateData.valid_from = validFrom ? new Date(validFrom) : null;
-        if (validTo !== undefined) updateData.valid_to = validTo ? new Date(validTo) : null;
-        if (limitAmount !== undefined) updateData.limit_amount = limitAmount;
+      if (name !== undefined) {
+        updateQuery += `name = $${paramIndex}, `;
+        updateValues.push(name);
+        paramIndex++;
       }
-      if (currency !== undefined) updateData.currency = currency;
       
-      const updatedPriceList = await prismaClient.priceList.update({
-        where: { price_list_id: id },
-        data: updateData
-      });
+      if (description !== undefined) {
+        updateQuery += `description = $${paramIndex}, `;
+        updateValues.push(description);
+        paramIndex++;
+      }
+      
+      if (!existingPriceList.is_default) {
+        if (validFrom !== undefined) {
+          updateQuery += `valid_from = $${paramIndex}, `;
+          updateValues.push(validFrom ? new Date(validFrom) : null);
+          paramIndex++;
+        }
+        
+        if (validTo !== undefined) {
+          updateQuery += `valid_to = $${paramIndex}, `;
+          updateValues.push(validTo ? new Date(validTo) : null);
+          paramIndex++;
+        }
+        
+        if (limitAmount !== undefined) {
+          updateQuery += `limit_amount = $${paramIndex}, `;
+          updateValues.push(limitAmount);
+          paramIndex++;
+        }
+      }
+      
+      if (currency !== undefined) {
+        updateQuery += `currency = $${paramIndex}, `;
+        updateValues.push(currency);
+        paramIndex++;
+      }
+      
+      // Son virgülü kaldır ve WHERE ekle
+      updateQuery = updateQuery.slice(0, -2) + ` WHERE price_list_id = $${paramIndex}`;
+      updateValues.push(id);
+      
+      await tx.$executeRawUnsafe(updateQuery, ...updateValues);
       
       // Koleksiyon fiyatlarını güncelle
       if (collectionPrices && collectionPrices.length > 0) {
         // Önce var olan tüm fiyat detaylarını sil
-        await prismaClient.priceListDetail.deleteMany({
-          where: { price_list_id: id }
-        });
+        await tx.$executeRaw`
+          DELETE FROM "PriceListDetail" WHERE price_list_id = ${id}
+        `;
         
         // Yeni fiyat detaylarını oluştur
-        await Promise.all(
-          collectionPrices.map((item: any) => 
-            prismaClient.priceListDetail.create({
-              data: {
-                price_list_id: id,
-                collection_id: item.collectionId,
-                price_per_square_meter: item.pricePerSquareMeter
-              }
-            })
-          )
-        );
+        for (const item of collectionPrices) {
+          await tx.$executeRaw`
+            INSERT INTO "PriceListDetail"(price_list_id, collection_id, price_per_square_meter)
+            VALUES (${id}, ${item.collectionId}, ${item.pricePerSquareMeter})
+          `;
+        }
       }
       
       // Güncellenmiş fiyat listesini tüm detaylarıyla getir
-      return await prismaClient.priceList.findUnique({
-        where: { price_list_id: id },
-        include: {
-          PriceListDetail: {
-            include: {
-              Collection: true
-            }
-          }
-        }
-      });
+      const result = await tx.$queryRaw`
+        SELECT pl.*, pld.*
+        FROM "PriceList" pl
+        LEFT JOIN "PriceListDetail" pld ON pl.price_list_id = pld.price_list_id
+        LEFT JOIN "Collection" c ON pld.collection_id = c.collection_id
+        WHERE pl.price_list_id = ${id}
+      `;
+      
+      return result;
     });
     
     return res.status(200).json({ success: true, data: result });
@@ -224,9 +277,11 @@ export const deletePriceList = async (req: Request, res: Response) => {
     const { id } = req.params;
     
     // Fiyat listesini kontrol et
-    const priceList = await prisma.priceList.findUnique({
-      where: { price_list_id: id }
-    });
+    const priceListResult = await prisma.$queryRaw<PriceList[]>`
+      SELECT * FROM "PriceList" WHERE price_list_id = ${id}
+    `;
+    
+    const priceList = priceListResult[0];
     
     if (!priceList) {
       return res.status(404).json({ success: false, message: 'Fiyat listesi bulunamadı' });
@@ -241,21 +296,21 @@ export const deletePriceList = async (req: Request, res: Response) => {
     }
     
     // Silme işlemini transaction ile yap
-    await prisma.$transaction(async (prismaClient) => {
+    await prisma.$transaction(async (tx) => {
       // Önce fiyat listesine ait tüm kullanıcı atamalarını sil
-      await prismaClient.userPriceList.deleteMany({
-        where: { price_list_id: id }
-      });
+      await tx.$executeRaw`
+        DELETE FROM "UserPriceList" WHERE price_list_id = ${id}
+      `;
       
       // Sonra fiyat listesine ait tüm detayları sil
-      await prismaClient.priceListDetail.deleteMany({
-        where: { price_list_id: id }
-      });
+      await tx.$executeRaw`
+        DELETE FROM "PriceListDetail" WHERE price_list_id = ${id}
+      `;
       
       // En son fiyat listesini sil
-      await prismaClient.priceList.delete({
-        where: { price_list_id: id }
-      });
+      await tx.$executeRaw`
+        DELETE FROM "PriceList" WHERE price_list_id = ${id}
+      `;
     });
     
     return res.status(200).json({ 
@@ -271,15 +326,9 @@ export const deletePriceList = async (req: Request, res: Response) => {
 // Fiyat listesi oluştururken kullanılacak koleksiyonları getir
 export const getCollectionsForPriceList = async (req: Request, res: Response) => {
   try {
-    const collections = await prisma.collection.findMany({
-      where: { isActive: true },
-      select: {
-        collectionId: true,
-        name: true,
-        code: true
-      },
-      orderBy: { name: 'asc' }
-    });
+    const collections = await prisma.$queryRaw`
+      SELECT "collectionId", name, code FROM "Collection" WHERE "isActive" = true ORDER BY name ASC
+    `;
     
     return res.status(200).json({ success: true, data: collections });
   } catch (error) {
@@ -294,18 +343,30 @@ export const assignPriceListToUser = async (req: Request, res: Response) => {
     const { userId, priceListId } = req.body;
     
     // Kullanıcı ve fiyat listesinin varlığını kontrol et
-    const user = await prisma.user.findUnique({ where: { userId } });
+    const userResult = await prisma.$queryRaw<User[]>`
+      SELECT * FROM "User" WHERE user_id = ${userId}
+    `;
+    
+    const user = userResult[0];
     if (!user) {
       return res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı' });
     }
     
-    const priceList = await prisma.priceList.findUnique({ where: { price_list_id: priceListId } });
+    const priceListResult = await prisma.$queryRaw<PriceList[]>`
+      SELECT * FROM "PriceList" WHERE price_list_id = ${priceListId}
+    `;
+    
+    const priceList = priceListResult[0];
     if (!priceList) {
       return res.status(404).json({ success: false, message: 'Fiyat listesi bulunamadı' });
     }
     
     // Kullanıcının "viewer" tipinde olup olmadığını kontrol et
-    const userType = await prisma.userType.findUnique({ where: { id: user.userTypeId } });
+    const userTypeResult = await prisma.$queryRaw<UserType[]>`
+      SELECT * FROM "UserType" WHERE user_type_id = ${user.user_type_id}
+    `;
+    
+    const userType = userTypeResult[0];
     if (userType?.name !== 'viewer') {
       return res.status(400).json({ 
         success: false, 
@@ -314,24 +375,36 @@ export const assignPriceListToUser = async (req: Request, res: Response) => {
     }
     
     // Kullanıcıya zaten bir fiyat listesi atanmış mı kontrol et
-    const existingAssignment = await prisma.userPriceList.findFirst({
-      where: { user_id: userId }
-    });
+    const existingAssignmentResult = await prisma.$queryRaw<UserPriceList[]>`
+      SELECT * FROM "UserPriceList" 
+      WHERE user_id = ${userId} AND price_list_id = ${priceListId}
+    `;
+    
+    const existingAssignment = existingAssignmentResult[0];
     
     // Eğer zaten bir atama varsa güncelle, yoksa yeni oluştur
     let userPriceList;
     if (existingAssignment) {
-      userPriceList = await prisma.userPriceList.update({
-        where: { user_price_list_id: existingAssignment.user_price_list_id },
-        data: { price_list_id: priceListId }
-      });
+      await prisma.$executeRaw`
+        UPDATE "UserPriceList" 
+        SET price_list_id = ${priceListId}, updated_at = NOW()
+        WHERE user_price_list_id = ${existingAssignment.user_price_list_id}
+      `;
+      
+      userPriceList = await prisma.$queryRaw`
+        SELECT * FROM "UserPriceList" WHERE user_price_list_id = ${existingAssignment.user_price_list_id}
+      `;
     } else {
-      userPriceList = await prisma.userPriceList.create({
-        data: {
-          user_id: userId,
-          price_list_id: priceListId
-        }
-      });
+      await prisma.$executeRaw`
+        INSERT INTO "UserPriceList"(user_id, price_list_id)
+        VALUES (${userId}, ${priceListId})
+      `;
+      
+      userPriceList = await prisma.$queryRaw`
+        SELECT * FROM "UserPriceList" 
+        WHERE user_id = ${userId} AND price_list_id = ${priceListId}
+        ORDER BY created_at DESC LIMIT 1
+      `;
     }
     
     return res.status(200).json({ success: true, data: userPriceList });
@@ -346,12 +419,12 @@ export const getUserPriceLists = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
     
-    const userPriceLists = await prisma.userPriceList.findMany({
-      where: { user_id: userId },
-      include: {
-        PriceList: true
-      }
-    });
+    const userPriceLists = await prisma.$queryRaw`
+      SELECT upl.*, pl.name as price_list_name, pl.description as price_list_description
+      FROM "UserPriceList" upl
+      JOIN "PriceList" pl ON upl.price_list_id = pl.price_list_id
+      WHERE upl.user_id = ${userId}
+    `;
     
     return res.status(200).json({ success: true, data: userPriceLists });
   } catch (error) {
@@ -365,17 +438,19 @@ export const removeUserPriceList = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     
-    const userPriceList = await prisma.userPriceList.findUnique({
-      where: { user_price_list_id: id }
-    });
+    const userPriceListResult = await prisma.$queryRaw<UserPriceList[]>`
+      SELECT * FROM "UserPriceList" WHERE user_price_list_id = ${id}
+    `;
+    
+    const userPriceList = userPriceListResult[0];
     
     if (!userPriceList) {
       return res.status(404).json({ success: false, message: 'Kullanıcı fiyat listesi bulunamadı' });
     }
     
-    await prisma.userPriceList.delete({
-      where: { user_price_list_id: id }
-    });
+    await prisma.$executeRaw`
+      DELETE FROM "UserPriceList" WHERE user_price_list_id = ${id}
+    `;
     
     return res.status(200).json({ 
       success: true, 

@@ -1,0 +1,104 @@
+generator client {
+  provider      = "prisma-client-js"
+  output        = "./client"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model userType {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  users user[]
+}
+
+model user {
+  email         String          @unique
+  name          String
+  createdAt     DateTime        @default(now()) @map("created_at")
+  credit        Decimal         @default(0) @db.Decimal(10, 2)
+  debit         Decimal         @default(0) @db.Decimal(10, 2)
+  isActive      Boolean         @default(true) @map("is_active")
+  password      String
+  phoneNumber   String?         @map("phone_number")
+  surname       String
+  userId        String          @id @default(uuid()) @map("user_id")
+  username      String          @unique
+  userTypeId    Int             @map("user_type_id")
+  userType      userType        @relation(fields: [userTypeId], references: [id])
+  userPriceList userPriceList[]
+}
+
+model collection {
+  collectionId    String            @id @default(uuid()) @map("collection_id")
+  name            String
+  description     String?
+  code            String            @unique
+  isActive        Boolean           @default(true) @map("is_active")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  priceListDetail priceListDetail[]
+  products        product[]
+}
+
+model product {
+  productId       String     @id @default(uuid()) @map("product_id")
+  name            String
+  description     String
+  stock           Int
+  width           Float
+  height          Float
+  cut             Boolean
+  productImage    String?    @map("product_imageurl")
+  collectionId    String     @map("collection_id")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  collection_name String?    @db.VarChar(255)
+  collection      collection @relation(fields: [collectionId], references: [collectionId])
+}
+
+model priceList {
+  price_list_id   String            @id @default(dbgenerated("gen_random_uuid()"))
+  name            String            @db.VarChar(255)
+  description     String?
+  is_default      Boolean           @default(false)
+  valid_from      DateTime?         @db.Timestamp(6)
+  valid_to        DateTime?         @db.Timestamp(6)
+  limit_amount    Decimal?          @db.Decimal(10, 2)
+  currency        String            @db.VarChar(3)
+  is_active       Boolean           @default(true)
+  created_at      DateTime          @default(now()) @db.Timestamp(6)
+  updated_at      DateTime          @default(now()) @db.Timestamp(6)
+  priceListDetail priceListDetail[]
+  userPriceList   userPriceList[]
+}
+
+model priceListDetail {
+  price_list_detail_id   String     @id @default(dbgenerated("gen_random_uuid()"))
+  price_list_id          String
+  collection_id          String
+  price_per_square_meter Decimal    @db.Decimal(10, 2)
+  created_at             DateTime   @default(now()) @db.Timestamp(6)
+  updated_at             DateTime   @default(now()) @db.Timestamp(6)
+  collection             collection @relation(fields: [collection_id], references: [collectionId], onDelete: NoAction, onUpdate: NoAction)
+  priceList              priceList  @relation(fields: [price_list_id], references: [price_list_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model userPriceList {
+  user_price_list_id String    @id @default(dbgenerated("gen_random_uuid()"))
+  user_id            String
+  price_list_id      String
+  created_at         DateTime  @default(now()) @db.Timestamp(6)
+  updated_at         DateTime  @default(now()) @db.Timestamp(6)
+  priceList          priceList @relation(fields: [price_list_id], references: [price_list_id], onDelete: NoAction, onUpdate: NoAction)
+  user               user      @relation(fields: [user_id], references: [userId], onDelete: NoAction, onUpdate: NoAction)
+}
+
+enum Currency {
+  TRY
+  USD
+  EUR
+}

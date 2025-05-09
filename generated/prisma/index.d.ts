@@ -33,6 +33,21 @@ export type Collection = $Result.DefaultSelection<Prisma.$CollectionPayload>
  * 
  */
 export type Product = $Result.DefaultSelection<Prisma.$ProductPayload>
+/**
+ * Model PriceList
+ * 
+ */
+export type PriceList = $Result.DefaultSelection<Prisma.$PriceListPayload>
+/**
+ * Model PriceListDetail
+ * 
+ */
+export type PriceListDetail = $Result.DefaultSelection<Prisma.$PriceListDetailPayload>
+/**
+ * Model UserPriceList
+ * 
+ */
+export type UserPriceList = $Result.DefaultSelection<Prisma.$UserPriceListPayload>
 
 /**
  * Enums
@@ -216,6 +231,36 @@ export class PrismaClient<
     * ```
     */
   get product(): Prisma.ProductDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.priceList`: Exposes CRUD operations for the **PriceList** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PriceLists
+    * const priceLists = await prisma.priceList.findMany()
+    * ```
+    */
+  get priceList(): Prisma.PriceListDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.priceListDetail`: Exposes CRUD operations for the **PriceListDetail** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PriceListDetails
+    * const priceListDetails = await prisma.priceListDetail.findMany()
+    * ```
+    */
+  get priceListDetail(): Prisma.PriceListDetailDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.userPriceList`: Exposes CRUD operations for the **UserPriceList** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more UserPriceLists
+    * const userPriceLists = await prisma.userPriceList.findMany()
+    * ```
+    */
+  get userPriceList(): Prisma.UserPriceListDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -659,7 +704,10 @@ export namespace Prisma {
     UserType: 'UserType',
     User: 'User',
     Collection: 'Collection',
-    Product: 'Product'
+    Product: 'Product',
+    PriceList: 'PriceList',
+    PriceListDetail: 'PriceListDetail',
+    UserPriceList: 'UserPriceList'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -678,7 +726,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "userType" | "user" | "collection" | "product"
+      modelProps: "userType" | "user" | "collection" | "product" | "priceList" | "priceListDetail" | "userPriceList"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -978,6 +1026,228 @@ export namespace Prisma {
           }
         }
       }
+      PriceList: {
+        payload: Prisma.$PriceListPayload<ExtArgs>
+        fields: Prisma.PriceListFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PriceListFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PriceListPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PriceListFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PriceListPayload>
+          }
+          findFirst: {
+            args: Prisma.PriceListFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PriceListPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PriceListFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PriceListPayload>
+          }
+          findMany: {
+            args: Prisma.PriceListFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PriceListPayload>[]
+          }
+          create: {
+            args: Prisma.PriceListCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PriceListPayload>
+          }
+          createMany: {
+            args: Prisma.PriceListCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.PriceListCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PriceListPayload>[]
+          }
+          delete: {
+            args: Prisma.PriceListDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PriceListPayload>
+          }
+          update: {
+            args: Prisma.PriceListUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PriceListPayload>
+          }
+          deleteMany: {
+            args: Prisma.PriceListDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PriceListUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.PriceListUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PriceListPayload>[]
+          }
+          upsert: {
+            args: Prisma.PriceListUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PriceListPayload>
+          }
+          aggregate: {
+            args: Prisma.PriceListAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregatePriceList>
+          }
+          groupBy: {
+            args: Prisma.PriceListGroupByArgs<ExtArgs>
+            result: $Utils.Optional<PriceListGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PriceListCountArgs<ExtArgs>
+            result: $Utils.Optional<PriceListCountAggregateOutputType> | number
+          }
+        }
+      }
+      PriceListDetail: {
+        payload: Prisma.$PriceListDetailPayload<ExtArgs>
+        fields: Prisma.PriceListDetailFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PriceListDetailFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PriceListDetailPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PriceListDetailFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PriceListDetailPayload>
+          }
+          findFirst: {
+            args: Prisma.PriceListDetailFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PriceListDetailPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PriceListDetailFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PriceListDetailPayload>
+          }
+          findMany: {
+            args: Prisma.PriceListDetailFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PriceListDetailPayload>[]
+          }
+          create: {
+            args: Prisma.PriceListDetailCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PriceListDetailPayload>
+          }
+          createMany: {
+            args: Prisma.PriceListDetailCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.PriceListDetailCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PriceListDetailPayload>[]
+          }
+          delete: {
+            args: Prisma.PriceListDetailDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PriceListDetailPayload>
+          }
+          update: {
+            args: Prisma.PriceListDetailUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PriceListDetailPayload>
+          }
+          deleteMany: {
+            args: Prisma.PriceListDetailDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PriceListDetailUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.PriceListDetailUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PriceListDetailPayload>[]
+          }
+          upsert: {
+            args: Prisma.PriceListDetailUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PriceListDetailPayload>
+          }
+          aggregate: {
+            args: Prisma.PriceListDetailAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregatePriceListDetail>
+          }
+          groupBy: {
+            args: Prisma.PriceListDetailGroupByArgs<ExtArgs>
+            result: $Utils.Optional<PriceListDetailGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PriceListDetailCountArgs<ExtArgs>
+            result: $Utils.Optional<PriceListDetailCountAggregateOutputType> | number
+          }
+        }
+      }
+      UserPriceList: {
+        payload: Prisma.$UserPriceListPayload<ExtArgs>
+        fields: Prisma.UserPriceListFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.UserPriceListFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserPriceListPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.UserPriceListFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserPriceListPayload>
+          }
+          findFirst: {
+            args: Prisma.UserPriceListFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserPriceListPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.UserPriceListFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserPriceListPayload>
+          }
+          findMany: {
+            args: Prisma.UserPriceListFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserPriceListPayload>[]
+          }
+          create: {
+            args: Prisma.UserPriceListCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserPriceListPayload>
+          }
+          createMany: {
+            args: Prisma.UserPriceListCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.UserPriceListCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserPriceListPayload>[]
+          }
+          delete: {
+            args: Prisma.UserPriceListDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserPriceListPayload>
+          }
+          update: {
+            args: Prisma.UserPriceListUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserPriceListPayload>
+          }
+          deleteMany: {
+            args: Prisma.UserPriceListDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.UserPriceListUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.UserPriceListUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserPriceListPayload>[]
+          }
+          upsert: {
+            args: Prisma.UserPriceListUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserPriceListPayload>
+          }
+          aggregate: {
+            args: Prisma.UserPriceListAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateUserPriceList>
+          }
+          groupBy: {
+            args: Prisma.UserPriceListGroupByArgs<ExtArgs>
+            result: $Utils.Optional<UserPriceListGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.UserPriceListCountArgs<ExtArgs>
+            result: $Utils.Optional<UserPriceListCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -1066,6 +1336,9 @@ export namespace Prisma {
     user?: UserOmit
     collection?: CollectionOmit
     product?: ProductOmit
+    priceList?: PriceListOmit
+    priceListDetail?: PriceListDetailOmit
+    userPriceList?: UserPriceListOmit
   }
 
   /* Types for Logging */
@@ -1187,14 +1460,47 @@ export namespace Prisma {
 
 
   /**
+   * Count Type UserCountOutputType
+   */
+
+  export type UserCountOutputType = {
+    UserPriceList: number
+  }
+
+  export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    UserPriceList?: boolean | UserCountOutputTypeCountUserPriceListArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserCountOutputType
+     */
+    select?: UserCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountUserPriceListArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: UserPriceListWhereInput
+  }
+
+
+  /**
    * Count Type CollectionCountOutputType
    */
 
   export type CollectionCountOutputType = {
+    PriceListDetail: number
     products: number
   }
 
   export type CollectionCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    PriceListDetail?: boolean | CollectionCountOutputTypeCountPriceListDetailArgs
     products?: boolean | CollectionCountOutputTypeCountProductsArgs
   }
 
@@ -1212,8 +1518,55 @@ export namespace Prisma {
   /**
    * CollectionCountOutputType without action
    */
+  export type CollectionCountOutputTypeCountPriceListDetailArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PriceListDetailWhereInput
+  }
+
+  /**
+   * CollectionCountOutputType without action
+   */
   export type CollectionCountOutputTypeCountProductsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: ProductWhereInput
+  }
+
+
+  /**
+   * Count Type PriceListCountOutputType
+   */
+
+  export type PriceListCountOutputType = {
+    PriceListDetail: number
+    UserPriceList: number
+  }
+
+  export type PriceListCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    PriceListDetail?: boolean | PriceListCountOutputTypeCountPriceListDetailArgs
+    UserPriceList?: boolean | PriceListCountOutputTypeCountUserPriceListArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * PriceListCountOutputType without action
+   */
+  export type PriceListCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PriceListCountOutputType
+     */
+    select?: PriceListCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * PriceListCountOutputType without action
+   */
+  export type PriceListCountOutputTypeCountPriceListDetailArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PriceListDetailWhereInput
+  }
+
+  /**
+   * PriceListCountOutputType without action
+   */
+  export type PriceListCountOutputTypeCountUserPriceListArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: UserPriceListWhereInput
   }
 
 
@@ -2549,6 +2902,8 @@ export namespace Prisma {
     username?: boolean
     userTypeId?: boolean
     userType?: boolean | UserTypeDefaultArgs<ExtArgs>
+    UserPriceList?: boolean | User$UserPriceListArgs<ExtArgs>
+    _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
   export type UserSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -2601,6 +2956,8 @@ export namespace Prisma {
   export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"email" | "name" | "createdAt" | "credit" | "debit" | "isActive" | "password" | "phoneNumber" | "surname" | "userId" | "username" | "userTypeId", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     userType?: boolean | UserTypeDefaultArgs<ExtArgs>
+    UserPriceList?: boolean | User$UserPriceListArgs<ExtArgs>
+    _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     userType?: boolean | UserTypeDefaultArgs<ExtArgs>
@@ -2613,6 +2970,7 @@ export namespace Prisma {
     name: "User"
     objects: {
       userType: Prisma.$UserTypePayload<ExtArgs>
+      UserPriceList: Prisma.$UserPriceListPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       email: string
@@ -3022,6 +3380,7 @@ export namespace Prisma {
   export interface Prisma__UserClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     userType<T extends UserTypeDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserTypeDefaultArgs<ExtArgs>>): Prisma__UserTypeClient<$Result.GetResult<Prisma.$UserTypePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    UserPriceList<T extends User$UserPriceListArgs<ExtArgs> = {}>(args?: Subset<T, User$UserPriceListArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UserPriceListPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3459,6 +3818,30 @@ export namespace Prisma {
   }
 
   /**
+   * User.UserPriceList
+   */
+  export type User$UserPriceListArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserPriceList
+     */
+    select?: UserPriceListSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserPriceList
+     */
+    omit?: UserPriceListOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserPriceListInclude<ExtArgs> | null
+    where?: UserPriceListWhereInput
+    orderBy?: UserPriceListOrderByWithRelationInput | UserPriceListOrderByWithRelationInput[]
+    cursor?: UserPriceListWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: UserPriceListScalarFieldEnum | UserPriceListScalarFieldEnum[]
+  }
+
+  /**
    * User without action
    */
   export type UserDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -3657,6 +4040,7 @@ export namespace Prisma {
     isActive?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    PriceListDetail?: boolean | Collection$PriceListDetailArgs<ExtArgs>
     products?: boolean | Collection$productsArgs<ExtArgs>
     _count?: boolean | CollectionCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["collection"]>
@@ -3693,6 +4077,7 @@ export namespace Prisma {
 
   export type CollectionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"collectionId" | "name" | "description" | "code" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["collection"]>
   export type CollectionInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    PriceListDetail?: boolean | Collection$PriceListDetailArgs<ExtArgs>
     products?: boolean | Collection$productsArgs<ExtArgs>
     _count?: boolean | CollectionCountOutputTypeDefaultArgs<ExtArgs>
   }
@@ -3702,6 +4087,7 @@ export namespace Prisma {
   export type $CollectionPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Collection"
     objects: {
+      PriceListDetail: Prisma.$PriceListDetailPayload<ExtArgs>[]
       products: Prisma.$ProductPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
@@ -4106,6 +4492,7 @@ export namespace Prisma {
    */
   export interface Prisma__CollectionClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
+    PriceListDetail<T extends Collection$PriceListDetailArgs<ExtArgs> = {}>(args?: Subset<T, Collection$PriceListDetailArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PriceListDetailPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     products<T extends Collection$productsArgs<ExtArgs> = {}>(args?: Subset<T, Collection$productsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ProductPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -4528,6 +4915,30 @@ export namespace Prisma {
      * Limit how many Collections to delete.
      */
     limit?: number
+  }
+
+  /**
+   * Collection.PriceListDetail
+   */
+  export type Collection$PriceListDetailArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PriceListDetail
+     */
+    select?: PriceListDetailSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PriceListDetail
+     */
+    omit?: PriceListDetailOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PriceListDetailInclude<ExtArgs> | null
+    where?: PriceListDetailWhereInput
+    orderBy?: PriceListDetailOrderByWithRelationInput | PriceListDetailOrderByWithRelationInput[]
+    cursor?: PriceListDetailWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PriceListDetailScalarFieldEnum | PriceListDetailScalarFieldEnum[]
   }
 
   /**
@@ -5765,6 +6176,3395 @@ export namespace Prisma {
 
 
   /**
+   * Model PriceList
+   */
+
+  export type AggregatePriceList = {
+    _count: PriceListCountAggregateOutputType | null
+    _avg: PriceListAvgAggregateOutputType | null
+    _sum: PriceListSumAggregateOutputType | null
+    _min: PriceListMinAggregateOutputType | null
+    _max: PriceListMaxAggregateOutputType | null
+  }
+
+  export type PriceListAvgAggregateOutputType = {
+    limit_amount: Decimal | null
+  }
+
+  export type PriceListSumAggregateOutputType = {
+    limit_amount: Decimal | null
+  }
+
+  export type PriceListMinAggregateOutputType = {
+    price_list_id: string | null
+    name: string | null
+    description: string | null
+    is_default: boolean | null
+    valid_from: Date | null
+    valid_to: Date | null
+    limit_amount: Decimal | null
+    currency: string | null
+    is_active: boolean | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type PriceListMaxAggregateOutputType = {
+    price_list_id: string | null
+    name: string | null
+    description: string | null
+    is_default: boolean | null
+    valid_from: Date | null
+    valid_to: Date | null
+    limit_amount: Decimal | null
+    currency: string | null
+    is_active: boolean | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type PriceListCountAggregateOutputType = {
+    price_list_id: number
+    name: number
+    description: number
+    is_default: number
+    valid_from: number
+    valid_to: number
+    limit_amount: number
+    currency: number
+    is_active: number
+    created_at: number
+    updated_at: number
+    _all: number
+  }
+
+
+  export type PriceListAvgAggregateInputType = {
+    limit_amount?: true
+  }
+
+  export type PriceListSumAggregateInputType = {
+    limit_amount?: true
+  }
+
+  export type PriceListMinAggregateInputType = {
+    price_list_id?: true
+    name?: true
+    description?: true
+    is_default?: true
+    valid_from?: true
+    valid_to?: true
+    limit_amount?: true
+    currency?: true
+    is_active?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type PriceListMaxAggregateInputType = {
+    price_list_id?: true
+    name?: true
+    description?: true
+    is_default?: true
+    valid_from?: true
+    valid_to?: true
+    limit_amount?: true
+    currency?: true
+    is_active?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type PriceListCountAggregateInputType = {
+    price_list_id?: true
+    name?: true
+    description?: true
+    is_default?: true
+    valid_from?: true
+    valid_to?: true
+    limit_amount?: true
+    currency?: true
+    is_active?: true
+    created_at?: true
+    updated_at?: true
+    _all?: true
+  }
+
+  export type PriceListAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PriceList to aggregate.
+     */
+    where?: PriceListWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PriceLists to fetch.
+     */
+    orderBy?: PriceListOrderByWithRelationInput | PriceListOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PriceListWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PriceLists from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PriceLists.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PriceLists
+    **/
+    _count?: true | PriceListCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: PriceListAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: PriceListSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PriceListMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PriceListMaxAggregateInputType
+  }
+
+  export type GetPriceListAggregateType<T extends PriceListAggregateArgs> = {
+        [P in keyof T & keyof AggregatePriceList]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePriceList[P]>
+      : GetScalarType<T[P], AggregatePriceList[P]>
+  }
+
+
+
+
+  export type PriceListGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PriceListWhereInput
+    orderBy?: PriceListOrderByWithAggregationInput | PriceListOrderByWithAggregationInput[]
+    by: PriceListScalarFieldEnum[] | PriceListScalarFieldEnum
+    having?: PriceListScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PriceListCountAggregateInputType | true
+    _avg?: PriceListAvgAggregateInputType
+    _sum?: PriceListSumAggregateInputType
+    _min?: PriceListMinAggregateInputType
+    _max?: PriceListMaxAggregateInputType
+  }
+
+  export type PriceListGroupByOutputType = {
+    price_list_id: string
+    name: string
+    description: string | null
+    is_default: boolean
+    valid_from: Date | null
+    valid_to: Date | null
+    limit_amount: Decimal | null
+    currency: string
+    is_active: boolean
+    created_at: Date
+    updated_at: Date
+    _count: PriceListCountAggregateOutputType | null
+    _avg: PriceListAvgAggregateOutputType | null
+    _sum: PriceListSumAggregateOutputType | null
+    _min: PriceListMinAggregateOutputType | null
+    _max: PriceListMaxAggregateOutputType | null
+  }
+
+  type GetPriceListGroupByPayload<T extends PriceListGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PriceListGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PriceListGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PriceListGroupByOutputType[P]>
+            : GetScalarType<T[P], PriceListGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PriceListSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    price_list_id?: boolean
+    name?: boolean
+    description?: boolean
+    is_default?: boolean
+    valid_from?: boolean
+    valid_to?: boolean
+    limit_amount?: boolean
+    currency?: boolean
+    is_active?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+    PriceListDetail?: boolean | PriceList$PriceListDetailArgs<ExtArgs>
+    UserPriceList?: boolean | PriceList$UserPriceListArgs<ExtArgs>
+    _count?: boolean | PriceListCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["priceList"]>
+
+  export type PriceListSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    price_list_id?: boolean
+    name?: boolean
+    description?: boolean
+    is_default?: boolean
+    valid_from?: boolean
+    valid_to?: boolean
+    limit_amount?: boolean
+    currency?: boolean
+    is_active?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }, ExtArgs["result"]["priceList"]>
+
+  export type PriceListSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    price_list_id?: boolean
+    name?: boolean
+    description?: boolean
+    is_default?: boolean
+    valid_from?: boolean
+    valid_to?: boolean
+    limit_amount?: boolean
+    currency?: boolean
+    is_active?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }, ExtArgs["result"]["priceList"]>
+
+  export type PriceListSelectScalar = {
+    price_list_id?: boolean
+    name?: boolean
+    description?: boolean
+    is_default?: boolean
+    valid_from?: boolean
+    valid_to?: boolean
+    limit_amount?: boolean
+    currency?: boolean
+    is_active?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }
+
+  export type PriceListOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"price_list_id" | "name" | "description" | "is_default" | "valid_from" | "valid_to" | "limit_amount" | "currency" | "is_active" | "created_at" | "updated_at", ExtArgs["result"]["priceList"]>
+  export type PriceListInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    PriceListDetail?: boolean | PriceList$PriceListDetailArgs<ExtArgs>
+    UserPriceList?: boolean | PriceList$UserPriceListArgs<ExtArgs>
+    _count?: boolean | PriceListCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type PriceListIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+  export type PriceListIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+
+  export type $PriceListPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PriceList"
+    objects: {
+      PriceListDetail: Prisma.$PriceListDetailPayload<ExtArgs>[]
+      UserPriceList: Prisma.$UserPriceListPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      price_list_id: string
+      name: string
+      description: string | null
+      is_default: boolean
+      valid_from: Date | null
+      valid_to: Date | null
+      limit_amount: Prisma.Decimal | null
+      currency: string
+      is_active: boolean
+      created_at: Date
+      updated_at: Date
+    }, ExtArgs["result"]["priceList"]>
+    composites: {}
+  }
+
+  type PriceListGetPayload<S extends boolean | null | undefined | PriceListDefaultArgs> = $Result.GetResult<Prisma.$PriceListPayload, S>
+
+  type PriceListCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<PriceListFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: PriceListCountAggregateInputType | true
+    }
+
+  export interface PriceListDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PriceList'], meta: { name: 'PriceList' } }
+    /**
+     * Find zero or one PriceList that matches the filter.
+     * @param {PriceListFindUniqueArgs} args - Arguments to find a PriceList
+     * @example
+     * // Get one PriceList
+     * const priceList = await prisma.priceList.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends PriceListFindUniqueArgs>(args: SelectSubset<T, PriceListFindUniqueArgs<ExtArgs>>): Prisma__PriceListClient<$Result.GetResult<Prisma.$PriceListPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one PriceList that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {PriceListFindUniqueOrThrowArgs} args - Arguments to find a PriceList
+     * @example
+     * // Get one PriceList
+     * const priceList = await prisma.priceList.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends PriceListFindUniqueOrThrowArgs>(args: SelectSubset<T, PriceListFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PriceListClient<$Result.GetResult<Prisma.$PriceListPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PriceList that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PriceListFindFirstArgs} args - Arguments to find a PriceList
+     * @example
+     * // Get one PriceList
+     * const priceList = await prisma.priceList.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends PriceListFindFirstArgs>(args?: SelectSubset<T, PriceListFindFirstArgs<ExtArgs>>): Prisma__PriceListClient<$Result.GetResult<Prisma.$PriceListPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PriceList that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PriceListFindFirstOrThrowArgs} args - Arguments to find a PriceList
+     * @example
+     * // Get one PriceList
+     * const priceList = await prisma.priceList.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends PriceListFindFirstOrThrowArgs>(args?: SelectSubset<T, PriceListFindFirstOrThrowArgs<ExtArgs>>): Prisma__PriceListClient<$Result.GetResult<Prisma.$PriceListPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more PriceLists that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PriceListFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PriceLists
+     * const priceLists = await prisma.priceList.findMany()
+     * 
+     * // Get first 10 PriceLists
+     * const priceLists = await prisma.priceList.findMany({ take: 10 })
+     * 
+     * // Only select the `price_list_id`
+     * const priceListWithPrice_list_idOnly = await prisma.priceList.findMany({ select: { price_list_id: true } })
+     * 
+     */
+    findMany<T extends PriceListFindManyArgs>(args?: SelectSubset<T, PriceListFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PriceListPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a PriceList.
+     * @param {PriceListCreateArgs} args - Arguments to create a PriceList.
+     * @example
+     * // Create one PriceList
+     * const PriceList = await prisma.priceList.create({
+     *   data: {
+     *     // ... data to create a PriceList
+     *   }
+     * })
+     * 
+     */
+    create<T extends PriceListCreateArgs>(args: SelectSubset<T, PriceListCreateArgs<ExtArgs>>): Prisma__PriceListClient<$Result.GetResult<Prisma.$PriceListPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many PriceLists.
+     * @param {PriceListCreateManyArgs} args - Arguments to create many PriceLists.
+     * @example
+     * // Create many PriceLists
+     * const priceList = await prisma.priceList.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends PriceListCreateManyArgs>(args?: SelectSubset<T, PriceListCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many PriceLists and returns the data saved in the database.
+     * @param {PriceListCreateManyAndReturnArgs} args - Arguments to create many PriceLists.
+     * @example
+     * // Create many PriceLists
+     * const priceList = await prisma.priceList.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many PriceLists and only return the `price_list_id`
+     * const priceListWithPrice_list_idOnly = await prisma.priceList.createManyAndReturn({
+     *   select: { price_list_id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends PriceListCreateManyAndReturnArgs>(args?: SelectSubset<T, PriceListCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PriceListPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a PriceList.
+     * @param {PriceListDeleteArgs} args - Arguments to delete one PriceList.
+     * @example
+     * // Delete one PriceList
+     * const PriceList = await prisma.priceList.delete({
+     *   where: {
+     *     // ... filter to delete one PriceList
+     *   }
+     * })
+     * 
+     */
+    delete<T extends PriceListDeleteArgs>(args: SelectSubset<T, PriceListDeleteArgs<ExtArgs>>): Prisma__PriceListClient<$Result.GetResult<Prisma.$PriceListPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one PriceList.
+     * @param {PriceListUpdateArgs} args - Arguments to update one PriceList.
+     * @example
+     * // Update one PriceList
+     * const priceList = await prisma.priceList.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends PriceListUpdateArgs>(args: SelectSubset<T, PriceListUpdateArgs<ExtArgs>>): Prisma__PriceListClient<$Result.GetResult<Prisma.$PriceListPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more PriceLists.
+     * @param {PriceListDeleteManyArgs} args - Arguments to filter PriceLists to delete.
+     * @example
+     * // Delete a few PriceLists
+     * const { count } = await prisma.priceList.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends PriceListDeleteManyArgs>(args?: SelectSubset<T, PriceListDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PriceLists.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PriceListUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PriceLists
+     * const priceList = await prisma.priceList.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends PriceListUpdateManyArgs>(args: SelectSubset<T, PriceListUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PriceLists and returns the data updated in the database.
+     * @param {PriceListUpdateManyAndReturnArgs} args - Arguments to update many PriceLists.
+     * @example
+     * // Update many PriceLists
+     * const priceList = await prisma.priceList.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more PriceLists and only return the `price_list_id`
+     * const priceListWithPrice_list_idOnly = await prisma.priceList.updateManyAndReturn({
+     *   select: { price_list_id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends PriceListUpdateManyAndReturnArgs>(args: SelectSubset<T, PriceListUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PriceListPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one PriceList.
+     * @param {PriceListUpsertArgs} args - Arguments to update or create a PriceList.
+     * @example
+     * // Update or create a PriceList
+     * const priceList = await prisma.priceList.upsert({
+     *   create: {
+     *     // ... data to create a PriceList
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PriceList we want to update
+     *   }
+     * })
+     */
+    upsert<T extends PriceListUpsertArgs>(args: SelectSubset<T, PriceListUpsertArgs<ExtArgs>>): Prisma__PriceListClient<$Result.GetResult<Prisma.$PriceListPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of PriceLists.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PriceListCountArgs} args - Arguments to filter PriceLists to count.
+     * @example
+     * // Count the number of PriceLists
+     * const count = await prisma.priceList.count({
+     *   where: {
+     *     // ... the filter for the PriceLists we want to count
+     *   }
+     * })
+    **/
+    count<T extends PriceListCountArgs>(
+      args?: Subset<T, PriceListCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PriceListCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PriceList.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PriceListAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PriceListAggregateArgs>(args: Subset<T, PriceListAggregateArgs>): Prisma.PrismaPromise<GetPriceListAggregateType<T>>
+
+    /**
+     * Group by PriceList.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PriceListGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PriceListGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PriceListGroupByArgs['orderBy'] }
+        : { orderBy?: PriceListGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PriceListGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPriceListGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PriceList model
+   */
+  readonly fields: PriceListFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PriceList.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PriceListClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    PriceListDetail<T extends PriceList$PriceListDetailArgs<ExtArgs> = {}>(args?: Subset<T, PriceList$PriceListDetailArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PriceListDetailPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    UserPriceList<T extends PriceList$UserPriceListArgs<ExtArgs> = {}>(args?: Subset<T, PriceList$UserPriceListArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UserPriceListPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the PriceList model
+   */
+  interface PriceListFieldRefs {
+    readonly price_list_id: FieldRef<"PriceList", 'String'>
+    readonly name: FieldRef<"PriceList", 'String'>
+    readonly description: FieldRef<"PriceList", 'String'>
+    readonly is_default: FieldRef<"PriceList", 'Boolean'>
+    readonly valid_from: FieldRef<"PriceList", 'DateTime'>
+    readonly valid_to: FieldRef<"PriceList", 'DateTime'>
+    readonly limit_amount: FieldRef<"PriceList", 'Decimal'>
+    readonly currency: FieldRef<"PriceList", 'String'>
+    readonly is_active: FieldRef<"PriceList", 'Boolean'>
+    readonly created_at: FieldRef<"PriceList", 'DateTime'>
+    readonly updated_at: FieldRef<"PriceList", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * PriceList findUnique
+   */
+  export type PriceListFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PriceList
+     */
+    select?: PriceListSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PriceList
+     */
+    omit?: PriceListOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PriceListInclude<ExtArgs> | null
+    /**
+     * Filter, which PriceList to fetch.
+     */
+    where: PriceListWhereUniqueInput
+  }
+
+  /**
+   * PriceList findUniqueOrThrow
+   */
+  export type PriceListFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PriceList
+     */
+    select?: PriceListSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PriceList
+     */
+    omit?: PriceListOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PriceListInclude<ExtArgs> | null
+    /**
+     * Filter, which PriceList to fetch.
+     */
+    where: PriceListWhereUniqueInput
+  }
+
+  /**
+   * PriceList findFirst
+   */
+  export type PriceListFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PriceList
+     */
+    select?: PriceListSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PriceList
+     */
+    omit?: PriceListOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PriceListInclude<ExtArgs> | null
+    /**
+     * Filter, which PriceList to fetch.
+     */
+    where?: PriceListWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PriceLists to fetch.
+     */
+    orderBy?: PriceListOrderByWithRelationInput | PriceListOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PriceLists.
+     */
+    cursor?: PriceListWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PriceLists from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PriceLists.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PriceLists.
+     */
+    distinct?: PriceListScalarFieldEnum | PriceListScalarFieldEnum[]
+  }
+
+  /**
+   * PriceList findFirstOrThrow
+   */
+  export type PriceListFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PriceList
+     */
+    select?: PriceListSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PriceList
+     */
+    omit?: PriceListOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PriceListInclude<ExtArgs> | null
+    /**
+     * Filter, which PriceList to fetch.
+     */
+    where?: PriceListWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PriceLists to fetch.
+     */
+    orderBy?: PriceListOrderByWithRelationInput | PriceListOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PriceLists.
+     */
+    cursor?: PriceListWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PriceLists from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PriceLists.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PriceLists.
+     */
+    distinct?: PriceListScalarFieldEnum | PriceListScalarFieldEnum[]
+  }
+
+  /**
+   * PriceList findMany
+   */
+  export type PriceListFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PriceList
+     */
+    select?: PriceListSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PriceList
+     */
+    omit?: PriceListOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PriceListInclude<ExtArgs> | null
+    /**
+     * Filter, which PriceLists to fetch.
+     */
+    where?: PriceListWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PriceLists to fetch.
+     */
+    orderBy?: PriceListOrderByWithRelationInput | PriceListOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PriceLists.
+     */
+    cursor?: PriceListWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PriceLists from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PriceLists.
+     */
+    skip?: number
+    distinct?: PriceListScalarFieldEnum | PriceListScalarFieldEnum[]
+  }
+
+  /**
+   * PriceList create
+   */
+  export type PriceListCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PriceList
+     */
+    select?: PriceListSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PriceList
+     */
+    omit?: PriceListOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PriceListInclude<ExtArgs> | null
+    /**
+     * The data needed to create a PriceList.
+     */
+    data: XOR<PriceListCreateInput, PriceListUncheckedCreateInput>
+  }
+
+  /**
+   * PriceList createMany
+   */
+  export type PriceListCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PriceLists.
+     */
+    data: PriceListCreateManyInput | PriceListCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PriceList createManyAndReturn
+   */
+  export type PriceListCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PriceList
+     */
+    select?: PriceListSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the PriceList
+     */
+    omit?: PriceListOmit<ExtArgs> | null
+    /**
+     * The data used to create many PriceLists.
+     */
+    data: PriceListCreateManyInput | PriceListCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PriceList update
+   */
+  export type PriceListUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PriceList
+     */
+    select?: PriceListSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PriceList
+     */
+    omit?: PriceListOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PriceListInclude<ExtArgs> | null
+    /**
+     * The data needed to update a PriceList.
+     */
+    data: XOR<PriceListUpdateInput, PriceListUncheckedUpdateInput>
+    /**
+     * Choose, which PriceList to update.
+     */
+    where: PriceListWhereUniqueInput
+  }
+
+  /**
+   * PriceList updateMany
+   */
+  export type PriceListUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PriceLists.
+     */
+    data: XOR<PriceListUpdateManyMutationInput, PriceListUncheckedUpdateManyInput>
+    /**
+     * Filter which PriceLists to update
+     */
+    where?: PriceListWhereInput
+    /**
+     * Limit how many PriceLists to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PriceList updateManyAndReturn
+   */
+  export type PriceListUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PriceList
+     */
+    select?: PriceListSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the PriceList
+     */
+    omit?: PriceListOmit<ExtArgs> | null
+    /**
+     * The data used to update PriceLists.
+     */
+    data: XOR<PriceListUpdateManyMutationInput, PriceListUncheckedUpdateManyInput>
+    /**
+     * Filter which PriceLists to update
+     */
+    where?: PriceListWhereInput
+    /**
+     * Limit how many PriceLists to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PriceList upsert
+   */
+  export type PriceListUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PriceList
+     */
+    select?: PriceListSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PriceList
+     */
+    omit?: PriceListOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PriceListInclude<ExtArgs> | null
+    /**
+     * The filter to search for the PriceList to update in case it exists.
+     */
+    where: PriceListWhereUniqueInput
+    /**
+     * In case the PriceList found by the `where` argument doesn't exist, create a new PriceList with this data.
+     */
+    create: XOR<PriceListCreateInput, PriceListUncheckedCreateInput>
+    /**
+     * In case the PriceList was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PriceListUpdateInput, PriceListUncheckedUpdateInput>
+  }
+
+  /**
+   * PriceList delete
+   */
+  export type PriceListDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PriceList
+     */
+    select?: PriceListSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PriceList
+     */
+    omit?: PriceListOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PriceListInclude<ExtArgs> | null
+    /**
+     * Filter which PriceList to delete.
+     */
+    where: PriceListWhereUniqueInput
+  }
+
+  /**
+   * PriceList deleteMany
+   */
+  export type PriceListDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PriceLists to delete
+     */
+    where?: PriceListWhereInput
+    /**
+     * Limit how many PriceLists to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * PriceList.PriceListDetail
+   */
+  export type PriceList$PriceListDetailArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PriceListDetail
+     */
+    select?: PriceListDetailSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PriceListDetail
+     */
+    omit?: PriceListDetailOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PriceListDetailInclude<ExtArgs> | null
+    where?: PriceListDetailWhereInput
+    orderBy?: PriceListDetailOrderByWithRelationInput | PriceListDetailOrderByWithRelationInput[]
+    cursor?: PriceListDetailWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PriceListDetailScalarFieldEnum | PriceListDetailScalarFieldEnum[]
+  }
+
+  /**
+   * PriceList.UserPriceList
+   */
+  export type PriceList$UserPriceListArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserPriceList
+     */
+    select?: UserPriceListSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserPriceList
+     */
+    omit?: UserPriceListOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserPriceListInclude<ExtArgs> | null
+    where?: UserPriceListWhereInput
+    orderBy?: UserPriceListOrderByWithRelationInput | UserPriceListOrderByWithRelationInput[]
+    cursor?: UserPriceListWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: UserPriceListScalarFieldEnum | UserPriceListScalarFieldEnum[]
+  }
+
+  /**
+   * PriceList without action
+   */
+  export type PriceListDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PriceList
+     */
+    select?: PriceListSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PriceList
+     */
+    omit?: PriceListOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PriceListInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model PriceListDetail
+   */
+
+  export type AggregatePriceListDetail = {
+    _count: PriceListDetailCountAggregateOutputType | null
+    _avg: PriceListDetailAvgAggregateOutputType | null
+    _sum: PriceListDetailSumAggregateOutputType | null
+    _min: PriceListDetailMinAggregateOutputType | null
+    _max: PriceListDetailMaxAggregateOutputType | null
+  }
+
+  export type PriceListDetailAvgAggregateOutputType = {
+    price_per_square_meter: Decimal | null
+  }
+
+  export type PriceListDetailSumAggregateOutputType = {
+    price_per_square_meter: Decimal | null
+  }
+
+  export type PriceListDetailMinAggregateOutputType = {
+    price_list_detail_id: string | null
+    price_list_id: string | null
+    collection_id: string | null
+    price_per_square_meter: Decimal | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type PriceListDetailMaxAggregateOutputType = {
+    price_list_detail_id: string | null
+    price_list_id: string | null
+    collection_id: string | null
+    price_per_square_meter: Decimal | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type PriceListDetailCountAggregateOutputType = {
+    price_list_detail_id: number
+    price_list_id: number
+    collection_id: number
+    price_per_square_meter: number
+    created_at: number
+    updated_at: number
+    _all: number
+  }
+
+
+  export type PriceListDetailAvgAggregateInputType = {
+    price_per_square_meter?: true
+  }
+
+  export type PriceListDetailSumAggregateInputType = {
+    price_per_square_meter?: true
+  }
+
+  export type PriceListDetailMinAggregateInputType = {
+    price_list_detail_id?: true
+    price_list_id?: true
+    collection_id?: true
+    price_per_square_meter?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type PriceListDetailMaxAggregateInputType = {
+    price_list_detail_id?: true
+    price_list_id?: true
+    collection_id?: true
+    price_per_square_meter?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type PriceListDetailCountAggregateInputType = {
+    price_list_detail_id?: true
+    price_list_id?: true
+    collection_id?: true
+    price_per_square_meter?: true
+    created_at?: true
+    updated_at?: true
+    _all?: true
+  }
+
+  export type PriceListDetailAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PriceListDetail to aggregate.
+     */
+    where?: PriceListDetailWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PriceListDetails to fetch.
+     */
+    orderBy?: PriceListDetailOrderByWithRelationInput | PriceListDetailOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PriceListDetailWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PriceListDetails from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PriceListDetails.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PriceListDetails
+    **/
+    _count?: true | PriceListDetailCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: PriceListDetailAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: PriceListDetailSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PriceListDetailMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PriceListDetailMaxAggregateInputType
+  }
+
+  export type GetPriceListDetailAggregateType<T extends PriceListDetailAggregateArgs> = {
+        [P in keyof T & keyof AggregatePriceListDetail]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePriceListDetail[P]>
+      : GetScalarType<T[P], AggregatePriceListDetail[P]>
+  }
+
+
+
+
+  export type PriceListDetailGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PriceListDetailWhereInput
+    orderBy?: PriceListDetailOrderByWithAggregationInput | PriceListDetailOrderByWithAggregationInput[]
+    by: PriceListDetailScalarFieldEnum[] | PriceListDetailScalarFieldEnum
+    having?: PriceListDetailScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PriceListDetailCountAggregateInputType | true
+    _avg?: PriceListDetailAvgAggregateInputType
+    _sum?: PriceListDetailSumAggregateInputType
+    _min?: PriceListDetailMinAggregateInputType
+    _max?: PriceListDetailMaxAggregateInputType
+  }
+
+  export type PriceListDetailGroupByOutputType = {
+    price_list_detail_id: string
+    price_list_id: string
+    collection_id: string
+    price_per_square_meter: Decimal
+    created_at: Date
+    updated_at: Date
+    _count: PriceListDetailCountAggregateOutputType | null
+    _avg: PriceListDetailAvgAggregateOutputType | null
+    _sum: PriceListDetailSumAggregateOutputType | null
+    _min: PriceListDetailMinAggregateOutputType | null
+    _max: PriceListDetailMaxAggregateOutputType | null
+  }
+
+  type GetPriceListDetailGroupByPayload<T extends PriceListDetailGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PriceListDetailGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PriceListDetailGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PriceListDetailGroupByOutputType[P]>
+            : GetScalarType<T[P], PriceListDetailGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PriceListDetailSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    price_list_detail_id?: boolean
+    price_list_id?: boolean
+    collection_id?: boolean
+    price_per_square_meter?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+    Collection?: boolean | CollectionDefaultArgs<ExtArgs>
+    PriceList?: boolean | PriceListDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["priceListDetail"]>
+
+  export type PriceListDetailSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    price_list_detail_id?: boolean
+    price_list_id?: boolean
+    collection_id?: boolean
+    price_per_square_meter?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+    Collection?: boolean | CollectionDefaultArgs<ExtArgs>
+    PriceList?: boolean | PriceListDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["priceListDetail"]>
+
+  export type PriceListDetailSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    price_list_detail_id?: boolean
+    price_list_id?: boolean
+    collection_id?: boolean
+    price_per_square_meter?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+    Collection?: boolean | CollectionDefaultArgs<ExtArgs>
+    PriceList?: boolean | PriceListDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["priceListDetail"]>
+
+  export type PriceListDetailSelectScalar = {
+    price_list_detail_id?: boolean
+    price_list_id?: boolean
+    collection_id?: boolean
+    price_per_square_meter?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }
+
+  export type PriceListDetailOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"price_list_detail_id" | "price_list_id" | "collection_id" | "price_per_square_meter" | "created_at" | "updated_at", ExtArgs["result"]["priceListDetail"]>
+  export type PriceListDetailInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    Collection?: boolean | CollectionDefaultArgs<ExtArgs>
+    PriceList?: boolean | PriceListDefaultArgs<ExtArgs>
+  }
+  export type PriceListDetailIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    Collection?: boolean | CollectionDefaultArgs<ExtArgs>
+    PriceList?: boolean | PriceListDefaultArgs<ExtArgs>
+  }
+  export type PriceListDetailIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    Collection?: boolean | CollectionDefaultArgs<ExtArgs>
+    PriceList?: boolean | PriceListDefaultArgs<ExtArgs>
+  }
+
+  export type $PriceListDetailPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PriceListDetail"
+    objects: {
+      Collection: Prisma.$CollectionPayload<ExtArgs>
+      PriceList: Prisma.$PriceListPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      price_list_detail_id: string
+      price_list_id: string
+      collection_id: string
+      price_per_square_meter: Prisma.Decimal
+      created_at: Date
+      updated_at: Date
+    }, ExtArgs["result"]["priceListDetail"]>
+    composites: {}
+  }
+
+  type PriceListDetailGetPayload<S extends boolean | null | undefined | PriceListDetailDefaultArgs> = $Result.GetResult<Prisma.$PriceListDetailPayload, S>
+
+  type PriceListDetailCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<PriceListDetailFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: PriceListDetailCountAggregateInputType | true
+    }
+
+  export interface PriceListDetailDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PriceListDetail'], meta: { name: 'PriceListDetail' } }
+    /**
+     * Find zero or one PriceListDetail that matches the filter.
+     * @param {PriceListDetailFindUniqueArgs} args - Arguments to find a PriceListDetail
+     * @example
+     * // Get one PriceListDetail
+     * const priceListDetail = await prisma.priceListDetail.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends PriceListDetailFindUniqueArgs>(args: SelectSubset<T, PriceListDetailFindUniqueArgs<ExtArgs>>): Prisma__PriceListDetailClient<$Result.GetResult<Prisma.$PriceListDetailPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one PriceListDetail that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {PriceListDetailFindUniqueOrThrowArgs} args - Arguments to find a PriceListDetail
+     * @example
+     * // Get one PriceListDetail
+     * const priceListDetail = await prisma.priceListDetail.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends PriceListDetailFindUniqueOrThrowArgs>(args: SelectSubset<T, PriceListDetailFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PriceListDetailClient<$Result.GetResult<Prisma.$PriceListDetailPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PriceListDetail that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PriceListDetailFindFirstArgs} args - Arguments to find a PriceListDetail
+     * @example
+     * // Get one PriceListDetail
+     * const priceListDetail = await prisma.priceListDetail.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends PriceListDetailFindFirstArgs>(args?: SelectSubset<T, PriceListDetailFindFirstArgs<ExtArgs>>): Prisma__PriceListDetailClient<$Result.GetResult<Prisma.$PriceListDetailPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PriceListDetail that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PriceListDetailFindFirstOrThrowArgs} args - Arguments to find a PriceListDetail
+     * @example
+     * // Get one PriceListDetail
+     * const priceListDetail = await prisma.priceListDetail.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends PriceListDetailFindFirstOrThrowArgs>(args?: SelectSubset<T, PriceListDetailFindFirstOrThrowArgs<ExtArgs>>): Prisma__PriceListDetailClient<$Result.GetResult<Prisma.$PriceListDetailPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more PriceListDetails that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PriceListDetailFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PriceListDetails
+     * const priceListDetails = await prisma.priceListDetail.findMany()
+     * 
+     * // Get first 10 PriceListDetails
+     * const priceListDetails = await prisma.priceListDetail.findMany({ take: 10 })
+     * 
+     * // Only select the `price_list_detail_id`
+     * const priceListDetailWithPrice_list_detail_idOnly = await prisma.priceListDetail.findMany({ select: { price_list_detail_id: true } })
+     * 
+     */
+    findMany<T extends PriceListDetailFindManyArgs>(args?: SelectSubset<T, PriceListDetailFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PriceListDetailPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a PriceListDetail.
+     * @param {PriceListDetailCreateArgs} args - Arguments to create a PriceListDetail.
+     * @example
+     * // Create one PriceListDetail
+     * const PriceListDetail = await prisma.priceListDetail.create({
+     *   data: {
+     *     // ... data to create a PriceListDetail
+     *   }
+     * })
+     * 
+     */
+    create<T extends PriceListDetailCreateArgs>(args: SelectSubset<T, PriceListDetailCreateArgs<ExtArgs>>): Prisma__PriceListDetailClient<$Result.GetResult<Prisma.$PriceListDetailPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many PriceListDetails.
+     * @param {PriceListDetailCreateManyArgs} args - Arguments to create many PriceListDetails.
+     * @example
+     * // Create many PriceListDetails
+     * const priceListDetail = await prisma.priceListDetail.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends PriceListDetailCreateManyArgs>(args?: SelectSubset<T, PriceListDetailCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many PriceListDetails and returns the data saved in the database.
+     * @param {PriceListDetailCreateManyAndReturnArgs} args - Arguments to create many PriceListDetails.
+     * @example
+     * // Create many PriceListDetails
+     * const priceListDetail = await prisma.priceListDetail.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many PriceListDetails and only return the `price_list_detail_id`
+     * const priceListDetailWithPrice_list_detail_idOnly = await prisma.priceListDetail.createManyAndReturn({
+     *   select: { price_list_detail_id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends PriceListDetailCreateManyAndReturnArgs>(args?: SelectSubset<T, PriceListDetailCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PriceListDetailPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a PriceListDetail.
+     * @param {PriceListDetailDeleteArgs} args - Arguments to delete one PriceListDetail.
+     * @example
+     * // Delete one PriceListDetail
+     * const PriceListDetail = await prisma.priceListDetail.delete({
+     *   where: {
+     *     // ... filter to delete one PriceListDetail
+     *   }
+     * })
+     * 
+     */
+    delete<T extends PriceListDetailDeleteArgs>(args: SelectSubset<T, PriceListDetailDeleteArgs<ExtArgs>>): Prisma__PriceListDetailClient<$Result.GetResult<Prisma.$PriceListDetailPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one PriceListDetail.
+     * @param {PriceListDetailUpdateArgs} args - Arguments to update one PriceListDetail.
+     * @example
+     * // Update one PriceListDetail
+     * const priceListDetail = await prisma.priceListDetail.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends PriceListDetailUpdateArgs>(args: SelectSubset<T, PriceListDetailUpdateArgs<ExtArgs>>): Prisma__PriceListDetailClient<$Result.GetResult<Prisma.$PriceListDetailPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more PriceListDetails.
+     * @param {PriceListDetailDeleteManyArgs} args - Arguments to filter PriceListDetails to delete.
+     * @example
+     * // Delete a few PriceListDetails
+     * const { count } = await prisma.priceListDetail.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends PriceListDetailDeleteManyArgs>(args?: SelectSubset<T, PriceListDetailDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PriceListDetails.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PriceListDetailUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PriceListDetails
+     * const priceListDetail = await prisma.priceListDetail.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends PriceListDetailUpdateManyArgs>(args: SelectSubset<T, PriceListDetailUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PriceListDetails and returns the data updated in the database.
+     * @param {PriceListDetailUpdateManyAndReturnArgs} args - Arguments to update many PriceListDetails.
+     * @example
+     * // Update many PriceListDetails
+     * const priceListDetail = await prisma.priceListDetail.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more PriceListDetails and only return the `price_list_detail_id`
+     * const priceListDetailWithPrice_list_detail_idOnly = await prisma.priceListDetail.updateManyAndReturn({
+     *   select: { price_list_detail_id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends PriceListDetailUpdateManyAndReturnArgs>(args: SelectSubset<T, PriceListDetailUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PriceListDetailPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one PriceListDetail.
+     * @param {PriceListDetailUpsertArgs} args - Arguments to update or create a PriceListDetail.
+     * @example
+     * // Update or create a PriceListDetail
+     * const priceListDetail = await prisma.priceListDetail.upsert({
+     *   create: {
+     *     // ... data to create a PriceListDetail
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PriceListDetail we want to update
+     *   }
+     * })
+     */
+    upsert<T extends PriceListDetailUpsertArgs>(args: SelectSubset<T, PriceListDetailUpsertArgs<ExtArgs>>): Prisma__PriceListDetailClient<$Result.GetResult<Prisma.$PriceListDetailPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of PriceListDetails.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PriceListDetailCountArgs} args - Arguments to filter PriceListDetails to count.
+     * @example
+     * // Count the number of PriceListDetails
+     * const count = await prisma.priceListDetail.count({
+     *   where: {
+     *     // ... the filter for the PriceListDetails we want to count
+     *   }
+     * })
+    **/
+    count<T extends PriceListDetailCountArgs>(
+      args?: Subset<T, PriceListDetailCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PriceListDetailCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PriceListDetail.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PriceListDetailAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PriceListDetailAggregateArgs>(args: Subset<T, PriceListDetailAggregateArgs>): Prisma.PrismaPromise<GetPriceListDetailAggregateType<T>>
+
+    /**
+     * Group by PriceListDetail.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PriceListDetailGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PriceListDetailGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PriceListDetailGroupByArgs['orderBy'] }
+        : { orderBy?: PriceListDetailGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PriceListDetailGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPriceListDetailGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PriceListDetail model
+   */
+  readonly fields: PriceListDetailFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PriceListDetail.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PriceListDetailClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    Collection<T extends CollectionDefaultArgs<ExtArgs> = {}>(args?: Subset<T, CollectionDefaultArgs<ExtArgs>>): Prisma__CollectionClient<$Result.GetResult<Prisma.$CollectionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    PriceList<T extends PriceListDefaultArgs<ExtArgs> = {}>(args?: Subset<T, PriceListDefaultArgs<ExtArgs>>): Prisma__PriceListClient<$Result.GetResult<Prisma.$PriceListPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the PriceListDetail model
+   */
+  interface PriceListDetailFieldRefs {
+    readonly price_list_detail_id: FieldRef<"PriceListDetail", 'String'>
+    readonly price_list_id: FieldRef<"PriceListDetail", 'String'>
+    readonly collection_id: FieldRef<"PriceListDetail", 'String'>
+    readonly price_per_square_meter: FieldRef<"PriceListDetail", 'Decimal'>
+    readonly created_at: FieldRef<"PriceListDetail", 'DateTime'>
+    readonly updated_at: FieldRef<"PriceListDetail", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * PriceListDetail findUnique
+   */
+  export type PriceListDetailFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PriceListDetail
+     */
+    select?: PriceListDetailSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PriceListDetail
+     */
+    omit?: PriceListDetailOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PriceListDetailInclude<ExtArgs> | null
+    /**
+     * Filter, which PriceListDetail to fetch.
+     */
+    where: PriceListDetailWhereUniqueInput
+  }
+
+  /**
+   * PriceListDetail findUniqueOrThrow
+   */
+  export type PriceListDetailFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PriceListDetail
+     */
+    select?: PriceListDetailSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PriceListDetail
+     */
+    omit?: PriceListDetailOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PriceListDetailInclude<ExtArgs> | null
+    /**
+     * Filter, which PriceListDetail to fetch.
+     */
+    where: PriceListDetailWhereUniqueInput
+  }
+
+  /**
+   * PriceListDetail findFirst
+   */
+  export type PriceListDetailFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PriceListDetail
+     */
+    select?: PriceListDetailSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PriceListDetail
+     */
+    omit?: PriceListDetailOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PriceListDetailInclude<ExtArgs> | null
+    /**
+     * Filter, which PriceListDetail to fetch.
+     */
+    where?: PriceListDetailWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PriceListDetails to fetch.
+     */
+    orderBy?: PriceListDetailOrderByWithRelationInput | PriceListDetailOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PriceListDetails.
+     */
+    cursor?: PriceListDetailWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PriceListDetails from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PriceListDetails.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PriceListDetails.
+     */
+    distinct?: PriceListDetailScalarFieldEnum | PriceListDetailScalarFieldEnum[]
+  }
+
+  /**
+   * PriceListDetail findFirstOrThrow
+   */
+  export type PriceListDetailFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PriceListDetail
+     */
+    select?: PriceListDetailSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PriceListDetail
+     */
+    omit?: PriceListDetailOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PriceListDetailInclude<ExtArgs> | null
+    /**
+     * Filter, which PriceListDetail to fetch.
+     */
+    where?: PriceListDetailWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PriceListDetails to fetch.
+     */
+    orderBy?: PriceListDetailOrderByWithRelationInput | PriceListDetailOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PriceListDetails.
+     */
+    cursor?: PriceListDetailWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PriceListDetails from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PriceListDetails.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PriceListDetails.
+     */
+    distinct?: PriceListDetailScalarFieldEnum | PriceListDetailScalarFieldEnum[]
+  }
+
+  /**
+   * PriceListDetail findMany
+   */
+  export type PriceListDetailFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PriceListDetail
+     */
+    select?: PriceListDetailSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PriceListDetail
+     */
+    omit?: PriceListDetailOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PriceListDetailInclude<ExtArgs> | null
+    /**
+     * Filter, which PriceListDetails to fetch.
+     */
+    where?: PriceListDetailWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PriceListDetails to fetch.
+     */
+    orderBy?: PriceListDetailOrderByWithRelationInput | PriceListDetailOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PriceListDetails.
+     */
+    cursor?: PriceListDetailWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PriceListDetails from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PriceListDetails.
+     */
+    skip?: number
+    distinct?: PriceListDetailScalarFieldEnum | PriceListDetailScalarFieldEnum[]
+  }
+
+  /**
+   * PriceListDetail create
+   */
+  export type PriceListDetailCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PriceListDetail
+     */
+    select?: PriceListDetailSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PriceListDetail
+     */
+    omit?: PriceListDetailOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PriceListDetailInclude<ExtArgs> | null
+    /**
+     * The data needed to create a PriceListDetail.
+     */
+    data: XOR<PriceListDetailCreateInput, PriceListDetailUncheckedCreateInput>
+  }
+
+  /**
+   * PriceListDetail createMany
+   */
+  export type PriceListDetailCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PriceListDetails.
+     */
+    data: PriceListDetailCreateManyInput | PriceListDetailCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PriceListDetail createManyAndReturn
+   */
+  export type PriceListDetailCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PriceListDetail
+     */
+    select?: PriceListDetailSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the PriceListDetail
+     */
+    omit?: PriceListDetailOmit<ExtArgs> | null
+    /**
+     * The data used to create many PriceListDetails.
+     */
+    data: PriceListDetailCreateManyInput | PriceListDetailCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PriceListDetailIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * PriceListDetail update
+   */
+  export type PriceListDetailUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PriceListDetail
+     */
+    select?: PriceListDetailSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PriceListDetail
+     */
+    omit?: PriceListDetailOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PriceListDetailInclude<ExtArgs> | null
+    /**
+     * The data needed to update a PriceListDetail.
+     */
+    data: XOR<PriceListDetailUpdateInput, PriceListDetailUncheckedUpdateInput>
+    /**
+     * Choose, which PriceListDetail to update.
+     */
+    where: PriceListDetailWhereUniqueInput
+  }
+
+  /**
+   * PriceListDetail updateMany
+   */
+  export type PriceListDetailUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PriceListDetails.
+     */
+    data: XOR<PriceListDetailUpdateManyMutationInput, PriceListDetailUncheckedUpdateManyInput>
+    /**
+     * Filter which PriceListDetails to update
+     */
+    where?: PriceListDetailWhereInput
+    /**
+     * Limit how many PriceListDetails to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PriceListDetail updateManyAndReturn
+   */
+  export type PriceListDetailUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PriceListDetail
+     */
+    select?: PriceListDetailSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the PriceListDetail
+     */
+    omit?: PriceListDetailOmit<ExtArgs> | null
+    /**
+     * The data used to update PriceListDetails.
+     */
+    data: XOR<PriceListDetailUpdateManyMutationInput, PriceListDetailUncheckedUpdateManyInput>
+    /**
+     * Filter which PriceListDetails to update
+     */
+    where?: PriceListDetailWhereInput
+    /**
+     * Limit how many PriceListDetails to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PriceListDetailIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * PriceListDetail upsert
+   */
+  export type PriceListDetailUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PriceListDetail
+     */
+    select?: PriceListDetailSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PriceListDetail
+     */
+    omit?: PriceListDetailOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PriceListDetailInclude<ExtArgs> | null
+    /**
+     * The filter to search for the PriceListDetail to update in case it exists.
+     */
+    where: PriceListDetailWhereUniqueInput
+    /**
+     * In case the PriceListDetail found by the `where` argument doesn't exist, create a new PriceListDetail with this data.
+     */
+    create: XOR<PriceListDetailCreateInput, PriceListDetailUncheckedCreateInput>
+    /**
+     * In case the PriceListDetail was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PriceListDetailUpdateInput, PriceListDetailUncheckedUpdateInput>
+  }
+
+  /**
+   * PriceListDetail delete
+   */
+  export type PriceListDetailDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PriceListDetail
+     */
+    select?: PriceListDetailSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PriceListDetail
+     */
+    omit?: PriceListDetailOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PriceListDetailInclude<ExtArgs> | null
+    /**
+     * Filter which PriceListDetail to delete.
+     */
+    where: PriceListDetailWhereUniqueInput
+  }
+
+  /**
+   * PriceListDetail deleteMany
+   */
+  export type PriceListDetailDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PriceListDetails to delete
+     */
+    where?: PriceListDetailWhereInput
+    /**
+     * Limit how many PriceListDetails to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * PriceListDetail without action
+   */
+  export type PriceListDetailDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PriceListDetail
+     */
+    select?: PriceListDetailSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PriceListDetail
+     */
+    omit?: PriceListDetailOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PriceListDetailInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model UserPriceList
+   */
+
+  export type AggregateUserPriceList = {
+    _count: UserPriceListCountAggregateOutputType | null
+    _min: UserPriceListMinAggregateOutputType | null
+    _max: UserPriceListMaxAggregateOutputType | null
+  }
+
+  export type UserPriceListMinAggregateOutputType = {
+    user_price_list_id: string | null
+    user_id: string | null
+    price_list_id: string | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type UserPriceListMaxAggregateOutputType = {
+    user_price_list_id: string | null
+    user_id: string | null
+    price_list_id: string | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type UserPriceListCountAggregateOutputType = {
+    user_price_list_id: number
+    user_id: number
+    price_list_id: number
+    created_at: number
+    updated_at: number
+    _all: number
+  }
+
+
+  export type UserPriceListMinAggregateInputType = {
+    user_price_list_id?: true
+    user_id?: true
+    price_list_id?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type UserPriceListMaxAggregateInputType = {
+    user_price_list_id?: true
+    user_id?: true
+    price_list_id?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type UserPriceListCountAggregateInputType = {
+    user_price_list_id?: true
+    user_id?: true
+    price_list_id?: true
+    created_at?: true
+    updated_at?: true
+    _all?: true
+  }
+
+  export type UserPriceListAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which UserPriceList to aggregate.
+     */
+    where?: UserPriceListWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of UserPriceLists to fetch.
+     */
+    orderBy?: UserPriceListOrderByWithRelationInput | UserPriceListOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: UserPriceListWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` UserPriceLists from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` UserPriceLists.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned UserPriceLists
+    **/
+    _count?: true | UserPriceListCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: UserPriceListMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: UserPriceListMaxAggregateInputType
+  }
+
+  export type GetUserPriceListAggregateType<T extends UserPriceListAggregateArgs> = {
+        [P in keyof T & keyof AggregateUserPriceList]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateUserPriceList[P]>
+      : GetScalarType<T[P], AggregateUserPriceList[P]>
+  }
+
+
+
+
+  export type UserPriceListGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: UserPriceListWhereInput
+    orderBy?: UserPriceListOrderByWithAggregationInput | UserPriceListOrderByWithAggregationInput[]
+    by: UserPriceListScalarFieldEnum[] | UserPriceListScalarFieldEnum
+    having?: UserPriceListScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: UserPriceListCountAggregateInputType | true
+    _min?: UserPriceListMinAggregateInputType
+    _max?: UserPriceListMaxAggregateInputType
+  }
+
+  export type UserPriceListGroupByOutputType = {
+    user_price_list_id: string
+    user_id: string
+    price_list_id: string
+    created_at: Date
+    updated_at: Date
+    _count: UserPriceListCountAggregateOutputType | null
+    _min: UserPriceListMinAggregateOutputType | null
+    _max: UserPriceListMaxAggregateOutputType | null
+  }
+
+  type GetUserPriceListGroupByPayload<T extends UserPriceListGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<UserPriceListGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof UserPriceListGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], UserPriceListGroupByOutputType[P]>
+            : GetScalarType<T[P], UserPriceListGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type UserPriceListSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    user_price_list_id?: boolean
+    user_id?: boolean
+    price_list_id?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+    PriceList?: boolean | PriceListDefaultArgs<ExtArgs>
+    User?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["userPriceList"]>
+
+  export type UserPriceListSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    user_price_list_id?: boolean
+    user_id?: boolean
+    price_list_id?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+    PriceList?: boolean | PriceListDefaultArgs<ExtArgs>
+    User?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["userPriceList"]>
+
+  export type UserPriceListSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    user_price_list_id?: boolean
+    user_id?: boolean
+    price_list_id?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+    PriceList?: boolean | PriceListDefaultArgs<ExtArgs>
+    User?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["userPriceList"]>
+
+  export type UserPriceListSelectScalar = {
+    user_price_list_id?: boolean
+    user_id?: boolean
+    price_list_id?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }
+
+  export type UserPriceListOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"user_price_list_id" | "user_id" | "price_list_id" | "created_at" | "updated_at", ExtArgs["result"]["userPriceList"]>
+  export type UserPriceListInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    PriceList?: boolean | PriceListDefaultArgs<ExtArgs>
+    User?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type UserPriceListIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    PriceList?: boolean | PriceListDefaultArgs<ExtArgs>
+    User?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type UserPriceListIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    PriceList?: boolean | PriceListDefaultArgs<ExtArgs>
+    User?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $UserPriceListPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "UserPriceList"
+    objects: {
+      PriceList: Prisma.$PriceListPayload<ExtArgs>
+      User: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      user_price_list_id: string
+      user_id: string
+      price_list_id: string
+      created_at: Date
+      updated_at: Date
+    }, ExtArgs["result"]["userPriceList"]>
+    composites: {}
+  }
+
+  type UserPriceListGetPayload<S extends boolean | null | undefined | UserPriceListDefaultArgs> = $Result.GetResult<Prisma.$UserPriceListPayload, S>
+
+  type UserPriceListCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<UserPriceListFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: UserPriceListCountAggregateInputType | true
+    }
+
+  export interface UserPriceListDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['UserPriceList'], meta: { name: 'UserPriceList' } }
+    /**
+     * Find zero or one UserPriceList that matches the filter.
+     * @param {UserPriceListFindUniqueArgs} args - Arguments to find a UserPriceList
+     * @example
+     * // Get one UserPriceList
+     * const userPriceList = await prisma.userPriceList.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends UserPriceListFindUniqueArgs>(args: SelectSubset<T, UserPriceListFindUniqueArgs<ExtArgs>>): Prisma__UserPriceListClient<$Result.GetResult<Prisma.$UserPriceListPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one UserPriceList that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {UserPriceListFindUniqueOrThrowArgs} args - Arguments to find a UserPriceList
+     * @example
+     * // Get one UserPriceList
+     * const userPriceList = await prisma.userPriceList.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends UserPriceListFindUniqueOrThrowArgs>(args: SelectSubset<T, UserPriceListFindUniqueOrThrowArgs<ExtArgs>>): Prisma__UserPriceListClient<$Result.GetResult<Prisma.$UserPriceListPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first UserPriceList that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {UserPriceListFindFirstArgs} args - Arguments to find a UserPriceList
+     * @example
+     * // Get one UserPriceList
+     * const userPriceList = await prisma.userPriceList.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends UserPriceListFindFirstArgs>(args?: SelectSubset<T, UserPriceListFindFirstArgs<ExtArgs>>): Prisma__UserPriceListClient<$Result.GetResult<Prisma.$UserPriceListPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first UserPriceList that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {UserPriceListFindFirstOrThrowArgs} args - Arguments to find a UserPriceList
+     * @example
+     * // Get one UserPriceList
+     * const userPriceList = await prisma.userPriceList.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends UserPriceListFindFirstOrThrowArgs>(args?: SelectSubset<T, UserPriceListFindFirstOrThrowArgs<ExtArgs>>): Prisma__UserPriceListClient<$Result.GetResult<Prisma.$UserPriceListPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more UserPriceLists that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {UserPriceListFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all UserPriceLists
+     * const userPriceLists = await prisma.userPriceList.findMany()
+     * 
+     * // Get first 10 UserPriceLists
+     * const userPriceLists = await prisma.userPriceList.findMany({ take: 10 })
+     * 
+     * // Only select the `user_price_list_id`
+     * const userPriceListWithUser_price_list_idOnly = await prisma.userPriceList.findMany({ select: { user_price_list_id: true } })
+     * 
+     */
+    findMany<T extends UserPriceListFindManyArgs>(args?: SelectSubset<T, UserPriceListFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UserPriceListPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a UserPriceList.
+     * @param {UserPriceListCreateArgs} args - Arguments to create a UserPriceList.
+     * @example
+     * // Create one UserPriceList
+     * const UserPriceList = await prisma.userPriceList.create({
+     *   data: {
+     *     // ... data to create a UserPriceList
+     *   }
+     * })
+     * 
+     */
+    create<T extends UserPriceListCreateArgs>(args: SelectSubset<T, UserPriceListCreateArgs<ExtArgs>>): Prisma__UserPriceListClient<$Result.GetResult<Prisma.$UserPriceListPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many UserPriceLists.
+     * @param {UserPriceListCreateManyArgs} args - Arguments to create many UserPriceLists.
+     * @example
+     * // Create many UserPriceLists
+     * const userPriceList = await prisma.userPriceList.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends UserPriceListCreateManyArgs>(args?: SelectSubset<T, UserPriceListCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many UserPriceLists and returns the data saved in the database.
+     * @param {UserPriceListCreateManyAndReturnArgs} args - Arguments to create many UserPriceLists.
+     * @example
+     * // Create many UserPriceLists
+     * const userPriceList = await prisma.userPriceList.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many UserPriceLists and only return the `user_price_list_id`
+     * const userPriceListWithUser_price_list_idOnly = await prisma.userPriceList.createManyAndReturn({
+     *   select: { user_price_list_id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends UserPriceListCreateManyAndReturnArgs>(args?: SelectSubset<T, UserPriceListCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UserPriceListPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a UserPriceList.
+     * @param {UserPriceListDeleteArgs} args - Arguments to delete one UserPriceList.
+     * @example
+     * // Delete one UserPriceList
+     * const UserPriceList = await prisma.userPriceList.delete({
+     *   where: {
+     *     // ... filter to delete one UserPriceList
+     *   }
+     * })
+     * 
+     */
+    delete<T extends UserPriceListDeleteArgs>(args: SelectSubset<T, UserPriceListDeleteArgs<ExtArgs>>): Prisma__UserPriceListClient<$Result.GetResult<Prisma.$UserPriceListPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one UserPriceList.
+     * @param {UserPriceListUpdateArgs} args - Arguments to update one UserPriceList.
+     * @example
+     * // Update one UserPriceList
+     * const userPriceList = await prisma.userPriceList.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends UserPriceListUpdateArgs>(args: SelectSubset<T, UserPriceListUpdateArgs<ExtArgs>>): Prisma__UserPriceListClient<$Result.GetResult<Prisma.$UserPriceListPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more UserPriceLists.
+     * @param {UserPriceListDeleteManyArgs} args - Arguments to filter UserPriceLists to delete.
+     * @example
+     * // Delete a few UserPriceLists
+     * const { count } = await prisma.userPriceList.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends UserPriceListDeleteManyArgs>(args?: SelectSubset<T, UserPriceListDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more UserPriceLists.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {UserPriceListUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many UserPriceLists
+     * const userPriceList = await prisma.userPriceList.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends UserPriceListUpdateManyArgs>(args: SelectSubset<T, UserPriceListUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more UserPriceLists and returns the data updated in the database.
+     * @param {UserPriceListUpdateManyAndReturnArgs} args - Arguments to update many UserPriceLists.
+     * @example
+     * // Update many UserPriceLists
+     * const userPriceList = await prisma.userPriceList.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more UserPriceLists and only return the `user_price_list_id`
+     * const userPriceListWithUser_price_list_idOnly = await prisma.userPriceList.updateManyAndReturn({
+     *   select: { user_price_list_id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends UserPriceListUpdateManyAndReturnArgs>(args: SelectSubset<T, UserPriceListUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UserPriceListPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one UserPriceList.
+     * @param {UserPriceListUpsertArgs} args - Arguments to update or create a UserPriceList.
+     * @example
+     * // Update or create a UserPriceList
+     * const userPriceList = await prisma.userPriceList.upsert({
+     *   create: {
+     *     // ... data to create a UserPriceList
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the UserPriceList we want to update
+     *   }
+     * })
+     */
+    upsert<T extends UserPriceListUpsertArgs>(args: SelectSubset<T, UserPriceListUpsertArgs<ExtArgs>>): Prisma__UserPriceListClient<$Result.GetResult<Prisma.$UserPriceListPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of UserPriceLists.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {UserPriceListCountArgs} args - Arguments to filter UserPriceLists to count.
+     * @example
+     * // Count the number of UserPriceLists
+     * const count = await prisma.userPriceList.count({
+     *   where: {
+     *     // ... the filter for the UserPriceLists we want to count
+     *   }
+     * })
+    **/
+    count<T extends UserPriceListCountArgs>(
+      args?: Subset<T, UserPriceListCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], UserPriceListCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a UserPriceList.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {UserPriceListAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends UserPriceListAggregateArgs>(args: Subset<T, UserPriceListAggregateArgs>): Prisma.PrismaPromise<GetUserPriceListAggregateType<T>>
+
+    /**
+     * Group by UserPriceList.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {UserPriceListGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends UserPriceListGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: UserPriceListGroupByArgs['orderBy'] }
+        : { orderBy?: UserPriceListGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, UserPriceListGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetUserPriceListGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the UserPriceList model
+   */
+  readonly fields: UserPriceListFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for UserPriceList.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__UserPriceListClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    PriceList<T extends PriceListDefaultArgs<ExtArgs> = {}>(args?: Subset<T, PriceListDefaultArgs<ExtArgs>>): Prisma__PriceListClient<$Result.GetResult<Prisma.$PriceListPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    User<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the UserPriceList model
+   */
+  interface UserPriceListFieldRefs {
+    readonly user_price_list_id: FieldRef<"UserPriceList", 'String'>
+    readonly user_id: FieldRef<"UserPriceList", 'String'>
+    readonly price_list_id: FieldRef<"UserPriceList", 'String'>
+    readonly created_at: FieldRef<"UserPriceList", 'DateTime'>
+    readonly updated_at: FieldRef<"UserPriceList", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * UserPriceList findUnique
+   */
+  export type UserPriceListFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserPriceList
+     */
+    select?: UserPriceListSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserPriceList
+     */
+    omit?: UserPriceListOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserPriceListInclude<ExtArgs> | null
+    /**
+     * Filter, which UserPriceList to fetch.
+     */
+    where: UserPriceListWhereUniqueInput
+  }
+
+  /**
+   * UserPriceList findUniqueOrThrow
+   */
+  export type UserPriceListFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserPriceList
+     */
+    select?: UserPriceListSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserPriceList
+     */
+    omit?: UserPriceListOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserPriceListInclude<ExtArgs> | null
+    /**
+     * Filter, which UserPriceList to fetch.
+     */
+    where: UserPriceListWhereUniqueInput
+  }
+
+  /**
+   * UserPriceList findFirst
+   */
+  export type UserPriceListFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserPriceList
+     */
+    select?: UserPriceListSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserPriceList
+     */
+    omit?: UserPriceListOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserPriceListInclude<ExtArgs> | null
+    /**
+     * Filter, which UserPriceList to fetch.
+     */
+    where?: UserPriceListWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of UserPriceLists to fetch.
+     */
+    orderBy?: UserPriceListOrderByWithRelationInput | UserPriceListOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for UserPriceLists.
+     */
+    cursor?: UserPriceListWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` UserPriceLists from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` UserPriceLists.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of UserPriceLists.
+     */
+    distinct?: UserPriceListScalarFieldEnum | UserPriceListScalarFieldEnum[]
+  }
+
+  /**
+   * UserPriceList findFirstOrThrow
+   */
+  export type UserPriceListFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserPriceList
+     */
+    select?: UserPriceListSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserPriceList
+     */
+    omit?: UserPriceListOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserPriceListInclude<ExtArgs> | null
+    /**
+     * Filter, which UserPriceList to fetch.
+     */
+    where?: UserPriceListWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of UserPriceLists to fetch.
+     */
+    orderBy?: UserPriceListOrderByWithRelationInput | UserPriceListOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for UserPriceLists.
+     */
+    cursor?: UserPriceListWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` UserPriceLists from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` UserPriceLists.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of UserPriceLists.
+     */
+    distinct?: UserPriceListScalarFieldEnum | UserPriceListScalarFieldEnum[]
+  }
+
+  /**
+   * UserPriceList findMany
+   */
+  export type UserPriceListFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserPriceList
+     */
+    select?: UserPriceListSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserPriceList
+     */
+    omit?: UserPriceListOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserPriceListInclude<ExtArgs> | null
+    /**
+     * Filter, which UserPriceLists to fetch.
+     */
+    where?: UserPriceListWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of UserPriceLists to fetch.
+     */
+    orderBy?: UserPriceListOrderByWithRelationInput | UserPriceListOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing UserPriceLists.
+     */
+    cursor?: UserPriceListWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` UserPriceLists from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` UserPriceLists.
+     */
+    skip?: number
+    distinct?: UserPriceListScalarFieldEnum | UserPriceListScalarFieldEnum[]
+  }
+
+  /**
+   * UserPriceList create
+   */
+  export type UserPriceListCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserPriceList
+     */
+    select?: UserPriceListSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserPriceList
+     */
+    omit?: UserPriceListOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserPriceListInclude<ExtArgs> | null
+    /**
+     * The data needed to create a UserPriceList.
+     */
+    data: XOR<UserPriceListCreateInput, UserPriceListUncheckedCreateInput>
+  }
+
+  /**
+   * UserPriceList createMany
+   */
+  export type UserPriceListCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many UserPriceLists.
+     */
+    data: UserPriceListCreateManyInput | UserPriceListCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * UserPriceList createManyAndReturn
+   */
+  export type UserPriceListCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserPriceList
+     */
+    select?: UserPriceListSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserPriceList
+     */
+    omit?: UserPriceListOmit<ExtArgs> | null
+    /**
+     * The data used to create many UserPriceLists.
+     */
+    data: UserPriceListCreateManyInput | UserPriceListCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserPriceListIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * UserPriceList update
+   */
+  export type UserPriceListUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserPriceList
+     */
+    select?: UserPriceListSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserPriceList
+     */
+    omit?: UserPriceListOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserPriceListInclude<ExtArgs> | null
+    /**
+     * The data needed to update a UserPriceList.
+     */
+    data: XOR<UserPriceListUpdateInput, UserPriceListUncheckedUpdateInput>
+    /**
+     * Choose, which UserPriceList to update.
+     */
+    where: UserPriceListWhereUniqueInput
+  }
+
+  /**
+   * UserPriceList updateMany
+   */
+  export type UserPriceListUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update UserPriceLists.
+     */
+    data: XOR<UserPriceListUpdateManyMutationInput, UserPriceListUncheckedUpdateManyInput>
+    /**
+     * Filter which UserPriceLists to update
+     */
+    where?: UserPriceListWhereInput
+    /**
+     * Limit how many UserPriceLists to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * UserPriceList updateManyAndReturn
+   */
+  export type UserPriceListUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserPriceList
+     */
+    select?: UserPriceListSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserPriceList
+     */
+    omit?: UserPriceListOmit<ExtArgs> | null
+    /**
+     * The data used to update UserPriceLists.
+     */
+    data: XOR<UserPriceListUpdateManyMutationInput, UserPriceListUncheckedUpdateManyInput>
+    /**
+     * Filter which UserPriceLists to update
+     */
+    where?: UserPriceListWhereInput
+    /**
+     * Limit how many UserPriceLists to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserPriceListIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * UserPriceList upsert
+   */
+  export type UserPriceListUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserPriceList
+     */
+    select?: UserPriceListSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserPriceList
+     */
+    omit?: UserPriceListOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserPriceListInclude<ExtArgs> | null
+    /**
+     * The filter to search for the UserPriceList to update in case it exists.
+     */
+    where: UserPriceListWhereUniqueInput
+    /**
+     * In case the UserPriceList found by the `where` argument doesn't exist, create a new UserPriceList with this data.
+     */
+    create: XOR<UserPriceListCreateInput, UserPriceListUncheckedCreateInput>
+    /**
+     * In case the UserPriceList was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<UserPriceListUpdateInput, UserPriceListUncheckedUpdateInput>
+  }
+
+  /**
+   * UserPriceList delete
+   */
+  export type UserPriceListDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserPriceList
+     */
+    select?: UserPriceListSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserPriceList
+     */
+    omit?: UserPriceListOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserPriceListInclude<ExtArgs> | null
+    /**
+     * Filter which UserPriceList to delete.
+     */
+    where: UserPriceListWhereUniqueInput
+  }
+
+  /**
+   * UserPriceList deleteMany
+   */
+  export type UserPriceListDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which UserPriceLists to delete
+     */
+    where?: UserPriceListWhereInput
+    /**
+     * Limit how many UserPriceLists to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * UserPriceList without action
+   */
+  export type UserPriceListDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserPriceList
+     */
+    select?: UserPriceListSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserPriceList
+     */
+    omit?: UserPriceListOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserPriceListInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -5833,6 +9633,46 @@ export namespace Prisma {
   };
 
   export type ProductScalarFieldEnum = (typeof ProductScalarFieldEnum)[keyof typeof ProductScalarFieldEnum]
+
+
+  export const PriceListScalarFieldEnum: {
+    price_list_id: 'price_list_id',
+    name: 'name',
+    description: 'description',
+    is_default: 'is_default',
+    valid_from: 'valid_from',
+    valid_to: 'valid_to',
+    limit_amount: 'limit_amount',
+    currency: 'currency',
+    is_active: 'is_active',
+    created_at: 'created_at',
+    updated_at: 'updated_at'
+  };
+
+  export type PriceListScalarFieldEnum = (typeof PriceListScalarFieldEnum)[keyof typeof PriceListScalarFieldEnum]
+
+
+  export const PriceListDetailScalarFieldEnum: {
+    price_list_detail_id: 'price_list_detail_id',
+    price_list_id: 'price_list_id',
+    collection_id: 'collection_id',
+    price_per_square_meter: 'price_per_square_meter',
+    created_at: 'created_at',
+    updated_at: 'updated_at'
+  };
+
+  export type PriceListDetailScalarFieldEnum = (typeof PriceListDetailScalarFieldEnum)[keyof typeof PriceListDetailScalarFieldEnum]
+
+
+  export const UserPriceListScalarFieldEnum: {
+    user_price_list_id: 'user_price_list_id',
+    user_id: 'user_id',
+    price_list_id: 'price_list_id',
+    created_at: 'created_at',
+    updated_at: 'updated_at'
+  };
+
+  export type UserPriceListScalarFieldEnum = (typeof UserPriceListScalarFieldEnum)[keyof typeof UserPriceListScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -6003,6 +9843,7 @@ export namespace Prisma {
     username?: StringFilter<"User"> | string
     userTypeId?: IntFilter<"User"> | number
     userType?: XOR<UserTypeScalarRelationFilter, UserTypeWhereInput>
+    UserPriceList?: UserPriceListListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
@@ -6019,6 +9860,7 @@ export namespace Prisma {
     username?: SortOrder
     userTypeId?: SortOrder
     userType?: UserTypeOrderByWithRelationInput
+    UserPriceList?: UserPriceListOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -6038,6 +9880,7 @@ export namespace Prisma {
     surname?: StringFilter<"User"> | string
     userTypeId?: IntFilter<"User"> | number
     userType?: XOR<UserTypeScalarRelationFilter, UserTypeWhereInput>
+    UserPriceList?: UserPriceListListRelationFilter
   }, "userId" | "email" | "username">
 
   export type UserOrderByWithAggregationInput = {
@@ -6089,6 +9932,7 @@ export namespace Prisma {
     isActive?: BoolFilter<"Collection"> | boolean
     createdAt?: DateTimeFilter<"Collection"> | Date | string
     updatedAt?: DateTimeFilter<"Collection"> | Date | string
+    PriceListDetail?: PriceListDetailListRelationFilter
     products?: ProductListRelationFilter
   }
 
@@ -6100,6 +9944,7 @@ export namespace Prisma {
     isActive?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    PriceListDetail?: PriceListDetailOrderByRelationAggregateInput
     products?: ProductOrderByRelationAggregateInput
   }
 
@@ -6114,6 +9959,7 @@ export namespace Prisma {
     isActive?: BoolFilter<"Collection"> | boolean
     createdAt?: DateTimeFilter<"Collection"> | Date | string
     updatedAt?: DateTimeFilter<"Collection"> | Date | string
+    PriceListDetail?: PriceListDetailListRelationFilter
     products?: ProductListRelationFilter
   }, "collectionId" | "code">
 
@@ -6235,6 +10081,219 @@ export namespace Prisma {
     collection_name?: StringNullableWithAggregatesFilter<"Product"> | string | null
   }
 
+  export type PriceListWhereInput = {
+    AND?: PriceListWhereInput | PriceListWhereInput[]
+    OR?: PriceListWhereInput[]
+    NOT?: PriceListWhereInput | PriceListWhereInput[]
+    price_list_id?: StringFilter<"PriceList"> | string
+    name?: StringFilter<"PriceList"> | string
+    description?: StringNullableFilter<"PriceList"> | string | null
+    is_default?: BoolFilter<"PriceList"> | boolean
+    valid_from?: DateTimeNullableFilter<"PriceList"> | Date | string | null
+    valid_to?: DateTimeNullableFilter<"PriceList"> | Date | string | null
+    limit_amount?: DecimalNullableFilter<"PriceList"> | Decimal | DecimalJsLike | number | string | null
+    currency?: StringFilter<"PriceList"> | string
+    is_active?: BoolFilter<"PriceList"> | boolean
+    created_at?: DateTimeFilter<"PriceList"> | Date | string
+    updated_at?: DateTimeFilter<"PriceList"> | Date | string
+    PriceListDetail?: PriceListDetailListRelationFilter
+    UserPriceList?: UserPriceListListRelationFilter
+  }
+
+  export type PriceListOrderByWithRelationInput = {
+    price_list_id?: SortOrder
+    name?: SortOrder
+    description?: SortOrderInput | SortOrder
+    is_default?: SortOrder
+    valid_from?: SortOrderInput | SortOrder
+    valid_to?: SortOrderInput | SortOrder
+    limit_amount?: SortOrderInput | SortOrder
+    currency?: SortOrder
+    is_active?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+    PriceListDetail?: PriceListDetailOrderByRelationAggregateInput
+    UserPriceList?: UserPriceListOrderByRelationAggregateInput
+  }
+
+  export type PriceListWhereUniqueInput = Prisma.AtLeast<{
+    price_list_id?: string
+    AND?: PriceListWhereInput | PriceListWhereInput[]
+    OR?: PriceListWhereInput[]
+    NOT?: PriceListWhereInput | PriceListWhereInput[]
+    name?: StringFilter<"PriceList"> | string
+    description?: StringNullableFilter<"PriceList"> | string | null
+    is_default?: BoolFilter<"PriceList"> | boolean
+    valid_from?: DateTimeNullableFilter<"PriceList"> | Date | string | null
+    valid_to?: DateTimeNullableFilter<"PriceList"> | Date | string | null
+    limit_amount?: DecimalNullableFilter<"PriceList"> | Decimal | DecimalJsLike | number | string | null
+    currency?: StringFilter<"PriceList"> | string
+    is_active?: BoolFilter<"PriceList"> | boolean
+    created_at?: DateTimeFilter<"PriceList"> | Date | string
+    updated_at?: DateTimeFilter<"PriceList"> | Date | string
+    PriceListDetail?: PriceListDetailListRelationFilter
+    UserPriceList?: UserPriceListListRelationFilter
+  }, "price_list_id">
+
+  export type PriceListOrderByWithAggregationInput = {
+    price_list_id?: SortOrder
+    name?: SortOrder
+    description?: SortOrderInput | SortOrder
+    is_default?: SortOrder
+    valid_from?: SortOrderInput | SortOrder
+    valid_to?: SortOrderInput | SortOrder
+    limit_amount?: SortOrderInput | SortOrder
+    currency?: SortOrder
+    is_active?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+    _count?: PriceListCountOrderByAggregateInput
+    _avg?: PriceListAvgOrderByAggregateInput
+    _max?: PriceListMaxOrderByAggregateInput
+    _min?: PriceListMinOrderByAggregateInput
+    _sum?: PriceListSumOrderByAggregateInput
+  }
+
+  export type PriceListScalarWhereWithAggregatesInput = {
+    AND?: PriceListScalarWhereWithAggregatesInput | PriceListScalarWhereWithAggregatesInput[]
+    OR?: PriceListScalarWhereWithAggregatesInput[]
+    NOT?: PriceListScalarWhereWithAggregatesInput | PriceListScalarWhereWithAggregatesInput[]
+    price_list_id?: StringWithAggregatesFilter<"PriceList"> | string
+    name?: StringWithAggregatesFilter<"PriceList"> | string
+    description?: StringNullableWithAggregatesFilter<"PriceList"> | string | null
+    is_default?: BoolWithAggregatesFilter<"PriceList"> | boolean
+    valid_from?: DateTimeNullableWithAggregatesFilter<"PriceList"> | Date | string | null
+    valid_to?: DateTimeNullableWithAggregatesFilter<"PriceList"> | Date | string | null
+    limit_amount?: DecimalNullableWithAggregatesFilter<"PriceList"> | Decimal | DecimalJsLike | number | string | null
+    currency?: StringWithAggregatesFilter<"PriceList"> | string
+    is_active?: BoolWithAggregatesFilter<"PriceList"> | boolean
+    created_at?: DateTimeWithAggregatesFilter<"PriceList"> | Date | string
+    updated_at?: DateTimeWithAggregatesFilter<"PriceList"> | Date | string
+  }
+
+  export type PriceListDetailWhereInput = {
+    AND?: PriceListDetailWhereInput | PriceListDetailWhereInput[]
+    OR?: PriceListDetailWhereInput[]
+    NOT?: PriceListDetailWhereInput | PriceListDetailWhereInput[]
+    price_list_detail_id?: StringFilter<"PriceListDetail"> | string
+    price_list_id?: StringFilter<"PriceListDetail"> | string
+    collection_id?: StringFilter<"PriceListDetail"> | string
+    price_per_square_meter?: DecimalFilter<"PriceListDetail"> | Decimal | DecimalJsLike | number | string
+    created_at?: DateTimeFilter<"PriceListDetail"> | Date | string
+    updated_at?: DateTimeFilter<"PriceListDetail"> | Date | string
+    Collection?: XOR<CollectionScalarRelationFilter, CollectionWhereInput>
+    PriceList?: XOR<PriceListScalarRelationFilter, PriceListWhereInput>
+  }
+
+  export type PriceListDetailOrderByWithRelationInput = {
+    price_list_detail_id?: SortOrder
+    price_list_id?: SortOrder
+    collection_id?: SortOrder
+    price_per_square_meter?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+    Collection?: CollectionOrderByWithRelationInput
+    PriceList?: PriceListOrderByWithRelationInput
+  }
+
+  export type PriceListDetailWhereUniqueInput = Prisma.AtLeast<{
+    price_list_detail_id?: string
+    AND?: PriceListDetailWhereInput | PriceListDetailWhereInput[]
+    OR?: PriceListDetailWhereInput[]
+    NOT?: PriceListDetailWhereInput | PriceListDetailWhereInput[]
+    price_list_id?: StringFilter<"PriceListDetail"> | string
+    collection_id?: StringFilter<"PriceListDetail"> | string
+    price_per_square_meter?: DecimalFilter<"PriceListDetail"> | Decimal | DecimalJsLike | number | string
+    created_at?: DateTimeFilter<"PriceListDetail"> | Date | string
+    updated_at?: DateTimeFilter<"PriceListDetail"> | Date | string
+    Collection?: XOR<CollectionScalarRelationFilter, CollectionWhereInput>
+    PriceList?: XOR<PriceListScalarRelationFilter, PriceListWhereInput>
+  }, "price_list_detail_id">
+
+  export type PriceListDetailOrderByWithAggregationInput = {
+    price_list_detail_id?: SortOrder
+    price_list_id?: SortOrder
+    collection_id?: SortOrder
+    price_per_square_meter?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+    _count?: PriceListDetailCountOrderByAggregateInput
+    _avg?: PriceListDetailAvgOrderByAggregateInput
+    _max?: PriceListDetailMaxOrderByAggregateInput
+    _min?: PriceListDetailMinOrderByAggregateInput
+    _sum?: PriceListDetailSumOrderByAggregateInput
+  }
+
+  export type PriceListDetailScalarWhereWithAggregatesInput = {
+    AND?: PriceListDetailScalarWhereWithAggregatesInput | PriceListDetailScalarWhereWithAggregatesInput[]
+    OR?: PriceListDetailScalarWhereWithAggregatesInput[]
+    NOT?: PriceListDetailScalarWhereWithAggregatesInput | PriceListDetailScalarWhereWithAggregatesInput[]
+    price_list_detail_id?: StringWithAggregatesFilter<"PriceListDetail"> | string
+    price_list_id?: StringWithAggregatesFilter<"PriceListDetail"> | string
+    collection_id?: StringWithAggregatesFilter<"PriceListDetail"> | string
+    price_per_square_meter?: DecimalWithAggregatesFilter<"PriceListDetail"> | Decimal | DecimalJsLike | number | string
+    created_at?: DateTimeWithAggregatesFilter<"PriceListDetail"> | Date | string
+    updated_at?: DateTimeWithAggregatesFilter<"PriceListDetail"> | Date | string
+  }
+
+  export type UserPriceListWhereInput = {
+    AND?: UserPriceListWhereInput | UserPriceListWhereInput[]
+    OR?: UserPriceListWhereInput[]
+    NOT?: UserPriceListWhereInput | UserPriceListWhereInput[]
+    user_price_list_id?: StringFilter<"UserPriceList"> | string
+    user_id?: StringFilter<"UserPriceList"> | string
+    price_list_id?: StringFilter<"UserPriceList"> | string
+    created_at?: DateTimeFilter<"UserPriceList"> | Date | string
+    updated_at?: DateTimeFilter<"UserPriceList"> | Date | string
+    PriceList?: XOR<PriceListScalarRelationFilter, PriceListWhereInput>
+    User?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }
+
+  export type UserPriceListOrderByWithRelationInput = {
+    user_price_list_id?: SortOrder
+    user_id?: SortOrder
+    price_list_id?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+    PriceList?: PriceListOrderByWithRelationInput
+    User?: UserOrderByWithRelationInput
+  }
+
+  export type UserPriceListWhereUniqueInput = Prisma.AtLeast<{
+    user_price_list_id?: string
+    AND?: UserPriceListWhereInput | UserPriceListWhereInput[]
+    OR?: UserPriceListWhereInput[]
+    NOT?: UserPriceListWhereInput | UserPriceListWhereInput[]
+    user_id?: StringFilter<"UserPriceList"> | string
+    price_list_id?: StringFilter<"UserPriceList"> | string
+    created_at?: DateTimeFilter<"UserPriceList"> | Date | string
+    updated_at?: DateTimeFilter<"UserPriceList"> | Date | string
+    PriceList?: XOR<PriceListScalarRelationFilter, PriceListWhereInput>
+    User?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }, "user_price_list_id">
+
+  export type UserPriceListOrderByWithAggregationInput = {
+    user_price_list_id?: SortOrder
+    user_id?: SortOrder
+    price_list_id?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+    _count?: UserPriceListCountOrderByAggregateInput
+    _max?: UserPriceListMaxOrderByAggregateInput
+    _min?: UserPriceListMinOrderByAggregateInput
+  }
+
+  export type UserPriceListScalarWhereWithAggregatesInput = {
+    AND?: UserPriceListScalarWhereWithAggregatesInput | UserPriceListScalarWhereWithAggregatesInput[]
+    OR?: UserPriceListScalarWhereWithAggregatesInput[]
+    NOT?: UserPriceListScalarWhereWithAggregatesInput | UserPriceListScalarWhereWithAggregatesInput[]
+    user_price_list_id?: StringWithAggregatesFilter<"UserPriceList"> | string
+    user_id?: StringWithAggregatesFilter<"UserPriceList"> | string
+    price_list_id?: StringWithAggregatesFilter<"UserPriceList"> | string
+    created_at?: DateTimeWithAggregatesFilter<"UserPriceList"> | Date | string
+    updated_at?: DateTimeWithAggregatesFilter<"UserPriceList"> | Date | string
+  }
+
   export type UserTypeCreateInput = {
     name: string
     users?: UserCreateNestedManyWithoutUserTypeInput
@@ -6284,6 +10343,7 @@ export namespace Prisma {
     userId?: string
     username: string
     userType: UserTypeCreateNestedOneWithoutUsersInput
+    UserPriceList?: UserPriceListCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateInput = {
@@ -6299,6 +10359,7 @@ export namespace Prisma {
     userId?: string
     username: string
     userTypeId: number
+    UserPriceList?: UserPriceListUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserUpdateInput = {
@@ -6314,6 +10375,7 @@ export namespace Prisma {
     userId?: StringFieldUpdateOperationsInput | string
     username?: StringFieldUpdateOperationsInput | string
     userType?: UserTypeUpdateOneRequiredWithoutUsersNestedInput
+    UserPriceList?: UserPriceListUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
@@ -6329,6 +10391,7 @@ export namespace Prisma {
     userId?: StringFieldUpdateOperationsInput | string
     username?: StringFieldUpdateOperationsInput | string
     userTypeId?: IntFieldUpdateOperationsInput | number
+    UserPriceList?: UserPriceListUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateManyInput = {
@@ -6383,6 +10446,7 @@ export namespace Prisma {
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    PriceListDetail?: PriceListDetailCreateNestedManyWithoutCollectionInput
     products?: ProductCreateNestedManyWithoutCollectionInput
   }
 
@@ -6394,6 +10458,7 @@ export namespace Prisma {
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    PriceListDetail?: PriceListDetailUncheckedCreateNestedManyWithoutCollectionInput
     products?: ProductUncheckedCreateNestedManyWithoutCollectionInput
   }
 
@@ -6405,6 +10470,7 @@ export namespace Prisma {
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    PriceListDetail?: PriceListDetailUpdateManyWithoutCollectionNestedInput
     products?: ProductUpdateManyWithoutCollectionNestedInput
   }
 
@@ -6416,6 +10482,7 @@ export namespace Prisma {
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    PriceListDetail?: PriceListDetailUncheckedUpdateManyWithoutCollectionNestedInput
     products?: ProductUncheckedUpdateManyWithoutCollectionNestedInput
   }
 
@@ -6551,6 +10618,227 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     collection_name?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type PriceListCreateInput = {
+    price_list_id?: string
+    name: string
+    description?: string | null
+    is_default?: boolean
+    valid_from?: Date | string | null
+    valid_to?: Date | string | null
+    limit_amount?: Decimal | DecimalJsLike | number | string | null
+    currency: string
+    is_active?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+    PriceListDetail?: PriceListDetailCreateNestedManyWithoutPriceListInput
+    UserPriceList?: UserPriceListCreateNestedManyWithoutPriceListInput
+  }
+
+  export type PriceListUncheckedCreateInput = {
+    price_list_id?: string
+    name: string
+    description?: string | null
+    is_default?: boolean
+    valid_from?: Date | string | null
+    valid_to?: Date | string | null
+    limit_amount?: Decimal | DecimalJsLike | number | string | null
+    currency: string
+    is_active?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+    PriceListDetail?: PriceListDetailUncheckedCreateNestedManyWithoutPriceListInput
+    UserPriceList?: UserPriceListUncheckedCreateNestedManyWithoutPriceListInput
+  }
+
+  export type PriceListUpdateInput = {
+    price_list_id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    is_default?: BoolFieldUpdateOperationsInput | boolean
+    valid_from?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    valid_to?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    limit_amount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    currency?: StringFieldUpdateOperationsInput | string
+    is_active?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    PriceListDetail?: PriceListDetailUpdateManyWithoutPriceListNestedInput
+    UserPriceList?: UserPriceListUpdateManyWithoutPriceListNestedInput
+  }
+
+  export type PriceListUncheckedUpdateInput = {
+    price_list_id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    is_default?: BoolFieldUpdateOperationsInput | boolean
+    valid_from?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    valid_to?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    limit_amount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    currency?: StringFieldUpdateOperationsInput | string
+    is_active?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    PriceListDetail?: PriceListDetailUncheckedUpdateManyWithoutPriceListNestedInput
+    UserPriceList?: UserPriceListUncheckedUpdateManyWithoutPriceListNestedInput
+  }
+
+  export type PriceListCreateManyInput = {
+    price_list_id?: string
+    name: string
+    description?: string | null
+    is_default?: boolean
+    valid_from?: Date | string | null
+    valid_to?: Date | string | null
+    limit_amount?: Decimal | DecimalJsLike | number | string | null
+    currency: string
+    is_active?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type PriceListUpdateManyMutationInput = {
+    price_list_id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    is_default?: BoolFieldUpdateOperationsInput | boolean
+    valid_from?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    valid_to?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    limit_amount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    currency?: StringFieldUpdateOperationsInput | string
+    is_active?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PriceListUncheckedUpdateManyInput = {
+    price_list_id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    is_default?: BoolFieldUpdateOperationsInput | boolean
+    valid_from?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    valid_to?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    limit_amount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    currency?: StringFieldUpdateOperationsInput | string
+    is_active?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PriceListDetailCreateInput = {
+    price_list_detail_id?: string
+    price_per_square_meter: Decimal | DecimalJsLike | number | string
+    created_at?: Date | string
+    updated_at?: Date | string
+    Collection: CollectionCreateNestedOneWithoutPriceListDetailInput
+    PriceList: PriceListCreateNestedOneWithoutPriceListDetailInput
+  }
+
+  export type PriceListDetailUncheckedCreateInput = {
+    price_list_detail_id?: string
+    price_list_id: string
+    collection_id: string
+    price_per_square_meter: Decimal | DecimalJsLike | number | string
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type PriceListDetailUpdateInput = {
+    price_list_detail_id?: StringFieldUpdateOperationsInput | string
+    price_per_square_meter?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    Collection?: CollectionUpdateOneRequiredWithoutPriceListDetailNestedInput
+    PriceList?: PriceListUpdateOneRequiredWithoutPriceListDetailNestedInput
+  }
+
+  export type PriceListDetailUncheckedUpdateInput = {
+    price_list_detail_id?: StringFieldUpdateOperationsInput | string
+    price_list_id?: StringFieldUpdateOperationsInput | string
+    collection_id?: StringFieldUpdateOperationsInput | string
+    price_per_square_meter?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PriceListDetailCreateManyInput = {
+    price_list_detail_id?: string
+    price_list_id: string
+    collection_id: string
+    price_per_square_meter: Decimal | DecimalJsLike | number | string
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type PriceListDetailUpdateManyMutationInput = {
+    price_list_detail_id?: StringFieldUpdateOperationsInput | string
+    price_per_square_meter?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PriceListDetailUncheckedUpdateManyInput = {
+    price_list_detail_id?: StringFieldUpdateOperationsInput | string
+    price_list_id?: StringFieldUpdateOperationsInput | string
+    collection_id?: StringFieldUpdateOperationsInput | string
+    price_per_square_meter?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type UserPriceListCreateInput = {
+    user_price_list_id?: string
+    created_at?: Date | string
+    updated_at?: Date | string
+    PriceList: PriceListCreateNestedOneWithoutUserPriceListInput
+    User: UserCreateNestedOneWithoutUserPriceListInput
+  }
+
+  export type UserPriceListUncheckedCreateInput = {
+    user_price_list_id?: string
+    user_id: string
+    price_list_id: string
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type UserPriceListUpdateInput = {
+    user_price_list_id?: StringFieldUpdateOperationsInput | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    PriceList?: PriceListUpdateOneRequiredWithoutUserPriceListNestedInput
+    User?: UserUpdateOneRequiredWithoutUserPriceListNestedInput
+  }
+
+  export type UserPriceListUncheckedUpdateInput = {
+    user_price_list_id?: StringFieldUpdateOperationsInput | string
+    user_id?: StringFieldUpdateOperationsInput | string
+    price_list_id?: StringFieldUpdateOperationsInput | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type UserPriceListCreateManyInput = {
+    user_price_list_id?: string
+    user_id: string
+    price_list_id: string
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type UserPriceListUpdateManyMutationInput = {
+    user_price_list_id?: StringFieldUpdateOperationsInput | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type UserPriceListUncheckedUpdateManyInput = {
+    user_price_list_id?: StringFieldUpdateOperationsInput | string
+    user_id?: StringFieldUpdateOperationsInput | string
+    price_list_id?: StringFieldUpdateOperationsInput | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type IntFilter<$PrismaModel = never> = {
@@ -6693,9 +10981,19 @@ export namespace Prisma {
     isNot?: UserTypeWhereInput
   }
 
+  export type UserPriceListListRelationFilter = {
+    every?: UserPriceListWhereInput
+    some?: UserPriceListWhereInput
+    none?: UserPriceListWhereInput
+  }
+
   export type SortOrderInput = {
     sort: SortOrder
     nulls?: NullsOrder
+  }
+
+  export type UserPriceListOrderByRelationAggregateInput = {
+    _count?: SortOrder
   }
 
   export type UserCountOrderByAggregateInput = {
@@ -6811,10 +11109,20 @@ export namespace Prisma {
     _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
+  export type PriceListDetailListRelationFilter = {
+    every?: PriceListDetailWhereInput
+    some?: PriceListDetailWhereInput
+    none?: PriceListDetailWhereInput
+  }
+
   export type ProductListRelationFilter = {
     every?: ProductWhereInput
     some?: ProductWhereInput
     none?: ProductWhereInput
+  }
+
+  export type PriceListDetailOrderByRelationAggregateInput = {
+    _count?: SortOrder
   }
 
   export type ProductOrderByRelationAggregateInput = {
@@ -6940,6 +11248,177 @@ export namespace Prisma {
     _max?: NestedFloatFilter<$PrismaModel>
   }
 
+  export type DateTimeNullableFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
+  }
+
+  export type DecimalNullableFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+  }
+
+  export type PriceListCountOrderByAggregateInput = {
+    price_list_id?: SortOrder
+    name?: SortOrder
+    description?: SortOrder
+    is_default?: SortOrder
+    valid_from?: SortOrder
+    valid_to?: SortOrder
+    limit_amount?: SortOrder
+    currency?: SortOrder
+    is_active?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type PriceListAvgOrderByAggregateInput = {
+    limit_amount?: SortOrder
+  }
+
+  export type PriceListMaxOrderByAggregateInput = {
+    price_list_id?: SortOrder
+    name?: SortOrder
+    description?: SortOrder
+    is_default?: SortOrder
+    valid_from?: SortOrder
+    valid_to?: SortOrder
+    limit_amount?: SortOrder
+    currency?: SortOrder
+    is_active?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type PriceListMinOrderByAggregateInput = {
+    price_list_id?: SortOrder
+    name?: SortOrder
+    description?: SortOrder
+    is_default?: SortOrder
+    valid_from?: SortOrder
+    valid_to?: SortOrder
+    limit_amount?: SortOrder
+    currency?: SortOrder
+    is_active?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type PriceListSumOrderByAggregateInput = {
+    limit_amount?: SortOrder
+  }
+
+  export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedDateTimeNullableFilter<$PrismaModel>
+    _max?: NestedDateTimeNullableFilter<$PrismaModel>
+  }
+
+  export type DecimalNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedDecimalNullableFilter<$PrismaModel>
+    _sum?: NestedDecimalNullableFilter<$PrismaModel>
+    _min?: NestedDecimalNullableFilter<$PrismaModel>
+    _max?: NestedDecimalNullableFilter<$PrismaModel>
+  }
+
+  export type PriceListScalarRelationFilter = {
+    is?: PriceListWhereInput
+    isNot?: PriceListWhereInput
+  }
+
+  export type PriceListDetailCountOrderByAggregateInput = {
+    price_list_detail_id?: SortOrder
+    price_list_id?: SortOrder
+    collection_id?: SortOrder
+    price_per_square_meter?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type PriceListDetailAvgOrderByAggregateInput = {
+    price_per_square_meter?: SortOrder
+  }
+
+  export type PriceListDetailMaxOrderByAggregateInput = {
+    price_list_detail_id?: SortOrder
+    price_list_id?: SortOrder
+    collection_id?: SortOrder
+    price_per_square_meter?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type PriceListDetailMinOrderByAggregateInput = {
+    price_list_detail_id?: SortOrder
+    price_list_id?: SortOrder
+    collection_id?: SortOrder
+    price_per_square_meter?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type PriceListDetailSumOrderByAggregateInput = {
+    price_per_square_meter?: SortOrder
+  }
+
+  export type UserScalarRelationFilter = {
+    is?: UserWhereInput
+    isNot?: UserWhereInput
+  }
+
+  export type UserPriceListCountOrderByAggregateInput = {
+    user_price_list_id?: SortOrder
+    user_id?: SortOrder
+    price_list_id?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type UserPriceListMaxOrderByAggregateInput = {
+    user_price_list_id?: SortOrder
+    user_id?: SortOrder
+    price_list_id?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type UserPriceListMinOrderByAggregateInput = {
+    user_price_list_id?: SortOrder
+    user_id?: SortOrder
+    price_list_id?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
   export type UserCreateNestedManyWithoutUserTypeInput = {
     create?: XOR<UserCreateWithoutUserTypeInput, UserUncheckedCreateWithoutUserTypeInput> | UserCreateWithoutUserTypeInput[] | UserUncheckedCreateWithoutUserTypeInput[]
     connectOrCreate?: UserCreateOrConnectWithoutUserTypeInput | UserCreateOrConnectWithoutUserTypeInput[]
@@ -7000,6 +11479,20 @@ export namespace Prisma {
     connect?: UserTypeWhereUniqueInput
   }
 
+  export type UserPriceListCreateNestedManyWithoutUserInput = {
+    create?: XOR<UserPriceListCreateWithoutUserInput, UserPriceListUncheckedCreateWithoutUserInput> | UserPriceListCreateWithoutUserInput[] | UserPriceListUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: UserPriceListCreateOrConnectWithoutUserInput | UserPriceListCreateOrConnectWithoutUserInput[]
+    createMany?: UserPriceListCreateManyUserInputEnvelope
+    connect?: UserPriceListWhereUniqueInput | UserPriceListWhereUniqueInput[]
+  }
+
+  export type UserPriceListUncheckedCreateNestedManyWithoutUserInput = {
+    create?: XOR<UserPriceListCreateWithoutUserInput, UserPriceListUncheckedCreateWithoutUserInput> | UserPriceListCreateWithoutUserInput[] | UserPriceListUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: UserPriceListCreateOrConnectWithoutUserInput | UserPriceListCreateOrConnectWithoutUserInput[]
+    createMany?: UserPriceListCreateManyUserInputEnvelope
+    connect?: UserPriceListWhereUniqueInput | UserPriceListWhereUniqueInput[]
+  }
+
   export type DateTimeFieldUpdateOperationsInput = {
     set?: Date | string
   }
@@ -7028,6 +11521,41 @@ export namespace Prisma {
     update?: XOR<XOR<UserTypeUpdateToOneWithWhereWithoutUsersInput, UserTypeUpdateWithoutUsersInput>, UserTypeUncheckedUpdateWithoutUsersInput>
   }
 
+  export type UserPriceListUpdateManyWithoutUserNestedInput = {
+    create?: XOR<UserPriceListCreateWithoutUserInput, UserPriceListUncheckedCreateWithoutUserInput> | UserPriceListCreateWithoutUserInput[] | UserPriceListUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: UserPriceListCreateOrConnectWithoutUserInput | UserPriceListCreateOrConnectWithoutUserInput[]
+    upsert?: UserPriceListUpsertWithWhereUniqueWithoutUserInput | UserPriceListUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: UserPriceListCreateManyUserInputEnvelope
+    set?: UserPriceListWhereUniqueInput | UserPriceListWhereUniqueInput[]
+    disconnect?: UserPriceListWhereUniqueInput | UserPriceListWhereUniqueInput[]
+    delete?: UserPriceListWhereUniqueInput | UserPriceListWhereUniqueInput[]
+    connect?: UserPriceListWhereUniqueInput | UserPriceListWhereUniqueInput[]
+    update?: UserPriceListUpdateWithWhereUniqueWithoutUserInput | UserPriceListUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: UserPriceListUpdateManyWithWhereWithoutUserInput | UserPriceListUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: UserPriceListScalarWhereInput | UserPriceListScalarWhereInput[]
+  }
+
+  export type UserPriceListUncheckedUpdateManyWithoutUserNestedInput = {
+    create?: XOR<UserPriceListCreateWithoutUserInput, UserPriceListUncheckedCreateWithoutUserInput> | UserPriceListCreateWithoutUserInput[] | UserPriceListUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: UserPriceListCreateOrConnectWithoutUserInput | UserPriceListCreateOrConnectWithoutUserInput[]
+    upsert?: UserPriceListUpsertWithWhereUniqueWithoutUserInput | UserPriceListUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: UserPriceListCreateManyUserInputEnvelope
+    set?: UserPriceListWhereUniqueInput | UserPriceListWhereUniqueInput[]
+    disconnect?: UserPriceListWhereUniqueInput | UserPriceListWhereUniqueInput[]
+    delete?: UserPriceListWhereUniqueInput | UserPriceListWhereUniqueInput[]
+    connect?: UserPriceListWhereUniqueInput | UserPriceListWhereUniqueInput[]
+    update?: UserPriceListUpdateWithWhereUniqueWithoutUserInput | UserPriceListUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: UserPriceListUpdateManyWithWhereWithoutUserInput | UserPriceListUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: UserPriceListScalarWhereInput | UserPriceListScalarWhereInput[]
+  }
+
+  export type PriceListDetailCreateNestedManyWithoutCollectionInput = {
+    create?: XOR<PriceListDetailCreateWithoutCollectionInput, PriceListDetailUncheckedCreateWithoutCollectionInput> | PriceListDetailCreateWithoutCollectionInput[] | PriceListDetailUncheckedCreateWithoutCollectionInput[]
+    connectOrCreate?: PriceListDetailCreateOrConnectWithoutCollectionInput | PriceListDetailCreateOrConnectWithoutCollectionInput[]
+    createMany?: PriceListDetailCreateManyCollectionInputEnvelope
+    connect?: PriceListDetailWhereUniqueInput | PriceListDetailWhereUniqueInput[]
+  }
+
   export type ProductCreateNestedManyWithoutCollectionInput = {
     create?: XOR<ProductCreateWithoutCollectionInput, ProductUncheckedCreateWithoutCollectionInput> | ProductCreateWithoutCollectionInput[] | ProductUncheckedCreateWithoutCollectionInput[]
     connectOrCreate?: ProductCreateOrConnectWithoutCollectionInput | ProductCreateOrConnectWithoutCollectionInput[]
@@ -7035,11 +11563,32 @@ export namespace Prisma {
     connect?: ProductWhereUniqueInput | ProductWhereUniqueInput[]
   }
 
+  export type PriceListDetailUncheckedCreateNestedManyWithoutCollectionInput = {
+    create?: XOR<PriceListDetailCreateWithoutCollectionInput, PriceListDetailUncheckedCreateWithoutCollectionInput> | PriceListDetailCreateWithoutCollectionInput[] | PriceListDetailUncheckedCreateWithoutCollectionInput[]
+    connectOrCreate?: PriceListDetailCreateOrConnectWithoutCollectionInput | PriceListDetailCreateOrConnectWithoutCollectionInput[]
+    createMany?: PriceListDetailCreateManyCollectionInputEnvelope
+    connect?: PriceListDetailWhereUniqueInput | PriceListDetailWhereUniqueInput[]
+  }
+
   export type ProductUncheckedCreateNestedManyWithoutCollectionInput = {
     create?: XOR<ProductCreateWithoutCollectionInput, ProductUncheckedCreateWithoutCollectionInput> | ProductCreateWithoutCollectionInput[] | ProductUncheckedCreateWithoutCollectionInput[]
     connectOrCreate?: ProductCreateOrConnectWithoutCollectionInput | ProductCreateOrConnectWithoutCollectionInput[]
     createMany?: ProductCreateManyCollectionInputEnvelope
     connect?: ProductWhereUniqueInput | ProductWhereUniqueInput[]
+  }
+
+  export type PriceListDetailUpdateManyWithoutCollectionNestedInput = {
+    create?: XOR<PriceListDetailCreateWithoutCollectionInput, PriceListDetailUncheckedCreateWithoutCollectionInput> | PriceListDetailCreateWithoutCollectionInput[] | PriceListDetailUncheckedCreateWithoutCollectionInput[]
+    connectOrCreate?: PriceListDetailCreateOrConnectWithoutCollectionInput | PriceListDetailCreateOrConnectWithoutCollectionInput[]
+    upsert?: PriceListDetailUpsertWithWhereUniqueWithoutCollectionInput | PriceListDetailUpsertWithWhereUniqueWithoutCollectionInput[]
+    createMany?: PriceListDetailCreateManyCollectionInputEnvelope
+    set?: PriceListDetailWhereUniqueInput | PriceListDetailWhereUniqueInput[]
+    disconnect?: PriceListDetailWhereUniqueInput | PriceListDetailWhereUniqueInput[]
+    delete?: PriceListDetailWhereUniqueInput | PriceListDetailWhereUniqueInput[]
+    connect?: PriceListDetailWhereUniqueInput | PriceListDetailWhereUniqueInput[]
+    update?: PriceListDetailUpdateWithWhereUniqueWithoutCollectionInput | PriceListDetailUpdateWithWhereUniqueWithoutCollectionInput[]
+    updateMany?: PriceListDetailUpdateManyWithWhereWithoutCollectionInput | PriceListDetailUpdateManyWithWhereWithoutCollectionInput[]
+    deleteMany?: PriceListDetailScalarWhereInput | PriceListDetailScalarWhereInput[]
   }
 
   export type ProductUpdateManyWithoutCollectionNestedInput = {
@@ -7054,6 +11603,20 @@ export namespace Prisma {
     update?: ProductUpdateWithWhereUniqueWithoutCollectionInput | ProductUpdateWithWhereUniqueWithoutCollectionInput[]
     updateMany?: ProductUpdateManyWithWhereWithoutCollectionInput | ProductUpdateManyWithWhereWithoutCollectionInput[]
     deleteMany?: ProductScalarWhereInput | ProductScalarWhereInput[]
+  }
+
+  export type PriceListDetailUncheckedUpdateManyWithoutCollectionNestedInput = {
+    create?: XOR<PriceListDetailCreateWithoutCollectionInput, PriceListDetailUncheckedCreateWithoutCollectionInput> | PriceListDetailCreateWithoutCollectionInput[] | PriceListDetailUncheckedCreateWithoutCollectionInput[]
+    connectOrCreate?: PriceListDetailCreateOrConnectWithoutCollectionInput | PriceListDetailCreateOrConnectWithoutCollectionInput[]
+    upsert?: PriceListDetailUpsertWithWhereUniqueWithoutCollectionInput | PriceListDetailUpsertWithWhereUniqueWithoutCollectionInput[]
+    createMany?: PriceListDetailCreateManyCollectionInputEnvelope
+    set?: PriceListDetailWhereUniqueInput | PriceListDetailWhereUniqueInput[]
+    disconnect?: PriceListDetailWhereUniqueInput | PriceListDetailWhereUniqueInput[]
+    delete?: PriceListDetailWhereUniqueInput | PriceListDetailWhereUniqueInput[]
+    connect?: PriceListDetailWhereUniqueInput | PriceListDetailWhereUniqueInput[]
+    update?: PriceListDetailUpdateWithWhereUniqueWithoutCollectionInput | PriceListDetailUpdateWithWhereUniqueWithoutCollectionInput[]
+    updateMany?: PriceListDetailUpdateManyWithWhereWithoutCollectionInput | PriceListDetailUpdateManyWithWhereWithoutCollectionInput[]
+    deleteMany?: PriceListDetailScalarWhereInput | PriceListDetailScalarWhereInput[]
   }
 
   export type ProductUncheckedUpdateManyWithoutCollectionNestedInput = {
@@ -7090,6 +11653,158 @@ export namespace Prisma {
     upsert?: CollectionUpsertWithoutProductsInput
     connect?: CollectionWhereUniqueInput
     update?: XOR<XOR<CollectionUpdateToOneWithWhereWithoutProductsInput, CollectionUpdateWithoutProductsInput>, CollectionUncheckedUpdateWithoutProductsInput>
+  }
+
+  export type PriceListDetailCreateNestedManyWithoutPriceListInput = {
+    create?: XOR<PriceListDetailCreateWithoutPriceListInput, PriceListDetailUncheckedCreateWithoutPriceListInput> | PriceListDetailCreateWithoutPriceListInput[] | PriceListDetailUncheckedCreateWithoutPriceListInput[]
+    connectOrCreate?: PriceListDetailCreateOrConnectWithoutPriceListInput | PriceListDetailCreateOrConnectWithoutPriceListInput[]
+    createMany?: PriceListDetailCreateManyPriceListInputEnvelope
+    connect?: PriceListDetailWhereUniqueInput | PriceListDetailWhereUniqueInput[]
+  }
+
+  export type UserPriceListCreateNestedManyWithoutPriceListInput = {
+    create?: XOR<UserPriceListCreateWithoutPriceListInput, UserPriceListUncheckedCreateWithoutPriceListInput> | UserPriceListCreateWithoutPriceListInput[] | UserPriceListUncheckedCreateWithoutPriceListInput[]
+    connectOrCreate?: UserPriceListCreateOrConnectWithoutPriceListInput | UserPriceListCreateOrConnectWithoutPriceListInput[]
+    createMany?: UserPriceListCreateManyPriceListInputEnvelope
+    connect?: UserPriceListWhereUniqueInput | UserPriceListWhereUniqueInput[]
+  }
+
+  export type PriceListDetailUncheckedCreateNestedManyWithoutPriceListInput = {
+    create?: XOR<PriceListDetailCreateWithoutPriceListInput, PriceListDetailUncheckedCreateWithoutPriceListInput> | PriceListDetailCreateWithoutPriceListInput[] | PriceListDetailUncheckedCreateWithoutPriceListInput[]
+    connectOrCreate?: PriceListDetailCreateOrConnectWithoutPriceListInput | PriceListDetailCreateOrConnectWithoutPriceListInput[]
+    createMany?: PriceListDetailCreateManyPriceListInputEnvelope
+    connect?: PriceListDetailWhereUniqueInput | PriceListDetailWhereUniqueInput[]
+  }
+
+  export type UserPriceListUncheckedCreateNestedManyWithoutPriceListInput = {
+    create?: XOR<UserPriceListCreateWithoutPriceListInput, UserPriceListUncheckedCreateWithoutPriceListInput> | UserPriceListCreateWithoutPriceListInput[] | UserPriceListUncheckedCreateWithoutPriceListInput[]
+    connectOrCreate?: UserPriceListCreateOrConnectWithoutPriceListInput | UserPriceListCreateOrConnectWithoutPriceListInput[]
+    createMany?: UserPriceListCreateManyPriceListInputEnvelope
+    connect?: UserPriceListWhereUniqueInput | UserPriceListWhereUniqueInput[]
+  }
+
+  export type NullableDateTimeFieldUpdateOperationsInput = {
+    set?: Date | string | null
+  }
+
+  export type NullableDecimalFieldUpdateOperationsInput = {
+    set?: Decimal | DecimalJsLike | number | string | null
+    increment?: Decimal | DecimalJsLike | number | string
+    decrement?: Decimal | DecimalJsLike | number | string
+    multiply?: Decimal | DecimalJsLike | number | string
+    divide?: Decimal | DecimalJsLike | number | string
+  }
+
+  export type PriceListDetailUpdateManyWithoutPriceListNestedInput = {
+    create?: XOR<PriceListDetailCreateWithoutPriceListInput, PriceListDetailUncheckedCreateWithoutPriceListInput> | PriceListDetailCreateWithoutPriceListInput[] | PriceListDetailUncheckedCreateWithoutPriceListInput[]
+    connectOrCreate?: PriceListDetailCreateOrConnectWithoutPriceListInput | PriceListDetailCreateOrConnectWithoutPriceListInput[]
+    upsert?: PriceListDetailUpsertWithWhereUniqueWithoutPriceListInput | PriceListDetailUpsertWithWhereUniqueWithoutPriceListInput[]
+    createMany?: PriceListDetailCreateManyPriceListInputEnvelope
+    set?: PriceListDetailWhereUniqueInput | PriceListDetailWhereUniqueInput[]
+    disconnect?: PriceListDetailWhereUniqueInput | PriceListDetailWhereUniqueInput[]
+    delete?: PriceListDetailWhereUniqueInput | PriceListDetailWhereUniqueInput[]
+    connect?: PriceListDetailWhereUniqueInput | PriceListDetailWhereUniqueInput[]
+    update?: PriceListDetailUpdateWithWhereUniqueWithoutPriceListInput | PriceListDetailUpdateWithWhereUniqueWithoutPriceListInput[]
+    updateMany?: PriceListDetailUpdateManyWithWhereWithoutPriceListInput | PriceListDetailUpdateManyWithWhereWithoutPriceListInput[]
+    deleteMany?: PriceListDetailScalarWhereInput | PriceListDetailScalarWhereInput[]
+  }
+
+  export type UserPriceListUpdateManyWithoutPriceListNestedInput = {
+    create?: XOR<UserPriceListCreateWithoutPriceListInput, UserPriceListUncheckedCreateWithoutPriceListInput> | UserPriceListCreateWithoutPriceListInput[] | UserPriceListUncheckedCreateWithoutPriceListInput[]
+    connectOrCreate?: UserPriceListCreateOrConnectWithoutPriceListInput | UserPriceListCreateOrConnectWithoutPriceListInput[]
+    upsert?: UserPriceListUpsertWithWhereUniqueWithoutPriceListInput | UserPriceListUpsertWithWhereUniqueWithoutPriceListInput[]
+    createMany?: UserPriceListCreateManyPriceListInputEnvelope
+    set?: UserPriceListWhereUniqueInput | UserPriceListWhereUniqueInput[]
+    disconnect?: UserPriceListWhereUniqueInput | UserPriceListWhereUniqueInput[]
+    delete?: UserPriceListWhereUniqueInput | UserPriceListWhereUniqueInput[]
+    connect?: UserPriceListWhereUniqueInput | UserPriceListWhereUniqueInput[]
+    update?: UserPriceListUpdateWithWhereUniqueWithoutPriceListInput | UserPriceListUpdateWithWhereUniqueWithoutPriceListInput[]
+    updateMany?: UserPriceListUpdateManyWithWhereWithoutPriceListInput | UserPriceListUpdateManyWithWhereWithoutPriceListInput[]
+    deleteMany?: UserPriceListScalarWhereInput | UserPriceListScalarWhereInput[]
+  }
+
+  export type PriceListDetailUncheckedUpdateManyWithoutPriceListNestedInput = {
+    create?: XOR<PriceListDetailCreateWithoutPriceListInput, PriceListDetailUncheckedCreateWithoutPriceListInput> | PriceListDetailCreateWithoutPriceListInput[] | PriceListDetailUncheckedCreateWithoutPriceListInput[]
+    connectOrCreate?: PriceListDetailCreateOrConnectWithoutPriceListInput | PriceListDetailCreateOrConnectWithoutPriceListInput[]
+    upsert?: PriceListDetailUpsertWithWhereUniqueWithoutPriceListInput | PriceListDetailUpsertWithWhereUniqueWithoutPriceListInput[]
+    createMany?: PriceListDetailCreateManyPriceListInputEnvelope
+    set?: PriceListDetailWhereUniqueInput | PriceListDetailWhereUniqueInput[]
+    disconnect?: PriceListDetailWhereUniqueInput | PriceListDetailWhereUniqueInput[]
+    delete?: PriceListDetailWhereUniqueInput | PriceListDetailWhereUniqueInput[]
+    connect?: PriceListDetailWhereUniqueInput | PriceListDetailWhereUniqueInput[]
+    update?: PriceListDetailUpdateWithWhereUniqueWithoutPriceListInput | PriceListDetailUpdateWithWhereUniqueWithoutPriceListInput[]
+    updateMany?: PriceListDetailUpdateManyWithWhereWithoutPriceListInput | PriceListDetailUpdateManyWithWhereWithoutPriceListInput[]
+    deleteMany?: PriceListDetailScalarWhereInput | PriceListDetailScalarWhereInput[]
+  }
+
+  export type UserPriceListUncheckedUpdateManyWithoutPriceListNestedInput = {
+    create?: XOR<UserPriceListCreateWithoutPriceListInput, UserPriceListUncheckedCreateWithoutPriceListInput> | UserPriceListCreateWithoutPriceListInput[] | UserPriceListUncheckedCreateWithoutPriceListInput[]
+    connectOrCreate?: UserPriceListCreateOrConnectWithoutPriceListInput | UserPriceListCreateOrConnectWithoutPriceListInput[]
+    upsert?: UserPriceListUpsertWithWhereUniqueWithoutPriceListInput | UserPriceListUpsertWithWhereUniqueWithoutPriceListInput[]
+    createMany?: UserPriceListCreateManyPriceListInputEnvelope
+    set?: UserPriceListWhereUniqueInput | UserPriceListWhereUniqueInput[]
+    disconnect?: UserPriceListWhereUniqueInput | UserPriceListWhereUniqueInput[]
+    delete?: UserPriceListWhereUniqueInput | UserPriceListWhereUniqueInput[]
+    connect?: UserPriceListWhereUniqueInput | UserPriceListWhereUniqueInput[]
+    update?: UserPriceListUpdateWithWhereUniqueWithoutPriceListInput | UserPriceListUpdateWithWhereUniqueWithoutPriceListInput[]
+    updateMany?: UserPriceListUpdateManyWithWhereWithoutPriceListInput | UserPriceListUpdateManyWithWhereWithoutPriceListInput[]
+    deleteMany?: UserPriceListScalarWhereInput | UserPriceListScalarWhereInput[]
+  }
+
+  export type CollectionCreateNestedOneWithoutPriceListDetailInput = {
+    create?: XOR<CollectionCreateWithoutPriceListDetailInput, CollectionUncheckedCreateWithoutPriceListDetailInput>
+    connectOrCreate?: CollectionCreateOrConnectWithoutPriceListDetailInput
+    connect?: CollectionWhereUniqueInput
+  }
+
+  export type PriceListCreateNestedOneWithoutPriceListDetailInput = {
+    create?: XOR<PriceListCreateWithoutPriceListDetailInput, PriceListUncheckedCreateWithoutPriceListDetailInput>
+    connectOrCreate?: PriceListCreateOrConnectWithoutPriceListDetailInput
+    connect?: PriceListWhereUniqueInput
+  }
+
+  export type CollectionUpdateOneRequiredWithoutPriceListDetailNestedInput = {
+    create?: XOR<CollectionCreateWithoutPriceListDetailInput, CollectionUncheckedCreateWithoutPriceListDetailInput>
+    connectOrCreate?: CollectionCreateOrConnectWithoutPriceListDetailInput
+    upsert?: CollectionUpsertWithoutPriceListDetailInput
+    connect?: CollectionWhereUniqueInput
+    update?: XOR<XOR<CollectionUpdateToOneWithWhereWithoutPriceListDetailInput, CollectionUpdateWithoutPriceListDetailInput>, CollectionUncheckedUpdateWithoutPriceListDetailInput>
+  }
+
+  export type PriceListUpdateOneRequiredWithoutPriceListDetailNestedInput = {
+    create?: XOR<PriceListCreateWithoutPriceListDetailInput, PriceListUncheckedCreateWithoutPriceListDetailInput>
+    connectOrCreate?: PriceListCreateOrConnectWithoutPriceListDetailInput
+    upsert?: PriceListUpsertWithoutPriceListDetailInput
+    connect?: PriceListWhereUniqueInput
+    update?: XOR<XOR<PriceListUpdateToOneWithWhereWithoutPriceListDetailInput, PriceListUpdateWithoutPriceListDetailInput>, PriceListUncheckedUpdateWithoutPriceListDetailInput>
+  }
+
+  export type PriceListCreateNestedOneWithoutUserPriceListInput = {
+    create?: XOR<PriceListCreateWithoutUserPriceListInput, PriceListUncheckedCreateWithoutUserPriceListInput>
+    connectOrCreate?: PriceListCreateOrConnectWithoutUserPriceListInput
+    connect?: PriceListWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutUserPriceListInput = {
+    create?: XOR<UserCreateWithoutUserPriceListInput, UserUncheckedCreateWithoutUserPriceListInput>
+    connectOrCreate?: UserCreateOrConnectWithoutUserPriceListInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type PriceListUpdateOneRequiredWithoutUserPriceListNestedInput = {
+    create?: XOR<PriceListCreateWithoutUserPriceListInput, PriceListUncheckedCreateWithoutUserPriceListInput>
+    connectOrCreate?: PriceListCreateOrConnectWithoutUserPriceListInput
+    upsert?: PriceListUpsertWithoutUserPriceListInput
+    connect?: PriceListWhereUniqueInput
+    update?: XOR<XOR<PriceListUpdateToOneWithWhereWithoutUserPriceListInput, PriceListUpdateWithoutUserPriceListInput>, PriceListUncheckedUpdateWithoutUserPriceListInput>
+  }
+
+  export type UserUpdateOneRequiredWithoutUserPriceListNestedInput = {
+    create?: XOR<UserCreateWithoutUserPriceListInput, UserUncheckedCreateWithoutUserPriceListInput>
+    connectOrCreate?: UserCreateOrConnectWithoutUserPriceListInput
+    upsert?: UserUpsertWithoutUserPriceListInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutUserPriceListInput, UserUpdateWithoutUserPriceListInput>, UserUncheckedUpdateWithoutUserPriceListInput>
   }
 
   export type NestedIntFilter<$PrismaModel = never> = {
@@ -7284,6 +11999,58 @@ export namespace Prisma {
     _max?: NestedFloatFilter<$PrismaModel>
   }
 
+  export type NestedDateTimeNullableFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
+  }
+
+  export type NestedDecimalNullableFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+  }
+
+  export type NestedDateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedDateTimeNullableFilter<$PrismaModel>
+    _max?: NestedDateTimeNullableFilter<$PrismaModel>
+  }
+
+  export type NestedDecimalNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedDecimalNullableFilter<$PrismaModel>
+    _sum?: NestedDecimalNullableFilter<$PrismaModel>
+    _min?: NestedDecimalNullableFilter<$PrismaModel>
+    _max?: NestedDecimalNullableFilter<$PrismaModel>
+  }
+
   export type UserCreateWithoutUserTypeInput = {
     email: string
     name: string
@@ -7296,6 +12063,7 @@ export namespace Prisma {
     surname: string
     userId?: string
     username: string
+    UserPriceList?: UserPriceListCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutUserTypeInput = {
@@ -7310,6 +12078,7 @@ export namespace Prisma {
     surname: string
     userId?: string
     username: string
+    UserPriceList?: UserPriceListUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutUserTypeInput = {
@@ -7370,6 +12139,30 @@ export namespace Prisma {
     create: XOR<UserTypeCreateWithoutUsersInput, UserTypeUncheckedCreateWithoutUsersInput>
   }
 
+  export type UserPriceListCreateWithoutUserInput = {
+    user_price_list_id?: string
+    created_at?: Date | string
+    updated_at?: Date | string
+    PriceList: PriceListCreateNestedOneWithoutUserPriceListInput
+  }
+
+  export type UserPriceListUncheckedCreateWithoutUserInput = {
+    user_price_list_id?: string
+    price_list_id: string
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type UserPriceListCreateOrConnectWithoutUserInput = {
+    where: UserPriceListWhereUniqueInput
+    create: XOR<UserPriceListCreateWithoutUserInput, UserPriceListUncheckedCreateWithoutUserInput>
+  }
+
+  export type UserPriceListCreateManyUserInputEnvelope = {
+    data: UserPriceListCreateManyUserInput | UserPriceListCreateManyUserInput[]
+    skipDuplicates?: boolean
+  }
+
   export type UserTypeUpsertWithoutUsersInput = {
     update: XOR<UserTypeUpdateWithoutUsersInput, UserTypeUncheckedUpdateWithoutUsersInput>
     create: XOR<UserTypeCreateWithoutUsersInput, UserTypeUncheckedCreateWithoutUsersInput>
@@ -7388,6 +12181,59 @@ export namespace Prisma {
   export type UserTypeUncheckedUpdateWithoutUsersInput = {
     id?: IntFieldUpdateOperationsInput | number
     name?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type UserPriceListUpsertWithWhereUniqueWithoutUserInput = {
+    where: UserPriceListWhereUniqueInput
+    update: XOR<UserPriceListUpdateWithoutUserInput, UserPriceListUncheckedUpdateWithoutUserInput>
+    create: XOR<UserPriceListCreateWithoutUserInput, UserPriceListUncheckedCreateWithoutUserInput>
+  }
+
+  export type UserPriceListUpdateWithWhereUniqueWithoutUserInput = {
+    where: UserPriceListWhereUniqueInput
+    data: XOR<UserPriceListUpdateWithoutUserInput, UserPriceListUncheckedUpdateWithoutUserInput>
+  }
+
+  export type UserPriceListUpdateManyWithWhereWithoutUserInput = {
+    where: UserPriceListScalarWhereInput
+    data: XOR<UserPriceListUpdateManyMutationInput, UserPriceListUncheckedUpdateManyWithoutUserInput>
+  }
+
+  export type UserPriceListScalarWhereInput = {
+    AND?: UserPriceListScalarWhereInput | UserPriceListScalarWhereInput[]
+    OR?: UserPriceListScalarWhereInput[]
+    NOT?: UserPriceListScalarWhereInput | UserPriceListScalarWhereInput[]
+    user_price_list_id?: StringFilter<"UserPriceList"> | string
+    user_id?: StringFilter<"UserPriceList"> | string
+    price_list_id?: StringFilter<"UserPriceList"> | string
+    created_at?: DateTimeFilter<"UserPriceList"> | Date | string
+    updated_at?: DateTimeFilter<"UserPriceList"> | Date | string
+  }
+
+  export type PriceListDetailCreateWithoutCollectionInput = {
+    price_list_detail_id?: string
+    price_per_square_meter: Decimal | DecimalJsLike | number | string
+    created_at?: Date | string
+    updated_at?: Date | string
+    PriceList: PriceListCreateNestedOneWithoutPriceListDetailInput
+  }
+
+  export type PriceListDetailUncheckedCreateWithoutCollectionInput = {
+    price_list_detail_id?: string
+    price_list_id: string
+    price_per_square_meter: Decimal | DecimalJsLike | number | string
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type PriceListDetailCreateOrConnectWithoutCollectionInput = {
+    where: PriceListDetailWhereUniqueInput
+    create: XOR<PriceListDetailCreateWithoutCollectionInput, PriceListDetailUncheckedCreateWithoutCollectionInput>
+  }
+
+  export type PriceListDetailCreateManyCollectionInputEnvelope = {
+    data: PriceListDetailCreateManyCollectionInput | PriceListDetailCreateManyCollectionInput[]
+    skipDuplicates?: boolean
   }
 
   export type ProductCreateWithoutCollectionInput = {
@@ -7426,6 +12272,34 @@ export namespace Prisma {
   export type ProductCreateManyCollectionInputEnvelope = {
     data: ProductCreateManyCollectionInput | ProductCreateManyCollectionInput[]
     skipDuplicates?: boolean
+  }
+
+  export type PriceListDetailUpsertWithWhereUniqueWithoutCollectionInput = {
+    where: PriceListDetailWhereUniqueInput
+    update: XOR<PriceListDetailUpdateWithoutCollectionInput, PriceListDetailUncheckedUpdateWithoutCollectionInput>
+    create: XOR<PriceListDetailCreateWithoutCollectionInput, PriceListDetailUncheckedCreateWithoutCollectionInput>
+  }
+
+  export type PriceListDetailUpdateWithWhereUniqueWithoutCollectionInput = {
+    where: PriceListDetailWhereUniqueInput
+    data: XOR<PriceListDetailUpdateWithoutCollectionInput, PriceListDetailUncheckedUpdateWithoutCollectionInput>
+  }
+
+  export type PriceListDetailUpdateManyWithWhereWithoutCollectionInput = {
+    where: PriceListDetailScalarWhereInput
+    data: XOR<PriceListDetailUpdateManyMutationInput, PriceListDetailUncheckedUpdateManyWithoutCollectionInput>
+  }
+
+  export type PriceListDetailScalarWhereInput = {
+    AND?: PriceListDetailScalarWhereInput | PriceListDetailScalarWhereInput[]
+    OR?: PriceListDetailScalarWhereInput[]
+    NOT?: PriceListDetailScalarWhereInput | PriceListDetailScalarWhereInput[]
+    price_list_detail_id?: StringFilter<"PriceListDetail"> | string
+    price_list_id?: StringFilter<"PriceListDetail"> | string
+    collection_id?: StringFilter<"PriceListDetail"> | string
+    price_per_square_meter?: DecimalFilter<"PriceListDetail"> | Decimal | DecimalJsLike | number | string
+    created_at?: DateTimeFilter<"PriceListDetail"> | Date | string
+    updated_at?: DateTimeFilter<"PriceListDetail"> | Date | string
   }
 
   export type ProductUpsertWithWhereUniqueWithoutCollectionInput = {
@@ -7470,6 +12344,7 @@ export namespace Prisma {
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    PriceListDetail?: PriceListDetailCreateNestedManyWithoutCollectionInput
   }
 
   export type CollectionUncheckedCreateWithoutProductsInput = {
@@ -7480,6 +12355,7 @@ export namespace Prisma {
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    PriceListDetail?: PriceListDetailUncheckedCreateNestedManyWithoutCollectionInput
   }
 
   export type CollectionCreateOrConnectWithoutProductsInput = {
@@ -7506,6 +12382,7 @@ export namespace Prisma {
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    PriceListDetail?: PriceListDetailUpdateManyWithoutCollectionNestedInput
   }
 
   export type CollectionUncheckedUpdateWithoutProductsInput = {
@@ -7516,6 +12393,377 @@ export namespace Prisma {
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    PriceListDetail?: PriceListDetailUncheckedUpdateManyWithoutCollectionNestedInput
+  }
+
+  export type PriceListDetailCreateWithoutPriceListInput = {
+    price_list_detail_id?: string
+    price_per_square_meter: Decimal | DecimalJsLike | number | string
+    created_at?: Date | string
+    updated_at?: Date | string
+    Collection: CollectionCreateNestedOneWithoutPriceListDetailInput
+  }
+
+  export type PriceListDetailUncheckedCreateWithoutPriceListInput = {
+    price_list_detail_id?: string
+    collection_id: string
+    price_per_square_meter: Decimal | DecimalJsLike | number | string
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type PriceListDetailCreateOrConnectWithoutPriceListInput = {
+    where: PriceListDetailWhereUniqueInput
+    create: XOR<PriceListDetailCreateWithoutPriceListInput, PriceListDetailUncheckedCreateWithoutPriceListInput>
+  }
+
+  export type PriceListDetailCreateManyPriceListInputEnvelope = {
+    data: PriceListDetailCreateManyPriceListInput | PriceListDetailCreateManyPriceListInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type UserPriceListCreateWithoutPriceListInput = {
+    user_price_list_id?: string
+    created_at?: Date | string
+    updated_at?: Date | string
+    User: UserCreateNestedOneWithoutUserPriceListInput
+  }
+
+  export type UserPriceListUncheckedCreateWithoutPriceListInput = {
+    user_price_list_id?: string
+    user_id: string
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type UserPriceListCreateOrConnectWithoutPriceListInput = {
+    where: UserPriceListWhereUniqueInput
+    create: XOR<UserPriceListCreateWithoutPriceListInput, UserPriceListUncheckedCreateWithoutPriceListInput>
+  }
+
+  export type UserPriceListCreateManyPriceListInputEnvelope = {
+    data: UserPriceListCreateManyPriceListInput | UserPriceListCreateManyPriceListInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type PriceListDetailUpsertWithWhereUniqueWithoutPriceListInput = {
+    where: PriceListDetailWhereUniqueInput
+    update: XOR<PriceListDetailUpdateWithoutPriceListInput, PriceListDetailUncheckedUpdateWithoutPriceListInput>
+    create: XOR<PriceListDetailCreateWithoutPriceListInput, PriceListDetailUncheckedCreateWithoutPriceListInput>
+  }
+
+  export type PriceListDetailUpdateWithWhereUniqueWithoutPriceListInput = {
+    where: PriceListDetailWhereUniqueInput
+    data: XOR<PriceListDetailUpdateWithoutPriceListInput, PriceListDetailUncheckedUpdateWithoutPriceListInput>
+  }
+
+  export type PriceListDetailUpdateManyWithWhereWithoutPriceListInput = {
+    where: PriceListDetailScalarWhereInput
+    data: XOR<PriceListDetailUpdateManyMutationInput, PriceListDetailUncheckedUpdateManyWithoutPriceListInput>
+  }
+
+  export type UserPriceListUpsertWithWhereUniqueWithoutPriceListInput = {
+    where: UserPriceListWhereUniqueInput
+    update: XOR<UserPriceListUpdateWithoutPriceListInput, UserPriceListUncheckedUpdateWithoutPriceListInput>
+    create: XOR<UserPriceListCreateWithoutPriceListInput, UserPriceListUncheckedCreateWithoutPriceListInput>
+  }
+
+  export type UserPriceListUpdateWithWhereUniqueWithoutPriceListInput = {
+    where: UserPriceListWhereUniqueInput
+    data: XOR<UserPriceListUpdateWithoutPriceListInput, UserPriceListUncheckedUpdateWithoutPriceListInput>
+  }
+
+  export type UserPriceListUpdateManyWithWhereWithoutPriceListInput = {
+    where: UserPriceListScalarWhereInput
+    data: XOR<UserPriceListUpdateManyMutationInput, UserPriceListUncheckedUpdateManyWithoutPriceListInput>
+  }
+
+  export type CollectionCreateWithoutPriceListDetailInput = {
+    collectionId?: string
+    name: string
+    description?: string | null
+    code: string
+    isActive?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    products?: ProductCreateNestedManyWithoutCollectionInput
+  }
+
+  export type CollectionUncheckedCreateWithoutPriceListDetailInput = {
+    collectionId?: string
+    name: string
+    description?: string | null
+    code: string
+    isActive?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    products?: ProductUncheckedCreateNestedManyWithoutCollectionInput
+  }
+
+  export type CollectionCreateOrConnectWithoutPriceListDetailInput = {
+    where: CollectionWhereUniqueInput
+    create: XOR<CollectionCreateWithoutPriceListDetailInput, CollectionUncheckedCreateWithoutPriceListDetailInput>
+  }
+
+  export type PriceListCreateWithoutPriceListDetailInput = {
+    price_list_id?: string
+    name: string
+    description?: string | null
+    is_default?: boolean
+    valid_from?: Date | string | null
+    valid_to?: Date | string | null
+    limit_amount?: Decimal | DecimalJsLike | number | string | null
+    currency: string
+    is_active?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+    UserPriceList?: UserPriceListCreateNestedManyWithoutPriceListInput
+  }
+
+  export type PriceListUncheckedCreateWithoutPriceListDetailInput = {
+    price_list_id?: string
+    name: string
+    description?: string | null
+    is_default?: boolean
+    valid_from?: Date | string | null
+    valid_to?: Date | string | null
+    limit_amount?: Decimal | DecimalJsLike | number | string | null
+    currency: string
+    is_active?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+    UserPriceList?: UserPriceListUncheckedCreateNestedManyWithoutPriceListInput
+  }
+
+  export type PriceListCreateOrConnectWithoutPriceListDetailInput = {
+    where: PriceListWhereUniqueInput
+    create: XOR<PriceListCreateWithoutPriceListDetailInput, PriceListUncheckedCreateWithoutPriceListDetailInput>
+  }
+
+  export type CollectionUpsertWithoutPriceListDetailInput = {
+    update: XOR<CollectionUpdateWithoutPriceListDetailInput, CollectionUncheckedUpdateWithoutPriceListDetailInput>
+    create: XOR<CollectionCreateWithoutPriceListDetailInput, CollectionUncheckedCreateWithoutPriceListDetailInput>
+    where?: CollectionWhereInput
+  }
+
+  export type CollectionUpdateToOneWithWhereWithoutPriceListDetailInput = {
+    where?: CollectionWhereInput
+    data: XOR<CollectionUpdateWithoutPriceListDetailInput, CollectionUncheckedUpdateWithoutPriceListDetailInput>
+  }
+
+  export type CollectionUpdateWithoutPriceListDetailInput = {
+    collectionId?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    code?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    products?: ProductUpdateManyWithoutCollectionNestedInput
+  }
+
+  export type CollectionUncheckedUpdateWithoutPriceListDetailInput = {
+    collectionId?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    code?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    products?: ProductUncheckedUpdateManyWithoutCollectionNestedInput
+  }
+
+  export type PriceListUpsertWithoutPriceListDetailInput = {
+    update: XOR<PriceListUpdateWithoutPriceListDetailInput, PriceListUncheckedUpdateWithoutPriceListDetailInput>
+    create: XOR<PriceListCreateWithoutPriceListDetailInput, PriceListUncheckedCreateWithoutPriceListDetailInput>
+    where?: PriceListWhereInput
+  }
+
+  export type PriceListUpdateToOneWithWhereWithoutPriceListDetailInput = {
+    where?: PriceListWhereInput
+    data: XOR<PriceListUpdateWithoutPriceListDetailInput, PriceListUncheckedUpdateWithoutPriceListDetailInput>
+  }
+
+  export type PriceListUpdateWithoutPriceListDetailInput = {
+    price_list_id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    is_default?: BoolFieldUpdateOperationsInput | boolean
+    valid_from?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    valid_to?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    limit_amount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    currency?: StringFieldUpdateOperationsInput | string
+    is_active?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    UserPriceList?: UserPriceListUpdateManyWithoutPriceListNestedInput
+  }
+
+  export type PriceListUncheckedUpdateWithoutPriceListDetailInput = {
+    price_list_id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    is_default?: BoolFieldUpdateOperationsInput | boolean
+    valid_from?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    valid_to?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    limit_amount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    currency?: StringFieldUpdateOperationsInput | string
+    is_active?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    UserPriceList?: UserPriceListUncheckedUpdateManyWithoutPriceListNestedInput
+  }
+
+  export type PriceListCreateWithoutUserPriceListInput = {
+    price_list_id?: string
+    name: string
+    description?: string | null
+    is_default?: boolean
+    valid_from?: Date | string | null
+    valid_to?: Date | string | null
+    limit_amount?: Decimal | DecimalJsLike | number | string | null
+    currency: string
+    is_active?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+    PriceListDetail?: PriceListDetailCreateNestedManyWithoutPriceListInput
+  }
+
+  export type PriceListUncheckedCreateWithoutUserPriceListInput = {
+    price_list_id?: string
+    name: string
+    description?: string | null
+    is_default?: boolean
+    valid_from?: Date | string | null
+    valid_to?: Date | string | null
+    limit_amount?: Decimal | DecimalJsLike | number | string | null
+    currency: string
+    is_active?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+    PriceListDetail?: PriceListDetailUncheckedCreateNestedManyWithoutPriceListInput
+  }
+
+  export type PriceListCreateOrConnectWithoutUserPriceListInput = {
+    where: PriceListWhereUniqueInput
+    create: XOR<PriceListCreateWithoutUserPriceListInput, PriceListUncheckedCreateWithoutUserPriceListInput>
+  }
+
+  export type UserCreateWithoutUserPriceListInput = {
+    email: string
+    name: string
+    createdAt?: Date | string
+    credit?: Decimal | DecimalJsLike | number | string
+    debit?: Decimal | DecimalJsLike | number | string
+    isActive?: boolean
+    password: string
+    phoneNumber?: string | null
+    surname: string
+    userId?: string
+    username: string
+    userType: UserTypeCreateNestedOneWithoutUsersInput
+  }
+
+  export type UserUncheckedCreateWithoutUserPriceListInput = {
+    email: string
+    name: string
+    createdAt?: Date | string
+    credit?: Decimal | DecimalJsLike | number | string
+    debit?: Decimal | DecimalJsLike | number | string
+    isActive?: boolean
+    password: string
+    phoneNumber?: string | null
+    surname: string
+    userId?: string
+    username: string
+    userTypeId: number
+  }
+
+  export type UserCreateOrConnectWithoutUserPriceListInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutUserPriceListInput, UserUncheckedCreateWithoutUserPriceListInput>
+  }
+
+  export type PriceListUpsertWithoutUserPriceListInput = {
+    update: XOR<PriceListUpdateWithoutUserPriceListInput, PriceListUncheckedUpdateWithoutUserPriceListInput>
+    create: XOR<PriceListCreateWithoutUserPriceListInput, PriceListUncheckedCreateWithoutUserPriceListInput>
+    where?: PriceListWhereInput
+  }
+
+  export type PriceListUpdateToOneWithWhereWithoutUserPriceListInput = {
+    where?: PriceListWhereInput
+    data: XOR<PriceListUpdateWithoutUserPriceListInput, PriceListUncheckedUpdateWithoutUserPriceListInput>
+  }
+
+  export type PriceListUpdateWithoutUserPriceListInput = {
+    price_list_id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    is_default?: BoolFieldUpdateOperationsInput | boolean
+    valid_from?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    valid_to?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    limit_amount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    currency?: StringFieldUpdateOperationsInput | string
+    is_active?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    PriceListDetail?: PriceListDetailUpdateManyWithoutPriceListNestedInput
+  }
+
+  export type PriceListUncheckedUpdateWithoutUserPriceListInput = {
+    price_list_id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    is_default?: BoolFieldUpdateOperationsInput | boolean
+    valid_from?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    valid_to?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    limit_amount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    currency?: StringFieldUpdateOperationsInput | string
+    is_active?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    PriceListDetail?: PriceListDetailUncheckedUpdateManyWithoutPriceListNestedInput
+  }
+
+  export type UserUpsertWithoutUserPriceListInput = {
+    update: XOR<UserUpdateWithoutUserPriceListInput, UserUncheckedUpdateWithoutUserPriceListInput>
+    create: XOR<UserCreateWithoutUserPriceListInput, UserUncheckedCreateWithoutUserPriceListInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutUserPriceListInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutUserPriceListInput, UserUncheckedUpdateWithoutUserPriceListInput>
+  }
+
+  export type UserUpdateWithoutUserPriceListInput = {
+    email?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    credit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    debit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    password?: StringFieldUpdateOperationsInput | string
+    phoneNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    surname?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    username?: StringFieldUpdateOperationsInput | string
+    userType?: UserTypeUpdateOneRequiredWithoutUsersNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutUserPriceListInput = {
+    email?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    credit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    debit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    password?: StringFieldUpdateOperationsInput | string
+    phoneNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    surname?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    username?: StringFieldUpdateOperationsInput | string
+    userTypeId?: IntFieldUpdateOperationsInput | number
   }
 
   export type UserCreateManyUserTypeInput = {
@@ -7544,6 +12792,7 @@ export namespace Prisma {
     surname?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
     username?: StringFieldUpdateOperationsInput | string
+    UserPriceList?: UserPriceListUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutUserTypeInput = {
@@ -7558,6 +12807,7 @@ export namespace Prisma {
     surname?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
     username?: StringFieldUpdateOperationsInput | string
+    UserPriceList?: UserPriceListUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateManyWithoutUserTypeInput = {
@@ -7574,6 +12824,42 @@ export namespace Prisma {
     username?: StringFieldUpdateOperationsInput | string
   }
 
+  export type UserPriceListCreateManyUserInput = {
+    user_price_list_id?: string
+    price_list_id: string
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type UserPriceListUpdateWithoutUserInput = {
+    user_price_list_id?: StringFieldUpdateOperationsInput | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    PriceList?: PriceListUpdateOneRequiredWithoutUserPriceListNestedInput
+  }
+
+  export type UserPriceListUncheckedUpdateWithoutUserInput = {
+    user_price_list_id?: StringFieldUpdateOperationsInput | string
+    price_list_id?: StringFieldUpdateOperationsInput | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type UserPriceListUncheckedUpdateManyWithoutUserInput = {
+    user_price_list_id?: StringFieldUpdateOperationsInput | string
+    price_list_id?: StringFieldUpdateOperationsInput | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PriceListDetailCreateManyCollectionInput = {
+    price_list_detail_id?: string
+    price_list_id: string
+    price_per_square_meter: Decimal | DecimalJsLike | number | string
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
   export type ProductCreateManyCollectionInput = {
     productId?: string
     name: string
@@ -7586,6 +12872,30 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     collection_name?: string | null
+  }
+
+  export type PriceListDetailUpdateWithoutCollectionInput = {
+    price_list_detail_id?: StringFieldUpdateOperationsInput | string
+    price_per_square_meter?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    PriceList?: PriceListUpdateOneRequiredWithoutPriceListDetailNestedInput
+  }
+
+  export type PriceListDetailUncheckedUpdateWithoutCollectionInput = {
+    price_list_detail_id?: StringFieldUpdateOperationsInput | string
+    price_list_id?: StringFieldUpdateOperationsInput | string
+    price_per_square_meter?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PriceListDetailUncheckedUpdateManyWithoutCollectionInput = {
+    price_list_detail_id?: StringFieldUpdateOperationsInput | string
+    price_list_id?: StringFieldUpdateOperationsInput | string
+    price_per_square_meter?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type ProductUpdateWithoutCollectionInput = {
@@ -7628,6 +12938,66 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     collection_name?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type PriceListDetailCreateManyPriceListInput = {
+    price_list_detail_id?: string
+    collection_id: string
+    price_per_square_meter: Decimal | DecimalJsLike | number | string
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type UserPriceListCreateManyPriceListInput = {
+    user_price_list_id?: string
+    user_id: string
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type PriceListDetailUpdateWithoutPriceListInput = {
+    price_list_detail_id?: StringFieldUpdateOperationsInput | string
+    price_per_square_meter?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    Collection?: CollectionUpdateOneRequiredWithoutPriceListDetailNestedInput
+  }
+
+  export type PriceListDetailUncheckedUpdateWithoutPriceListInput = {
+    price_list_detail_id?: StringFieldUpdateOperationsInput | string
+    collection_id?: StringFieldUpdateOperationsInput | string
+    price_per_square_meter?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PriceListDetailUncheckedUpdateManyWithoutPriceListInput = {
+    price_list_detail_id?: StringFieldUpdateOperationsInput | string
+    collection_id?: StringFieldUpdateOperationsInput | string
+    price_per_square_meter?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type UserPriceListUpdateWithoutPriceListInput = {
+    user_price_list_id?: StringFieldUpdateOperationsInput | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    User?: UserUpdateOneRequiredWithoutUserPriceListNestedInput
+  }
+
+  export type UserPriceListUncheckedUpdateWithoutPriceListInput = {
+    user_price_list_id?: StringFieldUpdateOperationsInput | string
+    user_id?: StringFieldUpdateOperationsInput | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type UserPriceListUncheckedUpdateManyWithoutPriceListInput = {
+    user_price_list_id?: StringFieldUpdateOperationsInput | string
+    user_id?: StringFieldUpdateOperationsInput | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
 
