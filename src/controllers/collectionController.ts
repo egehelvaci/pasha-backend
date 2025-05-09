@@ -44,7 +44,9 @@ export const createCollection = async (req: Request, res: Response) => {
     
     // Kod benzersiz olmalı, kontrol edelim
     const existingCollection = await prisma.collection.findUnique({
-      where: { code },
+      where: {
+        code: code
+      }
     });
     
     if (existingCollection) {
