@@ -327,7 +327,7 @@ export const deletePriceList = async (req: Request, res: Response) => {
 export const getCollectionsForPriceList = async (req: Request, res: Response) => {
   try {
     const collections = await prisma.$queryRaw`
-      SELECT "collectionId", name, code FROM "Collection" WHERE "isActive" = true ORDER BY name ASC
+      SELECT "collection_id" as "collectionId", name, code FROM "Collection" WHERE "is_active" = true ORDER BY name ASC
     `;
     
     return res.status(200).json({ success: true, data: collections });
