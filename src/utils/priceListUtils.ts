@@ -22,7 +22,9 @@ export const getActivePriceListForUser = async (userId: string) => {
   // Kullanıcıya özel atanmış fiyat listesini kontrol et
   const userPriceList = await prisma.userPriceList.findFirst({
     where: { user_id: userId },
-    include: { PriceList: true }
+    include: {
+      PriceList: true
+    }
   });
   
   if (userPriceList) {
