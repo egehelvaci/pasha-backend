@@ -54,7 +54,8 @@ export class AuthService {
           isActive: true
         },
         include: {
-          userType: true
+          userType: true,
+          Store: true
         }
       })
 
@@ -109,21 +110,14 @@ export class AuthService {
 
       console.log(`${user.username} kullanıcısı için yeni token oluşturuldu. JTI: ${jti}, Zaman: ${timestamp}`);
 
+      // Şifreyi hariç tutarak tüm kullanıcı bilgilerini döndür
+      const { password, ...userWithoutPassword } = user;
+
       return {
         token,
         user: {
-          userId: user.userId,
-          username: user.username,
-          name: user.name,
-          surname: user.surname,
-          email: user.email,
-          phoneNumber: user.phoneNumber,
-          isActive: user.isActive,
-          createdAt: user.createdAt,
-          credit: user.credit,
-          debit: user.debit,
-          userType: user.userType.name,
-          userTypeId: user.userTypeId
+          ...userWithoutPassword,
+          userType: user.userType.name
         }
       }
     } catch (error) {

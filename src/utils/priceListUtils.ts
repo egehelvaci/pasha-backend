@@ -19,37 +19,45 @@ export const calculateUserSpending = async (userId: string): Promise<number> => 
  * @returns Fiyat listesi
  */
 export const getActivePriceListForUser = async (userId: string) => {
-  // Kullanıcıya özel atanmış fiyat listesini kontrol et
-  const userPriceList = await prisma.userPriceList.findFirst({
-    where: { user_id: userId },
-    include: { PriceList: true }
+  // Kullanıcının mağazasını bul
+  const user = await prisma.user.findUnique({
+    where: { userId },
+    include: { Store: true }
   });
   
-  if (userPriceList) {
-    const priceList = userPriceList.PriceList;
+  if (user?.Store) {
+    // Kullanıcının mağazasına atanmış fiyat listesini kontrol et
+    const storePriceList = await prisma.storePriceList.findFirst({
+      where: { store_id: user.Store.store_id },
+      include: { PriceList: true }
+    });
     
-    // Fiyat listesinin geçerlilik süresini kontrol et
-    const now = new Date();
-    if (priceList.valid_from && new Date(priceList.valid_from) > now) {
-      // Henüz başlamamış, varsayılan listeyi kullan
-      return await getDefaultPriceList();
-    }
-    
-    if (priceList.valid_to && new Date(priceList.valid_to) < now) {
-      // Süresi dolmuş, varsayılan listeyi kullan
-      return await getDefaultPriceList();
-    }
-    
-    // Fiyat listesinin limit tutarını kontrol et
-    if (priceList.limit_amount) {
-      const userSpending = await calculateUserSpending(userId);
-      if (userSpending >= Number(priceList.limit_amount)) {
-        // Limiti aşmış, varsayılan listeyi kullan
+    if (storePriceList) {
+      const priceList = storePriceList.PriceList;
+      
+      // Fiyat listesinin geçerlilik süresini kontrol et
+      const now = new Date();
+      if (priceList.valid_from && new Date(priceList.valid_from) > now) {
+        // Henüz başlamamış, varsayılan listeyi kullan
         return await getDefaultPriceList();
       }
+      
+      if (priceList.valid_to && new Date(priceList.valid_to) < now) {
+        // Süresi dolmuş, varsayılan listeyi kullan
+        return await getDefaultPriceList();
+      }
+      
+      // Fiyat listesinin limit tutarını kontrol et
+      if (priceList.limit_amount) {
+        const userSpending = await calculateUserSpending(userId);
+        if (userSpending >= Number(priceList.limit_amount)) {
+          // Limiti aşmış, varsayılan listeyi kullan
+          return await getDefaultPriceList();
+        }
+      }
+      
+      return priceList;
     }
-    
-    return priceList;
   }
   
   // Kullanıcıya özel fiyat listesi yoksa varsayılan listeyi kullan
@@ -61,16 +69,13 @@ export const getActivePriceListForUser = async (userId: string) => {
  * @returns Varsayılan fiyat listesi
  */
 export const getDefaultPriceList = async () => {
-  return await prisma.priceList.findFirst({
+  const defaultPriceList = await prisma.priceList.findFirst({
     where: { is_default: true },
-    include: { 
-      PriceListDetail: {
-        include: {
-          Collection: true
-        }
-      }
+    include: {
+      PriceListDetail: true
     }
   });
+  return defaultPriceList;
 };
 
 /**

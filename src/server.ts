@@ -1,10 +1,20 @@
 import express from 'express'
-import authRoutes from './auth/auth-routes'
-import collectionRoutes from './routes/collectionRoutes'
+import cors from 'cors'
+import dotenv from 'dotenv'
+import { PrismaClient } from '../generated/prisma'
 import productRoutes from './routes/productRoutes'
-import adminRoutes from './admin/admin-routes'
-import catalogRoutes from './routes/catalogRoutes'
+import collectionRoutes from './routes/collectionRoutes'
 import priceListRoutes from './routes/priceListRoutes'
+import catalogRoutes from './routes/catalogRoutes'
+import adminRoutes from './admin/admin-routes'
+import authRoutes from './auth/auth-routes'
+import storeRoutes from './admin/store-routes'
+import path from 'path'
+import multer from 'multer'
+import { fileURLToPath } from 'url'
+import { dirname } from 'path'
+
+dotenv.config()
 
 // Express uygulaması oluştur
 const app = express()
@@ -21,30 +31,35 @@ console.log(`TEBI_SECRET_KEY: ${process.env.TEBI_SECRET_KEY ? 'Mevcut' : 'Tanım
 console.log(`TEBI_BUCKET_NAME: ${process.env.TEBI_BUCKET_NAME || 'pashahome'}`)
 
 // Middleware'ler
+app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
-// CORS ayarları - tüm domainlerden gelen isteklere izin ver
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization')
-  
-  // OPTIONS isteklerini hemen yanıtla
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end()
+// Statik dosyalar için klasör tanımı
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
+
+// Multer ayarları - dosya yükleme için
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, '../uploads/'))
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
+    const extension = path.extname(file.originalname)
+    cb(null, file.fieldname + '-' + uniqueSuffix + extension)
   }
-  
-  next()
 })
 
+const upload = multer({ storage: storage })
+
 // Routes
-app.use('/api/auth', authRoutes)
-app.use('/api/collections', collectionRoutes)
 app.use('/api/products', productRoutes)
-app.use('/api/admin', adminRoutes)
-app.use('/api/catalog', catalogRoutes)
+app.use('/api/collections', collectionRoutes)
 app.use('/api/price-lists', priceListRoutes)
+app.use('/api/catalog', catalogRoutes)
+app.use('/api/admin', adminRoutes)
+app.use('/api/auth', authRoutes)
+app.use('/api/stores', storeRoutes)
 
 // Kök rota - Railway proxy için basit yanıt
 app.get('/', (req, res) => {

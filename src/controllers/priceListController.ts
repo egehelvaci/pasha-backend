@@ -33,12 +33,6 @@ interface UserType {
   name: string;
 }
 
-interface UserPriceList {
-  user_price_list_id: number;
-  user_id: number;
-  price_list_id: number;
-}
-
 const prisma = new PrismaClient();
 
 // Tüm fiyat listelerini getir
@@ -255,24 +249,22 @@ export const updatePriceList = async (req: Request, res: Response) => {
         paramIndex++;
       }
       
-      if (!existingPriceList.is_default) {
-        if (validFrom !== undefined) {
-          updateQuery += `valid_from = $${paramIndex}, `;
-          updateValues.push(validFrom ? new Date(validFrom) : null);
-          paramIndex++;
-        }
-        
-        if (validTo !== undefined) {
-          updateQuery += `valid_to = $${paramIndex}, `;
-          updateValues.push(validTo ? new Date(validTo) : null);
-          paramIndex++;
-        }
-        
-        if (limitAmount !== undefined) {
-          updateQuery += `limit_amount = $${paramIndex}, `;
-          updateValues.push(limitAmount);
-          paramIndex++;
-        }
+      if (validFrom !== undefined) {
+        updateQuery += `valid_from = $${paramIndex}, `;
+        updateValues.push(validFrom ? new Date(validFrom) : null);
+        paramIndex++;
+      }
+      
+      if (validTo !== undefined) {
+        updateQuery += `valid_to = $${paramIndex}, `;
+        updateValues.push(validTo ? new Date(validTo) : null);
+        paramIndex++;
+      }
+      
+      if (limitAmount !== undefined) {
+        updateQuery += `limit_amount = $${paramIndex}, `;
+        updateValues.push(limitAmount);
+        paramIndex++;
       }
       
       if (currency !== undefined) {
@@ -281,25 +273,58 @@ export const updatePriceList = async (req: Request, res: Response) => {
         paramIndex++;
       }
       
-      // Son virgülü kaldır ve WHERE ekle
+      // Son virgülü kaldır ve WHERE koşulunu ekle
       updateQuery = updateQuery.slice(0, -2) + ` WHERE price_list_id = $${paramIndex}`;
       updateValues.push(id);
       
-      await tx.$executeRawUnsafe(updateQuery, ...updateValues);
+      // Güncelleme sorgusu boş değilse çalıştır
+      if (updateValues.length > 0) {
+        await tx.$executeRawUnsafe(updateQuery, ...updateValues);
+      }
       
       // Koleksiyon fiyatlarını güncelle
       if (collectionPrices && collectionPrices.length > 0) {
-        // Önce var olan tüm fiyat detaylarını sil
-        await tx.$executeRaw`
-          DELETE FROM "PriceListDetail" WHERE price_list_id = ${id}
+        // Önce mevcut detayları al
+        const existingDetails = await tx.$queryRaw`
+          SELECT * FROM "PriceListDetail" WHERE price_list_id = ${id}
         `;
         
-        // Yeni fiyat detaylarını oluştur
+        const existingDetailsMap = new Map();
+        if (Array.isArray(existingDetails)) {
+          existingDetails.forEach((detail: any) => {
+            existingDetailsMap.set(detail.collection_id, detail);
+          });
+        }
+        
+        // Her bir koleksiyon fiyatı için güncelleme yap
         for (const item of collectionPrices) {
-          await tx.$executeRaw`
-            INSERT INTO "PriceListDetail"(price_list_id, collection_id, price_per_square_meter)
-            VALUES (${id}, ${item.collectionId}, ${item.pricePerSquareMeter})
+          // Fiyat kontrolü
+          if (!item.pricePerSquareMeter || item.pricePerSquareMeter <= 0) {
+            throw new Error('Metrekare fiyatı pozitif bir sayı olmalıdır');
+          }
+          
+          // Koleksiyonun varlığını kontrol et
+          const collection = await tx.$queryRaw`
+            SELECT * FROM "Collection" WHERE collection_id = ${item.collectionId}
           `;
+          
+          if (!collection || (Array.isArray(collection) && collection.length === 0)) {
+            throw new Error(`${item.collectionId} ID'li koleksiyon bulunamadı`);
+          }
+          
+          // Eğer bu koleksiyon için detay varsa güncelle, yoksa ekle
+          if (existingDetailsMap.has(item.collectionId)) {
+            await tx.$executeRaw`
+              UPDATE "PriceListDetail" 
+              SET price_per_square_meter = ${item.pricePerSquareMeter}, updated_at = NOW()
+              WHERE price_list_id = ${id} AND collection_id = ${item.collectionId}
+            `;
+          } else {
+            await tx.$executeRaw`
+              INSERT INTO "PriceListDetail"(price_list_id, collection_id, price_per_square_meter)
+              VALUES (${id}, ${item.collectionId}, ${item.pricePerSquareMeter})
+            `;
+          }
         }
       }
       
@@ -348,9 +373,9 @@ export const deletePriceList = async (req: Request, res: Response) => {
     
     // Silme işlemini transaction ile yap
     await prisma.$transaction(async (tx) => {
-      // Önce fiyat listesine ait tüm kullanıcı atamalarını sil
+      // Önce mağaza-fiyat listesi ilişkilerini sil
       await tx.$executeRaw`
-        DELETE FROM "UserPriceList" WHERE price_list_id = ${id}
+        DELETE FROM "StorePriceList" WHERE price_list_id = ${id}
       `;
       
       // Sonra fiyat listesine ait tüm detayları sil
@@ -388,116 +413,161 @@ export const getCollectionsForPriceList = async (req: Request, res: Response) =>
   }
 };
 
-// Kullanıcıya fiyat listesi ata
-export const assignPriceListToUser = async (req: Request, res: Response) => {
+// Mağazaya fiyat listesi ata
+export const assignPriceListToStore = async (req: Request, res: Response) => {
   try {
-    const { userId, priceListId } = req.body;
-    
-    // Kullanıcı ve fiyat listesinin varlığını kontrol et
-    const user = await prisma.user.findUnique({
-      where: { userId },
-      include: { userType: true }
-    });
-    
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı' });
+    const { storeId, priceListId } = req.body;
+
+    if (!storeId || !priceListId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Mağaza ID ve fiyat listesi ID alanları zorunludur'
+      });
     }
-    
+
+    // Mağazanın varlığını kontrol et
+    const store = await prisma.store.findUnique({
+      where: { store_id: storeId }
+    });
+
+    if (!store) {
+      return res.status(404).json({
+        success: false,
+        message: 'Mağaza bulunamadı'
+      });
+    }
+
+    // Fiyat listesinin varlığını kontrol et
     const priceList = await prisma.priceList.findUnique({
       where: { price_list_id: priceListId }
     });
-    
+
     if (!priceList) {
-      return res.status(404).json({ success: false, message: 'Fiyat listesi bulunamadı' });
-    }
-    
-    // Kullanıcının "viewer" tipinde olup olmadığını kontrol et
-    if (user.userType?.name !== 'viewer') {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Fiyat listesi sadece viewer tipindeki kullanıcılara atanabilir' 
+      return res.status(404).json({
+        success: false,
+        message: 'Fiyat listesi bulunamadı'
       });
     }
-    
-    // Kullanıcıya zaten bir fiyat listesi atanmış mı kontrol et
-    const existingAssignment = await prisma.userPriceList.findFirst({
+
+    // Mevcut bir atama var mı kontrol et
+    const existingAssignment = await prisma.storePriceList.findFirst({
       where: {
-        user_id: userId,
+        store_id: storeId,
         price_list_id: priceListId
       }
     });
-    
-    // Eğer zaten bir atama varsa güncelle, yoksa yeni oluştur
-    let userPriceList;
-    
+
     if (existingAssignment) {
-      userPriceList = await prisma.userPriceList.update({
-        where: { user_price_list_id: existingAssignment.user_price_list_id },
-        data: {
-          price_list_id: priceListId,
-          updated_at: new Date()
-        }
-      });
-    } else {
-      userPriceList = await prisma.userPriceList.create({
-        data: {
-          user_id: userId,
-          price_list_id: priceListId
-        }
+      return res.status(400).json({
+        success: false,
+        message: 'Bu mağaza-fiyat listesi ataması zaten mevcut'
       });
     }
-    
-    return res.status(200).json({ success: true, data: userPriceList });
-  } catch (error) {
-    console.error('Fiyat listesi kullanıcıya atanırken hata oluştu:', error);
-    return res.status(500).json({ success: false, message: 'Sunucu hatası' });
-  }
-};
 
-// Kullanıcı fiyat listesi atamalarını getir
-export const getUserPriceLists = async (req: Request, res: Response) => {
-  try {
-    const { userId } = req.params;
-    
-    const userPriceLists = await prisma.$queryRaw`
-      SELECT upl.*, pl.name as price_list_name, pl.description as price_list_description
-      FROM "UserPriceList" upl
-      JOIN "PriceList" pl ON upl.price_list_id = pl.price_list_id
-      WHERE upl.user_id = ${userId}
-    `;
-    
-    return res.status(200).json({ success: true, data: userPriceLists });
-  } catch (error) {
-    console.error('Kullanıcı fiyat listeleri getirilirken hata oluştu:', error);
-    return res.status(500).json({ success: false, message: 'Sunucu hatası' });
-  }
-};
+    // Atamayı oluştur
+    const assignment = await prisma.storePriceList.create({
+      data: {
+        store_id: storeId,
+        price_list_id: priceListId
+      }
+    });
 
-// Kullanıcı fiyat listesi atamasını kaldır
-export const removeUserPriceList = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    
-    const userPriceListResult = await prisma.$queryRaw<UserPriceList[]>`
-      SELECT * FROM "UserPriceList" WHERE user_price_list_id = ${id}
-    `;
-    
-    const userPriceList = userPriceListResult[0];
-    
-    if (!userPriceList) {
-      return res.status(404).json({ success: false, message: 'Kullanıcı fiyat listesi bulunamadı' });
-    }
-    
-    await prisma.$executeRaw`
-      DELETE FROM "UserPriceList" WHERE user_price_list_id = ${id}
-    `;
-    
-    return res.status(200).json({ 
-      success: true, 
-      message: 'Kullanıcı fiyat listesi ataması başarıyla kaldırıldı' 
+    return res.status(201).json({
+      success: true,
+      data: assignment
     });
   } catch (error) {
-    console.error('Kullanıcı fiyat listesi ataması kaldırılırken hata oluştu:', error);
-    return res.status(500).json({ success: false, message: 'Sunucu hatası' });
+    console.error('Mağazaya fiyat listesi atanırken hata oluştu:', error);
+    return res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Sunucu hatası'
+    });
+  }
+};
+
+// Mağazanın fiyat listesi atamalarını getir
+export const getStorePriceLists = async (req: Request, res: Response) => {
+  try {
+    const { storeId } = req.params;
+
+    if (!storeId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Mağaza ID parametresi zorunludur'
+      });
+    }
+
+    // Mağazanın varlığını kontrol et
+    const store = await prisma.store.findUnique({
+      where: { store_id: storeId }
+    });
+
+    if (!store) {
+      return res.status(404).json({
+        success: false,
+        message: 'Mağaza bulunamadı'
+      });
+    }
+
+    // Mağazanın fiyat listesi atamalarını getir
+    const priceLists = await prisma.storePriceList.findMany({
+      where: { store_id: storeId },
+      include: {
+        PriceList: true
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: priceLists
+    });
+  } catch (error) {
+    console.error('Mağaza fiyat listeleri getirilirken hata oluştu:', error);
+    return res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Sunucu hatası'
+    });
+  }
+};
+
+// Mağaza fiyat listesi atamasını kaldır
+export const removeStorePriceList = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Atama ID parametresi zorunludur'
+      });
+    }
+
+    // Atamanın varlığını kontrol et
+    const assignment = await prisma.storePriceList.findUnique({
+      where: { store_price_list_id: id }
+    });
+
+    if (!assignment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Mağaza fiyat listesi ataması bulunamadı'
+      });
+    }
+
+    // Atamayı sil
+    await prisma.storePriceList.delete({
+      where: { store_price_list_id: id }
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Mağaza fiyat listesi ataması başarıyla kaldırıldı'
+    });
+  } catch (error) {
+    console.error('Mağaza fiyat listesi ataması kaldırılırken hata oluştu:', error);
+    return res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Sunucu hatası'
+    });
   }
 }; 

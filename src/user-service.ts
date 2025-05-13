@@ -1,254 +1,194 @@
 import { PrismaClient } from '../generated/prisma'
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken'
 
 const prisma = new PrismaClient()
-const SALT_ROUNDS = 10 // Şifre hash'leme için tuz değeri
 
-export class UserService {
-  /**
-   * Kullanıcı kimlik doğrulama
-   * @param username Kullanıcı adı
-   * @param password Şifre
-   * @returns Kimlik doğrulama başarılı ise true, değilse false
-   */
-  async authenticate(username: string, password: string): Promise<boolean> {
-    try {
-      const user = await prisma.user.findFirst({
-        where: {
-          username,
-          isActive: true
-        }
-      })
-      
-      if (!user) return false
-      
-      // Şifre hash kontrolü
-      const passwordMatch = await bcrypt.compare(password, user.password)
-      return passwordMatch
-    } catch (error) {
-      console.error('Kullanıcı kimlik doğrulama hatası:', error)
-      return false
-    }
-  }
-  
-  /**
-   * Şifreyi hashle
-   * @param password Plain text şifre
-   * @returns Hashlenmiş şifre
-   */
-  async hashPassword(password: string): Promise<string> {
-    return bcrypt.hash(password, SALT_ROUNDS)
-  }
-  
-  /**
-   * Kullanıcı hesabını deaktif etme
-   * @param userId Kullanıcı ID
-   */
-  async deactivate(userId: string): Promise<void> {
-    try {
-      await prisma.user.update({
-        where: { userId },
-        data: { isActive: false }
-      })
-      console.log(`${userId} ID'li kullanıcı deaktif edildi.`)
-    } catch (error) {
-      console.error('Kullanıcı deaktif etme hatası:', error)
-      throw new Error('Kullanıcı deaktif edilemedi')
-    }
-  }
-  
+class UserService {
   /**
    * Tüm aktif kullanıcıları getir
    */
-  async getAllActiveUsers() {
-    return prisma.user.findMany({
-      where: { isActive: true },
-      include: {
-        userType: true
-      }
-    })
-  }
-  
-  /**
-   * Tüm kullanıcıları getir (aktif veya deaktif)
-   */
   async getAllUsers() {
-    return prisma.user.findMany({
-      include: {
-        userType: true
-      }
-    })
-  }
-  
-  /**
-   * Belirli bir tipteki tüm kullanıcıları getir
-   * @param typeName Kullanıcı tipi adı (admin, editor, viewer)
-   */
-  async getUsersByType(typeName: string) {
-    return prisma.user.findMany({
+    return await prisma.user.findMany({
       where: {
-        userType: {
-          name: typeName
-        }
+        isActive: true
       },
       include: {
-        userType: true
+        userType: true,
+        Store: true
       }
     })
   }
-  
+
+  /**
+   * Kullanıcı adına göre kullanıcı getir
+   */
+  async getUserByUsername(username: string) {
+    return await prisma.user.findUnique({
+      where: {
+        username
+      },
+      include: {
+        userType: true,
+        Store: true
+      }
+    })
+  }
+
+  /**
+   * ID'ye göre kullanıcı getir
+   */
+  async getUserById(userId: string) {
+    return await prisma.user.findUnique({
+      where: {
+        userId
+      },
+      include: {
+        userType: true,
+        Store: true
+      }
+    })
+  }
+
   /**
    * Yeni kullanıcı oluştur
    */
-  async createUser(userData: {
-    username: string, 
-    password: string, 
-    name: string,
-    surname: string,
-    email: string, 
-    userTypeName: string
-  }) {
-    // Kullanıcı tipini bul
-    const userType = await prisma.userType.findFirst({
-      where: { name: userData.userTypeName }
-    })
+  async createUser(userData: any) {
+    const hashedPassword = await this.hashPassword(userData.password)
     
-    if (!userType) {
-      throw new Error(`${userData.userTypeName} tipinde bir kullanıcı tipi bulunamadı`)
-    }
-    
-    // Kullanıcı adının benzersiz olup olmadığını kontrol et
-    const existingUser = await prisma.user.findFirst({
-      where: { username: userData.username }
-    })
-    
-    if (existingUser) {
-      throw new Error('Bu kullanıcı adı zaten kullanılıyor')
-    }
-    
-    // Yeni kullanıcı oluştur
-    return prisma.user.create({
+    return await prisma.user.create({
       data: {
-        username: userData.username,
-        password: await this.hashPassword(userData.password),
-        name: userData.name,
-        surname: userData.surname,
-        email: userData.email,
-        isActive: true,
-        credit: 0,
-        debit: 0,
-        userTypeId: userType.id
+        ...userData,
+        password: hashedPassword
       },
       include: {
-        userType: true
+        userType: true,
+        Store: true
       }
     })
   }
-  
-  /**
-   * Kullanıcı kredisini güncelle
-   */
-  async updateCredit(userId: string, amount: number) {
-    return prisma.user.update({
-      where: { userId },
-      data: {
-        credit: {
-          increment: amount
-        }
-      },
-      include: {
-        userType: true
-      }
-    })
-  }
-  
-  /**
-   * Kullanıcı borcunu güncelle
-   */
-  async updateDebit(userId: string, amount: number) {
-    return prisma.user.update({
-      where: { userId },
-      data: {
-        debit: {
-          increment: amount
-        }
-      },
-      include: {
-        userType: true
-      }
-    })
-  }
-  
-  /**
-   * Kullanıcı tipini değiştir
-   */
-  async changeUserType(userId: string, newUserTypeName: string) {
-    const userType = await prisma.userType.findFirst({
-      where: { name: newUserTypeName }
-    })
-    
-    if (!userType) {
-      throw new Error(`${newUserTypeName} tipinde bir kullanıcı tipi bulunamadı`)
-    }
-    
-    return prisma.user.update({
-      where: { userId },
-      data: {
-        userTypeId: userType.id
-      },
-      include: {
-        userType: true
-      }
-    })
-  }
-  
-  /**
-   * Kullanıcı hesap bakiyesini getir
-   */
-  async getUserBalance(userId: string) {
-    const user = await prisma.user.findUnique({
-      where: { userId },
-      select: {
-        credit: true,
-        debit: true
-      }
-    })
-    
-    if (!user) {
-      throw new Error(`${userId} ID'li kullanıcı bulunamadı`)
-    }
-    
-    return {
-      credit: user.credit,
-      debit: user.debit,
-      balance: Number(user.credit) - Number(user.debit)
-    }
-  }
-  
+
   /**
    * Kullanıcı bilgilerini güncelle
    */
-  async updateUser(userId: string, updateData: any) {
-    // Şifre güncellenmişse hashleyelim
-    if (updateData.password) {
-      updateData.password = await this.hashPassword(updateData.password)
+  async updateUser(userId: string, userData: any) {
+    // Şifre güncellenecekse hash'le
+    if (userData.password) {
+      userData.password = await this.hashPassword(userData.password)
     }
     
-    return prisma.user.update({
-      where: { userId },
-      data: updateData,
+    return await prisma.user.update({
+      where: {
+        userId
+      },
+      data: userData,
       include: {
-        userType: true
+        userType: true,
+        Store: true
       }
     })
   }
-  
+
   /**
-   * Kullanıcıyı kalıcı olarak sil
+   * Kullanıcıyı deaktif et
    */
-  async deleteUser(userId: string) {
-    return prisma.user.delete({
-      where: { userId }
+  async deactivate(userId: string) {
+    return await prisma.user.update({
+      where: {
+        userId
+      },
+      data: {
+        isActive: false
+      }
     })
   }
-} 
+
+  /**
+   * Kullanıcıyı aktif et
+   */
+  async activate(userId: string) {
+    return await prisma.user.update({
+      where: {
+        userId
+      },
+      data: {
+        isActive: true
+      }
+    })
+  }
+
+  /**
+   * Kullanıcıyı sil
+   */
+  async deleteUser(userId: string) {
+    return await prisma.user.delete({
+      where: {
+        userId
+      }
+    })
+  }
+
+  /**
+   * Şifre hash'leme
+   */
+  async hashPassword(password: string) {
+    const salt = await bcrypt.genSalt(10)
+    return await bcrypt.hash(password, salt)
+  }
+
+  /**
+   * Şifre doğrulama
+   */
+  async verifyPassword(password: string, hashedPassword: string) {
+    return await bcrypt.compare(password, hashedPassword)
+  }
+
+  /**
+   * JWT token oluştur
+   */
+  generateToken(user: any) {
+    const payload = {
+      userId: user.userId,
+      username: user.username,
+      userType: user.userType.name
+    }
+    
+    const secret = process.env.JWT_SECRET || 'default_secret_key'
+    const expiresIn = '24h'
+    
+    return jwt.sign(payload, secret, { expiresIn })
+  }
+
+  /**
+   * Kullanıcıyı mağazaya ata
+   */
+  async assignUserToStore(userId: string, storeId: string) {
+    return await prisma.user.update({
+      where: {
+        userId
+      },
+      data: {
+        store_id: storeId
+      },
+      include: {
+        Store: true
+      }
+    })
+  }
+
+  /**
+   * Kullanıcıyı mağazadan kaldır
+   */
+  async removeUserFromStore(userId: string) {
+    return await prisma.user.update({
+      where: {
+        userId
+      },
+      data: {
+        store_id: null
+      }
+    })
+  }
+}
+
+export const userService = new UserService() 

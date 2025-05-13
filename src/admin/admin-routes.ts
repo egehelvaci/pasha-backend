@@ -1,6 +1,7 @@
 import express from 'express'
 import { AdminController } from './admin-controller'
 import { authMiddleware, authorizeRoles } from '../auth/auth-middleware'
+import storeRoutes from './store-routes'
 
 const router = express.Router()
 const adminController = new AdminController()
@@ -8,6 +9,9 @@ const adminController = new AdminController()
 // Tüm admin rotaları için önce kimlik doğrulama ve yetkilendirme gerekiyor
 router.use(authMiddleware)
 router.use(authorizeRoles('admin'))
+
+// Mağaza yönetimi rotalarını ekle
+router.use('/stores', storeRoutes)
 
 // Kullanıcıları listeleme
 router.get('/users', adminController.getAllUsers)

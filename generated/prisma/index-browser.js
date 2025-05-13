@@ -137,7 +137,8 @@ exports.Prisma.UserScalarFieldEnum = {
   surname: 'surname',
   userId: 'userId',
   username: 'username',
-  userTypeId: 'userTypeId'
+  userTypeId: 'userTypeId',
+  store_id: 'store_id'
 };
 
 exports.Prisma.CollectionScalarFieldEnum = {
@@ -188,9 +189,28 @@ exports.Prisma.PriceListDetailScalarFieldEnum = {
   updated_at: 'updated_at'
 };
 
-exports.Prisma.UserPriceListScalarFieldEnum = {
-  user_price_list_id: 'user_price_list_id',
-  user_id: 'user_id',
+exports.Prisma.StoreScalarFieldEnum = {
+  store_id: 'store_id',
+  kurum_adi: 'kurum_adi',
+  vergi_numarasi: 'vergi_numarasi',
+  vergi_dairesi: 'vergi_dairesi',
+  yetkili_adi: 'yetkili_adi',
+  yetkili_soyadi: 'yetkili_soyadi',
+  telefon: 'telefon',
+  eposta: 'eposta',
+  adres: 'adres',
+  faks_numarasi: 'faks_numarasi',
+  aciklama: 'aciklama',
+  limitsiz_acik_hesap: 'limitsiz_acik_hesap',
+  acik_hesap_tutari: 'acik_hesap_tutari',
+  is_active: 'is_active',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+};
+
+exports.Prisma.StorePriceListScalarFieldEnum = {
+  store_price_list_id: 'store_price_list_id',
+  store_id: 'store_id',
   price_list_id: 'price_list_id',
   created_at: 'created_at',
   updated_at: 'updated_at'
@@ -219,7 +239,8 @@ exports.Prisma.ModelName = {
   Product: 'Product',
   PriceList: 'PriceList',
   PriceListDetail: 'PriceListDetail',
-  UserPriceList: 'UserPriceList'
+  Store: 'Store',
+  StorePriceList: 'StorePriceList'
 };
 
 /**

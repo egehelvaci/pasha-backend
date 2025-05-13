@@ -1,8 +1,7 @@
 import { Request, Response } from 'express'
-import { UserService } from '../user-service'
+import { userService } from '../user-service'
 import { PrismaClient } from '../../generated/prisma'
 
-const userService = new UserService()
 const prisma = new PrismaClient()
 
 export class AdminController {
@@ -32,12 +31,18 @@ export class AdminController {
             }
           },
           include: {
-            userType: true
+            userType: true,
+            Store: true
           }
         })
       } else {
         // Tüm kullanıcıları getir (pasif olanlar dahil)
-        users = await userService.getAllUsers()
+        users = await prisma.user.findMany({
+          include: {
+            userType: true,
+            Store: true
+          }
+        })
       }
       
       return res.status(200).json({
@@ -64,7 +69,10 @@ export class AdminController {
       
       const user = await prisma.user.findUnique({
         where: { userId },
-        include: { userType: true }
+        include: { 
+          userType: true,
+          Store: true
+        }
       })
       
       if (!user) {
@@ -93,7 +101,18 @@ export class AdminController {
    */
   async createUser(req: Request, res: Response) {
     try {
-      const { username, password, name, surname, email, userTypeName, credit = 0, debit = 0, phoneNumber } = req.body
+      const { 
+        username, 
+        password, 
+        name, 
+        surname, 
+        email, 
+        userTypeName, 
+        credit = 0, 
+        debit = 0, 
+        phoneNumber,
+        store_id
+      } = req.body
       
       // Zorunlu alanların kontrolü
       if (!username || !password || !userTypeName || !name || !surname || !email) {
@@ -127,6 +146,20 @@ export class AdminController {
         })
       }
       
+      // Mağaza ID'si belirtilmişse mağazanın var olup olmadığını kontrol et
+      if (store_id) {
+        const store = await prisma.store.findUnique({
+          where: { store_id }
+        })
+        
+        if (!store) {
+          return res.status(404).json({
+            success: false,
+            message: 'Belirtilen mağaza bulunamadı'
+          })
+        }
+      }
+      
       // Şifreyi hashle
       const hashedPassword = await userService.hashPassword(password)
       
@@ -142,10 +175,12 @@ export class AdminController {
           credit: parseFloat(credit),
           debit: parseFloat(debit),
           userTypeId: userType.id,
-          phoneNumber
+          phoneNumber,
+          store_id
         },
         include: {
-          userType: true
+          userType: true,
+          Store: true
         }
       })
       
@@ -169,7 +204,18 @@ export class AdminController {
   async updateUser(req: Request, res: Response) {
     try {
       const { userId } = req.params
-      const { name, surname, email, userTypeName, isActive, password, credit, debit, phoneNumber } = req.body
+      const { 
+        name, 
+        surname, 
+        email, 
+        userTypeName, 
+        isActive, 
+        password, 
+        credit, 
+        debit, 
+        phoneNumber,
+        store_id
+      } = req.body
       
       // Güncellenecek kullanıcının var olup olmadığını kontrol et
       const existingUser = await prisma.user.findUnique({
@@ -200,6 +246,28 @@ export class AdminController {
       if (debit !== undefined) updateData.debit = parseFloat(debit)
       if (phoneNumber !== undefined) updateData.phoneNumber = phoneNumber
       
+      // Mağaza ID'si değiştirilecekse
+      if (store_id !== undefined) {
+        if (store_id === null) {
+          // Mağaza ilişkisini kaldır
+          updateData.store_id = null
+        } else {
+          // Mağazanın var olup olmadığını kontrol et
+          const store = await prisma.store.findUnique({
+            where: { store_id }
+          })
+          
+          if (!store) {
+            return res.status(404).json({
+              success: false,
+              message: 'Belirtilen mağaza bulunamadı'
+            })
+          }
+          
+          updateData.store_id = store_id
+        }
+      }
+      
       // Kullanıcı tipi değiştirilecekse
       if (userTypeName) {
         const userType = await prisma.userType.findFirst({
@@ -221,7 +289,8 @@ export class AdminController {
         where: { userId },
         data: updateData,
         include: {
-          userType: true
+          userType: true,
+          Store: true
         }
       })
       
