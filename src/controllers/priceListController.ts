@@ -517,6 +517,29 @@ export const getStorePriceLists = async (req: Request, res: Response) => {
       }
     });
 
+    // Eğer mağazaya atanmış fiyat listesi yoksa, varsayılan fiyat listesini getir
+    if (priceLists.length === 0) {
+      const defaultPriceList = await prisma.priceList.findFirst({
+        where: { is_default: true }
+      });
+
+      if (defaultPriceList) {
+        return res.status(200).json({
+          success: true,
+          data: [{
+            PriceList: defaultPriceList,
+            price_list_id: defaultPriceList.price_list_id,
+            store_id: storeId,
+            store_price_list_id: null, // Gerçek bir atama olmadığı için null
+            created_at: new Date(),
+            updated_at: new Date(),
+            is_default_assignment: true // Bu bir varsayılan atama olduğunu belirtmek için
+          }],
+          message: "Mağazaya özel atama bulunamadı, varsayılan fiyat listesi gösteriliyor"
+        });
+      }
+    }
+
     return res.status(200).json({
       success: true,
       data: priceLists
