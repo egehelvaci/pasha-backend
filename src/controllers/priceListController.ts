@@ -510,39 +510,57 @@ export const getStorePriceLists = async (req: Request, res: Response) => {
     }
 
     // Mağazanın fiyat listesi atamalarını getir
-    const priceLists = await prisma.storePriceList.findMany({
+    const storePriceLists = await prisma.storePriceList.findMany({
       where: { store_id: storeId },
       include: {
-        PriceList: true
+        PriceList: {
+          include: {
+            PriceListDetail: {
+              include: {
+                Collection: true
+              }
+            }
+          }
+        }
       }
     });
 
     // Eğer mağazaya atanmış fiyat listesi yoksa, varsayılan fiyat listesini getir
-    if (priceLists.length === 0) {
+    if (storePriceLists.length === 0) {
       const defaultPriceList = await prisma.priceList.findFirst({
-        where: { is_default: true }
+        where: { is_default: true },
+        include: {
+          PriceListDetail: {
+            include: {
+              Collection: true
+            }
+          }
+        }
       });
 
       if (defaultPriceList) {
         return res.status(200).json({
           success: true,
-          data: [{
-            PriceList: defaultPriceList,
-            price_list_id: defaultPriceList.price_list_id,
-            store_id: storeId,
-            store_price_list_id: null, // Gerçek bir atama olmadığı için null
-            created_at: new Date(),
-            updated_at: new Date(),
-            is_default_assignment: true // Bu bir varsayılan atama olduğunu belirtmek için
-          }],
+          data: defaultPriceList,
+          is_default: true,
           message: "Mağazaya özel atama bulunamadı, varsayılan fiyat listesi gösteriliyor"
         });
       }
     }
 
-    return res.status(200).json({
-      success: true,
-      data: priceLists
+    // Sadece fiyat listesi bilgilerini döndür
+    if (storePriceLists.length > 0) {
+      return res.status(200).json({
+        success: true,
+        data: storePriceLists[0].PriceList, // Mağazaya atanmış ilk fiyat listesini döndür
+        is_default: false
+      });
+    }
+
+    // Hiç fiyat listesi bulunamadı
+    return res.status(404).json({
+      success: false,
+      message: 'Mağaza için fiyat listesi bulunamadı ve varsayılan fiyat listesi tanımlanmamış'
     });
   } catch (error) {
     console.error('Mağaza fiyat listeleri getirilirken hata oluştu:', error);

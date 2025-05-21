@@ -20,11 +20,11 @@ router.use(authMiddleware);
 // Fiyat listelerini getir - sadece admin erişebilir
 router.get('/', authorizeRoles('admin'), getAllPriceLists);
 
-// Belirli bir fiyat listesini getir - sadece admin erişebilir
-router.get('/:id', authorizeRoles('admin'), getPriceList);
-
 // Koleksiyonları getir - fiyat listesi oluşturma formu için
 router.get('/collections/list', getCollectionsForPriceList);
+
+// Belirli bir fiyat listesini getir - tüm kullanıcılar erişebilir (giriş yapmış olması yeterli)
+router.get('/:id', getPriceList);
 
 // Mağazanın Fiyat Listesi Atamasını Getir - tüm kullanıcılar erişebilir (giriş yapmış olması yeterli)
 router.get('/store-assignments/:storeId', getStorePriceLists);
