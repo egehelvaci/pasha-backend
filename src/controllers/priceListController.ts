@@ -202,11 +202,9 @@ export const updatePriceList = async (req: Request, res: Response) => {
     } = req.body;
     
     // Fiyat listesini kontrol et
-    const existingPriceListResult = await prisma.$queryRaw<PriceList[]>`
-      SELECT * FROM "PriceList" WHERE price_list_id = ${id}
-    `;
-    
-    const existingPriceList = existingPriceListResult[0];
+    const existingPriceList = await prisma.priceList.findUnique({
+      where: { price_list_id: id }
+    });
     
     if (!existingPriceList) {
       return res.status(404).json({ success: false, message: 'Fiyat listesi bulunamadı' });
@@ -233,117 +231,102 @@ export const updatePriceList = async (req: Request, res: Response) => {
     // Güncelleme işlemini transaction ile yap
     const result = await prisma.$transaction(async (tx) => {
       // Fiyat listesini güncelle
-      let updateQuery = 'UPDATE "PriceList" SET ';
-      const updateValues = [];
-      let paramIndex = 1;
+      const updateData: any = {};
       
-      if (name !== undefined) {
-        updateQuery += `name = $${paramIndex}, `;
-        updateValues.push(name);
-        paramIndex++;
-      }
+      if (name !== undefined) updateData.name = name;
+      if (description !== undefined) updateData.description = description;
+      if (validFrom !== undefined) updateData.valid_from = validFrom ? new Date(validFrom) : null;
+      if (validTo !== undefined) updateData.valid_to = validTo ? new Date(validTo) : null;
+      if (limitAmount !== undefined) updateData.limit_amount = limitAmount;
+      if (currency !== undefined) updateData.currency = currency;
+      updateData.updated_at = new Date();
       
-      if (description !== undefined) {
-        updateQuery += `description = $${paramIndex}, `;
-        updateValues.push(description);
-        paramIndex++;
-      }
-      
-      if (validFrom !== undefined) {
-        updateQuery += `valid_from = $${paramIndex}, `;
-        updateValues.push(validFrom ? new Date(validFrom) : null);
-        paramIndex++;
-      }
-      
-      if (validTo !== undefined) {
-        updateQuery += `valid_to = $${paramIndex}, `;
-        updateValues.push(validTo ? new Date(validTo) : null);
-        paramIndex++;
-      }
-      
-      if (limitAmount !== undefined) {
-        updateQuery += `limit_amount = $${paramIndex}, `;
-        updateValues.push(limitAmount);
-        paramIndex++;
-      }
-      
-      if (currency !== undefined) {
-        updateQuery += `currency = $${paramIndex}, `;
-        updateValues.push(currency);
-        paramIndex++;
-      }
-      
-      // Son virgülü kaldır ve WHERE koşulunu ekle
-      updateQuery = updateQuery.slice(0, -2) + ` WHERE price_list_id = $${paramIndex}`;
-      updateValues.push(id);
-      
-      // Güncelleme sorgusu boş değilse çalıştır
-      if (updateValues.length > 0) {
-        await tx.$executeRawUnsafe(updateQuery, ...updateValues);
-      }
+      // Fiyat listesini güncelle
+      const updatedPriceList = await tx.priceList.update({
+        where: { price_list_id: id },
+        data: updateData,
+        include: {
+          PriceListDetail: {
+            include: {
+              Collection: true
+            }
+          }
+        }
+      });
       
       // Koleksiyon fiyatlarını güncelle
       if (collectionPrices && collectionPrices.length > 0) {
-        // Önce mevcut detayları al
-        const existingDetails = await tx.$queryRaw`
-          SELECT * FROM "PriceListDetail" WHERE price_list_id = ${id}
-        `;
+        // Mevcut fiyat listesi detaylarını al
+        const existingDetails = await tx.priceListDetail.findMany({
+          where: { price_list_id: id }
+        });
         
+        // Koleksiyon ID'sine göre mevcut detayları haritalandır
         const existingDetailsMap = new Map();
-        if (Array.isArray(existingDetails)) {
-          existingDetails.forEach((detail: any) => {
-            existingDetailsMap.set(detail.collection_id, detail);
-          });
-        }
+        existingDetails.forEach(detail => {
+          existingDetailsMap.set(detail.collection_id, detail);
+        });
         
         // Her bir koleksiyon fiyatı için güncelleme yap
         for (const item of collectionPrices) {
           // Fiyat kontrolü
-          if (!item.pricePerSquareMeter || item.pricePerSquareMeter <= 0) {
+          if (!item.pricePerSquareMeter || parseFloat(item.pricePerSquareMeter) <= 0) {
             throw new Error('Metrekare fiyatı pozitif bir sayı olmalıdır');
           }
           
           // Koleksiyonun varlığını kontrol et
-          const collection = await tx.$queryRaw`
-            SELECT * FROM "Collection" WHERE collection_id = ${item.collectionId}
-          `;
+          const collection = await tx.collection.findUnique({
+            where: { collectionId: item.collectionId }
+          });
           
-          if (!collection || (Array.isArray(collection) && collection.length === 0)) {
+          if (!collection) {
             throw new Error(`${item.collectionId} ID'li koleksiyon bulunamadı`);
           }
           
           // Eğer bu koleksiyon için detay varsa güncelle, yoksa ekle
           if (existingDetailsMap.has(item.collectionId)) {
-            await tx.$executeRaw`
-              UPDATE "PriceListDetail" 
-              SET price_per_square_meter = ${item.pricePerSquareMeter}, updated_at = NOW()
-              WHERE price_list_id = ${id} AND collection_id = ${item.collectionId}
-            `;
+            await tx.priceListDetail.update({
+              where: { 
+                price_list_detail_id: existingDetailsMap.get(item.collectionId).price_list_detail_id 
+              },
+              data: {
+                price_per_square_meter: parseFloat(item.pricePerSquareMeter),
+                updated_at: new Date()
+              }
+            });
           } else {
-            await tx.$executeRaw`
-              INSERT INTO "PriceListDetail"(price_list_id, collection_id, price_per_square_meter)
-              VALUES (${id}, ${item.collectionId}, ${item.pricePerSquareMeter})
-            `;
+            await tx.priceListDetail.create({
+              data: {
+                price_list_id: id,
+                collection_id: item.collectionId,
+                price_per_square_meter: parseFloat(item.pricePerSquareMeter)
+              }
+            });
           }
         }
       }
       
-      // Güncellenmiş fiyat listesini tüm detaylarıyla getir
-      const result = await tx.$queryRaw`
-        SELECT pl.*, pld.*
-        FROM "PriceList" pl
-        LEFT JOIN "PriceListDetail" pld ON pl.price_list_id = pld.price_list_id
-        LEFT JOIN "Collection" c ON pld.collection_id = c.collection_id
-        WHERE pl.price_list_id = ${id}
-      `;
-      
-      return result;
+      // Güncellenmiş fiyat listesini getir
+      return await tx.priceList.findUnique({
+        where: { price_list_id: id },
+        include: {
+          PriceListDetail: {
+            include: {
+              Collection: true
+            }
+          }
+        }
+      });
     });
     
     return res.status(200).json({ success: true, data: result });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Fiyat listesi güncellenirken hata oluştu:', error);
-    return res.status(500).json({ success: false, message: 'Sunucu hatası' });
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Sunucu hatası',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 
