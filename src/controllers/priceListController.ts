@@ -11,6 +11,7 @@ interface PriceList {
   limit_amount: number | null;
   currency: string;
   is_default: boolean;
+  is_active: boolean;
   created_at: Date;
   updated_at: Date;
 }
@@ -198,7 +199,8 @@ export const updatePriceList = async (req: Request, res: Response) => {
       validTo, 
       limitAmount, 
       currency, 
-      collectionPrices 
+      collectionPrices,
+      is_active 
     } = req.body;
     
     // Fiyat listesini kontrol et
@@ -239,6 +241,7 @@ export const updatePriceList = async (req: Request, res: Response) => {
       if (validTo !== undefined) updateData.valid_to = validTo ? new Date(validTo) : null;
       if (limitAmount !== undefined) updateData.limit_amount = limitAmount;
       if (currency !== undefined) updateData.currency = currency;
+      if (is_active !== undefined) updateData.is_active = is_active;
       updateData.updated_at = new Date();
       
       // Fiyat listesini güncelle
@@ -533,6 +536,11 @@ export const getStorePriceLists = async (req: Request, res: Response) => {
     const isPriceListValid = (priceList: any): boolean => {
       const now = new Date();
       
+      // Aktiflik kontrolü
+      if (priceList.is_active === false) {
+        return false; // Pasif durumdaki fiyat listesi
+      }
+      
       // Başlangıç tarihi kontrolü
       if (priceList.valid_from && new Date(priceList.valid_from) > now) {
         return false; // Henüz başlamamış
@@ -590,7 +598,9 @@ export const getStorePriceLists = async (req: Request, res: Response) => {
             data: defaultResult.priceList,
             is_default: true,
             is_valid: true,
-            message: "Atanan fiyat listesi artık geçerli değil, varsayılan fiyat listesi gösteriliyor"
+            message: assignedPriceList.is_active === false 
+              ? "Atanan fiyat listesi pasif durumda, varsayılan fiyat listesi gösteriliyor" 
+              : "Atanan fiyat listesi artık geçerli değil, varsayılan fiyat listesi gösteriliyor"
           });
         }
       }
