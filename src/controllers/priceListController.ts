@@ -449,32 +449,46 @@ export const assignPriceListToStore = async (req: Request, res: Response) => {
       });
     }
 
-    // Mevcut bir atama var mı kontrol et
-    const existingAssignment = await prisma.storePriceList.findFirst({
-      where: {
-        store_id: storeId,
-        price_list_id: priceListId
-      }
+    // Mağazanın mevcut fiyat listesi atamasını bul
+    const existingAssignments = await prisma.storePriceList.findMany({
+      where: { store_id: storeId }
     });
 
-    if (existingAssignment) {
-      return res.status(400).json({
-        success: false,
-        message: 'Bu mağaza-fiyat listesi ataması zaten mevcut'
-      });
-    }
-
-    // Atamayı oluştur
-    const assignment = await prisma.storePriceList.create({
-      data: {
-        store_id: storeId,
-        price_list_id: priceListId
+    // Transaction içinde işlemleri gerçekleştir
+    const result = await prisma.$transaction(async (tx) => {
+      // Eğer mağazanın önceden atanmış fiyat listeleri varsa, hepsini sil
+      if (existingAssignments.length > 0) {
+        await tx.storePriceList.deleteMany({
+          where: { store_id: storeId }
+        });
       }
+
+      // Yeni fiyat listesi atamasını oluştur
+      return await tx.storePriceList.create({
+        data: {
+          store_id: storeId,
+          price_list_id: priceListId
+        },
+        include: {
+          PriceList: {
+            include: {
+              PriceListDetail: {
+                include: {
+                  Collection: true
+                }
+              }
+            }
+          }
+        }
+      });
     });
 
     return res.status(201).json({
       success: true,
-      data: assignment
+      data: result,
+      message: existingAssignments.length > 0 
+        ? 'Mağazanın önceki fiyat listesi kaldırılıp yeni fiyat listesi atandı'
+        : 'Mağazaya fiyat listesi başarıyla atandı'
     });
   } catch (error) {
     console.error('Mağazaya fiyat listesi atanırken hata oluştu:', error);
@@ -509,6 +523,52 @@ export const getStorePriceLists = async (req: Request, res: Response) => {
       });
     }
 
+    // Varsayılan fiyat listesini getirme fonksiyonu
+    const getDefaultPriceList = async () => {
+      const defaultPriceList = await prisma.priceList.findFirst({
+        where: { is_default: true },
+        include: {
+          PriceListDetail: {
+            include: {
+              Collection: true
+            }
+          }
+        }
+      });
+
+      if (defaultPriceList) {
+        return {
+          priceList: defaultPriceList,
+          isDefault: true,
+          message: "Varsayılan fiyat listesi gösteriliyor"
+        };
+      }
+      return null;
+    };
+
+    // Fiyat listesinin geçerliliğini kontrol et
+    const isPriceListValid = (priceList: any): boolean => {
+      const now = new Date();
+      
+      // Başlangıç tarihi kontrolü
+      if (priceList.valid_from && new Date(priceList.valid_from) > now) {
+        return false; // Henüz başlamamış
+      }
+      
+      // Bitiş tarihi kontrolü
+      if (priceList.valid_to && new Date(priceList.valid_to) < now) {
+        return false; // Süresi dolmuş
+      }
+      
+      // Limit kontrolü - Bu kısmı şimdilik devre dışı bırakalım, çünkü
+      // harcama hesaplama işlevselliği henüz yok
+      // if (priceList.limit_amount) {
+      //   // Limit aşım kontrolü...
+      // }
+      
+      return true; // Tüm kontrollerden geçti
+    };
+
     // Mağazanın fiyat listesi atamalarını getir
     const storePriceLists = await prisma.storePriceList.findMany({
       where: { store_id: storeId },
@@ -525,35 +585,43 @@ export const getStorePriceLists = async (req: Request, res: Response) => {
       }
     });
 
-    // Eğer mağazaya atanmış fiyat listesi yoksa, varsayılan fiyat listesini getir
-    if (storePriceLists.length === 0) {
-      const defaultPriceList = await prisma.priceList.findFirst({
-        where: { is_default: true },
-        include: {
-          PriceListDetail: {
-            include: {
-              Collection: true
-            }
-          }
-        }
-      });
-
-      if (defaultPriceList) {
+    // Mağazaya atanmış fiyat listesi var mı kontrol et
+    if (storePriceLists.length > 0) {
+      const assignedPriceList = storePriceLists[0].PriceList;
+      
+      // Fiyat listesinin geçerliliğini kontrol et
+      if (isPriceListValid(assignedPriceList)) {
+        // Fiyat listesi geçerli, döndür
         return res.status(200).json({
           success: true,
-          data: defaultPriceList,
-          is_default: true,
-          message: "Mağazaya özel atama bulunamadı, varsayılan fiyat listesi gösteriliyor"
+          data: assignedPriceList,
+          is_default: false,
+          is_valid: true
         });
+      } else {
+        // Fiyat listesi geçerli değil, varsayılan listeyi kullan
+        const defaultResult = await getDefaultPriceList();
+        if (defaultResult) {
+          return res.status(200).json({
+            success: true,
+            data: defaultResult.priceList,
+            is_default: true,
+            is_valid: true,
+            message: "Atanan fiyat listesi artık geçerli değil, varsayılan fiyat listesi gösteriliyor"
+          });
+        }
       }
     }
 
-    // Sadece fiyat listesi bilgilerini döndür
-    if (storePriceLists.length > 0) {
+    // Atanmış fiyat listesi yoksa, varsayılan fiyat listesini getir
+    const defaultResult = await getDefaultPriceList();
+    if (defaultResult) {
       return res.status(200).json({
         success: true,
-        data: storePriceLists[0].PriceList, // Mağazaya atanmış ilk fiyat listesini döndür
-        is_default: false
+        data: defaultResult.priceList,
+        is_default: true,
+        is_valid: true,
+        message: defaultResult.message
       });
     }
 
