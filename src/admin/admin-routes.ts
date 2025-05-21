@@ -28,4 +28,10 @@ router.put('/users/:userId', adminController.updateUser)
 // Kullanıcı silme
 router.delete('/users/:userId', adminController.deleteUser)
 
+// Kullanıcıyı mağazaya ata
+router.post('/users/:userId/assign-store', adminController.assignUserToStore)
+
+// Kullanıcıyı mağazadan kaldır
+router.delete('/users/:userId/remove-store', adminController.removeUserFromStore)
+
 export default router 

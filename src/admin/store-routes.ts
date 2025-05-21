@@ -21,4 +21,7 @@ router.get('/:storeId/price-lists', storeController.getStorePriceLists)
 router.post('/:storeId/price-lists', storeController.assignPriceListToStore)
 router.delete('/:storeId/price-lists/:priceListId', storeController.removePriceListFromStore)
 
+// Mağaza-kullanıcı ilişkisi rotaları
+router.get('/:storeId/users', storeController.getStoreUsers)
+
 export default router 

@@ -6,7 +6,8 @@ import {
   updateProduct,
   deleteProduct,
   uploadProductImage,
-  getProductPrice
+  getProductPrice,
+  updateProductStock
 } from '../controllers/productController';
 
 const router = express.Router();
@@ -28,5 +29,8 @@ router.delete('/:id', deleteProduct);
 
 // Ürün fiyatını hesapla
 router.get('/:id/price', getProductPrice);
+
+// Stok güncelle
+router.patch('/:id/stock', updateProductStock);
 
 export default router; 

@@ -190,4 +190,31 @@ export const getProductPrice = async (req: Request, res: Response) => {
     console.error('Ürün fiyatı hesaplanırken hata oluştu:', error);
     return res.status(500).json({ success: false, message: 'Sunucu hatası' });
   }
+};
+
+// Ürün stok miktarını güncelle
+export const updateProductStock = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { quantity } = req.body;
+    
+    if (quantity === undefined || isNaN(parseInt(quantity))) {
+      return res.status(400).json({
+        success: false,
+        message: 'Geçerli bir miktar değeri gereklidir'
+      });
+    }
+    
+    const product = await productService.updateStock(id, parseInt(quantity));
+    
+    return res.status(200).json({
+      success: true,
+      data: product
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Stok güncellenemedi'
+    });
+  }
 }; 

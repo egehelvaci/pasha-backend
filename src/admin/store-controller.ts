@@ -430,4 +430,45 @@ export class StoreController {
       })
     }
   }
+
+  /**
+   * Mağazanın kullanıcılarını getir
+   */
+  async getStoreUsers(req: Request, res: Response) {
+    try {
+      const { storeId } = req.params
+
+      // Mağazanın var olup olmadığını kontrol et
+      const store = await prisma.store.findUnique({
+        where: { store_id: storeId }
+      })
+
+      if (!store) {
+        return res.status(404).json({
+          success: false,
+          message: 'Mağaza bulunamadı'
+        })
+      }
+
+      // Mağazaya atanmış kullanıcıları getir
+      const users = await prisma.user.findMany({
+        where: { store_id: storeId },
+        include: {
+          userType: true
+        }
+      })
+
+      return res.status(200).json({
+        success: true,
+        data: users
+      })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Mağaza kullanıcıları listelenirken bir hata oluştu'
+      
+      return res.status(500).json({
+        success: false,
+        message: errorMessage
+      })
+    }
+  }
 } 

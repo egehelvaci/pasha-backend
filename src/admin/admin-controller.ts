@@ -11,6 +11,8 @@ export class AdminController {
     this.updateUser = this.updateUser.bind(this)
     this.deleteUser = this.deleteUser.bind(this)
     this.getUserById = this.getUserById.bind(this)
+    this.assignUserToStore = this.assignUserToStore.bind(this)
+    this.removeUserFromStore = this.removeUserFromStore.bind(this)
   }
 
   /**
@@ -358,6 +360,108 @@ export class AdminController {
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Kullanıcı silinirken bir hata oluştu'
+      
+      return res.status(500).json({
+        success: false,
+        message: errorMessage
+      })
+    }
+  }
+
+  /**
+   * Kullanıcıyı mağazaya ata
+   */
+  async assignUserToStore(req: Request, res: Response) {
+    try {
+      const { userId } = req.params
+      const { storeId } = req.body
+      
+      if (!storeId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Mağaza ID\'si zorunludur'
+        })
+      }
+      
+      // Kullanıcının var olup olmadığını kontrol et
+      const user = await prisma.user.findUnique({
+        where: { userId }
+      })
+      
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'Kullanıcı bulunamadı'
+        })
+      }
+      
+      // Mağazanın var olup olmadığını kontrol et
+      const store = await prisma.store.findUnique({
+        where: { store_id: storeId }
+      })
+      
+      if (!store) {
+        return res.status(404).json({
+          success: false,
+          message: 'Mağaza bulunamadı'
+        })
+      }
+      
+      // Kullanıcıyı mağazaya ata
+      const updatedUser = await userService.assignUserToStore(userId, storeId)
+      
+      return res.status(200).json({
+        success: true,
+        data: updatedUser,
+        message: 'Kullanıcı mağazaya başarıyla atandı'
+      })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Kullanıcı mağazaya atanırken bir hata oluştu'
+      
+      return res.status(500).json({
+        success: false,
+        message: errorMessage
+      })
+    }
+  }
+  
+  /**
+   * Kullanıcıyı mağazadan kaldır
+   */
+  async removeUserFromStore(req: Request, res: Response) {
+    try {
+      const { userId } = req.params
+      
+      // Kullanıcının var olup olmadığını kontrol et
+      const user = await prisma.user.findUnique({
+        where: { userId }
+      })
+      
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'Kullanıcı bulunamadı'
+        })
+      }
+      
+      // Kullanıcının mağaza ataması var mı kontrol et
+      if (!user.store_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Bu kullanıcının bir mağaza ataması bulunmuyor'
+        })
+      }
+      
+      // Kullanıcıyı mağazadan kaldır
+      const updatedUser = await userService.removeUserFromStore(userId)
+      
+      return res.status(200).json({
+        success: true,
+        data: updatedUser,
+        message: 'Kullanıcının mağaza ataması başarıyla kaldırıldı'
+      })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Kullanıcı mağazadan kaldırılırken bir hata oluştu'
       
       return res.status(500).json({
         success: false,
