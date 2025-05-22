@@ -129,3 +129,10 @@ build
 .strapi-updater.json
 .strapi-cloud.json
 .env
+
+############################
+# Prisma Generated
+############################
+
+generated/prisma/*
+!generated/prisma/.gitkeep
