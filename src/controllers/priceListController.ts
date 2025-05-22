@@ -53,19 +53,40 @@ export const getPriceList = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     
-    const priceList = await prisma.$queryRaw`
-      SELECT pl.*, pld.*
-      FROM "PriceList" pl
-      LEFT JOIN "PriceListDetail" pld ON pl.price_list_id = pld.price_list_id
-      LEFT JOIN "Collection" c ON pld.collection_id = c.collection_id
-      WHERE pl.price_list_id = ${id}
-    `;
+    // Ana fiyat listesi bilgilerini getir
+    const priceListInfo = await prisma.priceList.findUnique({
+      where: { price_list_id: id }
+    });
     
-    if (!priceList || (Array.isArray(priceList) && priceList.length === 0)) {
+    if (!priceListInfo) {
       return res.status(404).json({ success: false, message: 'Fiyat listesi bulunamadı' });
     }
     
-    return res.status(200).json({ success: true, data: priceList });
+    // Koleksiyon detaylarını getir
+    const priceListDetails = await prisma.priceListDetail.findMany({
+      where: { price_list_id: id },
+      include: {
+        Collection: true
+      }
+    });
+    
+    // Koleksiyon detaylarını formatla
+    const formattedDetails = priceListDetails.map(detail => ({
+      price_list_detail_id: detail.price_list_detail_id,
+      collection_id: detail.collection_id,
+      collection_name: detail.Collection.name,
+      collection_code: detail.Collection.code,
+      price_per_square_meter: detail.price_per_square_meter
+    }));
+    
+    // Anlamlı bir şekilde yanıt oluştur
+    return res.status(200).json({ 
+      success: true, 
+      data: {
+        price_list: priceListInfo,
+        collection_prices: formattedDetails
+      }
+    });
   } catch (error) {
     console.error('Fiyat listesi getirilirken hata oluştu:', error);
     return res.status(500).json({ success: false, message: 'Sunucu hatası' });
@@ -167,15 +188,26 @@ export const createPriceList = async (req: Request, res: Response) => {
       }
       
       // Oluşturulan fiyat listesini tüm detaylarıyla getir
-      const result = await tx.$queryRaw`
-        SELECT pl.*, pld.*
-        FROM "PriceList" pl
-        LEFT JOIN "PriceListDetail" pld ON pl.price_list_id = pld.price_list_id
-        LEFT JOIN "Collection" c ON pld.collection_id = c.collection_id
-        WHERE pl.price_list_id = ${priceListId}
-      `;
-      
-      return result;
+      const createdPriceListDetails = await tx.priceListDetail.findMany({
+        where: { price_list_id: priceListId.toString() },
+        include: {
+          Collection: true
+        }
+      });
+
+      // Koleksiyon detaylarını formatla
+      const formattedDetails = createdPriceListDetails.map(detail => ({
+        price_list_detail_id: detail.price_list_detail_id,
+        collection_id: detail.collection_id,
+        collection_name: detail.Collection.name,
+        collection_code: detail.Collection.code,
+        price_per_square_meter: detail.price_per_square_meter
+      }));
+
+      return {
+        price_list: createdPriceList[0],
+        collection_prices: formattedDetails
+      };
     });
     
     return res.status(201).json({ success: true, data: result });
@@ -310,16 +342,31 @@ export const updatePriceList = async (req: Request, res: Response) => {
       }
       
       // Güncellenmiş fiyat listesini getir
-      return await tx.priceList.findUnique({
+      const updatedPriceListDetails = await tx.priceListDetail.findMany({
         where: { price_list_id: id },
         include: {
-          PriceListDetail: {
-            include: {
-              Collection: true
-            }
-          }
+          Collection: true
         }
       });
+
+      // Koleksiyon detaylarını formatla
+      const formattedDetails = updatedPriceListDetails.map(detail => ({
+        price_list_detail_id: detail.price_list_detail_id,
+        collection_id: detail.collection_id,
+        collection_name: detail.Collection.name,
+        collection_code: detail.Collection.code,
+        price_per_square_meter: detail.price_per_square_meter
+      }));
+
+      // Ana fiyat listesi bilgilerini getir
+      const updatedPriceListInfo = await tx.priceList.findUnique({
+        where: { price_list_id: id }
+      });
+
+      return {
+        price_list: updatedPriceListInfo,
+        collection_prices: formattedDetails
+      };
     });
     
     return res.status(200).json({ success: true, data: result });
