@@ -4,7 +4,7 @@
 
 ### 1. Tüm Koleksiyonları Getir
 - **HTTP Metodu**: GET
-- **Endpoint**: `/collections`
+- **Endpoint**: `/api/collections`
 - **Açıklama**: Sistemdeki tüm koleksiyonları ürünleriyle birlikte getirir.
 - **Cevap**: 
   ```json
@@ -27,7 +27,7 @@
 
 ### 2. ID'ye Göre Koleksiyon Getir
 - **HTTP Metodu**: GET
-- **Endpoint**: `/collections/:id`
+- **Endpoint**: `/api/collections/:id`
 - **Açıklama**: Belirtilen ID'ye sahip koleksiyonu getirir.
 - **Parametreler**: `id` (URL Parametresi) - Koleksiyon ID'si
 - **Cevap**: 
@@ -49,7 +49,7 @@
 
 ### 3. Koleksiyon Oluştur
 - **HTTP Metodu**: POST
-- **Endpoint**: `/collections`
+- **Endpoint**: `/api/collections`
 - **Açıklama**: Yeni bir koleksiyon oluşturur.
 - **İstek Gövdesi**:
   ```json
@@ -77,7 +77,7 @@
 
 ### 4. Koleksiyon Güncelle
 - **HTTP Metodu**: PUT
-- **Endpoint**: `/collections/:id`
+- **Endpoint**: `/api/collections/:id`
 - **Açıklama**: Mevcut bir koleksiyonu günceller.
 - **Parametreler**: `id` (URL Parametresi) - Koleksiyon ID'si
 - **İstek Gövdesi**:
@@ -107,7 +107,7 @@
 
 ### 5. Koleksiyon Sil
 - **HTTP Metodu**: DELETE
-- **Endpoint**: `/collections/:id`
+- **Endpoint**: `/api/collections/:id`
 - **Açıklama**: Belirtilen ID'ye sahip koleksiyonu ve bağlı tüm ürünleri siler.
 - **Parametreler**: `id` (URL Parametresi) - Koleksiyon ID'si
 - **Cevap**:
@@ -122,82 +122,144 @@
 
 ### 1. Tüm Ürünleri Getir
 - **HTTP Metodu**: GET
-- **Endpoint**: `/products`
+- **Endpoint**: `/api/products`
 - **Açıklama**: Sistemdeki tüm ürünleri koleksiyon bilgileriyle birlikte getirir.
 - **Cevap**:
   ```json
-  [
-    {
-      "productId": "...",
-      "name": "Ürün Adı",
-      "description": "Ürün Açıklaması",
-      "stock": 50,
-      "width": 10.5,
-      "height": 20.0,
-      "cut": true,
-      "productImage": "https://...",
-      "collectionId": "...",
-      "createdAt": "...",
-      "updatedAt": "...",
-      "collection_name": "Koleksiyon Adı",
-      "collection": {...}
-    }
-  ]
+  {
+    "success": true,
+    "data": [
+      {
+        "productId": "...",
+        "name": "Ürün Adı",
+        "description": "Ürün Açıklaması",
+        "stock": 50,
+        "width": 10.5,
+        "height": 20.0,
+        "pattern": "düz",
+        "category": "duvar",
+        "color": "mavi",
+        "cut": true,
+        "productImage": "https://...",
+        "price": 125.50,
+        "collectionId": "...",
+        "createdAt": "...",
+        "updatedAt": "...",
+        "collection_name": "Koleksiyon Adı",
+        "collection": {...}
+      }
+    ]
+  }
   ```
 
 ### 2. ID'ye Göre Ürün Getir
 - **HTTP Metodu**: GET
-- **Endpoint**: `/products/:id`
+- **Endpoint**: `/api/products/:id`
 - **Açıklama**: Belirtilen ID'ye sahip ürünü getirir.
 - **Parametreler**: `id` (URL Parametresi) - Ürün ID'si
 - **Cevap**:
   ```json
   {
-    "productId": "...",
-    "name": "Ürün Adı",
-    "description": "Ürün Açıklaması",
-    "stock": 50,
-    "width": 10.5,
-    "height": 20.0,
-    "cut": true,
-    "productImage": "https://...",
-    "collectionId": "...",
-    "createdAt": "...",
-    "updatedAt": "...",
-    "collection_name": "Koleksiyon Adı",
-    "collection": {...}
-  }
-  ```
-
-### 3. Koleksiyona Göre Ürünleri Getir
-- **HTTP Metodu**: GET
-- **Endpoint**: `/collections/:collectionId/products`
-- **Açıklama**: Belirli bir koleksiyona ait tüm ürünleri getirir.
-- **Parametreler**: `collectionId` (URL Parametresi) - Koleksiyon ID'si
-- **Cevap**:
-  ```json
-  [
-    {
+    "success": true,
+    "data": {
       "productId": "...",
       "name": "Ürün Adı",
       "description": "Ürün Açıklaması",
       "stock": 50,
       "width": 10.5,
       "height": 20.0,
+      "pattern": "düz",
+      "category": "duvar",
+      "color": "mavi",
       "cut": true,
       "productImage": "https://...",
+      "price": 125.50,
       "collectionId": "...",
       "createdAt": "...",
       "updatedAt": "...",
       "collection_name": "Koleksiyon Adı",
       "collection": {...}
     }
-  ]
+  }
   ```
 
-### 4. Görselli Ürün Oluştur
+### 3. Koleksiyona Göre Ürünleri Getir
+- **HTTP Metodu**: GET
+- **Endpoint**: `/api/collections/:collectionId/products`
+- **Açıklama**: Belirli bir koleksiyona ait tüm ürünleri getirir.
+- **Parametreler**: `collectionId` (URL Parametresi) - Koleksiyon ID'si
+- **Cevap**:
+  ```json
+  {
+    "success": true,
+    "data": [
+      {
+        "productId": "...",
+        "name": "Ürün Adı",
+        "description": "Ürün Açıklaması",
+        "stock": 50,
+        "width": 10.5,
+        "height": 20.0,
+        "pattern": "düz",
+        "category": "duvar",
+        "color": "mavi",
+        "cut": true,
+        "productImage": "https://...",
+        "price": 125.50,
+        "collectionId": "...",
+        "createdAt": "...",
+        "updatedAt": "...",
+        "collection_name": "Koleksiyon Adı",
+        "collection": {...}
+      }
+    ]
+  }
+  ```
+
+### 4. Filtreleme ile Ürünleri Getir
+- **HTTP Metodu**: GET
+- **Endpoint**: `/api/products/filter`
+- **Açıklama**: Belirtilen filtrelere göre ürünleri getirir.
+- **Query Parametreleri**:
+  - `collectionId`: Koleksiyon ID'sine göre filtrele (opsiyonel)
+  - `pattern`: Desen tipine göre filtrele (opsiyonel)
+  - `category`: Kategoriye göre filtrele (opsiyonel)
+  - `color`: Renge göre filtrele (opsiyonel)
+  - `minPrice`: Minimum fiyata göre filtrele (opsiyonel)
+  - `maxPrice`: Maksimum fiyata göre filtrele (opsiyonel)
+  - `sort`: Sıralama tipi (name_asc, name_desc, price_asc, price_desc) (opsiyonel)
+- **Cevap**:
+  ```json
+  {
+    "success": true,
+    "data": [
+      {
+        "productId": "...",
+        "name": "Ürün Adı",
+        "description": "Ürün Açıklaması",
+        "stock": 50,
+        "width": 10.5,
+        "height": 20.0,
+        "pattern": "düz",
+        "category": "duvar",
+        "color": "mavi",
+        "cut": true,
+        "productImage": "https://...",
+        "price": 125.50,
+        "collectionId": "...",
+        "createdAt": "...",
+        "updatedAt": "...",
+        "collection_name": "Koleksiyon Adı"
+      }
+    ],
+    "totalCount": 10,
+    "filteredCount": 3
+  }
+  ```
+
+### 5. Görselli Ürün Oluştur
 - **HTTP Metodu**: POST
-- **Endpoint**: `/products`
+- **Endpoint**: `/api/products`
 - **Açıklama**: Görsel ile birlikte yeni bir ürün oluşturur.
 - **İstek Türü**: `multipart/form-data`
 - **İstek Alanları**:
@@ -206,7 +268,11 @@
   - `stock`: Stok miktarı (text, tamsayı)
   - `width`: Genişlik (text, ondalıklı sayı)
   - `height`: Yükseklik (text, ondalıklı sayı)
+  - `pattern`: Desen tipi (text)
+  - `category`: Kategori (text)
+  - `color`: Renk (text)
   - `cut`: Kesim özelliği (text, "true" veya "false")
+  - `price`: Fiyat (text, ondalıklı sayı)
   - `collectionId`: Koleksiyon ID'si (text)
   - `productImage`: Ürün görseli (file)
 - **Cevap**:
@@ -220,8 +286,12 @@
       "stock": 25,
       "width": 15.0,
       "height": 25.0,
+      "pattern": "çizgili",
+      "category": "tavan",
+      "color": "beyaz",
       "cut": false,
       "productImage": "https://pashahome.s3.tebi.io/products/...",
+      "price": 150.75,
       "collectionId": "...",
       "createdAt": "...",
       "updatedAt": "...",
@@ -231,9 +301,9 @@
   }
   ```
 
-### 5. Ürün Güncelle
+### 6. Ürün Güncelle
 - **HTTP Metodu**: PUT
-- **Endpoint**: `/products/:id`
+- **Endpoint**: `/api/products/:id`
 - **Açıklama**: Mevcut bir ürünü günceller.
 - **Parametreler**: `id` (URL Parametresi) - Ürün ID'si
 - **İstek Türü**: `multipart/form-data`
@@ -243,7 +313,11 @@
   - `stock`: Stok miktarı (text, tamsayı, opsiyonel)
   - `width`: Genişlik (text, ondalıklı sayı, opsiyonel)
   - `height`: Yükseklik (text, ondalıklı sayı, opsiyonel)
+  - `pattern`: Desen tipi (text, opsiyonel)
+  - `category`: Kategori (text, opsiyonel)
+  - `color`: Renk (text, opsiyonel)
   - `cut`: Kesim özelliği (text, "true" veya "false", opsiyonel)
+  - `price`: Fiyat (text, ondalıklı sayı, opsiyonel)
   - `collectionId`: Koleksiyon ID'si (text, opsiyonel)
   - `productImage`: Ürün görseli (file, opsiyonel)
 - **Cevap**:
@@ -257,8 +331,12 @@
       "stock": 30,
       "width": 12.0,
       "height": 22.0,
+      "pattern": "desenli",
+      "category": "duvar",
+      "color": "kırmızı",
       "cut": true,
       "productImage": "https://pashahome.s3.tebi.io/products/...",
+      "price": 175.50,
       "collectionId": "...",
       "createdAt": "...",
       "updatedAt": "...",
@@ -268,9 +346,9 @@
   }
   ```
 
-### 6. Ürün Sil
+### 7. Ürün Sil
 - **HTTP Metodu**: DELETE
-- **Endpoint**: `/products/:id`
+- **Endpoint**: `/api/products/:id`
 - **Açıklama**: Belirtilen ID'ye sahip ürünü siler.
 - **Parametreler**: `id` (URL Parametresi) - Ürün ID'si
 - **Cevap**:
@@ -281,9 +359,9 @@
   }
   ```
 
-### 7. Stok Güncelle
+### 8. Stok Güncelle
 - **HTTP Metodu**: PATCH
-- **Endpoint**: `/products/:id/stock`
+- **Endpoint**: `/api/products/:id/stock`
 - **Açıklama**: Belirtilen ürünün stok miktarını günceller.
 - **Parametreler**: `id` (URL Parametresi) - Ürün ID'si
 - **İstek Gövdesi**:
@@ -295,10 +373,87 @@
 - **Cevap**:
   ```json
   {
-    "productId": "...",
-    "name": "Ürün Adı",
-    "stock": 60,  // Güncellenmiş stok değeri
-    ...
+    "success": true,
+    "data": {
+      "productId": "...",
+      "name": "Ürün Adı",
+      "stock": 60  // Güncellenmiş stok değeri
+    }
+  }
+  ```
+
+### 9. Toplu Ürün Fiyat Güncelleme
+- **HTTP Metodu**: POST
+- **Endpoint**: `/api/products/bulk-price-update`
+- **Açıklama**: Birden fazla ürünün fiyatını aynı anda günceller
+- **İstek Gövdesi**:
+  ```json
+  {
+    "products": [
+      {
+        "productId": "ürün-id-1",
+        "newPrice": 150.75
+      },
+      {
+        "productId": "ürün-id-2",
+        "newPrice": 225.50
+      }
+    ]
+  }
+  ```
+- **Cevap**:
+  ```json
+  {
+    "success": true,
+    "message": "2 ürünün fiyatı başarıyla güncellendi",
+    "updatedProducts": [
+      {
+        "productId": "ürün-id-1",
+        "name": "Ürün 1",
+        "price": 150.75
+      },
+      {
+        "productId": "ürün-id-2",
+        "name": "Ürün 2",
+        "price": 225.50
+      }
+    ]
+  }
+  ```
+
+### 10. Ürünlerin Desen Tiplerini Getir
+- **HTTP Metodu**: GET
+- **Endpoint**: `/api/products/patterns`
+- **Açıklama**: Sistemdeki tüm benzersiz desen tiplerini getirir
+- **Cevap**:
+  ```json
+  {
+    "success": true,
+    "data": ["düz", "çizgili", "desenli", "kareli"]
+  }
+  ```
+
+### 11. Ürünlerin Kategorilerini Getir
+- **HTTP Metodu**: GET
+- **Endpoint**: `/api/products/categories`
+- **Açıklama**: Sistemdeki tüm benzersiz kategorileri getirir
+- **Cevap**:
+  ```json
+  {
+    "success": true,
+    "data": ["duvar", "tavan", "yer"]
+  }
+  ```
+
+### 12. Ürünlerin Renklerini Getir
+- **HTTP Metodu**: GET
+- **Endpoint**: `/api/products/colors`
+- **Açıklama**: Sistemdeki tüm benzersiz renkleri getirir
+- **Cevap**:
+  ```json
+  {
+    "success": true,
+    "data": ["mavi", "beyaz", "kırmızı", "yeşil", "siyah"]
   }
   ```
 

@@ -1,6 +1,5 @@
 import express from 'express';
 import collectionRoutes from './routes/collectionRoutes';
-import productRoutes from './routes/productRoutes';
 import priceListRoutes from './routes/priceListRoutes';
 
 // Express uygulaması oluştur
@@ -27,7 +26,6 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/api/collections', collectionRoutes);
-app.use('/api/products', productRoutes);
 app.use('/api/price-lists', priceListRoutes);
 
 // Kök rota

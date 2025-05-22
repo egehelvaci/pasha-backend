@@ -3,9 +3,11 @@ import puppeteer from 'puppeteer';
 import handlebars from 'handlebars';
 import fs from 'fs';
 import path from 'path';
-import { ProductService } from './product-service';
 import { CollectionService } from './collection-service';
 import axios from 'axios';
+import { PrismaClient, Prisma } from '../generated/prisma';
+
+const prisma = new PrismaClient();
 
 interface ProductType {
   productId: string;
@@ -13,7 +15,10 @@ interface ProductType {
   description: string;
   productImage?: string | null;
   collectionId: string;
-  collection_name: string | null;
+  collection: {
+    name: string;
+  };
+  presignedImageUrl?: string;
 }
 
 interface CollectionProducts {
@@ -38,7 +43,6 @@ interface CatalogTemplateData {
 }
 
 export class CatalogService {
-  private productService = new ProductService();
   private collectionService = new CollectionService();
   private templatePath = path.resolve(__dirname, 'templates/catalog.hbs');
   private backgroundImagePath = path.join(process.cwd(), 'src', 'assets', 'images', 'catalog-bg.jpg');
@@ -72,12 +76,15 @@ export class CatalogService {
       // Ürünleri getir
       let products: ProductType[] = [];
       if (productIds?.length) {
+        // Ürün servisi olmadığı için doğrudan Prisma ile sorgulama yapıyoruz
         const productResults = await Promise.all(
-          productIds.map(id => this.productService.getProductById(id))
+          productIds.map(id => this.getProductById(id))
         );
-        products = productResults.filter(Boolean) as ProductType[];
+        // Filter out nulls and cast to ProductType
+        products = productResults.filter(Boolean) as unknown as ProductType[];
       } else {
-        products = await this.productService.getAllProducts() as unknown as ProductType[];
+        // Tüm ürünleri doğrudan Prisma ile getir
+        products = await this.getAllProducts();
       }
       
       console.log(`${products.length} ürün alındı`);
@@ -304,7 +311,7 @@ export class CatalogService {
     // Ürünleri koleksiyonlara göre grupla
     for (const product of products) {
       const collectionId = product.collectionId || 'uncategorized';
-      const collectionName = product.collection_name || 'Kategorisiz Ürünler';
+      const collectionName = product.collection.name || 'Kategorisiz Ürünler';
       
       if (!productsByCollection[collectionId]) {
         productsByCollection[collectionId] = {
@@ -548,6 +555,79 @@ export class CatalogService {
     } catch (error) {
       console.error('Font dosyası yüklenirken hata:', error);
       return '';
+    }
+  }
+
+  /**
+   * ID'ye göre ürün getir (Product service yerine)
+   */
+  private async getProductById(productId: string): Promise<ProductType | null> {
+    try {
+      const product = await prisma.product.findUnique({
+        where: { productId },
+        include: {
+          collection: true
+        }
+      });
+      
+      if (product) {
+        // Görsel için presigned URL oluştur
+        let presignedImageUrl = undefined;
+        if (product.productImage && product.productImage.includes('tebi.io')) {
+          try {
+            presignedImageUrl = await this.getPresignedUrl(product.productImage);
+          } catch (error) {
+            console.error('Presigned URL oluşturma hatası:', error);
+          }
+        }
+        
+        return {
+          ...product,
+          presignedImageUrl
+        } as ProductType;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Ürün getirme hatası:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Tüm ürünleri getir (Product service yerine)
+   */
+  private async getAllProducts(): Promise<ProductType[]> {
+    try {
+      const products = await prisma.product.findMany({
+        include: {
+          collection: true
+        }
+      });
+      
+      // Presigned URL'ler ekle
+      const productsWithUrls = await Promise.all(
+        products.map(async (product) => {
+          let presignedImageUrl = undefined;
+          if (product.productImage && product.productImage.includes('tebi.io')) {
+            try {
+              presignedImageUrl = await this.getPresignedUrl(product.productImage);
+            } catch (error) {
+              console.error(`Ürün ID ${product.productId} için presigned URL oluşturulamadı:`, error);
+            }
+          }
+          
+          return {
+            ...product,
+            presignedImageUrl
+          } as ProductType;
+        })
+      );
+      
+      return productsWithUrls;
+    } catch (error) {
+      console.error('Ürünleri getirme hatası:', error);
+      return [];
     }
   }
 }

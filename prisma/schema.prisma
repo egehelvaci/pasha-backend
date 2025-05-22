@@ -46,19 +46,17 @@ model Collection {
 }
 
 model Product {
-  productId       String     @id @default(uuid()) @map("product_id")
-  name            String
-  description     String
-  stock           Int
-  width           Float
-  height          Float
-  cut             Boolean
-  productImage    String?    @map("product_imageurl")
-  collectionId    String     @map("collection_id")
-  createdAt       DateTime   @default(now()) @map("created_at")
-  updatedAt       DateTime   @updatedAt @map("updated_at")
-  collection_name String?    @db.VarChar(255)
-  collection      Collection @relation(fields: [collectionId], references: [collectionId])
+  productId         String              @id @default(uuid()) @map("product_id")
+  name              String
+  description       String
+  productImage      String?             @map("product_imageurl")
+  collectionId      String              @map("collection_id")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+  rule_id           Int?
+  collection        Collection          @relation(fields: [collectionId], references: [collectionId])
+  productrules      productrules?       @relation(fields: [rule_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  productvariations productvariations[]
 }
 
 model PriceList {
@@ -84,7 +82,7 @@ model PriceListDetail {
   price_per_square_meter Decimal    @db.Decimal(10, 2)
   created_at             DateTime   @default(now()) @db.Timestamp(6)
   updated_at             DateTime   @default(now()) @db.Timestamp(6)
-  Collection             Collection @relation(fields: [collection_id], references: [collectionId], onDelete: NoAction, onUpdate: NoAction)
+  Collection             Collection @relation(fields: [collection_id], references: [collectionId], onDelete: Cascade, onUpdate: NoAction)
   PriceList              PriceList  @relation(fields: [price_list_id], references: [price_list_id], onDelete: NoAction, onUpdate: NoAction)
 }
 
@@ -119,6 +117,66 @@ model StorePriceList {
   Store               Store     @relation(fields: [store_id], references: [store_id], onDelete: Cascade)
 
   @@unique([store_id, price_list_id])
+}
+
+model cuttypes {
+  id                  Int                   @id @default(autoincrement())
+  name                String                @unique @db.VarChar(50)
+  created_at          DateTime?             @default(now()) @db.Timestamp(6)
+  updated_at          DateTime?             @default(now()) @db.Timestamp(6)
+  productrulecuttypes productrulecuttypes[]
+  productvariations   productvariations[]
+}
+
+model productrulecuttypes {
+  rule_id      Int
+  cut_type_id  Int
+  cuttypes     cuttypes     @relation(fields: [cut_type_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  productrules productrules @relation(fields: [rule_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([rule_id, cut_type_id])
+}
+
+model productrules {
+  id                  Int                   @id @default(autoincrement())
+  name                String                @unique @db.VarChar(100)
+  can_have_fringe     Boolean
+  description         String?
+  is_active           Boolean?              @default(true)
+  created_at          DateTime?             @default(now()) @db.Timestamp(6)
+  updated_at          DateTime?             @default(now()) @db.Timestamp(6)
+  Product             Product[]
+  productrulecuttypes productrulecuttypes[]
+  productsizeoptions  productsizeoptions[]
+}
+
+model productsizeoptions {
+  id                 Int           @id @default(autoincrement())
+  rule_id            Int?
+  width              Int
+  height             Int
+  is_optional_height Boolean?      @default(false)
+  created_at         DateTime?     @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?     @default(now()) @db.Timestamp(6)
+  productrules       productrules? @relation(fields: [rule_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([rule_id, width, height, is_optional_height])
+}
+
+model productvariations {
+  id             Int       @id @default(autoincrement())
+  product_id     String?   @db.VarChar(255)
+  cut_type_id    Int?
+  has_fringe     Boolean   @default(false)
+  width          Int
+  height         Int
+  stock_quantity Int       @default(0)
+  created_at     DateTime? @default(now()) @db.Timestamp(6)
+  updated_at     DateTime? @default(now()) @db.Timestamp(6)
+  cuttypes       cuttypes? @relation(fields: [cut_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Product        Product?  @relation(fields: [product_id], references: [productId], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([product_id, cut_type_id, has_fringe, width, height])
 }
 
 enum Currency {

@@ -1,0 +1,338 @@
+# Pasha Backend - Ürün API Endpointleri
+
+Bu dosya, Pasha Backend uygulamasındaki ürün API'lerini tanımlar.
+
+## Erişim Yetkileri
+
+* **Herkes Erişebilir**: Token gerektirmeden tüm kullanıcılar tarafından erişilebilen API'ler
+* **Admin Erişimi**: Sadece admin kullanıcı (userTypeId = 1) tarafından erişilebilen API'ler
+  * Admin erişimi için geçerli bir JWT token gerekmektedir
+  * Token, Authorization başlığında "Bearer {token}" formatında gönderilmelidir
+
+## Endpoints
+
+### 1. Ürün Listeleme
+
+**Endpoint:** `GET /api/products`  
+**Erişim:** Herkes erişebilir  
+**Açıklama:** Sistemdeki tüm ürünleri listeler.
+
+**Örnek Yanıt:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "productId": "550e8400-e29b-41d4-a716-446655440000",
+      "name": "Örnek Ürün",
+      "description": "Bu bir örnek ürün açıklamasıdır",
+      "productImage": "https://tebi.io/pashahome/products/ornek-urun.jpg",
+      "presignedImageUrl": "https://storage.googleapis.com/...",
+      "collectionId": "550e8400-e29b-41d4-a716-446655440001",
+      "createdAt": "2025-05-23T00:00:00.000Z",
+      "updatedAt": "2025-05-23T00:00:00.000Z",
+      "rule_id": 1,
+      "collection": {
+        "collectionId": "550e8400-e29b-41d4-a716-446655440001",
+        "name": "Örnek Koleksiyon",
+        "description": "Örnek koleksiyon açıklaması",
+        "code": "ORNEK",
+        "isActive": true
+      }
+    }
+  ]
+}
+```
+
+### 2. Koleksiyona Göre Ürün Listeleme
+
+**Endpoint:** `GET /api/products/by-collection/:collectionId`  
+**Erişim:** Herkes erişebilir  
+**Açıklama:** Belirtilen koleksiyona ait ürünleri listeler.
+
+**URL Parametreleri:**
+* `collectionId` (zorunlu): Ürünleri listelenmek istenen koleksiyonun ID'si
+
+**Örnek Yanıt:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "productId": "550e8400-e29b-41d4-a716-446655440000",
+      "name": "Örnek Ürün 1",
+      "description": "Bu bir örnek ürün açıklamasıdır",
+      "productImage": "https://tebi.io/pashahome/products/ornek-urun-1.jpg",
+      "presignedImageUrl": "https://storage.googleapis.com/...",
+      "collectionId": "550e8400-e29b-41d4-a716-446655440001",
+      "collection": {
+        "collectionId": "550e8400-e29b-41d4-a716-446655440001",
+        "name": "Örnek Koleksiyon"
+      }
+    }
+  ]
+}
+```
+
+### 3. ID'ye Göre Ürün Getirme
+
+**Endpoint:** `GET /api/products/:id`  
+**Erişim:** Herkes erişebilir  
+**Açıklama:** Belirtilen ID'ye sahip ürünü getirir.
+
+**URL Parametreleri:**
+* `id` (zorunlu): Getirilmek istenen ürünün ID'si
+
+**Örnek Yanıt:**
+```json
+{
+  "success": true,
+  "data": {
+    "productId": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Örnek Ürün",
+    "description": "Bu bir örnek ürün açıklamasıdır",
+    "productImage": "https://tebi.io/pashahome/products/ornek-urun.jpg",
+    "presignedImageUrl": "https://storage.googleapis.com/...",
+    "collectionId": "550e8400-e29b-41d4-a716-446655440001",
+    "rule_id": 1,
+    "collection": {
+      "collectionId": "550e8400-e29b-41d4-a716-446655440001",
+      "name": "Örnek Koleksiyon"
+    },
+    "pricing": {
+      "price": 1500.00,
+      "currency": "TRY",
+      "userTypeId": 2
+    }
+  }
+}
+```
+
+### 4. Ürün Kurallarını Listeleme
+
+**Endpoint:** `GET /api/products/rules`  
+**Erişim:** Herkes erişebilir  
+**Açıklama:** Sistemdeki tüm ürün kurallarını listeler.
+
+**Örnek Yanıt:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "Standart Ürün",
+      "can_have_fringe": true,
+      "description": "Standart ürün kuralları",
+      "is_active": true
+    }
+  ]
+}
+```
+
+### 5. Yeni Ürün Oluşturma
+
+**Endpoint:** `POST /api/products`  
+**Erişim:** Sadece admin  
+**Açıklama:** Yeni bir ürün oluşturur.
+
+**İstek Tipi:** multipart/form-data
+
+**İstek Parametreleri:**
+* `name` (zorunlu): Ürün adı
+* `description` (zorunlu): Ürün açıklaması
+* `collectionId` (zorunlu): Ürünün ait olduğu koleksiyon ID'si
+* `rule_id` (opsiyonel): Ürün kural ID'si
+* `productImage` (opsiyonel): Ürün görseli (multipart/form-data dosyası)
+
+**Authorization Header:**
+```
+Authorization: Bearer {jwt_token}
+```
+
+**Örnek Yanıt:**
+```json
+{
+  "success": true,
+  "data": {
+    "productId": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Yeni Ürün",
+    "description": "Yeni ürün açıklaması",
+    "productImage": "https://tebi.io/pashahome/products/yeni-urun.jpg",
+    "collectionId": "550e8400-e29b-41d4-a716-446655440001",
+    "rule_id": 1,
+    "createdAt": "2025-05-23T00:00:00.000Z",
+    "updatedAt": "2025-05-23T00:00:00.000Z",
+    "collection": {
+      "collectionId": "550e8400-e29b-41d4-a716-446655440001",
+      "name": "Örnek Koleksiyon"
+    }
+  }
+}
+```
+
+### 6. Ürün Güncelleme
+
+**Endpoint:** `PUT /api/products/:id`  
+**Erişim:** Sadece admin  
+**Açıklama:** Belirtilen ID'ye sahip ürünü günceller.
+
+**İstek Tipi:** multipart/form-data
+
+**URL Parametreleri:**
+* `id` (zorunlu): Güncellenecek ürünün ID'si
+
+**İstek Parametreleri:**
+* `name` (opsiyonel): Ürün adı
+* `description` (opsiyonel): Ürün açıklaması
+* `collectionId` (opsiyonel): Ürünün ait olduğu koleksiyon ID'si
+* `rule_id` (opsiyonel): Ürün kural ID'si
+* `productImage` (opsiyonel): Ürün görseli (multipart/form-data dosyası)
+
+**Authorization Header:**
+```
+Authorization: Bearer {jwt_token}
+```
+
+**Örnek Yanıt:**
+```json
+{
+  "success": true,
+  "data": {
+    "productId": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Güncellenmiş Ürün",
+    "description": "Güncellenmiş ürün açıklaması",
+    "productImage": "https://tebi.io/pashahome/products/guncellenmis-urun.jpg",
+    "collectionId": "550e8400-e29b-41d4-a716-446655440001",
+    "rule_id": 2,
+    "updatedAt": "2025-05-23T01:00:00.000Z",
+    "collection": {
+      "collectionId": "550e8400-e29b-41d4-a716-446655440001",
+      "name": "Örnek Koleksiyon"
+    }
+  }
+}
+```
+
+### 7. Ürün Silme
+
+**Endpoint:** `DELETE /api/products/:id`  
+**Erişim:** Sadece admin  
+**Açıklama:** Belirtilen ID'ye sahip ürünü siler.
+
+**URL Parametreleri:**
+* `id` (zorunlu): Silinecek ürünün ID'si
+
+**Authorization Header:**
+```
+Authorization: Bearer {jwt_token}
+```
+
+**Örnek Yanıt:**
+```json
+{
+  "success": true,
+  "message": "Ürün başarıyla silindi"
+}
+```
+
+### 8. Ürün Stok Güncelleme
+
+**Endpoint:** `PATCH /api/products/:id/stock`  
+**Erişim:** Sadece admin  
+**Açıklama:** Belirtilen ID'ye sahip ürünün stok miktarını günceller.
+
+**URL Parametreleri:**
+* `id` (zorunlu): Stok miktarı güncellenecek ürünün ID'si
+
+**İstek Parametreleri:**
+* `quantity` (zorunlu): Yeni stok miktarı
+
+**Authorization Header:**
+```
+Authorization: Bearer {jwt_token}
+```
+
+**Örnek İstek:**
+```json
+{
+  "quantity": 100
+}
+```
+
+**Örnek Yanıt:**
+```json
+{
+  "success": true,
+  "data": {
+    "productId": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Örnek Ürün",
+    "description": "Örnek ürün açıklaması",
+    "productImage": "https://tebi.io/pashahome/products/ornek-urun.jpg",
+    "presignedImageUrl": "https://storage.googleapis.com/...",
+    "collectionId": "550e8400-e29b-41d4-a716-446655440001",
+    "collection": {
+      "collectionId": "550e8400-e29b-41d4-a716-446655440001",
+      "name": "Örnek Koleksiyon"
+    },
+    "productvariations": [
+      {
+        "id": 1,
+        "product_id": "550e8400-e29b-41d4-a716-446655440000",
+        "stock_quantity": 100,
+        "width": 100,
+        "height": 100,
+        "has_fringe": false
+      }
+    ]
+  }
+}
+```
+
+## Kullanıcı Bazlı Fiyatlandırma (ID'ye Göre Ürün Getirme API'si İçin)
+
+ID'ye göre ürün getirme API'sinde (`GET /api/products/:id`), kullanıcı ID'si (`userId`) parametresi belirtildiğinde, 
+yanıtta ürüne ait fiyat bilgisi de döndürülür.
+
+Bu fiyat bilgisi, kullanıcının tipi (userTypeId) ve ürünün ait olduğu koleksiyona göre fiyat listesinden alınır.
+
+**Fiyat Yapısı:**
+```json
+"pricing": {
+  "price": 1500.00,
+  "currency": "TRY",
+  "userTypeId": 2
+}
+```
+
+**Önemli Notlar:**
+1. Fiyat bilgisi almak için `userId` parametresi sorgu parametresi olarak veya istek yapan kullanıcının tokeni üzerinden geçirilebilir.
+2. Kullanıcı belirtilmezse veya kullanıcı için bir fiyat listesi bulunamazsa fiyat bilgisi döndürülmez.
+3. Eğer koleksiyonun belirli bir kullanıcı tipi için fiyat listesi yoksa, varsayılan para birimi "TRY" olarak döner ve fiyat null olur.
+
+## Hata Kodları ve Mesajları
+
+* **400 Bad Request**: İstek parametreleri eksik veya geçersiz
+* **401 Unauthorized**: Giriş yapılmamış veya token eksik
+* **403 Forbidden**: Yetkisiz erişim (Admin yetkisi gerekli)
+* **404 Not Found**: Ürün veya ilgili kaynak bulunamadı
+* **500 Internal Server Error**: Sunucu hatası
+
+## Test Amaçlı API
+
+### Test Ürün Oluşturma
+
+**Endpoint:** `POST /api/products/test-create`  
+**Erişim:** Sadece admin  
+**Açıklama:** Test amaçlı basit ürün oluşturma. Basitleştirilmiş form.
+
+**İstek Parametreleri:**
+* `name` (zorunlu): Ürün adı
+* `description` (zorunlu): Ürün açıklaması
+* `collectionId` (zorunlu): Ürünün ait olduğu koleksiyon ID'si
+* `productImage` (opsiyonel): Ürün görseli (multipart/form-data dosyası)
+
+**Authorization Header:**
+```
+Authorization: Bearer {jwt_token}
+``` 
