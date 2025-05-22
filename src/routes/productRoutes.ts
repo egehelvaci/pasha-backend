@@ -2,35 +2,44 @@ import express from 'express';
 import {
   getAllProducts,
   getProductById,
+  getProductsByCollection,
   createProduct,
+  createProductSimple,
   updateProduct,
   deleteProduct,
   uploadProductImage,
-  getProductPrice,
-  updateProductStock
+  updateProductStock,
+  getAllProductRules
 } from '../controllers/productController';
+import { verifyToken, isAdmin } from '../middleware/authMiddleware';
 
 const router = express.Router();
 
-// Tüm ürünleri getir
-router.get('/', getAllProducts);
+// Sadece giriş yapmış kullanıcılar - Tüm ürünleri getir
+router.get('/', verifyToken, getAllProducts);
 
-// ID'ye göre ürün getir
-router.get('/:id', getProductById);
+// Herkes erişebilir - Tüm ürün kurallarını getir (dropdown için)
+router.get('/rules', getAllProductRules);
 
-// Yeni ürün oluştur (görsel yükleme ile)
-router.post('/', uploadProductImage, createProduct);
+// Sadece giriş yapmış kullanıcılar - Koleksiyona göre ürünleri getir
+router.get('/by-collection/:collectionId', verifyToken, getProductsByCollection);
 
-// Ürün güncelle (görsel yükleme ile)
-router.put('/:id', uploadProductImage, updateProduct);
+// Sadece giriş yapmış kullanıcılar - ID'ye göre ürün getir
+router.get('/:id', verifyToken, getProductById);
 
-// Ürün sil
-router.delete('/:id', deleteProduct);
+// Sadece admin erişebilir - Test amaçlı basit ürün oluşturma endpoint'i
+router.post('/test-create', isAdmin, uploadProductImage, createProductSimple);
 
-// Ürün fiyatını hesapla
-router.get('/:id/price', getProductPrice);
+// Sadece admin erişebilir - Yeni ürün oluştur (görsel yükleme ile)
+router.post('/', isAdmin, uploadProductImage, createProduct);
 
-// Stok güncelle
-router.patch('/:id/stock', updateProductStock);
+// Sadece admin erişebilir - Ürün güncelle (görsel yükleme ile)
+router.put('/:id', isAdmin, uploadProductImage, updateProduct);
+
+// Sadece admin erişebilir - Ürün sil
+router.delete('/:id', isAdmin, deleteProduct);
+
+// Sadece admin erişebilir - Stok güncelle
+router.patch('/:id/stock', isAdmin, updateProductStock);
 
 export default router; 
