@@ -400,6 +400,16 @@ Bu fiyat bilgisi, kullanıcının tipi (userTypeId) ve ürünün ait olduğu kol
 }
 ```
 
+**Fiyat Hesaplama Mantığı:**
+1. Kullanıcı bir mağazaya (store) bağlıysa, öncelikle bu mağazaya ait fiyat listesi (StorePriceList) kontrolü yapılır.
+2. Mağazaya ait fiyat listesi bulunursa, bu fiyat listesinin geçerliliği şu koşullara göre kontrol edilir:
+   - Fiyat listesi aktif olmalıdır (is_active = true)
+   - Eğer geçerlilik başlangıç tarihi (valid_from) tanımlanmışsa, bu tarih geçmiş olmalıdır
+   - Eğer geçerlilik bitiş tarihi (valid_to) tanımlanmışsa, bu tarih henüz gelmemiş olmalıdır
+3. Kullanıcıya özel fiyat listesi bulunamazsa veya fiyat listesi geçerli değilse, varsayılan fiyat listesi (is_default = true) kullanılır.
+4. Varsayılan fiyat listesi için de aynı geçerlilik kontrolleri yapılır.
+5. İlgili koleksiyon için geçerli bir fiyat bulunamazsa, fiyat bilgisi null olarak döndürülür.
+
 **Önemli Notlar:**
 1. Fiyat bilgisi almak için `userId` parametresi sorgu parametresi olarak veya istek yapan kullanıcının tokeni üzerinden geçirilebilir.
 2. Kullanıcı belirtilmezse veya kullanıcı için bir fiyat listesi bulunamazsa fiyat bilgisi döndürülmez.

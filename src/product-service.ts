@@ -91,6 +91,47 @@ export class ProductService {
     }
   }
   
+  // storePriceList bulunursa yapılacak işlemler için ortak metot
+  private async getPriceInfoFromPriceList(priceList: any, collectionId: string, userTypeId: number) {
+    // Fiyat listesinin geçerli olup olmadığını kontrol et
+    const now = new Date();
+    
+    // Fiyat listesi aktif değilse kullanma
+    if (!priceList.is_active) {
+      return null;
+    }
+    
+    // Fiyat listesinin tarih aralığı kontrolü
+    if (priceList.valid_from && new Date(priceList.valid_from) > now) {
+      // Başlangıç tarihi henüz gelmemiş
+      return null;
+    }
+    
+    if (priceList.valid_to && new Date(priceList.valid_to) < now) {
+      // Bitiş tarihi geçmiş
+      return null;
+    }
+    
+    // Fiyat detayını bul
+    const priceDetail = await prisma.priceListDetail.findFirst({
+      where: {
+        price_list_id: priceList.price_list_id,
+        collection_id: collectionId
+      }
+    });
+    
+    if (priceDetail) {
+      // Fiyat detayı bulundu
+      return {
+        price: priceDetail.price_per_square_meter ? parseFloat(priceDetail.price_per_square_meter.toString()) : null,
+        currency: priceList.currency || "TRY",
+        userTypeId: userTypeId
+      };
+    }
+    
+    return null;
+  }
+  
   /**
    * Tüm ürünleri getir
    */
@@ -131,23 +172,13 @@ export class ProductService {
                     include: { PriceList: true }
                   });
                   
-                  if (storePriceList) {
-                    // Mağazanın fiyat listesi varsa, bu koleksiyon için fiyat detayını bul
-                    const priceDetail = await prisma.priceListDetail.findFirst({
-                      where: {
-                        price_list_id: storePriceList.price_list_id,
-                        collection_id: product.collectionId
-                      }
-                    });
-                    
-                    if (priceDetail) {
-                      // Fiyat detayı bulundu
-                      priceInfo = {
-                        price: priceDetail.price_per_square_meter ? parseFloat(priceDetail.price_per_square_meter.toString()) : null,
-                        currency: storePriceList.PriceList.currency || "TRY",
-                        userTypeId: userTypeId
-                      };
-                    }
+                  if (storePriceList && storePriceList.PriceList) {
+                    // Fiyat listesinin geçerlilik kontrolü
+                    priceInfo = await this.getPriceInfoFromPriceList(
+                      storePriceList.PriceList, 
+                      product.collectionId, 
+                      userTypeId
+                    );
                   }
                 }
                 
@@ -158,20 +189,12 @@ export class ProductService {
                   });
                   
                   if (defaultPriceList) {
-                    const defaultPriceDetail = await prisma.priceListDetail.findFirst({
-                      where: {
-                        price_list_id: defaultPriceList.price_list_id,
-                        collection_id: product.collectionId
-                      }
-                    });
-                    
-                    if (defaultPriceDetail) {
-                      priceInfo = {
-                        price: defaultPriceDetail.price_per_square_meter ? parseFloat(defaultPriceDetail.price_per_square_meter.toString()) : null,
-                        currency: defaultPriceList.currency || "TRY",
-                        userTypeId: userTypeId
-                      };
-                    }
+                    // Varsayılan fiyat listesinin geçerlilik kontrolü
+                    priceInfo = await this.getPriceInfoFromPriceList(
+                      defaultPriceList, 
+                      product.collectionId, 
+                      userTypeId
+                    );
                   }
                 }
 
@@ -251,23 +274,13 @@ export class ProductService {
                   include: { PriceList: true }
                 });
                 
-                if (storePriceList) {
-                  // Mağazanın fiyat listesi varsa, bu koleksiyon için fiyat detayını bul
-                  const priceDetail = await prisma.priceListDetail.findFirst({
-                    where: {
-                      price_list_id: storePriceList.price_list_id,
-                      collection_id: product.collectionId
-                    }
-                  });
-                  
-                  if (priceDetail) {
-                    // Fiyat detayı bulundu
-                    priceInfo = {
-                      price: priceDetail.price_per_square_meter ? parseFloat(priceDetail.price_per_square_meter.toString()) : null,
-                      currency: storePriceList.PriceList.currency || "TRY",
-                      userTypeId: userTypeId
-                    };
-                  }
+                if (storePriceList && storePriceList.PriceList) {
+                  // Fiyat listesinin geçerlilik kontrolü
+                  priceInfo = await this.getPriceInfoFromPriceList(
+                    storePriceList.PriceList, 
+                    product.collectionId, 
+                    userTypeId
+                  );
                 }
               }
               
@@ -278,20 +291,12 @@ export class ProductService {
                 });
                 
                 if (defaultPriceList) {
-                  const defaultPriceDetail = await prisma.priceListDetail.findFirst({
-                    where: {
-                      price_list_id: defaultPriceList.price_list_id,
-                      collection_id: product.collectionId
-                    }
-                  });
-                  
-                  if (defaultPriceDetail) {
-                    priceInfo = {
-                      price: defaultPriceDetail.price_per_square_meter ? parseFloat(defaultPriceDetail.price_per_square_meter.toString()) : null,
-                      currency: defaultPriceList.currency || "TRY",
-                      userTypeId: userTypeId
-                    };
-                  }
+                  // Varsayılan fiyat listesinin geçerlilik kontrolü
+                  priceInfo = await this.getPriceInfoFromPriceList(
+                    defaultPriceList, 
+                    product.collectionId, 
+                    userTypeId
+                  );
                 }
               }
 
@@ -446,23 +451,13 @@ export class ProductService {
                     include: { PriceList: true }
                   });
                   
-                  if (storePriceList) {
-                    // Mağazanın fiyat listesi varsa, bu koleksiyon için fiyat detayını bul
-                    const priceDetail = await prisma.priceListDetail.findFirst({
-                      where: {
-                        price_list_id: storePriceList.price_list_id,
-                        collection_id: product.collectionId
-                      }
-                    });
-                    
-                    if (priceDetail) {
-                      // Fiyat detayı bulundu
-                      priceInfo = {
-                        price: priceDetail.price_per_square_meter ? parseFloat(priceDetail.price_per_square_meter.toString()) : null,
-                        currency: storePriceList.PriceList.currency || "TRY",
-                        userTypeId: userTypeId
-                      };
-                    }
+                  if (storePriceList && storePriceList.PriceList) {
+                    // Fiyat listesinin geçerlilik kontrolü
+                    priceInfo = await this.getPriceInfoFromPriceList(
+                      storePriceList.PriceList, 
+                      product.collectionId, 
+                      userTypeId
+                    );
                   }
                 }
                 
@@ -473,20 +468,12 @@ export class ProductService {
                   });
                   
                   if (defaultPriceList) {
-                    const defaultPriceDetail = await prisma.priceListDetail.findFirst({
-                      where: {
-                        price_list_id: defaultPriceList.price_list_id,
-                        collection_id: product.collectionId
-                      }
-                    });
-                    
-                    if (defaultPriceDetail) {
-                      priceInfo = {
-                        price: defaultPriceDetail.price_per_square_meter ? parseFloat(defaultPriceDetail.price_per_square_meter.toString()) : null,
-                        currency: defaultPriceList.currency || "TRY",
-                        userTypeId: userTypeId
-                      };
-                    }
+                    // Varsayılan fiyat listesinin geçerlilik kontrolü
+                    priceInfo = await this.getPriceInfoFromPriceList(
+                      defaultPriceList, 
+                      product.collectionId, 
+                      userTypeId
+                    );
                   }
                 }
 
