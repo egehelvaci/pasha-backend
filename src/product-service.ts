@@ -2,17 +2,18 @@ import { PrismaClient, Prisma } from '../generated/prisma';
 import { TebiService } from './utils/tebi-service';
 
 // Kesim türleri için tip tanımı
-interface CutType {
+export interface CutType {
   id: number;
   name: string;
 }
 
 // Boyut seçenekleri için tip tanımı
-interface SizeOption {
+export interface SizeOption {
   id: number;
   width: number;
   height: number;
   is_optional_height: boolean;
+  stockQuantity?: number;
 }
 
 // Ürün veri modelini tipini genişlet

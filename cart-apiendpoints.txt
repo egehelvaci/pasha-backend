@@ -1,0 +1,435 @@
+===========================================
+         SEPET API ENDPOINT'LERİ
+===========================================
+
+Bu dosya Pasha Backend sepet sistemi API endpoint'lerini içerir.
+Tüm endpoint'ler JWT authentication gerektirir.
+
+===========================================
+AUTH GEREKSİNİMLERİ
+===========================================
+
+Tüm isteklerde Authorization header'ı gereklidir:
+Authorization: Bearer <JWT_TOKEN>
+
+===========================================
+BASE URL
+===========================================
+
+Local: http://localhost:3001/api/cart
+Production: https://your-domain.com/api/cart
+
+===========================================
+ENDPOINT'LER
+===========================================
+
+1. SEPETE ÜRÜN EKLEME
+-----------------------------------------
+Method: POST
+URL: /api/cart/add
+
+Request Body:
+{
+  "productId": "550e8400-e29b-41d4-a716-446655440001",
+  "quantity": 2,
+  "width": 150,
+  "height": 200,
+  "hasFringe": true,
+  "cutType": "rectangle",
+  "notes": "Özel kesim notları (opsiyonel)"
+}
+
+Response (Success - 201):
+{
+  "success": true,
+  "message": "Ürün sepete eklendi",
+  "data": {
+    "id": 1,
+    "cart_id": 5,
+    "product_id": "550e8400-e29b-41d4-a716-446655440001",
+    "quantity": 2,
+    "width": "150.00",
+    "height": "200.00",
+    "area_m2": "3.00",
+    "unit_price": "45.50",
+    "total_price": "273.00",
+    "has_fringe": true,
+    "cut_type": "rectangle",
+    "notes": "Özel kesim notları",
+    "created_at": "2024-01-15T10:30:00.000Z",
+    "updated_at": "2024-01-15T10:30:00.000Z",
+    "Product": { ... },
+    "carts": { ... }
+  }
+}
+
+Response (Error - 400):
+{
+  "success": false,
+  "message": "Yeterli stok yok. Seçilen boyut (150x200cm) saçaklı için mevcut stok: 1"
+}
+
+Validasyonlar:
+- productId: Zorunlu, geçerli UUID
+- quantity: Zorunlu, pozitif sayı
+- width: Zorunlu, pozitif sayı (cm)
+- height: Zorunlu, pozitif sayı (cm)
+- hasFringe: Zorunlu, boolean
+- cutType: Zorunlu, enum ("rectangle", "round", "oval", "custom")
+- notes: Opsiyonel, string
+
+Özellikler:
+- Otomatik fiyat hesaplama (miktar × alan(m²) × birim fiyat)
+- SPESİFİK stok kontrolü (seçilen width × height × hasFringe kombinasyonu için)
+- Boyut validasyonu (is_optional_height kuralları)
+- Duplicate kontrolü (aynı ürün+boyut varsa miktar arttırılır + stok kontrolü)
+- Mevcut sepet öğesi + yeni miktar toplamı stok sınırını aşamaz
+
+===========================================
+
+2. SEPETİ GETIRME
+-----------------------------------------
+Method: GET
+URL: /api/cart
+
+Request Body: Yok
+
+Response (Success - 200):
+{
+  "success": true,
+  "data": {
+    "id": 5,
+    "items": [
+      {
+        "id": 1,
+        "cart_id": 5,
+        "product_id": "550e8400-e29b-41d4-a716-446655440001",
+        "quantity": 2,
+        "width": "150.00",
+        "height": "200.00",
+        "area_m2": "3.00",
+        "unit_price": "45.50",
+        "total_price": "273.00",
+        "has_fringe": true,
+        "cut_type": "rectangle",
+        "notes": "Özel kesim notları",
+        "created_at": "2024-01-15T10:30:00.000Z",
+        "updated_at": "2024-01-15T10:30:00.000Z",
+        "Product": {
+          "productId": "550e8400-e29b-41d4-a716-446655440001",
+          "name": "Premium Halı",
+          "description": "Yüksek kalite halı",
+          "productImage": "https://example.com/image.jpg",
+          "collection": {
+            "collectionId": "col-123",
+            "name": "Premium Koleksiyon",
+            "code": "PREM"
+          }
+        },
+        "ProductDetails": {
+          "productId": "550e8400-e29b-41d4-a716-446655440001",
+          "name": "Premium Halı",
+          "description": "Yüksek kalite halı",
+          "productImage": "https://s3.tebi.io/pashahome/products/image.jpg",
+          "collection": {
+            "collectionId": "col-123",
+            "name": "Premium Koleksiyon",
+            "code": "PREM",
+            "description": "Premium halı koleksiyonu",
+            "isActive": true,
+            "createdAt": "2025-05-09T12:46:20.707Z",
+            "updatedAt": "2025-05-09T12:46:20.707Z"
+          },
+          "pricing": {
+            "price": 504,
+            "currency": "TRY",
+            "userTypeId": 1
+          },
+          "canHaveFringe": true,
+          "hasFringe": true,
+          "cutTypes": [
+            {
+              "id": 1,
+              "name": "standart"
+            },
+            {
+              "id": 2,
+              "name": "oval"
+            }
+          ],
+          "sizeOptions": [
+            {
+              "id": 11,
+              "width": 80,
+              "height": 10000,
+              "is_optional_height": true,
+              "stockQuantity": 1000
+            },
+            {
+              "id": 12,
+              "width": 100,
+              "height": 10000,
+              "is_optional_height": true,
+              "stockQuantity": 1000
+            }
+          ]
+        }
+      }
+    ],
+    "totalItems": 2,
+    "totalPrice": "273.00",
+    "createdAt": "2024-01-15T10:00:00.000Z",
+    "updatedAt": "2024-01-15T10:30:00.000Z"
+  }
+}
+
+Response (Boş sepet - 200):
+{
+  "success": true,
+  "data": {
+    "id": null,
+    "items": [],
+    "totalItems": 0,
+    "totalPrice": "0.00"
+  }
+}
+
+===========================================
+
+3. SEPET ÖĞESİNİ GÜNCELLEME
+-----------------------------------------
+Method: PUT
+URL: /api/cart/items/:cartItemId
+
+Path Parameters:
+- cartItemId: Güncellenecek sepet öğesinin ID'si
+
+Request Body:
+{
+  "quantity": 3,
+  "width": 180,
+  "height": 220,
+  "hasFringe": false,
+  "cutType": "round",
+  "notes": "Güncellenmiş notlar"
+}
+
+Response (Success - 200):
+{
+  "success": true,
+  "message": "Sepet öğesi güncellendi",
+  "data": {
+    "id": 1,
+    "cart_id": 5,
+    "product_id": "550e8400-e29b-41d4-a716-446655440001",
+    "quantity": 3,
+    "width": "180.00",
+    "height": "220.00",
+    "area_m2": "3.96",
+    "unit_price": "45.50",
+    "total_price": "540.36",
+    "has_fringe": false,
+    "cut_type": "round",
+    "notes": "Güncellenmiş notlar",
+    "created_at": "2024-01-15T10:30:00.000Z",
+    "updated_at": "2024-01-15T10:45:00.000Z",
+    "Product": { ... }
+  }
+}
+
+Validasyonlar:
+- cartItemId: Zorunlu, pozitif sayı
+- quantity: Zorunlu, pozitif sayı
+- width, height, hasFringe, cutType, notes: Opsiyonel
+
+Özellikler:
+- Otomatik fiyat yeniden hesaplama
+- Stok kontrolü
+
+===========================================
+
+4. SEPETTEN ÜRÜN ÇIKARMA
+-----------------------------------------
+Method: DELETE
+URL: /api/cart/items/:cartItemId
+
+Path Parameters:
+- cartItemId: Çıkarılacak sepet öğesinin ID'si
+
+Request Body: Yok
+
+Response (Success - 200):
+{
+  "success": true,
+  "message": "Ürün sepetten çıkarıldı"
+}
+
+Response (Error - 400):
+{
+  "success": false,
+  "message": "Sepet öğesi bulunamadı veya size ait değil"
+}
+
+Özellikler:
+- Kullanıcı sahiplik kontrolü
+- Sadece kendi sepet öğelerini silebilir
+
+===========================================
+
+5. SEPETİ TEMİZLEME
+-----------------------------------------
+Method: DELETE
+URL: /api/cart/clear
+
+Request Body: Yok
+
+Response (Success - 200):
+{
+  "success": true,
+  "message": "Sepet temizlendi"
+}
+
+Response (Error - 400):
+{
+  "success": false,
+  "message": "Aktif sepet bulunamadı"
+}
+
+Özellikler:
+- Tüm sepet öğelerini siler
+- Sepet kaydını korur (sadece öğeleri siler)
+
+===========================================
+
+6. SEPETİ SİLME
+-----------------------------------------
+Method: DELETE
+URL: /api/cart
+
+Request Body: Yok
+
+Response (Success - 200):
+{
+  "success": true,
+  "message": "Sepet silindi"
+}
+
+Response (Error - 400):
+{
+  "success": false,
+  "message": "Aktif sepet bulunamadı"
+}
+
+Özellikler:
+- Sepet öğelerini siler
+- Sepeti deaktif eder (is_active = false)
+
+===========================================
+
+7. ESKİ SEPETLERİ TEMİZLEME (ADMIN)
+-----------------------------------------
+Method: POST
+URL: /api/cart/admin/clean
+
+Request Body: Yok
+
+Response (Success - 200):
+{
+  "success": true,
+  "message": "5 eski sepet temizlendi",
+  "deletedCount": 5
+}
+
+Özellikler:
+- 3 günden eski sepetleri otomatik siler
+- Admin endpoint'i (gelecekte yetkilendirme eklenebilir)
+- Cron job için kullanılabilir
+
+===========================================
+CURL ÖRNEKLERİ
+===========================================
+
+1. Sepete ürün ekleme:
+curl -X POST http://localhost:3001/api/cart/add \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "productId": "550e8400-e29b-41d4-a716-446655440001",
+    "quantity": 1,
+    "width": 100,
+    "height": 150,
+    "hasFringe": false,
+    "cutType": "rectangle"
+  }'
+
+2. Sepeti getirme:
+curl -X GET http://localhost:3001/api/cart \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+3. Sepet öğesini güncelleme:
+curl -X PUT http://localhost:3001/api/cart/items/1 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "quantity": 2,
+    "notes": "Yeni not"
+  }'
+
+4. Sepetten ürün çıkarma:
+curl -X DELETE http://localhost:3001/api/cart/items/1 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+5. Sepeti temizleme:
+curl -X DELETE http://localhost:3001/api/cart/clear \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+6. Sepeti silme:
+curl -X DELETE http://localhost:3001/api/cart \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+===========================================
+HATA KODLARI
+===========================================
+
+200 - Başarılı işlem
+201 - Başarılı oluşturma
+400 - Geçersiz istek / Validasyon hatası
+401 - Kimlik doğrulama gerekli
+403 - Yetkisiz erişim
+404 - Kaynak bulunamadı
+500 - Sunucu hatası
+
+===========================================
+ÖNEMLİ NOTLAR
+===========================================
+
+1. Fiyat Hesaplama:
+   - Alan = (width × height) / 10000 (cm²'den m²'ye)
+   - Toplam Fiyat = quantity × alan(m²) × birim fiyat
+
+2. SPESİFİK Stok Kontrolü:
+   - productvariations tablosundan EXACT MATCH stok kontrolü
+   - width × height × has_fringe kombinasyonu için özel stok kontrolü
+   - Quantity, seçilen boyut+özellik kombinasyonunun stok miktarını aşamaz
+   - Sepette mevcut + yeni eklenen toplam miktar stok sınırını aşamaz
+
+3. Boyut Validasyonu:
+   - productrules > productsizeoptions tablosuna göre
+   - is_optional_height = true ise height değiştirilebilir
+   - Maksimum height aşılamaz
+
+4. Otomatik Temizleme:
+   - 3 günden eski sepetler otomatik silinir
+   - clean_old_carts() fonksiyonu ile
+
+5. Duplicate Kontrolü:
+   - Aynı ürün, boyut ve özelliklerle tekrar eklenirse
+   - Yeni öğe oluşturmaz, mevcut miktar arttırılır
+   - TOPLAM miktar yine stok sınırlarına uymalıdır
+
+6. Güvenlik:
+   - Tüm endpoint'ler JWT authentication gerektirir
+   - Kullanıcı sadece kendi sepetine erişebilir
+   - verifyToken middleware kullanılır
+
+=========================================== 

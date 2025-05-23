@@ -6,6 +6,7 @@ import productRoutes from './routes/productRoutes'
 import collectionRoutes from './routes/collectionRoutes'
 import priceListRoutes from './routes/priceListRoutes'
 import catalogRoutes from './routes/catalogRoutes'
+import cartRoutes from './routes/cartRoutes'
 import adminRoutes from './admin/admin-routes'
 import authRoutes from './auth/auth-routes'
 import storeRoutes from './admin/store-routes'
@@ -57,6 +58,7 @@ app.use('/api/products', productRoutes)
 app.use('/api/collections', collectionRoutes)
 app.use('/api/price-lists', priceListRoutes)
 app.use('/api/catalog', catalogRoutes)
+app.use('/api/cart', cartRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/stores', storeRoutes)

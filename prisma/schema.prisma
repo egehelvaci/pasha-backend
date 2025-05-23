@@ -31,6 +31,7 @@ model User {
   store_id    String?  @db.Uuid
   userType    UserType @relation(fields: [userTypeId], references: [id])
   Store       Store?   @relation(fields: [store_id], references: [store_id], onUpdate: NoAction, map: "fk_user_store")
+  carts       carts[]
 }
 
 model Collection {
@@ -56,6 +57,7 @@ model Product {
   rule_id           Int?
   collection        Collection          @relation(fields: [collectionId], references: [collectionId])
   productrules      productrules?       @relation(fields: [rule_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  cart_items        cart_items[]
   productvariations productvariations[]
 }
 
@@ -179,8 +181,53 @@ model productvariations {
   @@unique([product_id, cut_type_id, has_fringe, width, height])
 }
 
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model cart_items {
+  id          Int            @id @default(autoincrement())
+  cart_id     Int
+  product_id  String         @db.VarChar(36)
+  quantity    Int            @default(1)
+  width       Decimal        @db.Decimal(8, 2)
+  height      Decimal        @db.Decimal(8, 2)
+  area_m2     Decimal        @db.Decimal(10, 2)
+  unit_price  Decimal        @db.Decimal(10, 2)
+  total_price Decimal        @db.Decimal(12, 2)
+  has_fringe  Boolean?       @default(false)
+  cut_type    cut_type_enum? @default(rectangle)
+  notes       String?
+  created_at  DateTime?      @default(now()) @db.Timestamp(6)
+  updated_at  DateTime?      @default(now()) @db.Timestamp(6)
+  carts       carts          @relation(fields: [cart_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Product     Product        @relation(fields: [product_id], references: [productId], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([cart_id], map: "idx_cart_items_cart_id")
+  @@index([cart_id, product_id], map: "idx_cart_items_composite")
+  @@index([product_id], map: "idx_cart_items_product_id")
+}
+
+model carts {
+  id         Int          @id @default(autoincrement())
+  user_id    String       @db.VarChar(36)
+  created_at DateTime?    @default(now()) @db.Timestamp(6)
+  updated_at DateTime?    @default(now()) @db.Timestamp(6)
+  is_active  Boolean?     @default(true)
+  cart_items cart_items[]
+  User       User         @relation(fields: [user_id], references: [userId], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([updated_at], map: "idx_carts_updated_at")
+  @@index([user_id, is_active], map: "idx_carts_user_active")
+  @@index([user_id], map: "idx_carts_user_id")
+}
+
 enum Currency {
   TRY
   USD
   EUR
+}
+
+enum cut_type_enum {
+  rectangle
+  round
+  oval
+  custom
 }
