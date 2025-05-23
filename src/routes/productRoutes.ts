@@ -9,7 +9,8 @@ import {
   deleteProduct,
   uploadProductImage,
   updateProductStock,
-  getAllProductRules
+  getAllProductRules,
+  getProductVariationOptions
 } from '../controllers/productController';
 import { verifyToken, isAdmin } from '../middleware/authMiddleware';
 
@@ -23,6 +24,9 @@ router.get('/rules', getAllProductRules);
 
 // Sadece giriş yapmış kullanıcılar - Koleksiyona göre ürünleri getir
 router.get('/by-collection/:collectionId', verifyToken, getProductsByCollection);
+
+// Sadece admin erişebilir - Ürünün stok varyasyon seçeneklerini getir
+router.get('/:id/variations', isAdmin, getProductVariationOptions);
 
 // Sadece giriş yapmış kullanıcılar - ID'ye göre ürün getir
 router.get('/:id', verifyToken, getProductById);

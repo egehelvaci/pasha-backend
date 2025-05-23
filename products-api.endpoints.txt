@@ -92,7 +92,6 @@ Bu dosya, Pasha Backend uygulamasındaki ürün API'lerini tanımlar.
     "name": "Örnek Ürün",
     "description": "Bu bir örnek ürün açıklamasıdır",
     "productImage": "https://tebi.io/pashahome/products/ornek-urun.jpg",
-    "presignedImageUrl": "https://storage.googleapis.com/...",
     "collectionId": "550e8400-e29b-41d4-a716-446655440001",
     "rule_id": 1,
     "collection": {
@@ -103,7 +102,31 @@ Bu dosya, Pasha Backend uygulamasındaki ürün API'lerini tanımlar.
       "price": 1500.00,
       "currency": "TRY",
       "userTypeId": 2
-    }
+    },
+    "canHaveFringe": true,
+    "hasFringe": false,
+    "cutTypes": [
+      {
+        "id": 1,
+        "name": "standart"
+      }
+    ],
+    "sizeOptions": [
+      {
+        "id": 11,
+        "width": 80,
+        "height": 10000,
+        "is_optional_height": true,
+        "stockQuantity": 15
+      },
+      {
+        "id": 12,
+        "width": 100,
+        "height": 10000,
+        "is_optional_height": true,
+        "stockQuantity": 0
+      }
+    ]
   }
 }
 ```
@@ -240,13 +263,15 @@ Authorization: Bearer {jwt_token}
 
 **Endpoint:** `PATCH /api/products/:id/stock`  
 **Erişim:** Sadece admin  
-**Açıklama:** Belirtilen ID'ye sahip ürünün stok miktarını günceller.
+**Açıklama:** Belirtilen ID'ye sahip ürünün stok miktarını, ürün kurallarındaki ebat seçeneklerine göre günceller.
 
 **URL Parametreleri:**
 * `id` (zorunlu): Stok miktarı güncellenecek ürünün ID'si
 
 **İstek Parametreleri:**
-* `quantity` (zorunlu): Yeni stok miktarı
+* `width` (zorunlu): Ürün genişliği (veritabanında o ürün için tanımlı bir genişlik değeri olmalı)
+* `height` (zorunlu): Ürün yüksekliği (veritabanında o genişlik için tanımlı yükseklik değeri olmalı)
+* `quantity` (zorunlu): Stok miktarı
 
 **Authorization Header:**
 ```
@@ -256,6 +281,8 @@ Authorization: Bearer {jwt_token}
 **Örnek İstek:**
 ```json
 {
+  "width": 100,
+  "height": 10000,
   "quantity": 100
 }
 ```
@@ -269,20 +296,88 @@ Authorization: Bearer {jwt_token}
     "name": "Örnek Ürün",
     "description": "Örnek ürün açıklaması",
     "productImage": "https://tebi.io/pashahome/products/ornek-urun.jpg",
-    "presignedImageUrl": "https://storage.googleapis.com/...",
     "collectionId": "550e8400-e29b-41d4-a716-446655440001",
     "collection": {
       "collectionId": "550e8400-e29b-41d4-a716-446655440001",
       "name": "Örnek Koleksiyon"
     },
-    "productvariations": [
+    "variations": [
+      {
+        "width": 100,
+        "height": 10000,
+        "stockQuantity": 100
+      }
+    ]
+  }
+}
+```
+
+**Hata Yanıtları:**
+```json
+{
+  "success": false,
+  "message": "Belirtilen genişlik değeri bu ürün için geçerli değil"
+}
+```
+
+```json
+{
+  "success": false,
+  "message": "Bu genişlik (80) için geçerli yükseklik değeri: 10000"
+}
+```
+
+### 9. Ürün Varyasyon Seçeneklerini Getirme
+
+**Endpoint:** `GET /api/products/:id/variations`  
+**Erişim:** Sadece admin  
+**Açıklama:** Belirtilen ID'ye sahip ürünün varyasyon seçeneklerini (ebatlar, kesim tipleri) ve mevcut stok varyasyonlarını getirir.
+
+**URL Parametreleri:**
+* `id` (zorunlu): Varyasyon seçenekleri getirilecek ürünün ID'si
+
+**Authorization Header:**
+```
+Authorization: Bearer {jwt_token}
+```
+
+**Örnek Yanıt:**
+```json
+{
+  "success": true,
+  "data": {
+    "sizeOptions": [
+      {
+        "id": 11,
+        "width": 80,
+        "height": 10000,
+        "is_optional_height": true,
+        "stockQuantity": 0
+      },
+      {
+        "id": 12,
+        "width": 100,
+        "height": 10000,
+        "is_optional_height": true,
+        "stockQuantity": 100
+      }
+    ],
+    "cutTypes": [
       {
         "id": 1,
-        "product_id": "550e8400-e29b-41d4-a716-446655440000",
-        "stock_quantity": 100,
+        "name": "standart"
+      },
+      {
+        "id": 2,
+        "name": "oval"
+      }
+    ],
+    "canHaveFringe": true,
+    "variations": [
+      {
         "width": 100,
-        "height": 100,
-        "has_fringe": false
+        "height": 10000,
+        "stockQuantity": 100
       }
     ]
   }
@@ -335,4 +430,4 @@ Bu fiyat bilgisi, kullanıcının tipi (userTypeId) ve ürünün ait olduğu kol
 **Authorization Header:**
 ```
 Authorization: Bearer {jwt_token}
-``` 
+```

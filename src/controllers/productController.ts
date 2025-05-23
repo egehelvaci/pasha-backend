@@ -306,16 +306,40 @@ export const deleteProduct = async (req: Request, res: Response) => {
 export const updateProductStock = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { quantity } = req.body;
+    const { width, height, quantity } = req.body;
     
-    if (quantity === undefined || isNaN(parseInt(quantity))) {
+    // Zorunlu alanları kontrol et
+    if (!width || height === undefined || height === null || height === '' || quantity === undefined || isNaN(parseInt(quantity))) {
       return res.status(400).json({
         success: false,
-        message: 'Geçerli bir miktar değeri gereklidir'
+        message: 'Geçerli bir genişlik, yükseklik ve miktar değeri gereklidir'
       });
     }
     
-    const product = await productService.updateStock(id, parseInt(quantity));
+    // Genişlik değeri kontrolü
+    const widthValue = parseInt(width);
+    if (isNaN(widthValue)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Genişlik değeri sayısal olmalıdır'
+      });
+    }
+    
+    // Yükseklik değeri kontrolü
+    const heightValue = parseInt(height);
+    if (isNaN(heightValue)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Yükseklik değeri sayısal olmalıdır'
+      });
+    }
+    
+    // Stok güncelleme işlemini gerçekleştir
+    const product = await productService.updateStock(id, {
+      width: widthValue,
+      height: heightValue,
+      quantity: parseInt(quantity)
+    });
     
     return res.status(200).json({
       success: true,
@@ -325,6 +349,25 @@ export const updateProductStock = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: error.message || 'Stok güncellenemedi'
+    });
+  }
+};
+
+// Ürünün varyasyon seçeneklerini getir
+export const getProductVariationOptions = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    const variationOptions = await productService.getProductVariationOptions(id);
+    
+    return res.status(200).json({
+      success: true,
+      data: variationOptions
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Ürün varyasyon seçenekleri getirilemedi'
     });
   }
 }; 

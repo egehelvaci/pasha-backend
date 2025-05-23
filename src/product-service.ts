@@ -361,13 +361,34 @@ export class ProductService {
               where: { rule_id: product.rule_id }
             });
             
+            // Mevcut stok varyasyonlarını getir
+            const variations = await prisma.productvariations.findMany({
+              where: { product_id: productId }
+            });
+            
             if (sizeOptions && sizeOptions.length > 0) {
-              product.sizeOptions = sizeOptions.map(so => ({
-                id: so.id,
-                width: so.width,
-                height: so.height,
-                is_optional_height: so.is_optional_height || false
-              }));
+              // Her bir boyut seçeneği için stok bilgisini ekle
+              product.sizeOptions = sizeOptions.map(so => {
+                // Bu boyut için stok varyasyonlarını bul
+                const stockForSize = variations.find(v => {
+                  // Eğer yükseklik değeri opsiyonelse sadece genişliğe göre eşleştir
+                  if (so.is_optional_height) {
+                    return v.width === so.width;
+                  } else {
+                    // Aksi takdirde hem genişlik hem yükseklik eşleşmeli
+                    return v.width === so.width && v.height === so.height;
+                  }
+                });
+                
+                return {
+                  id: so.id,
+                  width: so.width,
+                  height: so.height,
+                  is_optional_height: so.is_optional_height || false,
+                  // Stok miktarını ekle, eğer stok yoksa 0 olarak göster
+                  stockQuantity: stockForSize ? stockForSize.stock_quantity : 0
+                };
+              });
             } else {
               product.sizeOptions = [];
             }
@@ -576,45 +597,109 @@ export class ProductService {
   }
   
   /**
-   * Stok güncelle
+   * Stok güncelle - Ürün kurallarına göre stok miktarını günceller
    */
-  async updateStock(productId: string, quantity: number) {
+  async updateStock(productId: string, stockData: {
+    width: number;
+    height: number;
+    quantity: number;
+  }) {
     try {
       // Ürünün var olup olmadığını kontrol et
       const product = await prisma.product.findUnique({
-        where: { productId }
+        where: { productId },
+        include: {
+          productrules: true
+        }
       });
       
       if (!product) {
         throw new Error('Ürün bulunamadı');
       }
       
-      // Ürünün varyasyonları üzerinden stok güncellemesi yapalım
-      // Eğer hiç varyasyon yoksa, yeni bir varsayılan varyasyon oluşturalım
+      // Ürün kuralına göre ölçülerin geçerli olup olmadığını kontrol et
+      if (product.rule_id) {
+        // Girilen genişlik ve yükseklik değerleri size options tablosunda var mı kontrol et
+        const sizeOption = await prisma.productsizeoptions.findFirst({
+          where: {
+            rule_id: product.rule_id,
+            width: stockData.width
+          }
+        });
+        
+        if (!sizeOption) {
+          throw new Error('Belirtilen genişlik değeri bu ürün için geçerli değil');
+        }
+        
+        // Eğer yükseklik opsiyonel ise, kullanıcının girdiği height değeri veritabanındaki değerle eşleşmeli
+        if (sizeOption.is_optional_height) {
+          if (stockData.height !== sizeOption.height) {
+            throw new Error(`Bu genişlik (${stockData.width}) için geçerli yükseklik değeri: ${sizeOption.height}`);
+          }
+        } 
+        // Eğer yükseklik opsiyonel değilse, zaten tam eşleşme şartı var
+        else if (sizeOption.height !== stockData.height) {
+          throw new Error(`Belirtilen ölçüler geçerli değil. Bu genişlik (${stockData.width}) için yükseklik değeri: ${sizeOption.height} olmalıdır.`);
+        }
+      }
+      
+      // Kullanılacak yükseklik değerini belirle - artık bu değer kesinlikle veritabanındaki değer olacak
+      let heightToUse = stockData.height; // Bu zaten doğrulanmış bir değer
+      
+      // Bu ebatta varyasyon daha önce eklenmiş mi kontrol et
+      const existingVariation = await prisma.productvariations.findFirst({
+        where: {
+          product_id: productId,
+          width: stockData.width,
+          height: heightToUse
+        }
+      });
+      
+      if (existingVariation) {
+        // Varolan varyasyonu güncelle
+        await prisma.productvariations.update({
+          where: { id: existingVariation.id },
+          data: { 
+            stock_quantity: stockData.quantity,
+            // Kesim tipi ve saçak değerlerini null yap
+            cut_type_id: null,
+            has_fringe: false
+          }
+        });
+      } else {
+        // Yeni varyasyon oluştur
+        await prisma.productvariations.create({
+          data: {
+            product_id: productId,
+            width: stockData.width,
+            height: heightToUse,
+            stock_quantity: stockData.quantity,
+            // Kesim tipi ve saçak değerlerini varsayılan değerlere ayarla
+            cut_type_id: null,
+            has_fringe: false
+          }
+        });
+      }
+      
+      // Ürün varyasyonlarını getir
       const variations = await prisma.productvariations.findMany({
         where: { product_id: productId }
       });
       
-      if (variations.length === 0) {
-        // Varyasyon yoksa yeni oluştur
-        await prisma.productvariations.create({
-          data: {
-            product_id: productId,
-            width: 100, // Default width
-            height: 100, // Default height
-            stock_quantity: quantity,
-            has_fringe: false // Default fringe status
-          }
-        });
-      } else {
-        // İlk varyasyonu güncelle (varsayılan olarak)
-        await prisma.productvariations.update({
-          where: { id: variations[0].id },
-          data: { stock_quantity: quantity }
-        });
-      }
+      // Ürünü getir ve döndür
+      const updatedProduct = await this.getProductById(productId);
       
-      return await this.getProductById(productId);
+      // Varyasyonları da ekle
+      return {
+        ...updatedProduct,
+        variations: variations.map(v => {
+          return {
+            width: v.width,
+            height: v.height, // Gerçek yükseklik değerini kullan
+            stockQuantity: v.stock_quantity
+          };
+        })
+      };
     } catch (error) {
       console.error('Stok güncelleme hatası:', error);
       throw error;
@@ -635,6 +720,126 @@ export class ProductService {
     } catch (error) {
       console.error('Ürün kuralları getirme hatası:', error);
       throw new Error('Ürün kuralları getirilemedi');
+    }
+  }
+
+  /**
+   * Ürünün kurallarına göre geçerli ölçüleri, kesim tiplerini ve varyasyon seçeneklerini getir
+   */
+  async getProductVariationOptions(productId: string) {
+    try {
+      // Ürünün var olup olmadığını kontrol et
+      const product = await prisma.product.findUnique({
+        where: { productId }
+      });
+      
+      if (!product) {
+        throw new Error('Ürün bulunamadı');
+      }
+      
+      // Eğer ürünün kural ID'si yoksa boş sonuç döndür
+      if (!product.rule_id) {
+        return {
+          sizeOptions: [],
+          cutTypes: [],
+          canHaveFringe: false,
+          variations: []
+        };
+      }
+      
+      // Ürün kuralını getir
+      const rule = await prisma.productrules.findUnique({
+        where: { id: product.rule_id }
+      });
+      
+      if (!rule) {
+        throw new Error('Ürün kuralı bulunamadı');
+      }
+      
+      // Boyut seçeneklerini getir
+      const sizeOptions = await prisma.productsizeoptions.findMany({
+        where: { rule_id: product.rule_id }
+      });
+      
+      // Kesim tiplerini getir
+      const cutTypes = await prisma.productrulecuttypes.findMany({
+        where: { rule_id: product.rule_id },
+        include: {
+          cuttypes: true
+        }
+      });
+      
+      // Mevcut stok varyasyonlarını getir
+      const variations = await prisma.productvariations.findMany({
+        where: { product_id: productId }
+      });
+      
+      // Her ölçü seçeneği için stok miktarını kontrol et
+      const variationsMap = new Map();
+      
+      // Her bir boyut için ayrı varyasyonlar oluştur
+      const processedVariations = [];
+      
+      for (const sizeOption of sizeOptions) {
+        // Bu ölçü için varyasyonları bul
+        const matchingVariations = variations.filter(v => {
+          // Eğer yükseklik değeri opsiyonelse sadece genişliğe göre eşleştir
+          if (sizeOption.is_optional_height) {
+            return v.width === sizeOption.width;
+          } else {
+            // Aksi takdirde hem genişlik hem yükseklik eşleşmeli
+            return v.width === sizeOption.width && v.height === sizeOption.height;
+          }
+        });
+        
+        if (matchingVariations.length > 0) {
+          // Bu ölçü için varyasyonlar var, her birini işle
+          for (const variation of matchingVariations) {
+            // Sadece width, height ve stockQuantity bilgilerini ekle
+            processedVariations.push({
+              width: variation.width,
+              height: variation.height, // Gerçek yükseklik değerini kullan
+              stockQuantity: variation.stock_quantity
+            });
+          }
+        }
+      }
+      
+      // Her bir boyut seçeneği için stok miktarını hesapla
+      const sizeOptionsWithStock = sizeOptions.map(so => {
+        // Bu boyut için stok varyasyonlarını bul
+        const stockForSize = variations.find(v => {
+          // Eğer yükseklik değeri opsiyonelse sadece genişliğe göre eşleştir
+          if (so.is_optional_height) {
+            return v.width === so.width;
+          } else {
+            // Aksi takdirde hem genişlik hem yükseklik eşleşmeli
+            return v.width === so.width && v.height === so.height;
+          }
+        });
+        
+        return {
+          id: so.id,
+          width: so.width,
+          height: so.height, // Gerçek yükseklik değerini kullan
+          is_optional_height: so.is_optional_height || false,
+          // Stok miktarını ekle, eğer stok yoksa 0 olarak göster
+          stockQuantity: stockForSize ? stockForSize.stock_quantity : 0
+        };
+      });
+      
+      return {
+        sizeOptions: sizeOptionsWithStock,
+        cutTypes: cutTypes.map(ct => ({
+          id: ct.cuttypes.id,
+          name: ct.cuttypes.name
+        })),
+        canHaveFringe: rule.can_have_fringe || false,
+        variations: processedVariations
+      };
+    } catch (error) {
+      console.error('Ürün varyasyon seçenekleri getirme hatası:', error);
+      throw error;
     }
   }
 } 
