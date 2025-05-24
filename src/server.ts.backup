@@ -1,22 +1,4 @@
-import express from 'express'
-import cors from 'cors'
-import dotenv from 'dotenv'
-import { PrismaClient } from '../generated/prisma'
-import productRoutes from './routes/productRoutes'
-import collectionRoutes from './routes/collectionRoutes'
-import priceListRoutes from './routes/priceListRoutes'
-import catalogRoutes from './routes/catalogRoutes'
-import cartRoutes from './routes/cartRoutes'
-import adminRoutes from './admin/admin-routes'
-import authRoutes from './auth/auth-routes'
-import storeRoutes from './admin/store-routes'
-import path from 'path'
-import multer from 'multer'
-import { fileURLToPath } from 'url'
-import { dirname } from 'path'
-
-// .env dosyasını ana dizinden yükle
-dotenv.config({ path: path.join(__dirname, '../.env') })
+import express from 'express'import cors from 'cors'import dotenv from 'dotenv'import { PrismaClient } from '../generated/prisma'import productRoutes from './routes/productRoutes'import collectionRoutes from './routes/collectionRoutes'import priceListRoutes from './routes/priceListRoutes'import catalogRoutes from './routes/catalogRoutes'import cartRoutes from './routes/cartRoutes'import adminRoutes from './admin/admin-routes'import authRoutes from './auth/auth-routes'import storeRoutes from './admin/store-routes'import path from 'path'import multer from 'multer'import { fileURLToPath } from 'url'import { dirname } from 'path'// .env dosyasını ana dizinden yükledotenv.config({ path: path.join(__dirname, '../.env') })
 
 // Express uygulaması oluştur
 const app = express()

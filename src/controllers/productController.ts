@@ -3,11 +3,9 @@ import { ProductService } from '../product-service';
 import { UploadService } from '../utils/upload-service';
 import multer from 'multer';
 import { Readable } from 'stream';
-import { PrismaClient } from '../../generated/prisma';
 import path from 'path';
 import fs from 'fs';
-
-const prisma = new PrismaClient();
+import prisma from '../utils/prisma';
 
 // Geçici dosya yükleme için multer yapılandırması
 // Ürün görselleri için dosya yükleme dizini
@@ -163,11 +161,17 @@ export const createProduct = async (req: Request, res: Response) => {
     
     // Eğer resim yüklendiyse, Tebi.io'ya yükle
     if (req.file) {
+      // Disk storage kullanıldığı için dosyayı okuyup buffer'a çevir
+      const fileBuffer = fs.readFileSync(req.file.path);
+      
       productImageUrl = await uploadService.uploadFile(
-        req.file.buffer,
+        fileBuffer,
         req.file.mimetype,
         req.file.originalname
       );
+      
+      // Geçici dosyayı sil
+      fs.unlinkSync(req.file.path);
     }
     
     // Ürünü oluştur
@@ -208,11 +212,17 @@ export const createProductSimple = async (req: Request, res: Response) => {
     let productImageUrl = undefined;
     if (req.file) {
       console.log('Yüklenen dosya:', req.file);
+      // Disk storage kullanıldığı için dosyayı okuyup buffer'a çevir
+      const fileBuffer = fs.readFileSync(req.file.path);
+      
       productImageUrl = await uploadService.uploadFile(
-        req.file.buffer,
+        fileBuffer,
         req.file.mimetype,
         req.file.originalname
       );
+      
+      // Geçici dosyayı sil
+      fs.unlinkSync(req.file.path);
     }
     
     const product = await productService.createProduct({
@@ -262,11 +272,17 @@ export const updateProduct = async (req: Request, res: Response) => {
     
     // Eğer resim yüklendiyse, Tebi.io'ya yükle
     if (req.file) {
+      // Disk storage kullanıldığı için dosyayı okuyup buffer'a çevir
+      const fileBuffer = fs.readFileSync(req.file.path);
+      
       updateData.productImage = await uploadService.uploadFile(
-        req.file.buffer,
+        fileBuffer,
         req.file.mimetype,
         req.file.originalname
       );
+      
+      // Geçici dosyayı sil
+      fs.unlinkSync(req.file.path);
     }
     
     // Ürünü güncelle

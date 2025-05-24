@@ -1,10 +1,9 @@
-import { PrismaClient } from '../generated/prisma'
-import bcrypt from 'bcryptjs'
+import bcrypt from 'bcrypt'
+import { Prisma } from '../generated/prisma'
+import prisma from './utils/prisma'
 import jwt from 'jsonwebtoken'
 
-const prisma = new PrismaClient()
-
-class UserService {
+export class UserService {
   /**
    * Tüm aktif kullanıcıları getir
    */

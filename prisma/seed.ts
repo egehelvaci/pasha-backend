@@ -1,7 +1,8 @@
 import { PrismaClient, UserType, Currency } from '../generated/prisma';
 import * as bcrypt from 'bcryptjs';
+import prisma from '../src/utils/prisma';
 
-const prisma = new PrismaClient();
+const prismaClient = new PrismaClient();
 
 async function main() {
   try {
@@ -9,7 +10,7 @@ async function main() {
 
     // Kullanıcı tiplerini oluştur
     console.log('Kullanıcı tipleri oluşturuluyor...');
-    const adminType = await prisma.userType.upsert({
+    const adminType = await prismaClient.userType.upsert({
       where: { name: 'admin' },
       update: {},
       create: {
@@ -17,7 +18,7 @@ async function main() {
       }
     });
 
-    const editorType = await prisma.userType.upsert({
+    const editorType = await prismaClient.userType.upsert({
       where: { name: 'editor' },
       update: {},
       create: {
@@ -25,7 +26,7 @@ async function main() {
       }
     });
 
-    const viewerType = await prisma.userType.upsert({
+    const viewerType = await prismaClient.userType.upsert({
       where: { name: 'viewer' },
       update: {},
       create: {
@@ -38,7 +39,7 @@ async function main() {
     // Admin kullanıcısını oluştur
     console.log('Admin kullanıcısı oluşturuluyor...');
     const hashedPassword = await bcrypt.hash('gizli123', 10);
-    const admin = await prisma.user.upsert({
+    const admin = await prismaClient.user.upsert({
       where: { username: 'testkullanici' },
       update: {},
       create: {
@@ -56,7 +57,7 @@ async function main() {
 
     // Örnek koleksiyonlar oluştur
     console.log('Koleksiyonlar oluşturuluyor...');
-    const summerCollection = await prisma.collection.upsert({
+    const summerCollection = await prismaClient.collection.upsert({
       where: { code: 'YAZ2024' },
       update: {},
       create: {
@@ -68,7 +69,7 @@ async function main() {
       }
     });
 
-    const winterCollection = await prisma.collection.upsert({
+    const winterCollection = await prismaClient.collection.upsert({
       where: { code: 'KIS2024' },
       update: {},
       create: {
@@ -80,7 +81,7 @@ async function main() {
       }
     });
 
-    const specialCollection = await prisma.collection.upsert({
+    const specialCollection = await prismaClient.collection.upsert({
       where: { code: 'OZEL2024' },
       update: {},
       create: {
@@ -99,7 +100,7 @@ async function main() {
     
     // Yaz koleksiyonu ürünleri
     const summerProducts = await Promise.all([
-      prisma.product.upsert({
+      prismaClient.product.upsert({
         where: { productId: '1' },
         update: {},
         create: {
@@ -117,7 +118,7 @@ async function main() {
           collectionId: summerCollection.collectionId
         }
       }),
-      prisma.product.upsert({
+      prismaClient.product.upsert({
         where: { productId: '2' },
         update: {},
         create: {
@@ -139,7 +140,7 @@ async function main() {
 
     // Kış koleksiyonu ürünleri
     const winterProducts = await Promise.all([
-      prisma.product.upsert({
+      prismaClient.product.upsert({
         where: { productId: '3' },
         update: {},
         create: {
@@ -157,7 +158,7 @@ async function main() {
           collectionId: winterCollection.collectionId
         }
       }),
-      prisma.product.upsert({
+      prismaClient.product.upsert({
         where: { productId: '4' },
         update: {},
         create: {
@@ -179,7 +180,7 @@ async function main() {
 
     // Özel koleksiyon ürünleri
     const specialProducts = await Promise.all([
-      prisma.product.upsert({
+      prismaClient.product.upsert({
         where: { productId: '5' },
         update: {},
         create: {
@@ -197,7 +198,7 @@ async function main() {
           collectionId: specialCollection.collectionId
         }
       }),
-      prisma.product.upsert({
+      prismaClient.product.upsert({
         where: { productId: '6' },
         update: {},
         create: {
@@ -228,7 +229,7 @@ async function main() {
     console.error('Seed sırasında hata oluştu:', error);
     throw error;
   } finally {
-    await prisma.$disconnect();
+    await prismaClient.$disconnect();
   }
 }
 

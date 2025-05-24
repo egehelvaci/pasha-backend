@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { PrismaClient, Prisma } from '../../generated/prisma';
-
-const prisma = new PrismaClient();
+import { CollectionService } from '../collection-service';
+import { Prisma } from '../../generated/prisma';
+import prisma from '../utils/prisma';
 
 // Tüm koleksiyonları getir
 export const getAllCollections = async (req: Request, res: Response) => {

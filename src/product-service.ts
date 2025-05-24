@@ -1,5 +1,6 @@
-import { PrismaClient, Prisma } from '../generated/prisma';
+import { Prisma } from '../generated/prisma';
 import { TebiService } from './utils/tebi-service';
+import prisma from './utils/prisma';
 
 // Kesim türleri için tip tanımı
 export interface CutType {
@@ -29,7 +30,6 @@ interface ExtendedProduct extends Prisma.ProductGetPayload<{include: {collection
   canHaveFringe?: boolean;
 }
 
-const prisma = new PrismaClient();
 const tebiService = new TebiService();
 
 export class ProductService {

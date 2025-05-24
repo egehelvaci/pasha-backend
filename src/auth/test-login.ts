@@ -1,8 +1,7 @@
 import { AuthService } from './auth-service'
-import { PrismaClient } from '../../generated/prisma'
+import prisma from '../utils/prisma'
 
 const authService = new AuthService()
-const prisma = new PrismaClient()
 
 async function testLogin() {
   try {

@@ -1,4 +1,4 @@
-import { PrismaClient } from '../../generated/prisma'
+import prisma from '../utils/prisma'
 import bcrypt from 'bcryptjs'
 
 // Yeni admin kullanıcı bilgileri
@@ -11,8 +11,6 @@ const adminUser = {
 }
 
 async function createAdminUser() {
-  const prisma = new PrismaClient()
-  
   try {
     console.log('Admin kullanıcısı oluşturuluyor...')
     

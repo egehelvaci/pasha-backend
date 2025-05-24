@@ -5,9 +5,10 @@ import fs from 'fs';
 import path from 'path';
 import { CollectionService } from './collection-service';
 import axios from 'axios';
-import { PrismaClient, Prisma } from '../generated/prisma';
-
-const prisma = new PrismaClient();
+import { Prisma } from '../generated/prisma';
+import { TebiService } from './utils/tebi-service';
+import { ProductService } from './product-service';
+import prisma from './utils/prisma';
 
 interface ProductType {
   productId: string;

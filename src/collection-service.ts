@@ -1,6 +1,5 @@
-import { PrismaClient, Currency } from '../generated/prisma'
-
-const prisma = new PrismaClient()
+import prisma from './utils/prisma';
+import { Currency } from '../generated/prisma'
 
 export class CollectionService {
   /**

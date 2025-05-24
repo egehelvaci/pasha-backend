@@ -1,6 +1,4 @@
-import { PrismaClient } from '../generated/prisma'
-
-const prisma = new PrismaClient()
+import prisma from './utils/prisma'
 
 async function main() {
   // Prisma Client ile veritabanına bağlanma ve kullanma örneği

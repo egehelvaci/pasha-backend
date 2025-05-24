@@ -1,9 +1,8 @@
-import { PrismaClient } from '../../generated/prisma'
+import bcrypt from 'bcrypt'
 import jwt, { Secret, SignOptions } from 'jsonwebtoken'
-import bcrypt from 'bcryptjs'
+import { randomBytes } from 'crypto'
+import prisma from '../utils/prisma'
 import crypto from 'crypto'
-
-const prisma = new PrismaClient()
 
 interface LoginCredentials {
   username: string

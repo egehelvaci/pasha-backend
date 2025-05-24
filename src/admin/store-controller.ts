@@ -1,7 +1,6 @@
 import { Request, Response } from 'express'
-import { PrismaClient, Prisma } from '../../generated/prisma'
-
-const prisma = new PrismaClient()
+import prisma from '../utils/prisma'
+import { Prisma } from '../../generated/prisma'
 
 export class StoreController {
   /**

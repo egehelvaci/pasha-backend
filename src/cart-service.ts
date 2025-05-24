@@ -1,8 +1,9 @@
-import { PrismaClient, cut_type_enum } from '../generated/prisma';
+import { Prisma, $Enums } from '../generated/prisma';
 import { Decimal } from '@prisma/client/runtime/library';
 import { ProductService, CutType, SizeOption } from './product-service';
+import { TebiService } from './utils/tebi-service';
+import prisma from './utils/prisma';
 
-const prisma = new PrismaClient();
 const productService = new ProductService();
 
 export interface AddToCartRequest {
@@ -97,17 +98,17 @@ export class CartService {
       const requestedCutType = data.cutType.toLowerCase();
       
       // cutType mapping - API'den gelen değerleri enum değerlerine çevir
-      const cutTypeMapping: { [key: string]: cut_type_enum } = {
-        'standart': cut_type_enum.rectangle,
-        'dikdörtgen': cut_type_enum.rectangle, 
-        'rectangle': cut_type_enum.rectangle,
-        'daire': cut_type_enum.round,
-        'round': cut_type_enum.round,
-        'circle': cut_type_enum.round,
-        'oval': cut_type_enum.oval,
-        'custom': cut_type_enum.custom,
-        'özel': cut_type_enum.custom,
-        'post': cut_type_enum.custom
+      const cutTypeMapping: { [key: string]: $Enums.cut_type_enum } = {
+        'standart': $Enums.cut_type_enum.rectangle,
+        'dikdörtgen': $Enums.cut_type_enum.rectangle, 
+        'rectangle': $Enums.cut_type_enum.rectangle,
+        'daire': $Enums.cut_type_enum.round,
+        'round': $Enums.cut_type_enum.round,
+        'circle': $Enums.cut_type_enum.round,
+        'oval': $Enums.cut_type_enum.oval,
+        'custom': $Enums.cut_type_enum.custom,
+        'özel': $Enums.cut_type_enum.custom,
+        'post': $Enums.cut_type_enum.custom
       };
 
       // İlk önce gelen değeri mapping'den kontrol et
@@ -275,17 +276,17 @@ export class CartService {
         const validCutTypes = productDetails.cutTypes?.map(ct => ct.name.toLowerCase()) || [];
         const requestedCutType = data.cutType.toLowerCase();
         
-        const cutTypeMapping: { [key: string]: cut_type_enum } = {
-          'standart': cut_type_enum.rectangle,
-          'dikdörtgen': cut_type_enum.rectangle, 
-          'rectangle': cut_type_enum.rectangle,
-          'daire': cut_type_enum.round,
-          'round': cut_type_enum.round,
-          'circle': cut_type_enum.round,
-          'oval': cut_type_enum.oval,
-          'custom': cut_type_enum.custom,
-          'özel': cut_type_enum.custom,
-          'post': cut_type_enum.custom
+        const cutTypeMapping: { [key: string]: $Enums.cut_type_enum } = {
+          'standart': $Enums.cut_type_enum.rectangle,
+          'dikdörtgen': $Enums.cut_type_enum.rectangle, 
+          'rectangle': $Enums.cut_type_enum.rectangle,
+          'daire': $Enums.cut_type_enum.round,
+          'round': $Enums.cut_type_enum.round,
+          'circle': $Enums.cut_type_enum.round,
+          'oval': $Enums.cut_type_enum.oval,
+          'custom': $Enums.cut_type_enum.custom,
+          'özel': $Enums.cut_type_enum.custom,
+          'post': $Enums.cut_type_enum.custom
         };
 
         // İlk önce gelen değeri mapping'den kontrol et
@@ -312,19 +313,19 @@ export class CartService {
       const totalPrice = new Decimal(data.quantity).mul(new Decimal(areaM2)).mul(unitPrice);
 
       // Cut type mapping için
-      let finalCutType: cut_type_enum | undefined = undefined;
+      let finalCutType: $Enums.cut_type_enum | undefined = undefined;
       if (data.cutType) {
-        const cutTypeMapping: { [key: string]: cut_type_enum } = {
-          'standart': cut_type_enum.rectangle,
-          'dikdörtgen': cut_type_enum.rectangle, 
-          'rectangle': cut_type_enum.rectangle,
-          'daire': cut_type_enum.round,
-          'round': cut_type_enum.round,
-          'circle': cut_type_enum.round,
-          'oval': cut_type_enum.oval,
-          'custom': cut_type_enum.custom,
-          'özel': cut_type_enum.custom,
-          'post': cut_type_enum.custom
+        const cutTypeMapping: { [key: string]: $Enums.cut_type_enum } = {
+          'standart': $Enums.cut_type_enum.rectangle,
+          'dikdörtgen': $Enums.cut_type_enum.rectangle, 
+          'rectangle': $Enums.cut_type_enum.rectangle,
+          'daire': $Enums.cut_type_enum.round,
+          'round': $Enums.cut_type_enum.round,
+          'circle': $Enums.cut_type_enum.round,
+          'oval': $Enums.cut_type_enum.oval,
+          'custom': $Enums.cut_type_enum.custom,
+          'özel': $Enums.cut_type_enum.custom,
+          'post': $Enums.cut_type_enum.custom
         };
         finalCutType = cutTypeMapping[data.cutType.toLowerCase()];
       }

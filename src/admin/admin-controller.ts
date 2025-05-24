@@ -1,8 +1,6 @@
 import { Request, Response } from 'express'
 import { userService } from '../user-service'
-import { PrismaClient } from '../../generated/prisma'
-
-const prisma = new PrismaClient()
+import prisma from '../utils/prisma'
 
 export class AdminController {
   constructor() {
@@ -20,44 +18,16 @@ export class AdminController {
    */
   async getAllUsers(req: Request, res: Response) {
     try {
-      // Kullanıcı tipine göre filtreleme seçeneği
-      const { userType } = req.query
-      
-      let users
-      if (userType) {
-        // Kullanıcı tipine göre filtrele, ancak isActive şartını kaldır
-        users = await prisma.user.findMany({
-          where: {
-            userType: {
-              name: userType as string
-            }
-          },
-          include: {
-            userType: true,
-            Store: true
-          }
-        })
-      } else {
-        // Tüm kullanıcıları getir (pasif olanlar dahil)
-        users = await prisma.user.findMany({
-          include: {
-            userType: true,
-            Store: true
-          }
-        })
-      }
+      const users = await userService.getAllUsers()
       
       return res.status(200).json({
         success: true,
-        count: users.length,
         data: users
       })
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Kullanıcılar listelenirken bir hata oluştu'
-      
+    } catch (error: any) {
       return res.status(500).json({
         success: false,
-        message: errorMessage
+        message: error.message || 'Kullanıcılar getirilemedi'
       })
     }
   }
@@ -103,63 +73,31 @@ export class AdminController {
    */
   async createUser(req: Request, res: Response) {
     try {
-      const { 
-        username, 
-        password, 
-        name, 
-        surname, 
-        email, 
-        userTypeName, 
-        credit = 0, 
-        debit = 0, 
-        phoneNumber,
-        store_id
-      } = req.body
+      const { username, email, password, name, surname, phoneNumber, userTypeId, store_id } = req.body
       
-      // Zorunlu alanların kontrolü
-      if (!username || !password || !userTypeName || !name || !surname || !email) {
+      // Zorunlu alanları kontrol et
+      if (!username || !email || !password || !name || !surname || !userTypeId) {
         return res.status(400).json({
           success: false,
-          message: 'Kullanıcı adı, şifre, ad, soyad, e-posta ve kullanıcı tipi zorunludur'
+          message: 'Tüm zorunlu alanları doldurmanız gerekiyor'
         })
       }
-
-      // Kullanıcı adının benzersiz olup olmadığını kontrol et
+      
+      // Kullanıcı adı ve email benzersizlik kontrolü
       const existingUser = await prisma.user.findFirst({
-        where: { username }
+        where: {
+          OR: [
+            { username },
+            { email }
+          ]
+        }
       })
       
       if (existingUser) {
         return res.status(400).json({
           success: false,
-          message: 'Bu kullanıcı adı zaten kullanılıyor'
+          message: 'Bu kullanıcı adı veya email zaten kullanılıyor'
         })
-      }
-      
-      // Kullanıcı tipini bul
-      const userType = await prisma.userType.findFirst({
-        where: { name: userTypeName }
-      })
-      
-      if (!userType) {
-        return res.status(404).json({
-          success: false,
-          message: `${userTypeName} tipinde bir kullanıcı tipi bulunamadı`
-        })
-      }
-      
-      // Mağaza ID'si belirtilmişse mağazanın var olup olmadığını kontrol et
-      if (store_id) {
-        const store = await prisma.store.findUnique({
-          where: { store_id }
-        })
-        
-        if (!store) {
-          return res.status(404).json({
-            success: false,
-            message: 'Belirtilen mağaza bulunamadı'
-          })
-        }
       }
       
       // Şifreyi hashle
@@ -169,16 +107,13 @@ export class AdminController {
       const newUser = await prisma.user.create({
         data: {
           username,
+          email,
           password: hashedPassword,
           name,
           surname,
-          email,
-          isActive: true,
-          credit: parseFloat(credit),
-          debit: parseFloat(debit),
-          userTypeId: userType.id,
           phoneNumber,
-          store_id
+          userTypeId: parseInt(userTypeId),
+          store_id: store_id || null
         },
         include: {
           userType: true,
@@ -190,12 +125,10 @@ export class AdminController {
         success: true,
         data: newUser
       })
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Kullanıcı oluşturulurken bir hata oluştu'
-      
+    } catch (error: any) {
       return res.status(500).json({
         success: false,
-        message: errorMessage
+        message: error.message || 'Kullanıcı oluşturulamadı'
       })
     }
   }
@@ -206,87 +139,23 @@ export class AdminController {
   async updateUser(req: Request, res: Response) {
     try {
       const { userId } = req.params
-      const { 
-        name, 
-        surname, 
-        email, 
-        userTypeName, 
-        isActive, 
-        password, 
-        credit, 
-        debit, 
-        phoneNumber,
-        store_id
-      } = req.body
+      const { username, email, password, name, surname, phoneNumber, userTypeId, store_id } = req.body
       
-      // Güncellenecek kullanıcının var olup olmadığını kontrol et
-      const existingUser = await prisma.user.findUnique({
-        where: { userId }
-      })
-      
-      if (!existingUser) {
-        return res.status(404).json({
-          success: false,
-          message: 'Güncellenecek kullanıcı bulunamadı'
-        })
-      }
-      
-      // Güncelleme verileri
+      // Güncellenecek verileri hazırla
       const updateData: any = {}
-      
+      if (username !== undefined) updateData.username = username
+      if (email !== undefined) updateData.email = email
       if (name !== undefined) updateData.name = name
       if (surname !== undefined) updateData.surname = surname
-      if (email !== undefined) updateData.email = email
-      if (isActive !== undefined) updateData.isActive = isActive
+      if (phoneNumber !== undefined) updateData.phoneNumber = phoneNumber
+      if (userTypeId !== undefined) updateData.userTypeId = parseInt(userTypeId)
+      if (store_id !== undefined) updateData.store_id = store_id
       
       // Şifre değiştirilecekse hashle
       if (password !== undefined) {
         updateData.password = await userService.hashPassword(password)
       }
       
-      if (credit !== undefined) updateData.credit = parseFloat(credit)
-      if (debit !== undefined) updateData.debit = parseFloat(debit)
-      if (phoneNumber !== undefined) updateData.phoneNumber = phoneNumber
-      
-      // Mağaza ID'si değiştirilecekse
-      if (store_id !== undefined) {
-        if (store_id === null) {
-          // Mağaza ilişkisini kaldır
-          updateData.store_id = null
-        } else {
-          // Mağazanın var olup olmadığını kontrol et
-          const store = await prisma.store.findUnique({
-            where: { store_id }
-          })
-          
-          if (!store) {
-            return res.status(404).json({
-              success: false,
-              message: 'Belirtilen mağaza bulunamadı'
-            })
-          }
-          
-          updateData.store_id = store_id
-        }
-      }
-      
-      // Kullanıcı tipi değiştirilecekse
-      if (userTypeName) {
-        const userType = await prisma.userType.findFirst({
-          where: { name: userTypeName }
-        })
-        
-        if (!userType) {
-          return res.status(404).json({
-            success: false,
-            message: `${userTypeName} tipinde bir kullanıcı tipi bulunamadı`
-          })
-        }
-        
-        updateData.userTypeId = userType.id
-      }
-      
-      // Kullanıcıyı güncelle
       const updatedUser = await prisma.user.update({
         where: { userId },
         data: updateData,
@@ -300,12 +169,10 @@ export class AdminController {
         success: true,
         data: updatedUser
       })
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Kullanıcı güncellenirken bir hata oluştu'
-      
+    } catch (error: any) {
       return res.status(500).json({
         success: false,
-        message: errorMessage
+        message: error.message || 'Kullanıcı güncellenemedi'
       })
     }
   }
@@ -316,30 +183,10 @@ export class AdminController {
   async deleteUser(req: Request, res: Response) {
     try {
       const { userId } = req.params
-      const { permanently = false } = req.body
-      
-      // Kullanıcının var olup olmadığını kontrol et
-      const existingUser = await prisma.user.findUnique({
-        where: { userId }
-      })
-      
-      if (!existingUser) {
-        return res.status(404).json({
-          success: false,
-          message: 'Silinecek kullanıcı bulunamadı'
-        })
-      }
-
-      // Admin kendisini silemez
-      if (req.user?.userId === userId) {
-        return res.status(403).json({
-          success: false,
-          message: 'Kendi hesabınızı silemezsiniz'
-        })
-      }
+      const { permanent } = req.query
       
       // Kalıcı silme işlemi
-      if (permanently) {
+      if (permanent === 'true') {
         await prisma.user.delete({
           where: { userId }
         })
@@ -348,7 +195,7 @@ export class AdminController {
           success: true,
           message: 'Kullanıcı kalıcı olarak silindi'
         })
-      } 
+      }
       // Deaktif etme işlemi
       else {
         await userService.deactivate(userId)
@@ -358,12 +205,10 @@ export class AdminController {
           message: 'Kullanıcı deaktif edildi'
         })
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Kullanıcı silinirken bir hata oluştu'
-      
+    } catch (error: any) {
       return res.status(500).json({
         success: false,
-        message: errorMessage
+        message: error.message || 'Kullanıcı silinemedi'
       })
     }
   }
@@ -379,31 +224,7 @@ export class AdminController {
       if (!storeId) {
         return res.status(400).json({
           success: false,
-          message: 'Mağaza ID\'si zorunludur'
-        })
-      }
-      
-      // Kullanıcının var olup olmadığını kontrol et
-      const user = await prisma.user.findUnique({
-        where: { userId }
-      })
-      
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: 'Kullanıcı bulunamadı'
-        })
-      }
-      
-      // Mağazanın var olup olmadığını kontrol et
-      const store = await prisma.store.findUnique({
-        where: { store_id: storeId }
-      })
-      
-      if (!store) {
-        return res.status(404).json({
-          success: false,
-          message: 'Mağaza bulunamadı'
+          message: 'Mağaza ID gereklidir'
         })
       }
       
@@ -412,15 +233,12 @@ export class AdminController {
       
       return res.status(200).json({
         success: true,
-        data: updatedUser,
-        message: 'Kullanıcı mağazaya başarıyla atandı'
+        data: updatedUser
       })
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Kullanıcı mağazaya atanırken bir hata oluştu'
-      
+    } catch (error: any) {
       return res.status(500).json({
         success: false,
-        message: errorMessage
+        message: error.message || 'Kullanıcı mağazaya atanamadı'
       })
     }
   }
@@ -432,40 +250,17 @@ export class AdminController {
     try {
       const { userId } = req.params
       
-      // Kullanıcının var olup olmadığını kontrol et
-      const user = await prisma.user.findUnique({
-        where: { userId }
-      })
-      
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: 'Kullanıcı bulunamadı'
-        })
-      }
-      
-      // Kullanıcının mağaza ataması var mı kontrol et
-      if (!user.store_id) {
-        return res.status(400).json({
-          success: false,
-          message: 'Bu kullanıcının bir mağaza ataması bulunmuyor'
-        })
-      }
-      
       // Kullanıcıyı mağazadan kaldır
       const updatedUser = await userService.removeUserFromStore(userId)
       
       return res.status(200).json({
         success: true,
-        data: updatedUser,
-        message: 'Kullanıcının mağaza ataması başarıyla kaldırıldı'
+        data: updatedUser
       })
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Kullanıcı mağazadan kaldırılırken bir hata oluştu'
-      
+    } catch (error: any) {
       return res.status(500).json({
         success: false,
-        message: errorMessage
+        message: error.message || 'Kullanıcı mağazadan kaldırılamadı'
       })
     }
   }
