@@ -162,11 +162,21 @@ export const createProduct = async (req: Request, res: Response) => {
     
     // Eğer resim yüklendiyse, Tebi.io'ya yükle
     if (req.file) {
-      productImageUrl = await uploadService.uploadFile(
-        req.file.buffer,
-        req.file.mimetype,
-        req.file.originalname
-      );
+      // Multer diskStorage kullanıldığında dosya path olarak gelir
+      if (req.file.path) {
+        productImageUrl = await uploadService.uploadFileFromPath(
+          req.file.path,
+          req.file.mimetype,
+          req.file.originalname
+        );
+      } else if (req.file.buffer) {
+        // Buffer varsa buffer ile yükle
+        productImageUrl = await uploadService.uploadFile(
+          req.file.buffer,
+          req.file.mimetype,
+          req.file.originalname
+        );
+      }
     }
     
     // Ürünü oluştur
@@ -184,10 +194,12 @@ export const createProduct = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Ürün oluşturma hatası:', error);
+    console.error('Hata stack:', error.stack);
     return res.status(500).json({
       success: false,
       message: 'Ürün oluşturulamadı',
-      error: error.message
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 };
@@ -207,11 +219,21 @@ export const createProductSimple = async (req: Request, res: Response) => {
     let productImageUrl = undefined;
     if (req.file) {
       console.log('Yüklenen dosya:', req.file);
-      productImageUrl = await uploadService.uploadFile(
-        req.file.buffer,
-        req.file.mimetype,
-        req.file.originalname
-      );
+      // Multer diskStorage kullanıldığında dosya path olarak gelir
+      if (req.file.path) {
+        productImageUrl = await uploadService.uploadFileFromPath(
+          req.file.path,
+          req.file.mimetype,
+          req.file.originalname
+        );
+      } else if (req.file.buffer) {
+        // Buffer varsa buffer ile yükle
+        productImageUrl = await uploadService.uploadFile(
+          req.file.buffer,
+          req.file.mimetype,
+          req.file.originalname
+        );
+      }
     }
     
     const product = await productService.createProduct({
@@ -224,10 +246,12 @@ export const createProductSimple = async (req: Request, res: Response) => {
     return res.status(201).json({ success: true, data: product });
   } catch (error: any) {
     console.error('Test ürün oluşturma hatası:', error);
+    console.error('Hata stack:', error.stack);
     return res.status(500).json({
       success: false,
       message: 'Ürün oluşturulamadı',
-      error: error.message
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 };
@@ -261,11 +285,21 @@ export const updateProduct = async (req: Request, res: Response) => {
     
     // Eğer resim yüklendiyse, Tebi.io'ya yükle
     if (req.file) {
-      updateData.productImage = await uploadService.uploadFile(
-        req.file.buffer,
-        req.file.mimetype,
-        req.file.originalname
-      );
+      // Multer diskStorage kullanıldığında dosya path olarak gelir
+      if (req.file.path) {
+        updateData.productImage = await uploadService.uploadFileFromPath(
+          req.file.path,
+          req.file.mimetype,
+          req.file.originalname
+        );
+      } else if (req.file.buffer) {
+        // Buffer varsa buffer ile yükle
+        updateData.productImage = await uploadService.uploadFile(
+          req.file.buffer,
+          req.file.mimetype,
+          req.file.originalname
+        );
+      }
     }
     
     // Ürünü güncelle
