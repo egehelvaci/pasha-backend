@@ -3,11 +3,10 @@ import { ProductService } from '../product-service';
 import { UploadService } from '../utils/upload-service';
 import multer from 'multer';
 import { Readable } from 'stream';
-import { PrismaClient } from '../../generated/prisma';
 import path from 'path';
 import fs from 'fs';
-
-const prisma = new PrismaClient();
+import { TebiService } from '../utils/tebi-service';
+import prisma from '../utils/prisma';
 
 // Geçici dosya yükleme için multer yapılandırması
 // Ürün görselleri için dosya yükleme dizini

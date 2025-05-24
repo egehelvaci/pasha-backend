@@ -1,8 +1,6 @@
 import { Request, Response } from 'express'
 import { userService } from '../user-service'
-import { PrismaClient } from '../../generated/prisma'
-
-const prisma = new PrismaClient()
+import prisma from '../utils/prisma'
 
 export class AdminController {
   constructor() {

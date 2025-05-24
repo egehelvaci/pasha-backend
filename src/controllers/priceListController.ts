@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '../../generated/prisma';
+import prisma from '../utils/prisma';
 
 // Tip tanımlamaları
 interface PriceList {
@@ -33,8 +33,6 @@ interface UserType {
   id: number;
   name: string;
 }
-
-const prisma = new PrismaClient();
 
 // Tüm fiyat listelerini getir
 export const getAllPriceLists = async (req: Request, res: Response) => {

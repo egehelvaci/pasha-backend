@@ -1,7 +1,6 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
-import { PrismaClient } from '../generated/prisma'
 import productRoutes from './routes/productRoutes'
 import collectionRoutes from './routes/collectionRoutes'
 import priceListRoutes from './routes/priceListRoutes'

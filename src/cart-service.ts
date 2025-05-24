@@ -1,8 +1,8 @@
-import { PrismaClient, cut_type_enum } from '../generated/prisma';
+import { cut_type_enum } from '../generated/prisma';
 import { Decimal } from '@prisma/client/runtime/library';
 import { ProductService, CutType, SizeOption } from './product-service';
+import prisma from './utils/prisma';
 
-const prisma = new PrismaClient();
 const productService = new ProductService();
 
 export interface AddToCartRequest {

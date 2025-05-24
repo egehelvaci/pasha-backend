@@ -1,8 +1,6 @@
-import { PrismaClient } from '../generated/prisma'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-
-const prisma = new PrismaClient()
+import prisma from './utils/prisma'
 
 class UserService {
   /**
