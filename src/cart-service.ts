@@ -238,8 +238,9 @@ export class CartService {
       }
 
       // Boyut kontrolü - eğer boyut değiştiriliyorsa
+      let sizeOption;
       if (data.width || data.height) {
-        const sizeOption = productDetails.sizeOptions?.find(option => 
+        sizeOption = productDetails.sizeOptions?.find(option => 
           option.width === width && 
           (option.is_optional_height || option.height === height)
         );
@@ -259,12 +260,23 @@ export class CartService {
         if (sizeOption.is_optional_height && height > sizeOption.height) {
           throw new Error(`Maksimum yükseklik ${sizeOption.height}cm'dir`);
         }
+      } else {
+        // Boyut değişikliği yoksa mevcut boyut için size option'ı bul
+        sizeOption = productDetails.sizeOptions?.find(option => 
+          option.width === width && 
+          (option.is_optional_height || option.height === height)
+        );
+      }
 
-        // Stok kontrolü
+      // Stok kontrolü - her durumda yapılmalı
+      if (sizeOption) {
         const availableStock = sizeOption.stockQuantity || 0;
         if (availableStock < data.quantity) {
-          throw new Error(`Yeterli stok yok. Seçilen boyut (${width}x${height}cm) için mevcut stok: ${availableStock}`);
+          throw new Error(`Yeterli stok yok. Seçilen boyut (${width}x${height}cm) için mevcut stok: ${availableStock}, istenen miktar: ${data.quantity}`);
         }
+      } else {
+        // Size option bulunamazsa hata ver
+        throw new Error(`Bu boyut (${width}x${height}cm) için stok bilgisi bulunamadı`);
       }
 
       // Saçak kontrolü
