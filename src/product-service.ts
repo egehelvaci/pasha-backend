@@ -611,26 +611,17 @@ export class ProductService {
         const sizeOption = await prisma.productsizeoptions.findFirst({
           where: {
             rule_id: product.rule_id,
-            width: stockData.width
+            width: stockData.width,
+            height: stockData.height
           }
         });
         
         if (!sizeOption) {
-          throw new Error('Belirtilen genişlik değeri bu ürün için geçerli değil');
+          throw new Error(`Belirtilen ölçüler (${stockData.width}x${stockData.height}) bu ürün için geçerli değil`);
         }
         
-        // Yükseklik kontrolü
-        if (sizeOption.is_optional_height) {
-          // Opsiyonel yükseklik ise, maksimum değeri aşmamalı
-          if (stockData.height > sizeOption.height) {
-            throw new Error(`Bu genişlik (${stockData.width}) için maksimum yükseklik değeri: ${sizeOption.height}cm'dir`);
-          }
-        } else {
-          // Opsiyonel değilse, tam eşleşme olmalı
-          if (sizeOption.height !== stockData.height) {
-            throw new Error(`Bu genişlik (${stockData.width}) için yükseklik değeri: ${sizeOption.height}cm olarak sabitdir`);
-          }
-        }
+        // Artık tam eşleşme bulundu, opsiyonel yükseklik kontrolü gerekmiyor
+        // Çünkü zaten tam eşleşen bir size option bulduk
       }
       
       // Kullanılacak yükseklik değerini belirle - artık bu değer kesinlikle veritabanındaki değer olacak
