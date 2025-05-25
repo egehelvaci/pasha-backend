@@ -619,15 +619,17 @@ export class ProductService {
           throw new Error('Belirtilen genişlik değeri bu ürün için geçerli değil');
         }
         
-        // Eğer yükseklik opsiyonel ise, kullanıcının girdiği height değeri veritabanındaki değerle eşleşmeli
+        // Yükseklik kontrolü
         if (sizeOption.is_optional_height) {
-          if (stockData.height !== sizeOption.height) {
-            throw new Error(`Bu genişlik (${stockData.width}) için geçerli yükseklik değeri: ${sizeOption.height}`);
+          // Opsiyonel yükseklik ise, maksimum değeri aşmamalı
+          if (stockData.height > sizeOption.height) {
+            throw new Error(`Bu genişlik (${stockData.width}) için maksimum yükseklik değeri: ${sizeOption.height}cm'dir`);
           }
-        } 
-        // Eğer yükseklik opsiyonel değilse, zaten tam eşleşme şartı var
-        else if (sizeOption.height !== stockData.height) {
-          throw new Error(`Belirtilen ölçüler geçerli değil. Bu genişlik (${stockData.width}) için yükseklik değeri: ${sizeOption.height} olmalıdır.`);
+        } else {
+          // Opsiyonel değilse, tam eşleşme olmalı
+          if (sizeOption.height !== stockData.height) {
+            throw new Error(`Bu genişlik (${stockData.width}) için yükseklik değeri: ${sizeOption.height}cm olarak sabitdir`);
+          }
         }
       }
       
