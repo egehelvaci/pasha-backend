@@ -375,24 +375,26 @@ export class ProductService {
             if (sizeOptions && sizeOptions.length > 0) {
               // Her bir boyut seçeneği için stok bilgisini ekle
               product.sizeOptions = sizeOptions.map(so => {
-                // Bu boyut için stok varyasyonlarını bul
-                const stockForSize = variations.find(v => {
-                  // Eğer yükseklik değeri opsiyonelse sadece genişliğe göre eşleştir
-                  if (so.is_optional_height) {
-                    return v.width === so.width;
-                  } else {
-                    // Aksi takdirde hem genişlik hem yükseklik eşleşmeli
-                    return v.width === so.width && v.height === so.height;
-                  }
-                });
+                let stockQuantity = 0;
+                
+                if (so.is_optional_height) {
+                  // Opsiyonel yükseklik ise, aynı genişlikteki tüm varyasyonların toplamını al
+                  const matchingVariations = variations.filter(v => v.width === so.width);
+                  stockQuantity = matchingVariations.reduce((total, v) => total + v.stock_quantity, 0);
+                } else {
+                  // Sabit yükseklik ise, tam eşleşen varyasyonu bul
+                  const stockForSize = variations.find(v => 
+                    v.width === so.width && v.height === so.height
+                  );
+                  stockQuantity = stockForSize ? stockForSize.stock_quantity : 0;
+                }
                 
                 return {
                   id: so.id,
                   width: so.width,
                   height: so.height,
                   is_optional_height: so.is_optional_height || false,
-                  // Stok miktarını ekle, eğer stok yoksa 0 olarak göster
-                  stockQuantity: stockForSize ? stockForSize.stock_quantity : 0
+                  stockQuantity: stockQuantity
                 };
               });
             } else {
@@ -607,8 +609,8 @@ export class ProductService {
       
       // Ürün kuralına göre ölçülerin geçerli olup olmadığını kontrol et
       if (product.rule_id) {
-        // Girilen genişlik ve yükseklik değerleri size options tablosunda var mı kontrol et
-        const sizeOption = await prisma.productsizeoptions.findFirst({
+        // Önce tam eşleşme ara (is_optional_height: false durumlar için)
+        let sizeOption = await prisma.productsizeoptions.findFirst({
           where: {
             rule_id: product.rule_id,
             width: stockData.width,
@@ -616,12 +618,27 @@ export class ProductService {
           }
         });
         
+        // Tam eşleşme bulunamazsa, opsiyonel yükseklik kontrolü yap
+        if (!sizeOption) {
+          sizeOption = await prisma.productsizeoptions.findFirst({
+            where: {
+              rule_id: product.rule_id,
+              width: stockData.width,
+              is_optional_height: true
+            }
+          });
+          
+          if (sizeOption) {
+            // Opsiyonel yükseklik bulundu, maksimum değer kontrolü yap
+            if (stockData.height > sizeOption.height) {
+              throw new Error(`Bu genişlik (${stockData.width}) için maksimum yükseklik değeri: ${sizeOption.height}cm'dir`);
+            }
+          }
+        }
+        
         if (!sizeOption) {
           throw new Error(`Belirtilen ölçüler (${stockData.width}x${stockData.height}) bu ürün için geçerli değil`);
         }
-        
-        // Artık tam eşleşme bulundu, opsiyonel yükseklik kontrolü gerekmiyor
-        // Çünkü zaten tam eşleşen bir size option bulduk
       }
       
       // Kullanılacak yükseklik değerini belirle - artık bu değer kesinlikle veritabanındaki değer olacak
