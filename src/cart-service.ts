@@ -108,7 +108,8 @@ export class CartService {
         'oval': $Enums.cut_type_enum.oval,
         'custom': $Enums.cut_type_enum.custom,
         'özel': $Enums.cut_type_enum.custom,
-        'post': $Enums.cut_type_enum.custom
+        'post': $Enums.cut_type_enum.custom,
+        'post kesim': $Enums.cut_type_enum.custom
       };
 
       // İlk önce gelen değeri mapping'den kontrol et
@@ -286,7 +287,8 @@ export class CartService {
           'oval': $Enums.cut_type_enum.oval,
           'custom': $Enums.cut_type_enum.custom,
           'özel': $Enums.cut_type_enum.custom,
-          'post': $Enums.cut_type_enum.custom
+          'post': $Enums.cut_type_enum.custom,
+          'post kesim': $Enums.cut_type_enum.custom
         };
 
         // İlk önce gelen değeri mapping'den kontrol et
@@ -325,7 +327,8 @@ export class CartService {
           'oval': $Enums.cut_type_enum.oval,
           'custom': $Enums.cut_type_enum.custom,
           'özel': $Enums.cut_type_enum.custom,
-          'post': $Enums.cut_type_enum.custom
+          'post': $Enums.cut_type_enum.custom,
+          'post kesim': $Enums.cut_type_enum.custom
         };
         finalCutType = cutTypeMapping[data.cutType.toLowerCase()];
       }
