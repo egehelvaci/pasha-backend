@@ -15,7 +15,6 @@ export interface SizeOption {
   height: number;
   is_optional_height: boolean;
   stockQuantity?: number;
-  stockNote?: string;
 }
 
 // Ürün veri modelini tipini genişlet
@@ -386,9 +385,7 @@ export class ProductService {
                   width: so.width,
                   height: so.height,
                   is_optional_height: so.is_optional_height || false,
-                  stockQuantity: stockForSize ? stockForSize.stock_quantity : 0,
-                  // Opsiyonel yükseklik için açıklama ekle
-                  stockNote: so.is_optional_height ? `Maksimum yükseklik: ${so.height}cm` : undefined
+                  stockQuantity: stockForSize ? stockForSize.stock_quantity : 0
                 };
               });
             } else {
