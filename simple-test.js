@@ -33,7 +33,8 @@ const req = http.request(options, (res) => {
       if (jsonResponse.success && jsonResponse.data) {
         console.log('\nSize Options:');
         jsonResponse.data.sizeOptions.forEach(so => {
-          console.log(`- ${so.width}x${so.height} (optional: ${so.is_optional_height}, stock: ${so.stockQuantity})`);
+          const note = so.stockNote ? ` - ${so.stockNote}` : '';
+          console.log(`- ${so.width}x${so.height} (optional: ${so.is_optional_height}, stock: ${so.stockQuantity})${note}`);
         });
         
         console.log('\nVariations:');
