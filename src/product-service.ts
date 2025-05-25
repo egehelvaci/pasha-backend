@@ -376,28 +376,19 @@ export class ProductService {
             if (sizeOptions && sizeOptions.length > 0) {
               // Her bir boyut seçeneği için stok bilgisini ekle
               product.sizeOptions = sizeOptions.map(so => {
-                let stockQuantity = 0;
-                
-                if (so.is_optional_height) {
-                  // Opsiyonel yükseklik ise, aynı genişlikteki tüm varyasyonların toplamını al
-                  const matchingVariations = variations.filter(v => v.width === so.width);
-                  stockQuantity = matchingVariations.reduce((total, v) => total + v.stock_quantity, 0);
-                } else {
-                  // Sabit yükseklik ise, tam eşleşen varyasyonu bul
-                  const stockForSize = variations.find(v => 
-                    v.width === so.width && v.height === so.height
-                  );
-                  stockQuantity = stockForSize ? stockForSize.stock_quantity : 0;
-                }
+                // Her zaman spesifik boyut için stok ara (tam eşleşme)
+                const stockForSize = variations.find(v => 
+                  v.width === so.width && v.height === so.height
+                );
                 
                 return {
                   id: so.id,
                   width: so.width,
                   height: so.height,
                   is_optional_height: so.is_optional_height || false,
-                  stockQuantity: stockQuantity,
+                  stockQuantity: stockForSize ? stockForSize.stock_quantity : 0,
                   // Opsiyonel yükseklik için açıklama ekle
-                  stockNote: so.is_optional_height ? `Bu genişlikteki tüm yüksekliklerin toplam stoğu (maks: ${so.height}cm)` : undefined
+                  stockNote: so.is_optional_height ? `Maksimum yükseklik: ${so.height}cm` : undefined
                 };
               });
             } else {
@@ -775,49 +766,12 @@ export class ProductService {
         where: { product_id: productId }
       });
       
-      // Her ölçü seçeneği için stok miktarını kontrol et
-      const variationsMap = new Map();
-      
-      // Her bir boyut için ayrı varyasyonlar oluştur
-      const processedVariations = [];
-      
-      for (const sizeOption of sizeOptions) {
-        // Bu ölçü için varyasyonları bul
-        const matchingVariations = variations.filter(v => {
-          // Eğer yükseklik değeri opsiyonelse sadece genişliğe göre eşleştir
-          if (sizeOption.is_optional_height) {
-            return v.width === sizeOption.width;
-          } else {
-            // Aksi takdirde hem genişlik hem yükseklik eşleşmeli
-            return v.width === sizeOption.width && v.height === sizeOption.height;
-          }
-        });
-        
-        if (matchingVariations.length > 0) {
-          // Bu ölçü için varyasyonlar var, her birini işle
-          for (const variation of matchingVariations) {
-            // Sadece width, height ve stockQuantity bilgilerini ekle
-            processedVariations.push({
-              width: variation.width,
-              height: variation.height, // Gerçek yükseklik değerini kullan
-              stockQuantity: variation.stock_quantity
-            });
-          }
-        }
-      }
-      
       // Her bir boyut seçeneği için stok miktarını hesapla
       const sizeOptionsWithStock = sizeOptions.map(so => {
-        // Bu boyut için stok varyasyonlarını bul
-        const stockForSize = variations.find(v => {
-          // Eğer yükseklik değeri opsiyonelse sadece genişliğe göre eşleştir
-          if (so.is_optional_height) {
-            return v.width === so.width;
-          } else {
-            // Aksi takdirde hem genişlik hem yükseklik eşleşmeli
-            return v.width === so.width && v.height === so.height;
-          }
-        });
+        // Her zaman spesifik boyut için stok ara (tam eşleşme)
+        const stockForSize = variations.find(v => 
+          v.width === so.width && v.height === so.height
+        );
         
         return {
           id: so.id,
@@ -835,7 +789,13 @@ export class ProductService {
           name: ct.cuttypes.name
         })),
         canHaveFringe: rule.can_have_fringe || false,
-        variations: processedVariations
+        variations: variations.map(v => {
+          return {
+            width: v.width,
+            height: v.height,
+            stockQuantity: v.stock_quantity
+          };
+        })
       };
     } catch (error) {
       console.error('Ürün varyasyon seçenekleri getirme hatası:', error);
