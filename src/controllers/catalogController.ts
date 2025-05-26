@@ -19,9 +19,9 @@ export const generateCatalog = async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
 
-    // Request timeout ayarla (15 dakika)
-    req.setTimeout(900000, () => {
-      console.error('❌ Request timeout - 15 dakika aşıldı');
+    // Request timeout ayarla (10 dakika)
+    req.setTimeout(600000, () => {
+      console.error('❌ Request timeout - 10 dakika aşıldı');
       if (!res.headersSent) {
         res.status(408).json({
           success: false,

@@ -28,6 +28,7 @@ COPY tsconfig.json ./
 COPY prisma ./prisma
 COPY src ./src
 COPY scripts ./scripts
+COPY public ./public
 
 # Prisma client oluştur 
 RUN npx prisma generate

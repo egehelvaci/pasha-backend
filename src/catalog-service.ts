@@ -48,17 +48,16 @@ export class CatalogService {
   private collectionService = new CollectionService();
   private templatePath = path.resolve(__dirname, 'templates/catalog.hbs');
   private backgroundImageUrl = 'https://s3.tebi.io/pashahome/pexels-meruyert-gonullu-7314471.jpg';
-  private blackLogoPath = path.join(process.cwd(), 'public', 'black-logo.svg');
+  private blackLogoPath = this.getLogoPath();
   private robotoRegularFontPath = path.resolve(__dirname, 'assets/fonts/Roboto-Regular.ttf');
   private robotoBoldFontPath = path.resolve(__dirname, 'assets/fonts/Roboto-Bold.ttf');
   
   // 🚀 Performance optimizations
   private static browserInstance: Browser | null = null;
   private imageCache = new Map<string, string>();
-  private readonly MAX_CONCURRENT_IMAGES = 5; // Paralel resim yükleme limiti (10'dan 5'e)
-  private readonly IMAGE_TIMEOUT = 5000; // 5 saniye (3'ten artırıldı)
-  private readonly BROWSER_TIMEOUT = 45000; // 45 saniye browser timeout (30'dan artırıldı)
-  private readonly PDF_TIMEOUT = 120000; // 2 dakika PDF timeout
+  private readonly MAX_CONCURRENT_IMAGES = 10; // Paralel resim yükleme limiti
+  private readonly IMAGE_TIMEOUT = 3000; // 3 saniye (15'ten düşürüldü)
+  private readonly BROWSER_TIMEOUT = 30000; // 30 saniye browser timeout
 
   constructor() {
     // Handlebars yardımcı fonksiyonları
@@ -137,10 +136,7 @@ export class CatalogService {
           '--disable-default-apps',
           '--disable-extensions',
           '--disable-translate',
-          '--disable-background-timer-throttling',
-          '--max-old-space-size=2048',  // Memory limiti
-          '--disable-background-networking',
-          '--disable-background-updates'
+          '--disable-background-timer-throttling'
         ],
         headless: true,
         timeout: this.BROWSER_TIMEOUT
@@ -201,7 +197,7 @@ export class CatalogService {
         },
         preferCSSPageSize: true,
         displayHeaderFooter: false,
-        timeout: this.PDF_TIMEOUT // 2 dakika PDF timeout
+        timeout: 30000 // 30 saniye PDF timeout
       });
       
       return Buffer.from(pdfBuffer);
@@ -927,5 +923,27 @@ export class CatalogService {
       console.error('Black logo yüklenemedi:', error);
       return '';
     }
+  }
+
+  private getLogoPath(): string {
+    // Production'da (dist klasöründe çalışırken) veya development'da çalışacak şekilde path belirle
+    const possiblePaths = [
+      // Production: dist klasöründen public erişimi
+      path.join(__dirname, 'public', 'black-logo.svg'),
+      // Development: root'tan public erişimi  
+      path.join(process.cwd(), 'public', 'black-logo.svg'),
+    ];
+    
+    for (const logoPath of possiblePaths) {
+      if (fs.existsSync(logoPath)) {
+        console.log('Logo bulundu:', logoPath);
+        return logoPath;
+      }
+    }
+    
+    // Fallback: process.cwd() + public
+    const fallbackPath = path.join(process.cwd(), 'public', 'black-logo.svg');
+    console.warn('Logo dosyası bulunamadı, fallback kullanılıyor:', fallbackPath);
+    return fallbackPath;
   }
 }

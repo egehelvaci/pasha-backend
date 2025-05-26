@@ -15,5 +15,4 @@ database = "railway"
 
 [environments.production]
 NODE_ENV = "production"
-PUPPETEER_EXECUTABLE_PATH = "/usr/bin/chromium-browser"
-RAILWAY_HEALTHCHECK_TIMEOUT_SEC = 600 
+PUPPETEER_EXECUTABLE_PATH = "/usr/bin/chromium-browser" 

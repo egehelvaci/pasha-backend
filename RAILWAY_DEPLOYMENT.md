@@ -5,25 +5,6 @@
 - **Railway'de beklenen:** 10-15 saniye
 - **Gateway timeout riski:** Çok düşük
 
-## 🚀 Deployment Configuration
-
-### Environment Variables
-- `NODE_ENV=production`
-- `PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser`
-- `RAILWAY_HEALTHCHECK_TIMEOUT_SEC=600`
-
-### Timeout Ayarları (502 Gateway Hata Çözümü)
-- **Healthcheck Timeout**: 600 saniye (10 dakika)
-- **Request Timeout**: 900 saniye (15 dakika) 
-- **PDF Generation Timeout**: 120 saniye (2 dakika)
-- **Browser Launch Timeout**: 45 saniye
-
-### Memory Optimizasyonları
-- Browser instance tekrar kullanımı
-- Paralel resim yükleme limiti: 5
-- Chromium memory limiti: 2GB
-- Image cache mekanizması
-
 ## 🔧 Railway Konfigürasyonu
 
 ### 1. Environment Variables
@@ -52,6 +33,14 @@ npm run api:build
 # Start komutu  
 npm run api:start
 ```
+
+## 🎨 Logo Sorunu Çözüldü
+**Sorun:** Railway ortamında logo görünmüyordu
+**Neden:** Public klasörü Docker image'a dahil edilmemişti
+**Çözüm:** 
+- ✅ Dockerfile'a `COPY public ./public` eklendi
+- ✅ copy-assets.js scripti public klasörünü dist'e kopyalıyor
+- ✅ catalog-service.ts'de akıllı logo path algılaması eklendi
 
 ## 🧪 Test Komutları
 

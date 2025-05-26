@@ -78,16 +78,6 @@ app.get('/', (req, res) => {
 // Railway healthcheck için ek endpoint
 app.get('/healthz', (req, res) => {
   console.log('Health check isteği alındı:', new Date().toISOString())
-  
-  // Memory kullanımını logla
-  const memUsage = process.memoryUsage()
-  console.log('Memory kullanımı:', {
-    rss: `${Math.round(memUsage.rss / 1024 / 1024)} MB`,
-    heapTotal: `${Math.round(memUsage.heapTotal / 1024 / 1024)} MB`,
-    heapUsed: `${Math.round(memUsage.heapUsed / 1024 / 1024)} MB`,
-    external: `${Math.round(memUsage.external / 1024 / 1024)} MB`
-  })
-  
   return res.status(200).send('OK')
 })
 

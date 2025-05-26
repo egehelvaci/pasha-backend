@@ -85,6 +85,23 @@ try {
     console.log('⚠️ Assets klasörü bulunamadı (opsiyonel):', assetsSource);
   }
   
+  // Public klasörünü kopyala
+  const publicSource = path.join(__dirname, '..', 'public');
+  const publicTarget = path.join(__dirname, '..', 'dist', 'public');
+  
+  if (fs.existsSync(publicSource)) {
+    copyRecursiveSync(publicSource, publicTarget);
+    console.log('✅ Public klasörü başarıyla kopyalandı');
+    
+    // Kopyalanan dosyaları listele
+    if (fs.existsSync(publicTarget)) {
+      const files = fs.readdirSync(publicTarget);
+      console.log('📋 Kopyalanan public dosyaları:', files);
+    }
+  } else {
+    console.log('❌ Public klasörü bulunamadı:', publicSource);
+  }
+  
   console.log('🎉 Asset kopyalama işlemi tamamlandı!');
   
 } catch (error) {
