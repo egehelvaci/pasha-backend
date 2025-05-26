@@ -105,3 +105,6 @@ Expected: PDF response in 10-15 seconds
 
 ---
 **Not:** Bu optimizasyonlar ile Railway'de gateway timeout sorunu yaşamazsınız! 
+
+---
+**Son Deploy:** 2024-12-19 Logo sorunu çözümü sonrası deployment 
