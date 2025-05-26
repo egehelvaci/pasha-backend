@@ -1,0 +1,23 @@
+[phases.setup]
+nixPkgs = [
+  'nodejs-18_x', 
+  'npm-9_x',
+  'chromium',
+  'nss',
+  'freetype',
+  'fontconfig',
+  'ca-certificates'
+]
+
+[phases.install]
+cmds = ['npm ci']
+
+[phases.build] 
+cmds = ['npm run api:build']
+
+[start]
+cmd = 'npm run api:start'
+
+[variables]
+NODE_ENV = 'production'
+PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = 'true' 
