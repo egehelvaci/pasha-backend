@@ -39,6 +39,7 @@ interface CatalogTemplateData {
   currentYear: number;
   collections: CollectionProducts[];
   backgroundImage: string;
+  blackLogo: string;
   robotoRegularFont: string;
   robotoBoldFont: string;
 }
@@ -46,7 +47,8 @@ interface CatalogTemplateData {
 export class CatalogService {
   private collectionService = new CollectionService();
   private templatePath = path.resolve(__dirname, 'templates/catalog.hbs');
-  private backgroundImagePath = path.join(__dirname, 'assets', 'images', 'catalog-bg.jpg');
+  private backgroundImagePath = path.join(process.cwd(), 'public', 'catalog-bg.jpg');
+  private blackLogoPath = path.join(process.cwd(), 'public', 'black-logo.svg');
   private robotoRegularFontPath = path.resolve(__dirname, 'assets/fonts/Roboto-Regular.ttf');
   private robotoBoldFontPath = path.resolve(__dirname, 'assets/fonts/Roboto-Bold.ttf');
 
@@ -107,6 +109,7 @@ export class CatalogService {
         currentYear: templateData.currentYear,
         collections: templateData.collections,
         backgroundImage: templateData.backgroundImage,
+        blackLogo: templateData.blackLogo,
         robotoRegularFont: templateData.robotoRegularFont,
         robotoBoldFont: templateData.robotoBoldFont
       });
@@ -396,6 +399,7 @@ export class CatalogService {
     
     // Arka plan resmini ve fontları yükle
     const backgroundImage = await this.loadCatalogBackgroundImage();
+    const blackLogo = await this.loadBlackLogo();
     const robotoRegularFont = await this.loadFontAsBase64(this.robotoRegularFontPath);
     const robotoBoldFont = await this.loadFontAsBase64(this.robotoBoldFontPath);
     
@@ -408,6 +412,7 @@ export class CatalogService {
       currentYear: now.getFullYear(),
       collections,
       backgroundImage,
+      blackLogo,
       robotoRegularFont,
       robotoBoldFont
     };
@@ -747,6 +752,28 @@ export class CatalogService {
     } catch (error) {
       console.error('Ürünleri getirme hatası:', error);
       return [];
+    }
+  }
+
+  private async loadBlackLogo(): Promise<string> {
+    try {
+      console.log('BlackLogo yükleniyor:', this.blackLogoPath);
+      
+      if (fs.existsSync(this.blackLogoPath)) {
+        console.log('BlackLogo bulundu, okunuyor...');
+        const imageBuffer = fs.readFileSync(this.blackLogoPath);
+        const base64Image = imageBuffer.toString('base64');
+        
+        console.log(`BlackLogo başarıyla okundu: ${Math.floor(base64Image.length / 1024)} KB`);
+        
+        return `data:image/svg+xml;base64,${base64Image}`;
+      } else {
+        console.error('BlackLogo dosyası bulunamadı:', this.blackLogoPath);
+        return 'linear-gradient(135deg, #0f2027, #203a43, #2c5364)';
+      }
+    } catch (error) {
+      console.error('BlackLogo yüklenirken hata:', error);
+      return 'linear-gradient(135deg, #0f2027, #203a43, #2c5364)';
     }
   }
 }
