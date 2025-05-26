@@ -5,12 +5,14 @@ buildCommand = "npm run api:build"
 [deploy]
 startCommand = "npm run api:start"
 healthcheckPath = "/healthz"
-healthcheckTimeout = 300
+healthcheckTimeout = 600
 healthcheckDisabled = false
 restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
 
 [postgres]
 database = "railway"
 
 [environments.production]
-NODE_ENV = "production" 
+NODE_ENV = "production"
+PUPPETEER_EXECUTABLE_PATH = "/usr/bin/chromium-browser" 

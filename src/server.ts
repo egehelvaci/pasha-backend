@@ -10,6 +10,7 @@ import cartRoutes from './routes/cartRoutes'
 import adminRoutes from './admin/admin-routes'
 import authRoutes from './auth/auth-routes'
 import storeRoutes from './admin/store-routes'
+import { CatalogService } from './catalog-service'
 import path from 'path'
 import multer from 'multer'
 import { fileURLToPath } from 'url'
@@ -113,20 +114,22 @@ app.use((err: any, req: any, res: any, next: any) => {
 // Sunucuyu başlat - PORT'a dikkat et
 try {
   const server = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Sunucu ${process.env.PUBLIC_URL || `http://0.0.0.0:${PORT}`} adresinde çalışıyor (port: ${PORT})`)
+    console.log(`🚀 Sunucu ${process.env.PUBLIC_URL || `http://0.0.0.0:${PORT}`} adresinde çalışıyor (port: ${PORT})`)
   })
   
   // İşlem sonlandırma sinyallerini yakala
-  process.on('SIGTERM', () => {
+  process.on('SIGTERM', async () => {
     console.log('SIGTERM sinyali alındı, sunucu kapatılıyor...')
+    await CatalogService.cleanup()
     server.close(() => {
       console.log('Sunucu kapatıldı')
       process.exit(0)
     })
   })
   
-  process.on('SIGINT', () => {
+  process.on('SIGINT', async () => {
     console.log('SIGINT sinyali alındı, sunucu kapatılıyor...')
+    await CatalogService.cleanup()
     server.close(() => {
       console.log('Sunucu kapatıldı')
       process.exit(0)

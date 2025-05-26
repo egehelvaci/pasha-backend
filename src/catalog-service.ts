@@ -1,5 +1,5 @@
 // catalog-service.ts
-import puppeteer from 'puppeteer';
+import puppeteer, { Browser, Page } from 'puppeteer';
 import handlebars from 'handlebars';
 import fs from 'fs';
 import path from 'path';
@@ -51,6 +51,13 @@ export class CatalogService {
   private blackLogoPath = path.join(process.cwd(), 'public', 'black-logo.svg');
   private robotoRegularFontPath = path.resolve(__dirname, 'assets/fonts/Roboto-Regular.ttf');
   private robotoBoldFontPath = path.resolve(__dirname, 'assets/fonts/Roboto-Bold.ttf');
+  
+  // 🚀 Performance optimizations
+  private static browserInstance: Browser | null = null;
+  private imageCache = new Map<string, string>();
+  private readonly MAX_CONCURRENT_IMAGES = 10; // Paralel resim yükleme limiti
+  private readonly IMAGE_TIMEOUT = 3000; // 3 saniye (15'ten düşürüldü)
+  private readonly BROWSER_TIMEOUT = 30000; // 30 saniye browser timeout
 
   constructor() {
     // Handlebars yardımcı fonksiyonları
@@ -62,10 +69,8 @@ export class CatalogService {
       return new Date().getFullYear();
     });
     
-    // Konsol loglarına çalışma dizinini ekle
+    console.log('🚀 Optimized CatalogService başlatıldı');
     console.log('Çalışma dizini (CWD):', process.cwd());
-    console.log('Arka plan görsel URL:', this.backgroundImageUrl);
-    console.log('Black logo yolu:', this.blackLogoPath);
   }
 
   async generateCatalog(options: {
@@ -75,180 +80,112 @@ export class CatalogService {
   }): Promise<Buffer> {
     const { productIds, companyName = "Şirket Adı", companyLogoUrl } = options;
     
+    const startTime = Date.now();
+    console.log('🚀 Katalog oluşturma başladı...');
+    
     try {
-      // Ürünleri getir
+      // 1. Ürünleri getir (optimize edilmiş)
       let products: ProductType[] = [];
       if (productIds?.length) {
-        // Ürün servisi olmadığı için doğrudan Prisma ile sorgulama yapıyoruz
-        const productResults = await Promise.all(
-          productIds.map(id => this.getProductById(id))
-        );
-        // Filter out nulls and cast to ProductType
-        products = productResults.filter(Boolean) as unknown as ProductType[];
+        products = await this.getProductsByIds(productIds);
       } else {
-        // Tüm ürünleri doğrudan Prisma ile getir
         products = await this.getAllProducts();
       }
       
-      console.log(`${products.length} ürün alındı`);
+      console.log(`✅ ${products.length} ürün alındı (${Date.now() - startTime}ms)`);
       
-      // Şablon verisini hazırla
-      const templateData = await this.prepareTemplateData(products, companyName, companyLogoUrl);
+      // 2. Şablon verisini hazırla (paralel resim yükleme ile)
+      const templateData = await this.prepareTemplateDataOptimized(products, companyName, companyLogoUrl);
+      console.log(`✅ Template data hazırlandı (${Date.now() - startTime}ms)`);
       
-      // Handlebars şablonunu oku
-      const templatePath = path.join(__dirname, 'templates', 'catalog.hbs');
-      console.log('Şablon dosyası yolu:', templatePath);
+      // 3. HTML oluştur
+      const html = await this.generateHTML(templateData);
+      console.log(`✅ HTML oluşturuldu (${Date.now() - startTime}ms)`);
       
-      const templateContent = fs.readFileSync(templatePath, 'utf-8');
-      const template = handlebars.compile(templateContent);
+      // 4. PDF oluştur (optimize edilmiş)
+      const pdfBuffer = await this.generatePDFFromHTMLOptimized(html);
       
-      // Şablonu verilerle birleştir
-      const html = template({
-        companyName: templateData.companyName,
-        formatDate: templateData.formatDate,
-        currentYear: templateData.currentYear,
-        collections: templateData.collections,
-        backgroundImage: templateData.backgroundImage,
-        blackLogo: templateData.blackLogo,
-        robotoRegularFont: templateData.robotoRegularFont,
-        robotoBoldFont: templateData.robotoBoldFont
-      });
-      
-      // Test için HTML dosyasını diske yaz (hata ayıklama)
-      const debugDir = path.join(__dirname, '..', 'debug');
-      if (!fs.existsSync(debugDir)) {
-        fs.mkdirSync(debugDir, { recursive: true });
-      }
-      fs.writeFileSync(path.join(debugDir, 'catalog-debug.html'), html);
-      console.log('Debug HTML dosyası oluşturuldu:', path.join(debugDir, 'catalog-debug.html'));
-      
-      // HTML içeriğini PDF'e dönüştür
-      console.log('HTML oluşturuldu, PDF dönüştürme işlemi başlıyor...');
-      const pdfBuffer = await this.generatePDFFromHTML(html);
+      const totalTime = Date.now() - startTime;
+      console.log(`🎉 Katalog başarıyla oluşturuldu! Toplam süre: ${totalTime}ms`);
       
       return pdfBuffer;
     } catch (error: any) {
-      console.error('Katalog oluşturma hatası:', error);
+      console.error('❌ Katalog oluşturma hatası:', error);
       throw new Error(`Katalog oluşturulurken bir hata oluştu: ${error.message}`);
     }
   }
 
   /**
-   * HTML içeriğini PDF'e dönüştürür
+   * 🚀 Optimize edilmiş HTML'den PDF oluşturma
    */
-  private async generatePDFFromHTML(html: string): Promise<Buffer> {
-    const browser = await puppeteer.launch({
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-web-security',
-        '--disable-features=IsolateOrigins,site-per-process',
-        '--allow-file-access-from-files',
-        '--disable-gpu',
-        '--disable-dev-shm-usage',
-        '--disable-software-rasterizer',
-        '--no-first-run',
-        '--no-default-browser-check',
-        '--disable-default-apps',
-        '--disable-extensions',
-        '--disable-plugins',
-        '--disable-translate',
-        '--disable-background-timer-throttling',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-renderer-backgrounding',
-        '--disable-features=TranslateUI',
-        '--disable-ipc-flooding-protection',
-        '--force-color-profile=generic-rgb',
-        '--enable-print-browser'
-      ],
-      headless: true
-    });
+  private async generatePDFFromHTMLOptimized(html: string): Promise<Buffer> {
+    let browser = CatalogService.browserInstance;
+    
+    // Browser instance yoksa oluştur
+    if (!browser || !browser.isConnected()) {
+      console.log('🚀 Yeni browser instance oluşturuluyor...');
+      browser = await puppeteer.launch({
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-web-security',
+          '--disable-gpu',
+          '--no-first-run',
+          '--disable-default-apps',
+          '--disable-extensions',
+          '--disable-translate',
+          '--disable-background-timer-throttling'
+        ],
+        headless: true,
+        timeout: this.BROWSER_TIMEOUT
+      });
+      CatalogService.browserInstance = browser;
+    }
+    
+    const page = await browser.newPage();
     
     try {
-      const page = await browser.newPage();
-      
-      // Sayfanın viewport ölçülerini ayarla
+      // Viewport ayarla
       await page.setViewport({
         width: 1200,
         height: 1600,
         deviceScaleFactor: 1
       });
       
-      // Resim isteklerini izle (basit versiyon)
+      // Request interception'ı basitleştir
       await page.setRequestInterception(true);
-      
-      page.on('request', request => {
-        // Sadece tebi.io isteklerini özel olarak işle
-        if (request.url().includes('tebi.io')) {
-          request.continue({
-            headers: {
-              ...request.headers(),
-              'Accept': 'image/*,*/*;q=0.8',
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
-          });
-        } else {
+      page.on('request', (request: any) => {
+        const resourceType = request.resourceType();
+        // Sadece gerekli kaynakları yükle
+        if (['document', 'stylesheet', 'image', 'font'].includes(resourceType)) {
           request.continue();
+        } else {
+          request.abort();
         }
       });
 
-      page.on('requestfailed', request => {
-        if (request.resourceType() === 'image') {
-          console.log('❌ Resim yüklenemedi:', request.url().substring(0, 100) + '...');
-        }
-      });
-
-      // HTML içeriğini yükle
-      console.log('HTML içeriği yükleniyor...');
-      
-      // Önce basit HTML'i yükle, sonra kaynakları kontrol et
+      // HTML'i hızlı yükle
       await page.setContent(html, { 
-        waitUntil: 'domcontentloaded', // daha hızlı yükleme
-        timeout: 30000 // timeout'u azalt
+        waitUntil: 'domcontentloaded',
+        timeout: 15000 // 15 saniye timeout
       });
       
-      console.log('HTML DOM yüklendi, kaynaklar kontrol ediliyor...');
-      
-      // Print için CSS ayarlarını inject et
+      // CSS inject et
       await page.addStyleTag({
         content: `
           @media screen {
-            * {
-              -webkit-print-color-adjust: exact !important;
-              color-adjust: exact !important;
-            }
+            * { -webkit-print-color-adjust: exact !important; }
           }
-          
-          @page {
-            margin: 10mm;
-            size: A4;
-          }
+          @page { margin: 10mm; size: A4; }
         `
       });
       
-      // Resimlerin durumunu kontrol et (basit versiyon)
-      try {
-        const imagesResult = await page.evaluate(() => {
-          const imgElements = Array.from(document.querySelectorAll('img'));
-          return {
-            totalImages: imgElements.length,
-            loadedImages: imgElements.filter(img => img.complete && img.naturalWidth > 0).length
-          };
-        });
-        
-        console.log(`Resim durumu: ${imagesResult.loadedImages}/${imagesResult.totalImages} yüklendi`);
-      } catch (evalError) {
-        console.warn('Resim durum kontrolü atlandı:', evalError);
-      }
+      // Kısa bekleme (2 saniyeden 500ms'ye düşürüldü)
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // PDF hazırlığı için kısa bekleme
-      console.log('PDF hazırlığı için bekleniyor...');
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // PDF olarak dışa aktar
-      console.log('PDF oluşturuluyor...');
+      // PDF oluştur
       const pdfBuffer = await page.pdf({
         format: 'A4',
         printBackground: true,
@@ -260,53 +197,205 @@ export class CatalogService {
         },
         preferCSSPageSize: true,
         displayHeaderFooter: false,
-        omitBackground: false
+        timeout: 30000 // 30 saniye PDF timeout
       });
       
       return Buffer.from(pdfBuffer);
     } finally {
-      await browser.close();
+      await page.close();
+      // Browser'ı açık bırak (tekrar kullanım için)
     }
   }
 
   /**
-   * Katalog için data hazırla
+   * 🚀 Optimize edilmiş template data hazırlama
    */
-  private async prepareTemplateData(
+  private async prepareTemplateDataOptimized(
     products: ProductType[], 
     companyName: string, 
     companyLogoUrl?: string
   ): Promise<CatalogTemplateData> {
-    console.log(`Katalog için ${products.length} ürün hazırlanıyor...`);
+    console.log(`🚀 ${products.length} ürün için optimize edilmiş template hazırlanıyor...`);
 
-    // Önce tüm ürün resimlerini paralel olarak yükle
-    console.log('🚀 Ürün resimleri paralel olarak yükleniyor...');
-    const imageLoadPromises = products.map(async (product) => {
-      if (product.productImage) {
-        try {
-          console.log(`⏳ Resim yükleniyor: ${product.name}`);
-          product.productImage = await this.loadImageAsDataUrl(product.productImage);
-          console.log(`✅ Resim yüklendi: ${product.name}`);
-        } catch (error) {
-          console.error(`❌ Resim yüklenemedi: ${product.name}`, error instanceof Error ? error.message : String(error));
+    // Paralel işlemler için promise'ları hazırla
+    const [
+      productsWithImages,
+      backgroundImage,
+      blackLogo,
+      fonts
+    ] = await Promise.all([
+      // 1. Ürün resimlerini paralel yükle
+      this.loadProductImagesInBatches(products),
+      // 2. Arka plan resmini yükle
+      this.loadCatalogBackgroundImageCached(),
+      // 3. Logo'yu yükle
+      this.loadBlackLogoCached(),
+      // 4. Fontları yükle
+      Promise.all([
+        this.loadFontAsBase64Cached(this.robotoRegularFontPath),
+        this.loadFontAsBase64Cached(this.robotoBoldFontPath)
+      ])
+    ]);
+
+    const [robotoRegularFont, robotoBoldFont] = fonts;
+
+    // Ürünleri koleksiyonlara grupla
+    const collections = this.groupProductsByCollection(productsWithImages);
+    
+    const now = new Date();
+    
+    return {
+      companyName: companyName || 'PAŞA HOME',
+      companyLogoUrl,
+      formatDate: now.toLocaleDateString('tr-TR'),
+      currentYear: now.getFullYear(),
+      collections,
+      backgroundImage,
+      blackLogo,
+      robotoRegularFont,
+      robotoBoldFont
+    };
+  }
+
+  /**
+   * 🚀 Ürün resimlerini batch'ler halinde paralel yükle
+   */
+  private async loadProductImagesInBatches(products: ProductType[]): Promise<ProductType[]> {
+    console.log(`🚀 ${products.length} ürün resmi batch'ler halinde yükleniyor...`);
+    
+    const results: ProductType[] = [];
+    
+    // Batch'ler halinde işle
+    for (let i = 0; i < products.length; i += this.MAX_CONCURRENT_IMAGES) {
+      const batch = products.slice(i, i + this.MAX_CONCURRENT_IMAGES);
+      
+      const batchPromises = batch.map(async (product) => {
+        if (product.productImage) {
+          try {
+            product.productImage = await this.loadImageAsDataUrlCached(product.productImage);
+          } catch (error) {
+            console.warn(`⚠️ Resim yüklenemedi: ${product.name}`);
+            product.productImage = this.getDefaultImageDataUrl();
+          }
+        } else {
           product.productImage = this.getDefaultImageDataUrl();
         }
+        return product;
+      });
+      
+      const batchResults = await Promise.allSettled(batchPromises);
+      const successfulResults = batchResults
+        .filter(result => result.status === 'fulfilled')
+        .map(result => (result as PromiseFulfilledResult<ProductType>).value);
+      
+      results.push(...successfulResults);
+      
+      console.log(`✅ Batch ${Math.floor(i / this.MAX_CONCURRENT_IMAGES) + 1} tamamlandı (${successfulResults.length}/${batch.length})`);
+    }
+    
+    return results;
+  }
+
+  /**
+   * 🚀 Cache'li resim yükleme
+   */
+  private async loadImageAsDataUrlCached(imageUrl: string): Promise<string> {
+    // Cache'de var mı kontrol et
+    if (this.imageCache.has(imageUrl)) {
+      return this.imageCache.get(imageUrl)!;
+    }
+    
+    try {
+      // Timeout promise
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout')), this.IMAGE_TIMEOUT);
+      });
+      
+      let dataUrl: string;
+      if (imageUrl.includes('tebi.io')) {
+        dataUrl = await Promise.race([this.loadTebiImageOptimized(imageUrl), timeoutPromise]);
       } else {
-        product.productImage = this.getDefaultImageDataUrl();
+        dataUrl = await Promise.race([this.loadRegularImageOptimized(imageUrl), timeoutPromise]);
       }
-      return product;
+      
+      // Cache'e kaydet
+      this.imageCache.set(imageUrl, dataUrl);
+      return dataUrl;
+      
+    } catch (error) {
+      const defaultImage = this.getDefaultImageDataUrl();
+      this.imageCache.set(imageUrl, defaultImage);
+      return defaultImage;
+    }
+  }
+
+  /**
+   * 🚀 Optimize edilmiş Tebi resim yükleme
+   */
+  private async loadTebiImageOptimized(imageUrl: string): Promise<string> {
+    // Sadece orijinal URL'yi dene (presigned URL işlemini atla)
+    const attempts = [
+      imageUrl,
+      imageUrl.replace('http://', 'https://')
+    ];
+    
+    for (const url of attempts) {
+      try {
+        return await this.loadRegularImageOptimized(url);
+      } catch (error) {
+        continue;
+      }
+    }
+    
+    throw new Error('Tebi resim yüklenemedi');
+  }
+
+  /**
+   * 🚀 Optimize edilmiş normal resim yükleme
+   */
+  private async loadRegularImageOptimized(imageUrl: string): Promise<string> {
+    const response = await axios.get(imageUrl, {
+      responseType: 'arraybuffer',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; CatalogBot/1.0)',
+        'Accept': 'image/*'
+      },
+      timeout: this.IMAGE_TIMEOUT,
+      maxRedirects: 2
     });
+    
+    if (!response.data || response.data.length === 0) {
+      throw new Error('Boş resim verisi');
+    }
+    
+    // MIME tipini belirle
+    let contentType = response.headers['content-type'] || this.detectImageMimeType(imageUrl, response.data);
+    
+    // Base64'e çevir
+    const base64 = Buffer.from(response.data).toString('base64');
+    
+    return `data:${contentType};base64,${base64}`;
+  }
 
-    // Tüm resimlerin yüklenmesini bekle
-    const productsWithImages = await Promise.allSettled(imageLoadPromises);
-    console.log('📸 Tüm ürün resimleri işlendi');
+  /**
+   * 🚀 HTML oluşturma
+   */
+  private async generateHTML(templateData: CatalogTemplateData): Promise<string> {
+    const templatePath = path.join(__dirname, 'templates', 'catalog.hbs');
+    const templateContent = fs.readFileSync(templatePath, 'utf-8');
+    const template = handlebars.compile(templateContent);
+    
+    return template(templateData);
+  }
 
-    // Ürünleri koleksiyonlara göre grupla
+  /**
+   * 🚀 Ürünleri koleksiyonlara grupla
+   */
+  private groupProductsByCollection(products: ProductType[]): CollectionProducts[] {
     const productsByCollection: ProductsByCollection = {};
     
     // Ürünleri koleksiyonlara göre grupla
-    for (let i = 0; i < products.length; i++) {
-      const product = products[i];
+    for (const product of products) {
       const collectionId = product.collectionId || 'uncategorized';
       const collectionName = product.collection.name || 'Kategorisiz Ürünler';
       
@@ -323,7 +412,7 @@ export class CatalogService {
     
     // Koleksiyonları diziye dönüştür ve sayfalara böl
     const collections: CollectionProducts[] = [];
-    let pageCounter = 1; // İçerik sayfaları 1'den başlar (kapak sayfa 0)
+    let pageCounter = 1;
     
     const sortedCollections = Object.values(productsByCollection)
       .filter(collection => collection.products.length > 0)
@@ -343,34 +432,130 @@ export class CatalogService {
         collections.push({
           collectionName: collection.collectionName,
           products: pageProducts,
-          pageNumber: pageCounter++ // Her içerik sayfası için artan numara
+          pageNumber: pageCounter++
         });
-        
-        console.log(`📄 Sayfa oluşturuldu: ${collection.collectionName} - Sayfa ${pageCounter - 1} (${pageProducts.length} ürün)`);
       }
     }
     
-    console.log(`📋 Toplam ${collections.length} sayfa oluşturuldu (Kapak + ${collections.length} içerik sayfası)`);
+    return collections;
+  }
+
+  /**
+   * 🚀 Cache'li arka plan resmi yükleme
+   */
+  private async loadCatalogBackgroundImageCached(): Promise<string> {
+    const cacheKey = 'background_image';
+    if (this.imageCache.has(cacheKey)) {
+      return this.imageCache.get(cacheKey)!;
+    }
     
-    // Arka plan resmini ve fontları yükle
-    const backgroundImage = await this.loadCatalogBackgroundImage();
-    const blackLogo = await this.loadBlackLogo();
-    const robotoRegularFont = await this.loadFontAsBase64(this.robotoRegularFontPath);
-    const robotoBoldFont = await this.loadFontAsBase64(this.robotoBoldFontPath);
+    try {
+      const backgroundImage = await this.loadImageAsDataUrlCached(this.backgroundImageUrl);
+      this.imageCache.set(cacheKey, backgroundImage);
+      return backgroundImage;
+    } catch (error) {
+      const defaultBg = 'data:image/svg+xml;base64,' + Buffer.from(`
+        <svg width="1200" height="1600" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#f8f9fa"/>
+              <stop offset="100%" style="stop-color:#e9ecef"/>
+            </linearGradient>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#bg)"/>
+        </svg>
+      `).toString('base64');
+      this.imageCache.set(cacheKey, defaultBg);
+      return defaultBg;
+    }
+  }
+
+  /**
+   * 🚀 Cache'li logo yükleme
+   */
+  private async loadBlackLogoCached(): Promise<string> {
+    const cacheKey = 'black_logo';
+    if (this.imageCache.has(cacheKey)) {
+      return this.imageCache.get(cacheKey)!;
+    }
     
-    const now = new Date();
+    try {
+      if (fs.existsSync(this.blackLogoPath)) {
+        const svgContent = fs.readFileSync(this.blackLogoPath, 'utf8');
+        const base64Svg = Buffer.from(svgContent).toString('base64');
+        const dataUrl = `data:image/svg+xml;base64,${base64Svg}`;
+        this.imageCache.set(cacheKey, dataUrl);
+        return dataUrl;
+      }
+    } catch (error) {
+      console.error('Logo yüklenemedi:', error);
+    }
     
-    return {
-      companyName: companyName || 'PAŞA HOME',
-      companyLogoUrl,
-      formatDate: now.toLocaleDateString('tr-TR'),
-      currentYear: now.getFullYear(),
-      collections,
-      backgroundImage,
-      blackLogo,
-      robotoRegularFont,
-      robotoBoldFont
-    };
+    const emptyLogo = '';
+    this.imageCache.set(cacheKey, emptyLogo);
+    return emptyLogo;
+  }
+
+  /**
+   * 🚀 Cache'li font yükleme
+   */
+  private async loadFontAsBase64Cached(fontPath: string): Promise<string> {
+    const cacheKey = `font_${fontPath}`;
+    if (this.imageCache.has(cacheKey)) {
+      return this.imageCache.get(cacheKey)!;
+    }
+    
+    try {
+      if (fs.existsSync(fontPath)) {
+        const fontBuffer = fs.readFileSync(fontPath);
+        const base64Font = fontBuffer.toString('base64');
+        this.imageCache.set(cacheKey, base64Font);
+        return base64Font;
+      }
+    } catch (error) {
+      console.error('Font yüklenemedi:', error);
+    }
+    
+    this.imageCache.set(cacheKey, '');
+    return '';
+  }
+
+  /**
+   * 🚀 Optimize edilmiş çoklu ürün getirme
+   */
+  private async getProductsByIds(productIds: string[]): Promise<ProductType[]> {
+    try {
+      const products = await prisma.product.findMany({
+        where: { 
+          productId: { 
+            in: productIds 
+          } 
+        },
+        include: {
+          collection: true
+        }
+      });
+      
+      return products as ProductType[];
+    } catch (error) {
+      console.error('Ürünleri getirme hatası:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Browser instance'ını temizle
+   */
+  static async cleanup(): Promise<void> {
+    if (CatalogService.browserInstance) {
+      try {
+        await CatalogService.browserInstance.close();
+        CatalogService.browserInstance = null;
+        console.log('🧹 Browser instance temizlendi');
+      } catch (error) {
+        console.error('Browser temizleme hatası:', error);
+      }
+    }
   }
   
   /**
@@ -398,7 +583,7 @@ export class CatalogService {
       return this.getDefaultImageDataUrl();
     }
   }
-  
+
   /**
    * Tebi.io görsellerini yükler
    */
