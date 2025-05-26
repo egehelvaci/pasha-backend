@@ -52,14 +52,13 @@ export class CatalogService {
   private robotoRegularFontPath = path.resolve(__dirname, 'assets/fonts/Roboto-Regular.ttf');
   private robotoBoldFontPath = path.resolve(__dirname, 'assets/fonts/Roboto-Bold.ttf');
   
-  // 🚀 Performance optimizations - Railway için agresif ayarlar
+  // 🚀 Performance optimizations
   private static browserInstance: Browser | null = null;
   private imageCache = new Map<string, string>();
-  private readonly MAX_CONCURRENT_IMAGES = 5; // Railway için düşürüldü (10'dan 5'e)
-  private readonly IMAGE_TIMEOUT = 2000; // Railway için daha agresif (3s'den 2s'ye)
-  private readonly BROWSER_TIMEOUT = 20000; // Railway için düşürüldü (30s'den 20s'ye)
-  private readonly MAX_PRODUCTS_PER_CATALOG = 50; // Railway için ürün limiti
-  private readonly SKIP_IMAGES_ON_TIMEOUT = true; // Timeout durumunda resimleri atla
+  private readonly MAX_CONCURRENT_IMAGES = 5; // Paralel resim yükleme limiti (10'dan 5'e)
+  private readonly IMAGE_TIMEOUT = 5000; // 5 saniye (3'ten artırıldı)
+  private readonly BROWSER_TIMEOUT = 45000; // 45 saniye browser timeout (30'dan artırıldı)
+  private readonly PDF_TIMEOUT = 120000; // 2 dakika PDF timeout
 
   constructor() {
     // Handlebars yardımcı fonksiyonları
@@ -83,7 +82,7 @@ export class CatalogService {
     const { productIds, companyName = "Şirket Adı", companyLogoUrl } = options;
     
     const startTime = Date.now();
-    console.log('🚀 Railway optimized katalog oluşturma başladı...');
+    console.log('🚀 Katalog oluşturma başladı...');
     
     try {
       // 1. Ürünleri getir (optimize edilmiş)
@@ -94,44 +93,38 @@ export class CatalogService {
         products = await this.getAllProducts();
       }
       
-      // Railway için ürün sayısını sınırla
-      if (products.length > this.MAX_PRODUCTS_PER_CATALOG) {
-        console.log(`⚠️ Railway için ürün sayısı sınırlandı: ${products.length} -> ${this.MAX_PRODUCTS_PER_CATALOG}`);
-        products = products.slice(0, this.MAX_PRODUCTS_PER_CATALOG);
-      }
-      
       console.log(`✅ ${products.length} ürün alındı (${Date.now() - startTime}ms)`);
       
-      // 2. Şablon verisini hazırla (Railway optimized)
-      const templateData = await this.prepareTemplateDataRailwayOptimized(products, companyName, companyLogoUrl);
+      // 2. Şablon verisini hazırla (paralel resim yükleme ile)
+      const templateData = await this.prepareTemplateDataOptimized(products, companyName, companyLogoUrl);
       console.log(`✅ Template data hazırlandı (${Date.now() - startTime}ms)`);
       
       // 3. HTML oluştur
       const html = await this.generateHTML(templateData);
       console.log(`✅ HTML oluşturuldu (${Date.now() - startTime}ms)`);
       
-      // 4. PDF oluştur (Railway optimized)
-      const pdfBuffer = await this.generatePDFRailwayOptimized(html);
+      // 4. PDF oluştur (optimize edilmiş)
+      const pdfBuffer = await this.generatePDFFromHTMLOptimized(html);
       
       const totalTime = Date.now() - startTime;
-      console.log(`🎉 Railway katalog başarıyla oluşturuldu! Toplam süre: ${totalTime}ms`);
+      console.log(`🎉 Katalog başarıyla oluşturuldu! Toplam süre: ${totalTime}ms`);
       
       return pdfBuffer;
     } catch (error: any) {
-      console.error('❌ Railway katalog oluşturma hatası:', error);
-      throw new Error(`Railway katalog oluşturulurken bir hata oluştu: ${error.message}`);
+      console.error('❌ Katalog oluşturma hatası:', error);
+      throw new Error(`Katalog oluşturulurken bir hata oluştu: ${error.message}`);
     }
   }
 
   /**
-   * 🚀 Railway için optimize edilmiş PDF oluşturma
+   * 🚀 Optimize edilmiş HTML'den PDF oluşturma
    */
-  private async generatePDFRailwayOptimized(html: string): Promise<Buffer> {
+  private async generatePDFFromHTMLOptimized(html: string): Promise<Buffer> {
     let browser = CatalogService.browserInstance;
     
-    // Browser instance yoksa oluştur (Railway için minimal ayarlar)
+    // Browser instance yoksa oluştur
     if (!browser || !browser.isConnected()) {
-      console.log('🚀 Railway için minimal browser instance oluşturuluyor...');
+      console.log('🚀 Yeni browser instance oluşturuluyor...');
       browser = await puppeteer.launch({
         executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
         args: [
@@ -145,9 +138,9 @@ export class CatalogService {
           '--disable-extensions',
           '--disable-translate',
           '--disable-background-timer-throttling',
-          '--disable-features=VizDisplayCompositor',
-          '--memory-pressure-off',
-          '--max_old_space_size=512' // Railway için memory limiti
+          '--max-old-space-size=2048',  // Memory limiti
+          '--disable-background-networking',
+          '--disable-background-updates'
         ],
         headless: true,
         timeout: this.BROWSER_TIMEOUT
@@ -158,86 +151,97 @@ export class CatalogService {
     const page = await browser.newPage();
     
     try {
-      // Railway için minimal viewport
+      // Viewport ayarla
       await page.setViewport({
-        width: 800, // Düşürüldü (1200'den 800'e)
-        height: 1000, // Düşürüldü (1600'dan 1000'e)
+        width: 1200,
+        height: 1600,
         deviceScaleFactor: 1
       });
       
-      // Railway için basitleştirilmiş request handling
+      // Request interception'ı basitleştir
       await page.setRequestInterception(true);
       page.on('request', (request: any) => {
         const resourceType = request.resourceType();
-        // Sadece en gerekli kaynakları yükle
-        if (['document', 'stylesheet'].includes(resourceType)) {
+        // Sadece gerekli kaynakları yükle
+        if (['document', 'stylesheet', 'image', 'font'].includes(resourceType)) {
           request.continue();
         } else {
-          request.abort(); // Resim ve font'ları atla (inline olarak gelecek)
+          request.abort();
         }
       });
 
-      // HTML'i hızlı yükle (Railway için daha agresif)
+      // HTML'i hızlı yükle
       await page.setContent(html, { 
         waitUntil: 'domcontentloaded',
-        timeout: 10000 // Railway için düşürüldü (15s'den 10s'ye)
+        timeout: 15000 // 15 saniye timeout
       });
       
-      // Minimal CSS
+      // CSS inject et
       await page.addStyleTag({
         content: `
-          @media screen { * { -webkit-print-color-adjust: exact !important; } }
-          @page { margin: 5mm; size: A4; }
+          @media screen {
+            * { -webkit-print-color-adjust: exact !important; }
+          }
+          @page { margin: 10mm; size: A4; }
         `
       });
       
-      // Railway için minimal bekleme
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // Kısa bekleme (2 saniyeden 500ms'ye düşürüldü)
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // PDF oluştur (Railway için agresif ayarlar)
+      // PDF oluştur
       const pdfBuffer = await page.pdf({
         format: 'A4',
         printBackground: true,
         margin: {
-          top: '5mm',
-          right: '5mm', 
-          bottom: '5mm',
-          left: '5mm'
+          top: '10mm',
+          right: '10mm',
+          bottom: '10mm',
+          left: '10mm'
         },
         preferCSSPageSize: true,
         displayHeaderFooter: false,
-        timeout: 15000 // Railway için düşürüldü (30s'den 15s'ye)
+        timeout: this.PDF_TIMEOUT // 2 dakika PDF timeout
       });
       
       return Buffer.from(pdfBuffer);
     } finally {
       await page.close();
+      // Browser'ı açık bırak (tekrar kullanım için)
     }
   }
 
   /**
-   * 🚀 Railway için optimize edilmiş template data hazırlama
+   * 🚀 Optimize edilmiş template data hazırlama
    */
-  private async prepareTemplateDataRailwayOptimized(
+  private async prepareTemplateDataOptimized(
     products: ProductType[], 
     companyName: string, 
     companyLogoUrl?: string
   ): Promise<CatalogTemplateData> {
-    console.log(`🚀 Railway için ${products.length} ürün template hazırlanıyor...`);
+    console.log(`🚀 ${products.length} ürün için optimize edilmiş template hazırlanıyor...`);
 
-    // Railway için sıralı işlem (paralel yerine - memory tasarrufu)
-    console.log('📸 Railway için resimler yükleniyor...');
-    const productsWithImages = await this.loadProductImagesRailwayOptimized(products);
-    
-    console.log('🖼️ Railway için arka plan yükleniyor...');
-    const backgroundImage = await this.loadCatalogBackgroundImageCached();
-    
-    console.log('🏷️ Railway için logo yükleniyor...');
-    const blackLogo = await this.loadBlackLogoCached();
-    
-    console.log('🔤 Railway için fontlar yükleniyor...');
-    const robotoRegularFont = await this.loadFontAsBase64Cached(this.robotoRegularFontPath);
-    const robotoBoldFont = await this.loadFontAsBase64Cached(this.robotoBoldFontPath);
+    // Paralel işlemler için promise'ları hazırla
+    const [
+      productsWithImages,
+      backgroundImage,
+      blackLogo,
+      fonts
+    ] = await Promise.all([
+      // 1. Ürün resimlerini paralel yükle
+      this.loadProductImagesInBatches(products),
+      // 2. Arka plan resmini yükle
+      this.loadCatalogBackgroundImageCached(),
+      // 3. Logo'yu yükle
+      this.loadBlackLogoCached(),
+      // 4. Fontları yükle
+      Promise.all([
+        this.loadFontAsBase64Cached(this.robotoRegularFontPath),
+        this.loadFontAsBase64Cached(this.robotoBoldFontPath)
+      ])
+    ]);
+
+    const [robotoRegularFont, robotoBoldFont] = fonts;
 
     // Ürünleri koleksiyonlara grupla
     const collections = this.groupProductsByCollection(productsWithImages);
@@ -258,32 +262,23 @@ export class CatalogService {
   }
 
   /**
-   * 🚀 Railway için optimize edilmiş resim yükleme
+   * 🚀 Ürün resimlerini batch'ler halinde paralel yükle
    */
-  private async loadProductImagesRailwayOptimized(products: ProductType[]): Promise<ProductType[]> {
-    console.log(`🚀 Railway için ${products.length} ürün resmi yükleniyor...`);
+  private async loadProductImagesInBatches(products: ProductType[]): Promise<ProductType[]> {
+    console.log(`🚀 ${products.length} ürün resmi batch'ler halinde yükleniyor...`);
     
     const results: ProductType[] = [];
     
-    // Railway için daha küçük batch'ler
-    const batchSize = this.MAX_CONCURRENT_IMAGES;
-    
-    for (let i = 0; i < products.length; i += batchSize) {
-      const batch = products.slice(i, i + batchSize);
+    // Batch'ler halinde işle
+    for (let i = 0; i < products.length; i += this.MAX_CONCURRENT_IMAGES) {
+      const batch = products.slice(i, i + this.MAX_CONCURRENT_IMAGES);
       
       const batchPromises = batch.map(async (product) => {
-        if (product.productImage && !this.SKIP_IMAGES_ON_TIMEOUT) {
+        if (product.productImage) {
           try {
-            // Railway için daha agresif timeout
-            const timeoutPromise = new Promise<string>((_, reject) => {
-              setTimeout(() => reject(new Error('Railway timeout')), this.IMAGE_TIMEOUT);
-            });
-            
-            const imagePromise = this.loadImageAsDataUrlCached(product.productImage);
-            product.productImage = await Promise.race([imagePromise, timeoutPromise]);
-            
+            product.productImage = await this.loadImageAsDataUrlCached(product.productImage);
           } catch (error) {
-            console.warn(`⚠️ Railway resim timeout: ${product.name}`);
+            console.warn(`⚠️ Resim yüklenemedi: ${product.name}`);
             product.productImage = this.getDefaultImageDataUrl();
           }
         } else {
@@ -299,12 +294,7 @@ export class CatalogService {
       
       results.push(...successfulResults);
       
-      console.log(`✅ Railway batch ${Math.floor(i / batchSize) + 1} tamamlandı (${successfulResults.length}/${batch.length})`);
-      
-      // Railway için batch'ler arası kısa bekleme
-      if (i + batchSize < products.length) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
+      console.log(`✅ Batch ${Math.floor(i / this.MAX_CONCURRENT_IMAGES) + 1} tamamlandı (${successfulResults.length}/${batch.length})`);
     }
     
     return results;
