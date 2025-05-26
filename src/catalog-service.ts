@@ -365,7 +365,7 @@ export class CatalogService {
     
     // Koleksiyonları diziye dönüştür ve sayfalara böl
     const collections: CollectionProducts[] = [];
-    let pageCounter = 1;
+    let pageCounter = 1; // İçerik sayfaları 1'den başlar (kapak sayfa 0)
     
     const sortedCollections = Object.values(productsByCollection)
       .filter(collection => collection.products.length > 0)
@@ -385,10 +385,14 @@ export class CatalogService {
         collections.push({
           collectionName: collection.collectionName,
           products: pageProducts,
-          pageNumber: pageCounter++
+          pageNumber: pageCounter++ // Her içerik sayfası için artan numara
         });
+        
+        console.log(`📄 Sayfa oluşturuldu: ${collection.collectionName} - Sayfa ${pageCounter - 1} (${pageProducts.length} ürün)`);
       }
     }
+    
+    console.log(`📋 Toplam ${collections.length} sayfa oluşturuldu (Kapak + ${collections.length} içerik sayfası)`);
     
     // Arka plan resmini ve fontları yükle
     const backgroundImage = await this.loadCatalogBackgroundImage();
@@ -644,47 +648,9 @@ export class CatalogService {
         
         console.log(`Arka plan resmi başarıyla okundu: ${Math.floor(base64Image.length / 1024)} KB`);
         
-        // Test: Arka plan görselini debug klasörüne kopyala
-        try {
-          const debugDir = path.join(__dirname, '..', 'debug');
-          if (!fs.existsSync(debugDir)) {
-            fs.mkdirSync(debugDir, { recursive: true });
-          }
-          fs.copyFileSync(this.backgroundImagePath, path.join(debugDir, 'catalog-bg-copy.jpg'));
-          console.log('Arka plan resmi debug klasörüne kopyalandı');
-        } catch (copyError) {
-          console.error('Debug için kopya oluşturma hatası:', copyError);
-        }
-        
         return `data:image/jpeg;base64,${base64Image}`;
       } else {
         console.error('Arka plan resim dosyası bulunamadı:', this.backgroundImagePath);
-        // Proje klasöründe mevcut resimleri listele
-        try {
-          const assetsDir = path.join(__dirname, 'assets');
-          if (fs.existsSync(assetsDir)) {
-            console.log('Assets klasörü içeriği:');
-            const listFiles = (dir: string, depth = 0) => {
-              const files = fs.readdirSync(dir);
-              files.forEach(file => {
-                const filePath = path.join(dir, file);
-                const stats = fs.statSync(filePath);
-                const relativePath = path.relative(path.join(__dirname, '..'), filePath);
-                console.log(`${' '.repeat(depth * 2)}${stats.isDirectory() ? '📁' : '📄'} ${relativePath}`);
-                if (stats.isDirectory()) {
-                  listFiles(filePath, depth + 1);
-                }
-              });
-            };
-            listFiles(assetsDir);
-          } else {
-            console.log('Assets klasörü bulunamadı');
-          }
-        } catch (listError) {
-          console.error('Dosya listeleme hatası:', listError);
-        }
-        
-        // Varsayılan gradient döndür
         return 'linear-gradient(135deg, #0f2027, #203a43, #2c5364)';
       }
     } catch (error) {

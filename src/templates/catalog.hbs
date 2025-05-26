@@ -104,6 +104,7 @@
       padding: 40px;
       box-sizing: border-box;
       page-break-before: always;
+      position: relative;
     }
     
     .page-header {
@@ -228,16 +229,19 @@
     
     /* Sayfa Numarası */
     .page-number {
-      position: fixed;
-      bottom: 30px;
-      right: 50%;
-      transform: translateX(50%);
-      background: #D2691E;
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #D2691E, #B8631B);
       color: white;
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-size: 14px;
+      padding: 10px 20px;
+      border-radius: 25px;
+      font-size: 16px;
       font-weight: bold;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.2);
     }
     
     /* Print Stilleri */
