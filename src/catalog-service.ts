@@ -47,7 +47,7 @@ interface CatalogTemplateData {
 export class CatalogService {
   private collectionService = new CollectionService();
   private templatePath = path.resolve(__dirname, 'templates/catalog.hbs');
-  private backgroundImagePath = path.join(process.cwd(), 'public', 'catalog-bg.jpg');
+  private backgroundImageUrl = 'https://s3.tebi.io/pashahome/pexels-meruyert-gonullu-7314471.jpg';
   private blackLogoPath = path.join(process.cwd(), 'public', 'black-logo.svg');
   private robotoRegularFontPath = path.resolve(__dirname, 'assets/fonts/Roboto-Regular.ttf');
   private robotoBoldFontPath = path.resolve(__dirname, 'assets/fonts/Roboto-Bold.ttf');
@@ -64,8 +64,8 @@ export class CatalogService {
     
     // Konsol loglarına çalışma dizinini ekle
     console.log('Çalışma dizini (CWD):', process.cwd());
-    console.log('Arka plan görsel yolu:', this.backgroundImagePath);
-    console.log('Görsel dizini mevcut mu:', fs.existsSync(path.dirname(this.backgroundImagePath)));
+    console.log('Arka plan görsel URL:', this.backgroundImageUrl);
+    console.log('Black logo yolu:', this.blackLogoPath);
   }
 
   async generateCatalog(options: {
@@ -159,7 +159,9 @@ export class CatalogService {
         '--disable-backgrounding-occluded-windows',
         '--disable-renderer-backgrounding',
         '--disable-features=TranslateUI',
-        '--disable-ipc-flooding-protection'
+        '--disable-ipc-flooding-protection',
+        '--force-color-profile=generic-rgb',
+        '--enable-print-browser'
       ],
       headless: true
     });
@@ -174,25 +176,17 @@ export class CatalogService {
         deviceScaleFactor: 1
       });
       
-      // Resim isteklerini her zaman kabul et
+      // Resim isteklerini izle (basit versiyon)
       await page.setRequestInterception(true);
       
-      // Kaynakları izle ve daha fazla bilgi ekle
-      const failedRequests: string[] = [];
-      const successRequests: string[] = [];
-      
       page.on('request', request => {
-        // Tebi üzerindeki görsel isteklerinde özel başlıkları ayarla
+        // Sadece tebi.io isteklerini özel olarak işle
         if (request.url().includes('tebi.io')) {
-          console.log('Tebi.io isteği yakalandı:', request.url());
           request.continue({
             headers: {
               ...request.headers(),
-              'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
-              'Accept-Encoding': 'gzip, deflate, br',
-              'Origin': 'https://pashahome.com',
-              'Referer': 'https://pashahome.com/',
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+              'Accept': 'image/*,*/*;q=0.8',
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             }
           });
         } else {
@@ -200,99 +194,58 @@ export class CatalogService {
         }
       });
 
-      page.on('requestfinished', request => {
-        const url = request.url();
-        if (request.resourceType() === 'image') {
-          console.log('✅ Resim başarıyla yüklendi:', url);
-          successRequests.push(url);
-        }
-      });
-
       page.on('requestfailed', request => {
-        const url = request.url();
         if (request.resourceType() === 'image') {
-          console.log('❌ Resim yüklenemedi:', url, 'Hata:', request.failure()?.errorText);
-          failedRequests.push(url);
+          console.log('❌ Resim yüklenemedi:', request.url().substring(0, 100) + '...');
         }
       });
 
       // HTML içeriğini yükle
       console.log('HTML içeriği yükleniyor...');
+      
+      // Önce basit HTML'i yükle, sonra kaynakları kontrol et
       await page.setContent(html, { 
-        waitUntil: 'networkidle0', 
-        timeout: 60000 // Timeout süresini artır
+        waitUntil: 'domcontentloaded', // daha hızlı yükleme
+        timeout: 30000 // timeout'u azalt
       });
       
-      // JavaScript ile resimlerin tam yüklenmesini bekle
-      await page.evaluate(() => {
-        return new Promise((resolveAll) => {
-          // Önce tüm img elementlerini toplayalım
-          const images = Array.from(document.querySelectorAll('img'));
-          console.log(`${images.length} resim elementi bulundu`);
-          
-          // Her resim yüklendiğinde veya yüklenemediğinde kontrol edeceğimiz sayaç
-          let loaded = 0;
-          
-          // Hiç resim yoksa hemen tamamlandı olarak işaretle
-          if (images.length === 0) {
-            resolveAll(true);
-            return;
+      console.log('HTML DOM yüklendi, kaynaklar kontrol ediliyor...');
+      
+      // Print için CSS ayarlarını inject et
+      await page.addStyleTag({
+        content: `
+          @media screen {
+            * {
+              -webkit-print-color-adjust: exact !important;
+              color-adjust: exact !important;
+            }
           }
           
-          // Her resim için yükleme işlemlerini kontrol et
-          images.forEach(img => {
-            // Resim zaten yüklenmişse sayacı artır
-            if (img.complete) {
-              loaded++;
-              if (loaded === images.length) resolveAll(true);
-              return;
-            }
-            
-            // Resim yüklendiğinde
-            img.addEventListener('load', () => {
-              loaded++;
-              if (loaded === images.length) resolveAll(true);
-            });
-            
-            // Resim yüklenemediğinde
-            img.addEventListener('error', () => {
-              // Resmi gizle ve hata mesajını göster
-              if (img instanceof HTMLImageElement) {
-                img.style.display = 'none';
-                const errorText = img.nextElementSibling;
-                if (errorText instanceof HTMLElement) {
-                  errorText.style.display = 'block';
-                }
-              }
-              
-              loaded++;
-              if (loaded === images.length) resolveAll(true);
-            });
-          });
-          
-          // Zaman aşımı olursa yine de devam et
-          setTimeout(() => resolveAll(false), 5000);
+          @page {
+            margin: 10mm;
+            size: A4;
+          }
+        `
+      });
+      
+      // Resimlerin durumunu kontrol et (basit versiyon)
+      try {
+        const imagesResult = await page.evaluate(() => {
+          const imgElements = Array.from(document.querySelectorAll('img'));
+          return {
+            totalImages: imgElements.length,
+            loadedImages: imgElements.filter(img => img.complete && img.naturalWidth > 0).length
+          };
         });
-      });
+        
+        console.log(`Resim durumu: ${imagesResult.loadedImages}/${imagesResult.totalImages} yüklendi`);
+      } catch (evalError) {
+        console.warn('Resim durum kontrolü atlandı:', evalError);
+      }
       
-      // Resimlerin durumunu kontrol et
-      const imagesResult = await page.evaluate(() => {
-        const imgElements = Array.from(document.querySelectorAll('img'));
-        return imgElements.map(img => ({
-          src: img.src,
-          complete: img.complete,
-          naturalWidth: img.naturalWidth,
-          naturalHeight: img.naturalHeight,
-          displayed: img.style.display !== 'none',
-          alt: img.alt
-        }));
-      });
-      
-      console.log('Resim durumları:', JSON.stringify(imagesResult, null, 2));
-      console.log(`Başarılı resim istekleri: ${successRequests.length}, Başarısız: ${failedRequests.length}`);
-      
-      // Tüm içeriklerin yüklenmesi için biraz daha bekle
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      // PDF hazırlığı için kısa bekleme
+      console.log('PDF hazırlığı için bekleniyor...');
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       // PDF olarak dışa aktar
       console.log('PDF oluşturuluyor...');
@@ -305,7 +258,9 @@ export class CatalogService {
           bottom: '10mm',
           left: '10mm'
         },
-        preferCSSPageSize: true
+        preferCSSPageSize: true,
+        displayHeaderFooter: false,
+        omitBackground: false
       });
       
       return Buffer.from(pdfBuffer);
@@ -644,23 +599,28 @@ export class CatalogService {
    */
   private async loadCatalogBackgroundImage(): Promise<string> {
     try {
-      console.log('Arka plan resmini yüklüyorum:', this.backgroundImagePath);
+      console.log('Arka plan resmini yüklüyorum:', this.backgroundImageUrl);
       
-      if (fs.existsSync(this.backgroundImagePath)) {
-        console.log('Arka plan resmi bulundu, okunuyor...');
-        const imageBuffer = fs.readFileSync(this.backgroundImagePath);
-        const base64Image = imageBuffer.toString('base64');
-        
-        console.log(`Arka plan resmi başarıyla okundu: ${Math.floor(base64Image.length / 1024)} KB`);
-        
-        return `data:image/jpeg;base64,${base64Image}`;
-      } else {
-        console.error('Arka plan resim dosyası bulunamadı:', this.backgroundImagePath);
-        return 'linear-gradient(135deg, #0f2027, #203a43, #2c5364)';
-      }
+      // URL'den görsel yükle
+      const backgroundImageDataUrl = await this.loadImageAsDataUrl(this.backgroundImageUrl);
+      
+      console.log('Arka plan resmi başarıyla yüklendi');
+      return backgroundImageDataUrl;
+      
     } catch (error) {
-      console.error('Arka plan resmi yüklenirken hata:', error);
-      return 'linear-gradient(135deg, #0f2027, #203a43, #2c5364)';
+      console.error('Arka plan resmi yüklenemedi:', error);
+      // Hata durumunda varsayılan bir arka plan rengi döndür
+      return 'data:image/svg+xml;base64,' + Buffer.from(`
+        <svg width="1200" height="1600" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#f8f9fa"/>
+              <stop offset="100%" style="stop-color:#e9ecef"/>
+            </linearGradient>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#bg)"/>
+        </svg>
+      `).toString('base64');
     }
   }
   
@@ -755,25 +715,28 @@ export class CatalogService {
     }
   }
 
+  /**
+   * Black logo SVG'sini yükler
+   */
   private async loadBlackLogo(): Promise<string> {
     try {
-      console.log('BlackLogo yükleniyor:', this.blackLogoPath);
+      console.log('Black logo yükleniyor:', this.blackLogoPath);
       
       if (fs.existsSync(this.blackLogoPath)) {
-        console.log('BlackLogo bulundu, okunuyor...');
-        const imageBuffer = fs.readFileSync(this.blackLogoPath);
-        const base64Image = imageBuffer.toString('base64');
+        console.log('Black logo bulundu, okunuyor...');
+        const svgContent = fs.readFileSync(this.blackLogoPath, 'utf8');
+        const base64Svg = Buffer.from(svgContent).toString('base64');
         
-        console.log(`BlackLogo başarıyla okundu: ${Math.floor(base64Image.length / 1024)} KB`);
+        console.log(`Black logo başarıyla okundu: ${Math.floor(base64Svg.length / 1024)} KB`);
         
-        return `data:image/svg+xml;base64,${base64Image}`;
+        return `data:image/svg+xml;base64,${base64Svg}`;
       } else {
-        console.error('BlackLogo dosyası bulunamadı:', this.blackLogoPath);
-        return 'linear-gradient(135deg, #0f2027, #203a43, #2c5364)';
+        console.error('Black logo dosyası bulunamadı:', this.blackLogoPath);
+        return '';
       }
     } catch (error) {
-      console.error('BlackLogo yüklenirken hata:', error);
-      return 'linear-gradient(135deg, #0f2027, #203a43, #2c5364)';
+      console.error('Black logo yüklenemedi:', error);
+      return '';
     }
   }
 }

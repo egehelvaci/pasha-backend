@@ -31,26 +31,36 @@
       width: 100%;
       height: 100vh;
       background: linear-gradient(135deg, #8B4513 0%, #D2691E  50%, #F4A460 100%);
-      background-image: url('{{blackLogo}}'), url('{{backgroundImage}}');
-      background-size: 200px auto, cover;
-      background-position: center center, center center;
-      background-repeat: no-repeat, no-repeat;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
       position: relative;
       page-break-after: always;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      padding: 60px 40px 40px 40px;
+      box-sizing: border-box;
     }
     
-    .cover-page::before {
-      content: "";
+    .cover-page-background {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(255, 255, 255, 0.1);
+      background-image: url('{{backgroundImage}}');
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+      z-index: 0;
+    }
+    
+    .cover-page-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.4);
       z-index: 1;
     }
     
@@ -59,16 +69,34 @@
       z-index: 2;
       text-align: center;
       color: white;
-      padding: 40px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .logo-section {
+      margin-bottom: 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .black-logo {
+      width: 180px;
+      height: auto;
+      margin-bottom: 30px;
+      filter: brightness(0) invert(1);
     }
     
     .logo-container {
-      background: rgba(255, 255, 255, 0.75);
-      padding: 30px;
-      border-radius: 15px;
-      margin-bottom: 30px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      background: rgba(255, 255, 255, 0.9);
+      padding: 40px 60px;
+      border-radius: 20px;
+      margin-top: 100px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
       backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.3);
     }
     
     .company-logo {
@@ -103,24 +131,34 @@
       width: 100%;
       min-height: 100vh;
       background: white;
-      background-image: url('{{backgroundImage}}');
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
       padding: 40px;
       box-sizing: border-box;
       page-break-before: always;
       position: relative;
+      -webkit-print-color-adjust: exact !important;
+      color-adjust: exact !important;
+      print-color-adjust: exact !important;
     }
     
-    .content-page::before {
-      content: "";
+    .content-page-background-img {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(255, 255, 255, 0.85);
+      object-fit: cover;
+      z-index: 0;
+      -webkit-print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
+    
+    .content-page-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.65);
       z-index: 1;
       pointer-events: none;
     }
@@ -141,7 +179,7 @@
       padding: 20px;
       padding-bottom: 20px;
       border-bottom: 3px solid #D2691E;
-      background: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.8);
       border-radius: 8px;
       backdrop-filter: blur(10px);
     }
@@ -153,16 +191,18 @@
     }
     
     .page-logo-img {
-      width: 60px;
+      width: 80px;
       height: 60px;
-      background: #8B4513;
-      border-radius: 50%;
+      background: transparent;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
-      font-weight: bold;
-      font-size: 24px;
+    }
+    
+    .page-logo-svg {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
     
     .page-company-name {
@@ -184,7 +224,7 @@
       margin: 30px 0 50px 0;
       letter-spacing: 1px;
       padding: 20px;
-      background: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.8);
       border-radius: 8px;
       backdrop-filter: blur(10px);
       text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
@@ -282,12 +322,23 @@
     
     /* Print Stilleri */
     @media print {
+      * {
+        -webkit-print-color-adjust: exact !important;
+        color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      
       .cover-page, .content-page {
         page-break-inside: avoid;
+        -webkit-print-color-adjust: exact !important;
+        color-adjust: exact !important;
       }
       
       .content-page {
-        background-attachment: local !important;
+        background-attachment: scroll !important;
+        background-size: cover !important;
+        background-position: center center !important;
+        background-repeat: no-repeat !important;
       }
       
       .product-item:hover {
@@ -300,7 +351,17 @@
 <body>
   <!-- Kapak Sayfası -->
   <div class="cover-page">
+    <!-- Arka Plan Görseli -->
+    <div class="cover-page-background"></div>
+    <div class="cover-page-overlay"></div>
+    
     <div class="cover-content">
+      <!-- Logo Bölümü -->
+      <div class="logo-section">
+        <img src="{{blackLogo}}" alt="{{companyName}} Logo" class="black-logo">
+      </div>
+      
+      <!-- Ana İçerik -->
       <div class="logo-container">
         <h1 class="company-name">{{companyName}}</h1>
         <p class="catalog-title">e-katalog</p>
@@ -313,11 +374,16 @@
   <!-- İçerik Sayfaları -->
   {{#each collections}}
     <div class="content-page">
+      <!-- Arka Plan Görseli -->
+      <img src="{{../backgroundImage}}" class="content-page-background-img" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0;" alt="">
+      <div class="content-page-overlay"></div>
+      
       <!-- Sayfa Başlığı -->
       <div class="page-header">
         <div class="page-logo">
-          <div class="page-logo-img">PH</div>
-          <span class="page-company-name">{{../companyName}}</span>
+          <div class="page-logo-img">
+            <img src="{{../blackLogo}}" alt="{{../companyName}} Logo" class="page-logo-svg">
+          </div>
         </div>
         <div class="page-catalog-info">
           <div>e-katalog</div>
