@@ -19,7 +19,8 @@
     "api:start": "node dist/server.js",
     "create-admin": "ts-node src/tools/create-admin-user.ts",
     "test:catalog": "node test-catalog-performance.js",
-    "test:catalog:prod": "API_URL=https://your-railway-url.railway.app node test-catalog-performance.js"
+    "test:catalog:railway": "API_URL=https://your-railway-url.railway.app node test-catalog-performance.js",
+    "test:catalog:local": "API_URL=http://localhost:3001 node test-catalog-performance.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.496.0",
