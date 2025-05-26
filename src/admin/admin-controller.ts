@@ -73,14 +73,51 @@ export class AdminController {
    */
   async createUser(req: Request, res: Response) {
     try {
-      const { username, email, password, name, surname, phoneNumber, userTypeId, store_id } = req.body
+      const { 
+        username, 
+        email, 
+        password, 
+        name, 
+        surname, 
+        phoneNumber, 
+        userTypeId, 
+        userTypeName, 
+        storeId, 
+        store_id,
+        credit,
+        debit 
+      } = req.body
       
       // Zorunlu alanları kontrol et
-      if (!username || !email || !password || !name || !surname || !userTypeId) {
+      if (!username || !email || !password || !name || !surname) {
         return res.status(400).json({
           success: false,
-          message: 'Tüm zorunlu alanları doldurmanız gerekiyor'
+          message: 'Username, email, password, name ve surname zorunlu alanlarıdır'
         })
+      }
+
+      // UserType ID'sini belirle (userTypeName varsa name'e göre ID bul)
+      let finalUserTypeId = userTypeId;
+      if (userTypeName && !userTypeId) {
+        const userType = await prisma.userType.findFirst({
+          where: { name: userTypeName }
+        });
+        
+        if (!userType) {
+          return res.status(400).json({
+            success: false,
+            message: `Geçersiz kullanıcı tipi: ${userTypeName}`
+          });
+        }
+        
+        finalUserTypeId = userType.id;
+      }
+
+      if (!finalUserTypeId) {
+        return res.status(400).json({
+          success: false,
+          message: 'userTypeId veya userTypeName belirtilmelidir'
+        });
       }
       
       // Kullanıcı adı ve email benzersizlik kontrolü
@@ -103,6 +140,9 @@ export class AdminController {
       // Şifreyi hashle
       const hashedPassword = await userService.hashPassword(password)
       
+      // Store ID'sini belirle (hem storeId hem store_id desteği)
+      const finalStoreId = storeId || store_id || null;
+      
       // Yeni kullanıcı oluştur
       const newUser = await prisma.user.create({
         data: {
@@ -111,9 +151,11 @@ export class AdminController {
           password: hashedPassword,
           name,
           surname,
-          phoneNumber,
-          userTypeId: parseInt(userTypeId),
-          store_id: store_id || null
+          phoneNumber: phoneNumber || null,
+          userTypeId: parseInt(finalUserTypeId),
+          store_id: finalStoreId,
+          credit: credit ? parseFloat(credit) : 0,
+          debit: debit ? parseFloat(debit) : 0
         },
         include: {
           userType: true,
@@ -126,6 +168,7 @@ export class AdminController {
         data: newUser
       })
     } catch (error: any) {
+      console.error('Kullanıcı oluşturma hatası:', error);
       return res.status(500).json({
         success: false,
         message: error.message || 'Kullanıcı oluşturulamadı'
