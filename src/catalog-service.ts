@@ -306,11 +306,34 @@ export class CatalogService {
   ): Promise<CatalogTemplateData> {
     console.log(`Katalog için ${products.length} ürün hazırlanıyor...`);
 
+    // Önce tüm ürün resimlerini paralel olarak yükle
+    console.log('🚀 Ürün resimleri paralel olarak yükleniyor...');
+    const imageLoadPromises = products.map(async (product) => {
+      if (product.productImage) {
+        try {
+          console.log(`⏳ Resim yükleniyor: ${product.name}`);
+          product.productImage = await this.loadImageAsDataUrl(product.productImage);
+          console.log(`✅ Resim yüklendi: ${product.name}`);
+        } catch (error) {
+          console.error(`❌ Resim yüklenemedi: ${product.name}`, error instanceof Error ? error.message : String(error));
+          product.productImage = this.getDefaultImageDataUrl();
+        }
+      } else {
+        product.productImage = this.getDefaultImageDataUrl();
+      }
+      return product;
+    });
+
+    // Tüm resimlerin yüklenmesini bekle
+    const productsWithImages = await Promise.allSettled(imageLoadPromises);
+    console.log('📸 Tüm ürün resimleri işlendi');
+
     // Ürünleri koleksiyonlara göre grupla
     const productsByCollection: ProductsByCollection = {};
     
     // Ürünleri koleksiyonlara göre grupla
-    for (const product of products) {
+    for (let i = 0; i < products.length; i++) {
+      const product = products[i];
       const collectionId = product.collectionId || 'uncategorized';
       const collectionName = product.collection.name || 'Kategorisiz Ürünler';
       
@@ -322,37 +345,35 @@ export class CatalogService {
         };
       }
       
-      // Ürün resmini düzenle
-      if (product.productImage) {
-        try {
-          // Tebi.io linkleri için özel işlem yap
-          if (product.productImage.includes('tebi.io')) {
-            const presignedUrl = await this.getPresignedUrl(product.productImage);
-            if (presignedUrl) {
-              product.productImage = await this.loadImageAsDataUrl(presignedUrl);
-            } else {
-              // Ön imzalı URL alınamazsa orijinal URL'yi kullan
-              product.productImage = await this.loadImageAsDataUrl(product.productImage);
-            }
-          } else {
-            // Diğer tüm linkler için normal işlem
-            product.productImage = await this.loadImageAsDataUrl(product.productImage);
-          }
-        } catch (error) {
-          console.error(`Ürün resmi yüklenirken hata: ${product.productImage}`, error);
-          product.productImage = this.getDefaultImageDataUrl();
-        }
-      } else {
-        product.productImage = this.getDefaultImageDataUrl();
-      }
-      
       productsByCollection[collectionId].products.push(product);
     }
     
-    // Koleksiyonları diziye dönüştür
-    const collections = Object.values(productsByCollection)
+    // Koleksiyonları diziye dönüştür ve sayfalara böl
+    const collections: CollectionProducts[] = [];
+    let pageCounter = 1;
+    
+    const sortedCollections = Object.values(productsByCollection)
       .filter(collection => collection.products.length > 0)
       .sort((a, b) => a.collectionName.localeCompare(b.collectionName, 'tr'));
+    
+    // Her koleksiyonu sayfalara böl (her sayfada maksimum 9 ürün)
+    for (const collection of sortedCollections) {
+      const productsPerPage = 9;
+      const totalProducts = collection.products.length;
+      const totalPages = Math.ceil(totalProducts / productsPerPage);
+      
+      for (let page = 0; page < totalPages; page++) {
+        const startIndex = page * productsPerPage;
+        const endIndex = Math.min(startIndex + productsPerPage, totalProducts);
+        const pageProducts = collection.products.slice(startIndex, endIndex);
+        
+        collections.push({
+          collectionName: collection.collectionName,
+          products: pageProducts,
+          pageNumber: pageCounter++
+        });
+      }
+    }
     
     // Arka plan resmini ve fontları yükle
     const backgroundImage = await this.loadCatalogBackgroundImage();
@@ -362,7 +383,7 @@ export class CatalogService {
     const now = new Date();
     
     return {
-      companyName: companyName || 'Ürün Kataloğu',
+      companyName: companyName || 'PAŞA HOME',
       companyLogoUrl,
       formatDate: now.toLocaleDateString('tr-TR'),
       currentYear: now.getFullYear(),
@@ -378,60 +399,161 @@ export class CatalogService {
    */
   private async loadImageAsDataUrl(imageUrl: string): Promise<string> {
     try {
-      // Tebi için kimlik doğrulama bilgilerini kontrol et
-      const headers: Record<string, string> = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8'
-      };
+      console.log(`Görsel yükleniyor: ${imageUrl}`);
       
-      // Tebi.io görselleri için kimlik doğrulama
-      if (imageUrl.includes('tebi.io') && process.env.TEBI_ACCESS_KEY && process.env.TEBI_SECRET_KEY) {
-        console.log(`Tebi.io erişim bilgileri kullanılıyor: Access Key: ${process.env.TEBI_ACCESS_KEY.substring(0, 4)}...`);
-        
-        // Direkt bucket URL'i yerine, kendi sunucumuzdan tebi servisini kullanarak, 
-        // veya kendi servisimizden presign url alıp deneyelim
-        const presignedUrl = await this.getPresignedUrl(imageUrl);
-        if (presignedUrl) {
-          console.log('Presigned URL ile devam ediliyor:', presignedUrl.substring(0, 30) + '...');
-          imageUrl = presignedUrl;
-        }
-      }
-      
-      // Görseli indir
-      const response = await axios.get(imageUrl, {
-        responseType: 'arraybuffer',
-        headers,
-        timeout: 10000
+      // 5 saniye timeout ekle
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout')), 5000);
       });
       
-      // MIME tipini belirle
-      let contentType = response.headers['content-type'];
-      if (!contentType || contentType === 'application/octet-stream') {
-        // MIME tipi yoksa veya bilinmiyorsa, dosya uzantısından tahmin et
-        if (imageUrl.endsWith('.jpg') || imageUrl.endsWith('.jpeg')) {
-          contentType = 'image/jpeg';
-        } else if (imageUrl.endsWith('.png')) {
-          contentType = 'image/png';
-        } else if (imageUrl.endsWith('.gif')) {
-          contentType = 'image/gif';
-        } else if (imageUrl.endsWith('.webp')) {
-          contentType = 'image/webp';
-        } else {
-          contentType = 'image/jpeg'; // Varsayılan olarak JPEG kabul et
-        }
+      // Tebi.io URL'leri için özel işlem
+      if (imageUrl.includes('tebi.io')) {
+        return await Promise.race([this.loadTebiImage(imageUrl), timeoutPromise]);
       }
       
-      // Binary veriyi base64'e çevir
-      const base64 = Buffer.from(response.data, 'binary').toString('base64');
+      // Diğer URL'ler için normal işlem
+      return await Promise.race([this.loadRegularImage(imageUrl), timeoutPromise]);
       
-      // Data URL formatı: data:[<MIME-type>][;base64],<data>
-      return `data:${contentType};base64,${base64}`;
     } catch (error) {
-      console.error(`Görsel yüklenemedi: ${imageUrl}`, error);
-      
-      // Hata durumunda varsayılan bir görsel döndür
+      console.error(`Görsel yüklenemedi (${error instanceof Error ? error.message : 'timeout'}): ${imageUrl}`);
       return this.getDefaultImageDataUrl();
     }
+  }
+  
+  /**
+   * Tebi.io görsellerini yükler
+   */
+  private async loadTebiImage(imageUrl: string): Promise<string> {
+    console.log('Tebi.io görseli yükleniyor:', imageUrl);
+    
+    // Önce presigned URL ile deneyelim
+    try {
+      const presignedUrl = await this.getPresignedUrl(imageUrl);
+      if (presignedUrl && presignedUrl !== imageUrl) {
+        console.log('Presigned URL ile deneniyor...');
+        return await this.loadRegularImage(presignedUrl);
+      }
+    } catch (presignError) {
+      console.warn('Presigned URL alınamadı:', presignError);
+    }
+    
+    // Presigned URL başarısızsa, farklı yöntemler deneyelim
+    const attempts = [
+      // 1. Orijinal URL
+      imageUrl,
+      // 2. HTTPS zorla
+      imageUrl.replace('http://', 'https://'),
+      // 3. Tebi.io public URL formatı
+      imageUrl.replace(/^https?:\/\/[^\/]+\//, 'https://s3.tebi.io/pasha-home-bucket/')
+    ];
+    
+    for (const url of attempts) {
+      try {
+        console.log(`Tebi URL denemesi: ${url}`);
+        return await this.loadRegularImage(url);
+      } catch (error) {
+        console.warn(`Tebi URL başarısız: ${url}`, error instanceof Error ? error.message : String(error));
+        continue;
+      }
+    }
+    
+    throw new Error('Tüm Tebi URL denemeleri başarısız');
+  }
+  
+  /**
+   * Normal görsel URL'lerini yükler
+   */
+  private async loadRegularImage(imageUrl: string): Promise<string> {
+    const headers: Record<string, string> = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+      'Accept-Language': 'tr-TR,tr;q=0.9,en;q=0.8',
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache'
+    };
+    
+    // Tebi.io için özel header'lar
+    if (imageUrl.includes('tebi.io')) {
+      headers['Origin'] = 'https://pashahome.com';
+      headers['Referer'] = 'https://pashahome.com/';
+      
+      // Eğer environment variable'lar varsa ekle
+      if (process.env.TEBI_ACCESS_KEY && process.env.TEBI_SECRET_KEY) {
+        console.log('Tebi erişim bilgileri kullanılıyor...');
+        // AWS S3 tarzı authorization header'ı eklenebilir
+      }
+    }
+    
+    const response = await axios.get(imageUrl, {
+      responseType: 'arraybuffer',
+      headers,
+      timeout: 15000,
+      maxRedirects: 5,
+      validateStatus: (status) => status < 400
+    });
+    
+    if (!response.data || response.data.length === 0) {
+      throw new Error('Boş görsel verisi alındı');
+    }
+    
+    // MIME tipini belirle
+    let contentType = response.headers['content-type'];
+    if (!contentType || contentType === 'application/octet-stream') {
+      contentType = this.detectImageMimeType(imageUrl, response.data);
+    }
+    
+    // Binary veriyi base64'e çevir
+    const base64 = Buffer.from(response.data).toString('base64');
+    
+    console.log(`Görsel başarıyla yüklendi: ${Math.floor(base64.length / 1024)} KB, MIME: ${contentType}`);
+    
+    return `data:${contentType};base64,${base64}`;
+  }
+  
+  /**
+   * Görsel MIME tipini tespit eder
+   */
+  private detectImageMimeType(url: string, data: ArrayBuffer): string {
+    // Dosya uzantısından tahmin et
+    const urlLower = url.toLowerCase();
+    if (urlLower.includes('.jpg') || urlLower.includes('.jpeg')) {
+      return 'image/jpeg';
+    } else if (urlLower.includes('.png')) {
+      return 'image/png';
+    } else if (urlLower.includes('.gif')) {
+      return 'image/gif';
+    } else if (urlLower.includes('.webp')) {
+      return 'image/webp';
+    } else if (urlLower.includes('.svg')) {
+      return 'image/svg+xml';
+    }
+    
+    // Binary veriden magic number'lara bakarak tespit et
+    const bytes = new Uint8Array(data.slice(0, 12));
+    
+    // JPEG: FF D8 FF
+    if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) {
+      return 'image/jpeg';
+    }
+    
+    // PNG: 89 50 4E 47 0D 0A 1A 0A
+    if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) {
+      return 'image/png';
+    }
+    
+    // GIF: 47 49 46 38
+    if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x38) {
+      return 'image/gif';
+    }
+    
+    // WebP: 52 49 46 46 ... 57 45 42 50
+    if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
+        bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) {
+      return 'image/webp';
+    }
+    
+    // Varsayılan olarak JPEG
+    return 'image/jpeg';
   }
   
   /**
@@ -474,8 +596,23 @@ export class CatalogService {
    * Varsayılan görsel için data URL döndürür
    */
   private getDefaultImageDataUrl(): string {
-    // Basit 1x1 şeffaf PNG
-    return 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
+    // Daha görünür bir placeholder - gri arka plan üzerinde "Resim Yok" yazısı
+    const svgPlaceholder = `
+      <svg width="300" height="300" xmlns="http://www.w3.org/2000/svg">
+        <rect width="300" height="300" fill="#f0f0f0" stroke="#ddd" stroke-width="2"/>
+        <text x="150" y="140" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#999">
+          Resim Yok
+        </text>
+        <text x="150" y="160" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#bbb">
+          No Image
+        </text>
+        <circle cx="150" cy="100" r="20" fill="none" stroke="#ccc" stroke-width="2"/>
+        <path d="M140 90 L160 90 M150 80 L150 100 M145 105 L155 105" stroke="#ccc" stroke-width="2" fill="none"/>
+      </svg>
+    `;
+    
+    const base64Svg = Buffer.from(svgPlaceholder).toString('base64');
+    return `data:image/svg+xml;base64,${base64Svg}`;
   }
 
   /**
