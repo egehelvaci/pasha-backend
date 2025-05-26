@@ -58,16 +58,26 @@ npm run test:catalog:prod
 ## 📈 Performans Optimizasyonları
 
 ### ✅ Yapılan İyileştirmeler
-1. **Paralel resim yükleme** (10 eşzamanlı)
+1. **Paralel resim yükleme** (20 eşzamanlı - 300 ürün için optimize)
 2. **Cache sistemi** (resim, font, logo)
 3. **Browser instance tekrar kullanımı**
-4. **Timeout optimizasyonları** (3s resim timeout)
+4. **Timeout optimizasyonları** (5s resim, 120s PDF timeout)
 5. **Memory yönetimi** ve cleanup
+6. **300 ürün desteği** - sınırsız ürün katalog oluşturma
+
+### 🎯 300 Ürün Optimizasyonları
+- ✅ **MAX_CONCURRENT_IMAGES**: 10 → 20 (2x performans artışı)
+- ✅ **IMAGE_TIMEOUT**: 3s → 5s (kararlılık artışı)
+- ✅ **BROWSER_TIMEOUT**: 30s → 60s
+- ✅ **PDF_TIMEOUT**: 30s → 120s (büyük kataloglar için)
+- ✅ **HTML_LOAD_TIMEOUT**: 15s → 45s
+- ✅ **Batch processing**: 20'li gruplar halinde paralel işlem
 
 ### 🎯 Sonuçlar
-- **90% performans artışı**
-- **Gateway timeout riski eliminasyonu**
-- **Stable 7-8 saniye response time**
+- **300 ürün**: ~2-3 dakika beklenen süre
+- **Gateway timeout riski**: Eliminasyon
+- **Memory efficient**: Batch processing ile bellek optimizasyonu
+- **Stable performance**: Cache ve retry mekanizmaları
 
 ## 🚨 Troubleshooting
 

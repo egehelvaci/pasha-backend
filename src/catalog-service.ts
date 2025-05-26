@@ -52,12 +52,14 @@ export class CatalogService {
   private robotoRegularFontPath = path.resolve(__dirname, 'assets/fonts/Roboto-Regular.ttf');
   private robotoBoldFontPath = path.resolve(__dirname, 'assets/fonts/Roboto-Bold.ttf');
   
-  // 🚀 Performance optimizations
+  // 🚀 Performance optimizations - 300 ürün için optimize edildi
   private static browserInstance: Browser | null = null;
   private imageCache = new Map<string, string>();
-  private readonly MAX_CONCURRENT_IMAGES = 10; // Paralel resim yükleme limiti
-  private readonly IMAGE_TIMEOUT = 3000; // 3 saniye (15'ten düşürüldü)
-  private readonly BROWSER_TIMEOUT = 30000; // 30 saniye browser timeout
+  private readonly MAX_CONCURRENT_IMAGES = 20; // 300 ürün için paralel resim yükleme limiti artırıldı
+  private readonly IMAGE_TIMEOUT = 5000; // 5 saniye resim timeout (3'ten artırıldı)
+  private readonly BROWSER_TIMEOUT = 60000; // 60 saniye browser timeout (30'dan artırıldı)
+  private readonly PDF_TIMEOUT = 120000; // 120 saniye PDF timeout
+  private readonly HTML_LOAD_TIMEOUT = 45000; // 45 saniye HTML yükleme timeout
 
   constructor() {
     // Handlebars yardımcı fonksiyonları
@@ -166,10 +168,10 @@ export class CatalogService {
         }
       });
 
-      // HTML'i hızlı yükle
+      // HTML'i hızlı yükle - 300 ürün için timeout artırıldı
       await page.setContent(html, { 
         waitUntil: 'domcontentloaded',
-        timeout: 15000 // 15 saniye timeout
+        timeout: this.HTML_LOAD_TIMEOUT // 45 saniye timeout (15'ten artırıldı)
       });
       
       // CSS inject et
@@ -182,10 +184,10 @@ export class CatalogService {
         `
       });
       
-      // Kısa bekleme (2 saniyeden 500ms'ye düşürüldü)
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Daha uzun bekleme (300 ürün için)
+      await new Promise(resolve => setTimeout(resolve, 2000)); // 500ms'den 2s'ye artırıldı
       
-      // PDF oluştur
+      // PDF oluştur - 300 ürün için timeout artırıldı
       const pdfBuffer = await page.pdf({
         format: 'A4',
         printBackground: true,
@@ -197,7 +199,7 @@ export class CatalogService {
         },
         preferCSSPageSize: true,
         displayHeaderFooter: false,
-        timeout: 30000 // 30 saniye PDF timeout
+        timeout: this.PDF_TIMEOUT // 120 saniye PDF timeout (30'dan artırıldı)
       });
       
       return Buffer.from(pdfBuffer);
