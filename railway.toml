@@ -10,4 +10,7 @@ healthcheckDisabled = false
 restartPolicyType = "on_failure"
 
 [postgres]
-database = "railway" 
+database = "railway"
+
+[environments.production]
+NODE_ENV = "production" 

@@ -46,7 +46,7 @@ interface CatalogTemplateData {
 export class CatalogService {
   private collectionService = new CollectionService();
   private templatePath = path.resolve(__dirname, 'templates/catalog.hbs');
-  private backgroundImagePath = path.join(process.cwd(), 'src', 'assets', 'images', 'catalog-bg.jpg');
+  private backgroundImagePath = path.join(__dirname, 'assets', 'images', 'catalog-bg.jpg');
   private robotoRegularFontPath = path.resolve(__dirname, 'assets/fonts/Roboto-Regular.ttf');
   private robotoBoldFontPath = path.resolve(__dirname, 'assets/fonts/Roboto-Bold.ttf');
 
