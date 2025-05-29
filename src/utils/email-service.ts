@@ -53,13 +53,23 @@ export class EmailService {
   private normalizeUrl(url: string): string {
     if (!url) return url
     
-    // Çift protokol durumunu düzelt
-    if (url.includes('://') && url.indexOf('://') !== url.lastIndexOf('://')) {
-      // İkinci protokolden sonrasını al
-      const lastProtocolIndex = url.lastIndexOf('://')
-      const protocol = url.substring(0, url.indexOf('://') + 3)
-      const domain = url.substring(lastProtocolIndex + 3)
-      return protocol + domain
+    // Çift protokol durumunu düzelt (https://https:// gibi)
+    if (url.includes('://')) {
+      // İlk protokolü bul
+      const firstProtocolIndex = url.indexOf('://')
+      const protocol = url.substring(0, firstProtocolIndex + 3)
+      
+      // Protokolden sonraki kısmı al
+      let remaining = url.substring(firstProtocolIndex + 3)
+      
+      // Eğer remaining kısmında tekrar protokol varsa, onu kaldır
+      if (remaining.startsWith('http://') || remaining.startsWith('https://')) {
+        const secondProtocolIndex = remaining.indexOf('://')
+        remaining = remaining.substring(secondProtocolIndex + 3)
+      }
+      
+      // Temiz URL'yi oluştur
+      return protocol + remaining
     }
     
     // Protokol yoksa https ekle
@@ -78,6 +88,7 @@ export class EmailService {
       const frontendUrl = this.getFrontendUrl()
       const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`
       
+      console.log(`Frontend URL: ${frontendUrl}`)
       console.log(`Şifre sıfırlama linki oluşturuldu: ${resetUrl}`)
       
       const mailOptions = {
