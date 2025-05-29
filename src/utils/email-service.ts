@@ -26,7 +26,7 @@ export class EmailService {
     // 3. Default local URL
     
     if (process.env.FRONTEND_URL) {
-      return process.env.FRONTEND_URL
+      return this.normalizeUrl(process.env.FRONTEND_URL)
     }
 
     // Production ortamında (Vercel, Railway vs.)
@@ -37,14 +37,37 @@ export class EmailService {
       }
       // Railway URL'i varsa kullan
       if (process.env.RAILWAY_STATIC_URL) {
-        return process.env.RAILWAY_STATIC_URL
+        return this.normalizeUrl(process.env.RAILWAY_STATIC_URL)
       }
       // Genel production URL
-      return process.env.PRODUCTION_FRONTEND_URL || 'https://pasha-frontend.vercel.app'
+      return this.normalizeUrl(process.env.PRODUCTION_FRONTEND_URL || 'https://pasha-frontend.vercel.app')
     }
 
     // Development ortamında
     return 'http://localhost:3000'
+  }
+
+  /**
+   * URL'yi normalize et (çift protokol sorununu düzelt)
+   */
+  private normalizeUrl(url: string): string {
+    if (!url) return url
+    
+    // Çift protokol durumunu düzelt
+    if (url.includes('://') && url.indexOf('://') !== url.lastIndexOf('://')) {
+      // İkinci protokolden sonrasını al
+      const lastProtocolIndex = url.lastIndexOf('://')
+      const protocol = url.substring(0, url.indexOf('://') + 3)
+      const domain = url.substring(lastProtocolIndex + 3)
+      return protocol + domain
+    }
+    
+    // Protokol yoksa https ekle
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      return `https://${url}`
+    }
+    
+    return url
   }
 
   /**
