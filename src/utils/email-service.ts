@@ -62,28 +62,44 @@ export class EmailService {
         to: email,
         subject: 'Şifre Sıfırlama Talebi',
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #333;">Şifre Sıfırlama Talebi</h2>
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #333; text-align: center;">Şifre Sıfırlama Talebi</h2>
             <p>Merhaba ${userName},</p>
             <p>Hesabınız için şifre sıfırlama talebinde bulundunuz. Aşağıdaki bağlantıya tıklayarak yeni şifrenizi belirleyebilirsiniz:</p>
+            
+            <!-- Buton ve Link -->
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${resetUrl}" 
-                 style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
-                Şifremi Sıfırla
-              </a>
+              <table cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                <tr>
+                  <td style="background-color: #007bff; border-radius: 5px; padding: 0;">
+                    <a href="${resetUrl}" 
+                       style="display: inline-block; color: white; text-decoration: none; padding: 15px 30px; font-weight: bold; border-radius: 5px;">
+                      Şifremi Sıfırla
+                    </a>
+                  </td>
+                </tr>
+              </table>
             </div>
+            
+            <!-- Açık URL -->
+            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <p style="margin: 0; font-size: 14px; color: #666;">
+                <strong>Buton çalışmıyorsa, aşağıdaki bağlantıyı kopyalayıp tarayıcınıza yapıştırın:</strong>
+              </p>
+              <p style="margin: 10px 0 0 0; word-break: break-all;">
+                <a href="${resetUrl}" style="color: #007bff; text-decoration: underline;">${resetUrl}</a>
+              </p>
+            </div>
+            
             <p style="color: #666; font-size: 14px;">
-              Bu bağlantı 1 saat boyunca geçerlidir. Eğer şifre sıfırlama talebinde bulunmadıysanız, bu email'i görmezden gelebilirsiniz.
+              ⏰ Bu bağlantı <strong>1 saat</strong> boyunca geçerlidir. Eğer şifre sıfırlama talebinde bulunmadıysanız, bu email'i görmezden gelebilirsiniz.
             </p>
-            <p style="color: #666; font-size: 14px;">
-              Bağlantı çalışmıyorsa, aşağıdaki URL'yi tarayıcınıza kopyalayabilirsiniz:<br>
-              ${resetUrl}
-            </p>
+            
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-            <p style="color: #999; font-size: 12px;">
+            <p style="color: #999; font-size: 12px; text-align: center;">
               Bu email otomatik olarak gönderilmiştir. Lütfen yanıtlamayın.
             </p>
-            <p style="color: #999; font-size: 12px;">
+            <p style="color: #999; font-size: 12px; text-align: center;">
               Environment: ${process.env.NODE_ENV || 'development'} | Frontend: ${frontendUrl}
             </p>
           </div>
