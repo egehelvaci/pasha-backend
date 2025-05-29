@@ -15,4 +15,5 @@ database = "railway"
 
 [environments.production]
 NODE_ENV = "production"
-PUPPETEER_EXECUTABLE_PATH = "/usr/bin/chromium-browser" 
+PUPPETEER_EXECUTABLE_PATH = "/usr/bin/chromium-browser"
+FRONTEND_URL = "https://pasha-frontend.vercel.app" 

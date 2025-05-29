@@ -20,32 +20,46 @@ export class EmailService {
    * Frontend URL'ini environment'a göre belirle
    */
   private getFrontendUrl(): string {
-    // Öncelik sırası:
-    // 1. FRONTEND_URL environment variable
-    // 2. NODE_ENV'e göre otomatik belirleme
-    // 3. Default local URL
+    console.log('\n=== FRONTEND URL DEBUG ===')
+    console.log('NODE_ENV:', process.env.NODE_ENV)
+    console.log('FRONTEND_URL:', process.env.FRONTEND_URL)
+    console.log('VERCEL_URL:', process.env.VERCEL_URL)
+    console.log('RAILWAY_STATIC_URL:', process.env.RAILWAY_STATIC_URL)
+    console.log('==========================')
     
+    // 1. Öncelik: FRONTEND_URL environment variable
     if (process.env.FRONTEND_URL) {
-      return this.normalizeUrl(process.env.FRONTEND_URL)
+      const result = this.normalizeUrl(process.env.FRONTEND_URL)
+      console.log('✅ Using FRONTEND_URL:', result)
+      return result
     }
 
-    // Production ortamında (Vercel, Railway vs.)
+    // 2. Production ortamında platform-specific URL'leri kullan
     if (process.env.NODE_ENV === 'production') {
-      // Vercel URL'i varsa kullan
+      // Vercel deployment
       if (process.env.VERCEL_URL) {
-        return `https://${process.env.VERCEL_URL}`
+        const result = this.normalizeUrl(process.env.VERCEL_URL)
+        console.log('✅ Using VERCEL_URL:', result)
+        return result
       }
-      // Railway URL'i varsa kullan
+      
+      // Railway deployment
       if (process.env.RAILWAY_STATIC_URL) {
-        return this.normalizeUrl(process.env.RAILWAY_STATIC_URL)
+        const result = this.normalizeUrl(process.env.RAILWAY_STATIC_URL)
+        console.log('✅ Using RAILWAY_STATIC_URL:', result)
+        return result
       }
-      // Genel production URL
-      const defaultUrl = process.env.PRODUCTION_FRONTEND_URL || 'https://pasha-frontend.vercel.app'
-      return this.normalizeUrl(defaultUrl)
+      
+      // Fallback production URL
+      const fallbackUrl = 'https://pasha-frontend.vercel.app'
+      console.log('⚠️ Using fallback production URL:', fallbackUrl)
+      return fallbackUrl
     }
 
-    // Development ortamında
-    return 'http://localhost:3000'
+    // 3. Development ortamında
+    const devUrl = 'http://localhost:3000'
+    console.log('✅ Using development URL:', devUrl)
+    return devUrl
   }
 
   /**
@@ -54,24 +68,24 @@ export class EmailService {
   private normalizeUrl(url: string): string {
     if (!url) return url
     
-    // Çift protokol durumunu düzelt (https://https:// gibi)
-    let result = url
+    console.log('🔧 normalizeUrl input:', url)
     
-    // Tüm protokolleri temizle ve sadece bir tane bırak
-    const protocolRegex = /(https?:\/\/)+/g
-    const matches = url.match(protocolRegex)
+    // URL'yi temizle
+    let result = url.trim()
     
-    if (matches && matches.length > 0) {
-      // En son protokolü al (genellikle https://)
-      const protocol = matches[matches.length - 1]
-      // Tüm protokolleri kaldır ve sadece birini ekle
-      result = url.replace(protocolRegex, '')
-      result = protocol + result
-    } else if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      // Protokol yoksa https ekle
-      result = `https://${url}`
+    // Çift protokol sorununu düzelt
+    // https://https:// veya http://https:// gibi durumları temizle
+    result = result.replace(/^(https?:\/\/)+/g, 'https://')
+    
+    // Eğer hiç protokol yoksa https ekle
+    if (!result.startsWith('http://') && !result.startsWith('https://')) {
+      result = `https://${result}`
     }
     
+    // Son slash'i kaldır (eğer varsa)
+    result = result.replace(/\/$/, '')
+    
+    console.log('🔧 normalizeUrl final output:', result)
     return result
   }
 
@@ -82,6 +96,11 @@ export class EmailService {
     try {
       const frontendUrl = this.getFrontendUrl()
       const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`
+      
+      console.log('\n=== FINAL EMAIL URL ===')
+      console.log('Frontend URL:', frontendUrl)
+      console.log('Reset URL:', resetUrl)
+      console.log('=======================\n')
       
       const mailOptions = {
         from: process.env.SMTP_FROM || process.env.SMTP_USER,
@@ -138,8 +157,10 @@ export class EmailService {
       }
 
       const result = await this.transporter.sendMail(mailOptions)
+      console.log('✅ Email gönderildi, messageId:', result.messageId)
       return result
     } catch (error) {
+      console.error('❌ Email gönderme hatası:', error)
       throw new Error('Email gönderilemedi')
     }
   }
