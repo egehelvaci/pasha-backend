@@ -103,16 +103,21 @@ export class EmailService {
             
             <!-- Buton ve Link -->
             <div style="text-align: center; margin: 30px 0;">
-              <table cellpadding="0" cellspacing="0" style="margin: 0 auto;">
-                <tr>
-                  <td style="background-color: #007bff; border-radius: 5px; padding: 0;">
-                    <a href="${resetUrl}" 
-                       style="display: inline-block; color: white; text-decoration: none; padding: 15px 30px; font-weight: bold; border-radius: 5px;">
-                      Şifremi Sıfırla
-                    </a>
-                  </td>
-                </tr>
-              </table>
+              <!-- Basit buton yaklaşımı -->
+              <div style="display: inline-block; background-color: #007bff; border-radius: 5px; padding: 15px 30px;">
+                <a href="${resetUrl}" 
+                   style="color: white !important; text-decoration: none !important; font-weight: bold; font-size: 16px; display: block;">
+                  Şifremi Sıfırla
+                </a>
+              </div>
+              
+              <!-- Alternatif: Sadece link -->
+              <div style="margin-top: 15px;">
+                <a href="${resetUrl}" 
+                   style="color: #007bff; text-decoration: underline; font-weight: bold; font-size: 16px;">
+                  → Şifre Sıfırlama Sayfasına Git
+                </a>
+              </div>
             </div>
             
             <!-- Açık URL -->
