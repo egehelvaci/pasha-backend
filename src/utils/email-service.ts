@@ -40,7 +40,8 @@ export class EmailService {
         return this.normalizeUrl(process.env.RAILWAY_STATIC_URL)
       }
       // Genel production URL
-      return this.normalizeUrl(process.env.PRODUCTION_FRONTEND_URL || 'https://pasha-frontend.vercel.app')
+      const defaultUrl = process.env.PRODUCTION_FRONTEND_URL || 'https://pasha-frontend.vercel.app'
+      return this.normalizeUrl(defaultUrl)
     }
 
     // Development ortamında
@@ -54,30 +55,24 @@ export class EmailService {
     if (!url) return url
     
     // Çift protokol durumunu düzelt (https://https:// gibi)
-    if (url.includes('://')) {
-      // İlk protokolü bul
-      const firstProtocolIndex = url.indexOf('://')
-      const protocol = url.substring(0, firstProtocolIndex + 3)
-      
-      // Protokolden sonraki kısmı al
-      let remaining = url.substring(firstProtocolIndex + 3)
-      
-      // Eğer remaining kısmında tekrar protokol varsa, onu kaldır
-      if (remaining.startsWith('http://') || remaining.startsWith('https://')) {
-        const secondProtocolIndex = remaining.indexOf('://')
-        remaining = remaining.substring(secondProtocolIndex + 3)
-      }
-      
-      // Temiz URL'yi oluştur
-      return protocol + remaining
+    let result = url
+    
+    // Tüm protokolleri temizle ve sadece bir tane bırak
+    const protocolRegex = /(https?:\/\/)+/g
+    const matches = url.match(protocolRegex)
+    
+    if (matches && matches.length > 0) {
+      // En son protokolü al (genellikle https://)
+      const protocol = matches[matches.length - 1]
+      // Tüm protokolleri kaldır ve sadece birini ekle
+      result = url.replace(protocolRegex, '')
+      result = protocol + result
+    } else if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      // Protokol yoksa https ekle
+      result = `https://${url}`
     }
     
-    // Protokol yoksa https ekle
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      return `https://${url}`
-    }
-    
-    return url
+    return result
   }
 
   /**
@@ -87,9 +82,6 @@ export class EmailService {
     try {
       const frontendUrl = this.getFrontendUrl()
       const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`
-      
-      console.log(`Frontend URL: ${frontendUrl}`)
-      console.log(`Şifre sıfırlama linki oluşturuldu: ${resetUrl}`)
       
       const mailOptions = {
         from: process.env.SMTP_FROM || process.env.SMTP_USER,
@@ -146,10 +138,8 @@ export class EmailService {
       }
 
       const result = await this.transporter.sendMail(mailOptions)
-      console.log('Şifre sıfırlama email\'i gönderildi:', result.messageId)
       return result
     } catch (error) {
-      console.error('Email gönderme hatası:', error)
       throw new Error('Email gönderilemedi')
     }
   }
@@ -160,10 +150,8 @@ export class EmailService {
   async verifyConnection() {
     try {
       await this.transporter.verify()
-      console.log('SMTP bağlantısı başarılı')
       return true
     } catch (error) {
-      console.error('SMTP bağlantı hatası:', error)
       return false
     }
   }
