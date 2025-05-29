@@ -1,5 +1,6 @@
 import express from 'express'
 import { AuthController } from './auth-controller'
+import passwordResetRoutes from './password-reset-routes'
 
 const router = express.Router()
 const authController = new AuthController()
@@ -13,5 +14,8 @@ router.post('/login', function(req, res) {
 router.post('/logout', function(req, res) {
   return authController.logout(req, res)
 })
+
+// Şifre sıfırlama route'larını ekle
+router.use('/', passwordResetRoutes)
 
 export default router 

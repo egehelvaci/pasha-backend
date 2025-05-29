@@ -32,6 +32,7 @@ model User {
   userType    UserType @relation(fields: [userTypeId], references: [id])
   Store       Store?   @relation(fields: [store_id], references: [store_id], onUpdate: NoAction, map: "fk_user_store")
   carts       carts[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 model Collection {
@@ -217,6 +218,18 @@ model carts {
   @@index([updated_at], map: "idx_carts_updated_at")
   @@index([user_id, is_active], map: "idx_carts_user_active")
   @@index([user_id], map: "idx_carts_user_id")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  isUsed    Boolean  @default(false) @map("is_used")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
 }
 
 enum Currency {
