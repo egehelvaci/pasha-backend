@@ -2,7 +2,7 @@
 
 ## 1. Şifre Sıfırlama Talebi
 
-**Endpoint:** `POST /api/auth/forgot-password`
+**Endpoint:** `POST https://pasha-backend-production.up.railway.app/api/auth/forgot-password`
 
 **Açıklama:** Kullanıcının email adresine şifre sıfırlama bağlantısı gönderir.
 
@@ -31,7 +31,7 @@
 
 **Curl Örneği:**
 ```bash
-curl -X POST http://localhost:3001/api/auth/forgot-password \
+curl -X POST https://pasha-backend-production.up.railway.app/api/auth/forgot-password \
   -H "Content-Type: application/json" \
   -d '{"email": "kullanici@example.com"}'
 ```
@@ -40,7 +40,7 @@ curl -X POST http://localhost:3001/api/auth/forgot-password \
 
 ## 2. Token Doğrulama
 
-**Endpoint:** `GET /api/auth/validate-reset-token/:token`
+**Endpoint:** `GET https://pasha-backend-production.up.railway.app/api/auth/validate-reset-token/:token`
 
 **Açıklama:** Şifre sıfırlama token'ının geçerliliğini kontrol eder.
 
@@ -66,14 +66,14 @@ curl -X POST http://localhost:3001/api/auth/forgot-password \
 
 **Curl Örneği:**
 ```bash
-curl -X GET http://localhost:3001/api/auth/validate-reset-token/abc123def456
+curl -X GET https://pasha-backend-production.up.railway.app/api/auth/validate-reset-token/abc123def456
 ```
 
 ---
 
 ## 3. Şifre Sıfırlama
 
-**Endpoint:** `POST /api/auth/reset-password`
+**Endpoint:** `POST https://pasha-backend-production.up.railway.app/api/auth/reset-password`
 
 **Açıklama:** Token ile yeni şifre belirler.
 
@@ -104,7 +104,7 @@ curl -X GET http://localhost:3001/api/auth/validate-reset-token/abc123def456
 
 **Curl Örneği:**
 ```bash
-curl -X POST http://localhost:3001/api/auth/reset-password \
+curl -X POST https://pasha-backend-production.up.railway.app/api/auth/reset-password \
   -H "Content-Type: application/json" \
   -d '{
     "token": "abc123def456",
@@ -137,7 +137,7 @@ Authorization: Bearer <jwt-token>
 
 **Curl Örneği:**
 ```bash
-curl -X DELETE http://localhost:3001/api/auth/cleanup-tokens \
+curl -X DELETE https://pasha-backend-production.up.railway.app/api/auth/cleanup-tokens \
   -H "Authorization: Bearer <jwt-token>"
 ```
 
