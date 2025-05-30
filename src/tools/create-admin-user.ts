@@ -3,11 +3,11 @@ import bcrypt from 'bcryptjs'
 
 // Yeni admin kullanıcı bilgileri
 const adminUser = {
-  username: 'admin',
-  password: 'admin123', // Bu güvenli bir şifre değildir, gerçek ortamda daha güçlü bir şifre kullanın
-  name: 'Admin',
-  surname: 'User',
-  email: 'admin@example.com'
+  username: 'testadmin',
+  password: 'test123', // Bu güvenli bir şifre değildir, gerçek ortamda daha güçlü bir şifre kullanın
+  name: 'Test',
+  surname: 'Admin',
+  email: 'testadmin@example.com'
 }
 
 async function createAdminUser() {

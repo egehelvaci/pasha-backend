@@ -37,6 +37,7 @@ interface CatalogTemplateData {
   companyLogoUrl?: string;
   formatDate: string;
   currentYear: number;
+  currentDate: string;
   collections: CollectionProducts[];
   backgroundImage: string;
   blackLogo: string;
@@ -64,11 +65,23 @@ export class CatalogService {
   constructor() {
     // Handlebars yardımcı fonksiyonları
     handlebars.registerHelper('formatDate', () => {
-      return new Date().toLocaleDateString('tr-TR');
+      const now = new Date();
+      const day = now.getDate().toString().padStart(2, '0');
+      const month = (now.getMonth() + 1).toString().padStart(2, '0');
+      const year = now.getFullYear();
+      return `${day}/${month}/${year}`;
     });
 
     handlebars.registerHelper('currentYear', () => {
       return new Date().getFullYear();
+    });
+    
+    handlebars.registerHelper('currentDate', () => {
+      const now = new Date();
+      const day = now.getDate().toString().padStart(2, '0');
+      const month = (now.getMonth() + 1).toString().padStart(2, '0');
+      const year = now.getFullYear();
+      return `${day}/${month}/${year}`;
     });
     
     console.log('🚀 Optimized CatalogService başlatıldı');
@@ -245,12 +258,17 @@ export class CatalogService {
     const collections = this.groupProductsByCollection(productsWithImages);
     
     const now = new Date();
+    const day = now.getDate().toString().padStart(2, '0');
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const year = now.getFullYear();
+    const currentDate = `${day}/${month}/${year}`;
     
     return {
       companyName: companyName || 'PAŞA HOME',
       companyLogoUrl,
-      formatDate: now.toLocaleDateString('tr-TR'),
+      formatDate: currentDate,
       currentYear: now.getFullYear(),
+      currentDate: currentDate,
       collections,
       backgroundImage,
       blackLogo,
