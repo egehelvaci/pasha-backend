@@ -5,25 +5,9 @@ import jwt from 'jsonwebtoken'
 
 export class UserService {
   /**
-   * Tüm kullanıcıları getir (aktif ve deaktif)
+   * Tüm aktif kullanıcıları getir
    */
   async getAllUsers() {
-    return await prisma.user.findMany({
-      include: {
-        userType: true,
-        Store: true
-      },
-      orderBy: [
-        { isActive: 'desc' }, // Aktif kullanıcılar önce
-        { createdAt: 'desc' }
-      ]
-    })
-  }
-
-  /**
-   * Sadece aktif kullanıcıları getir
-   */
-  async getActiveUsers() {
     return await prisma.user.findMany({
       where: {
         isActive: true
@@ -103,86 +87,6 @@ export class UserService {
       include: {
         userType: true,
         Store: true
-      }
-    })
-  }
-
-  /**
-   * Kullanıcıyı deaktif et
-   */
-  async deactivate(userId: string) {
-    // Önce kullanıcının mevcut bilgilerini al
-    const existingUser = await prisma.user.findUnique({
-      where: { userId }
-    })
-    
-    if (!existingUser) {
-      throw new Error('Kullanıcı bulunamadı')
-    }
-    
-    // Username ve email'i değiştir ve deaktif et
-    const timestamp = Date.now()
-    return await prisma.user.update({
-      where: { userId },
-      data: {
-        isActive: false,
-        username: `${existingUser.username}_deactivated_${timestamp}`,
-        email: `${existingUser.email}_deactivated_${timestamp}`
-      }
-    })
-  }
-
-  /**
-   * Kullanıcıyı aktif et
-   */
-  async activate(userId: string) {
-    // Önce kullanıcının mevcut bilgilerini al
-    const existingUser = await prisma.user.findUnique({
-      where: { userId }
-    })
-    
-    if (!existingUser) {
-      throw new Error('Kullanıcı bulunamadı')
-    }
-    
-    // Eğer username ve email deactivated suffix'i içeriyorsa, orijinal halini geri yükle
-    let originalUsername = existingUser.username
-    let originalEmail = existingUser.email
-    
-    if (existingUser.username.includes('_deactivated_')) {
-      originalUsername = existingUser.username.split('_deactivated_')[0]
-    }
-    
-    if (existingUser.email.includes('_deactivated_')) {
-      originalEmail = existingUser.email.split('_deactivated_')[0]
-    }
-    
-    // Orijinal username ve email'in başka aktif kullanıcı tarafından kullanılıp kullanılmadığını kontrol et
-    const conflictingUser = await prisma.user.findFirst({
-      where: {
-        AND: [
-          {
-            OR: [
-              { username: originalUsername },
-              { email: originalEmail }
-            ]
-          },
-          { isActive: true },
-          { userId: { not: userId } } // Kendisi hariç
-        ]
-      }
-    })
-    
-    if (conflictingUser) {
-      throw new Error('Bu kullanıcı adı veya email başka bir aktif kullanıcı tarafından kullanılıyor')
-    }
-    
-    return await prisma.user.update({
-      where: { userId },
-      data: {
-        isActive: true,
-        username: originalUsername,
-        email: originalEmail
       }
     })
   }

@@ -5,14 +5,12 @@ import prisma from '../utils/prisma'
 export class AdminController {
   constructor() {
     this.getAllUsers = this.getAllUsers.bind(this)
-    this.getActiveUsers = this.getActiveUsers.bind(this)
     this.createUser = this.createUser.bind(this)
     this.updateUser = this.updateUser.bind(this)
     this.deleteUser = this.deleteUser.bind(this)
     this.getUserById = this.getUserById.bind(this)
     this.assignUserToStore = this.assignUserToStore.bind(this)
     this.removeUserFromStore = this.removeUserFromStore.bind(this)
-    this.activateUser = this.activateUser.bind(this)
   }
 
   /**
@@ -30,25 +28,6 @@ export class AdminController {
       return res.status(500).json({
         success: false,
         message: error.message || 'Kullanıcılar getirilemedi'
-      })
-    }
-  }
-
-  /**
-   * Sadece aktif kullanıcıları listele
-   */
-  async getActiveUsers(req: Request, res: Response) {
-    try {
-      const users = await userService.getActiveUsers()
-      
-      return res.status(200).json({
-        success: true,
-        data: users
-      })
-    } catch (error: any) {
-      return res.status(500).json({
-        success: false,
-        message: error.message || 'Aktif kullanıcılar getirilemedi'
       })
     }
   }
@@ -208,7 +187,47 @@ export class AdminController {
   async updateUser(req: Request, res: Response) {
     try {
       const { userId } = req.params
-      const { username, email, password, name, surname, phoneNumber, userTypeId, store_id } = req.body
+      const { 
+        username, 
+        email, 
+        password, 
+        name, 
+        surname, 
+        phoneNumber, 
+        userTypeId, 
+        userTypeName,
+        store_id, 
+        storeId,
+        credit,
+        debit 
+      } = req.body
+      
+      console.log('Update User Request:', { userId, body: req.body })
+      
+      // Username ve email benzersizlik kontrolü (kendisi hariç)
+      if (username || email) {
+        const conflictingUser = await prisma.user.findFirst({
+          where: {
+            AND: [
+              {
+                OR: [
+                  ...(username ? [{ username }] : []),
+                  ...(email ? [{ email }] : [])
+                ]
+              },
+              { userId: { not: userId } }, // Kendisi hariç
+              { isActive: true } // Sadece aktif kullanıcıları kontrol et
+            ]
+          }
+        })
+        
+        if (conflictingUser) {
+          return res.status(400).json({
+            success: false,
+            message: 'Bu kullanıcı adı veya email başka bir kullanıcı tarafından kullanılıyor'
+          })
+        }
+      }
       
       // Güncellenecek verileri hazırla
       const updateData: any = {}
@@ -219,11 +238,27 @@ export class AdminController {
       if (phoneNumber !== undefined) updateData.phoneNumber = phoneNumber
       if (userTypeId !== undefined) updateData.userTypeId = parseInt(userTypeId)
       if (store_id !== undefined) updateData.store_id = store_id
+      if (storeId !== undefined) updateData.store_id = storeId
+      if (credit !== undefined) updateData.credit = parseFloat(credit)
+      if (debit !== undefined) updateData.debit = parseFloat(debit)
+      
+      // UserType name'e göre ID bul
+      if (userTypeName && !userTypeId) {
+        const userType = await prisma.userType.findFirst({
+          where: { name: userTypeName }
+        });
+        
+        if (userType) {
+          updateData.userTypeId = userType.id;
+        }
+      }
       
       // Şifre değiştirilecekse hashle
       if (password !== undefined) {
         updateData.password = await userService.hashPassword(password)
       }
+      
+      console.log('Update Data:', updateData)
       
       const updatedUser = await prisma.user.update({
         where: { userId },
@@ -234,11 +269,14 @@ export class AdminController {
         }
       })
       
+      console.log('Updated User:', updatedUser)
+      
       return res.status(200).json({
         success: true,
         data: updatedUser
       })
     } catch (error: any) {
+      console.error('Kullanıcı güncelleme hatası:', error)
       return res.status(500).json({
         success: false,
         message: error.message || 'Kullanıcı güncellenemedi'
@@ -247,58 +285,46 @@ export class AdminController {
   }
   
   /**
-   * Kullanıcıyı sil veya deaktif et
+   * Kullanıcıyı kalıcı olarak sil
    */
   async deleteUser(req: Request, res: Response) {
     try {
       const { userId } = req.params
-      const { permanent } = req.query
       
-      // Kalıcı silme işlemi
-      if (permanent === 'true') {
-        // Önce kullanıcının mevcut bilgilerini al
-        const existingUser = await prisma.user.findUnique({
-          where: { userId }
+      // Önce kullanıcının mevcut bilgilerini al
+      const existingUser = await prisma.user.findUnique({
+        where: { userId }
+      })
+      
+      if (!existingUser) {
+        return res.status(404).json({
+          success: false,
+          message: 'Kullanıcı bulunamadı'
         })
-        
-        if (!existingUser) {
-          return res.status(404).json({
-            success: false,
-            message: 'Kullanıcı bulunamadı'
-          })
+      }
+      
+      // Username ve email'i değiştir (gelecekte aynı bilgilerle yeni kullanıcı oluşturulabilsin)
+      const timestamp = Date.now()
+      await prisma.user.update({
+        where: { userId },
+        data: {
+          username: `${existingUser.username}_deleted_${timestamp}`,
+          email: `${existingUser.email}_deleted_${timestamp}`,
+          isActive: false
         }
-        
-        // Username ve email'i değiştir (gelecekte aynı bilgilerle yeni kullanıcı oluşturulabilsin)
-        const timestamp = Date.now()
-        await prisma.user.update({
-          where: { userId },
-          data: {
-            username: `${existingUser.username}_deleted_${timestamp}`,
-            email: `${existingUser.email}_deleted_${timestamp}`,
-            isActive: false
-          }
-        })
-        
-        // Şimdi kullanıcıyı sil
-        await prisma.user.delete({
-          where: { userId }
-        })
-        
-        return res.status(200).json({
-          success: true,
-          message: 'Kullanıcı kalıcı olarak silindi'
-        })
-      }
-      // Deaktif etme işlemi
-      else {
-        await userService.deactivate(userId)
-        
-        return res.status(200).json({
-          success: true,
-          message: 'Kullanıcı deaktif edildi'
-        })
-      }
+      })
+      
+      // Kullanıcıyı kalıcı olarak sil
+      await prisma.user.delete({
+        where: { userId }
+      })
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Kullanıcı kalıcı olarak silindi'
+      })
     } catch (error: any) {
+      console.error('Kullanıcı silme hatası:', error)
       return res.status(500).json({
         success: false,
         message: error.message || 'Kullanıcı silinemedi'
@@ -354,27 +380,6 @@ export class AdminController {
       return res.status(500).json({
         success: false,
         message: error.message || 'Kullanıcı mağazadan kaldırılamadı'
-      })
-    }
-  }
-
-  /**
-   * Kullanıcıyı aktif et
-   */
-  async activateUser(req: Request, res: Response) {
-    try {
-      const { userId } = req.params
-      
-      await userService.activate(userId)
-      
-      return res.status(200).json({
-        success: true,
-        message: 'Kullanıcı aktif edildi'
-      })
-    } catch (error: any) {
-      return res.status(500).json({
-        success: false,
-        message: error.message || 'Kullanıcı aktif edilemedi'
       })
     }
   }
