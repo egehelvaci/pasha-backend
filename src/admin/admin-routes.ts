@@ -16,6 +16,9 @@ router.use('/stores', storeRoutes)
 // Kullanıcıları listeleme
 router.get('/users', adminController.getAllUsers)
 
+// Sadece aktif kullanıcıları listeleme
+router.get('/users/active', adminController.getActiveUsers)
+
 // Belirli bir kullanıcıyı getirme
 router.get('/users/:userId', adminController.getUserById)
 
@@ -27,6 +30,9 @@ router.put('/users/:userId', adminController.updateUser)
 
 // Kullanıcı silme
 router.delete('/users/:userId', adminController.deleteUser)
+
+// Kullanıcıyı aktif et
+router.put('/users/:userId/activate', adminController.activateUser)
 
 // Kullanıcıyı mağazaya ata
 router.post('/users/:userId/assign-store', adminController.assignUserToStore)

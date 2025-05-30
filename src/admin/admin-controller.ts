@@ -5,12 +5,14 @@ import prisma from '../utils/prisma'
 export class AdminController {
   constructor() {
     this.getAllUsers = this.getAllUsers.bind(this)
+    this.getActiveUsers = this.getActiveUsers.bind(this)
     this.createUser = this.createUser.bind(this)
     this.updateUser = this.updateUser.bind(this)
     this.deleteUser = this.deleteUser.bind(this)
     this.getUserById = this.getUserById.bind(this)
     this.assignUserToStore = this.assignUserToStore.bind(this)
     this.removeUserFromStore = this.removeUserFromStore.bind(this)
+    this.activateUser = this.activateUser.bind(this)
   }
 
   /**
@@ -28,6 +30,25 @@ export class AdminController {
       return res.status(500).json({
         success: false,
         message: error.message || 'Kullanıcılar getirilemedi'
+      })
+    }
+  }
+
+  /**
+   * Sadece aktif kullanıcıları listele
+   */
+  async getActiveUsers(req: Request, res: Response) {
+    try {
+      const users = await userService.getActiveUsers()
+      
+      return res.status(200).json({
+        success: true,
+        data: users
+      })
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Aktif kullanıcılar getirilemedi'
       })
     }
   }
@@ -120,12 +141,17 @@ export class AdminController {
         });
       }
       
-      // Kullanıcı adı ve email benzersizlik kontrolü
+      // Kullanıcı adı ve email benzersizlik kontrolü - sadece aktif kullanıcılar için
       const existingUser = await prisma.user.findFirst({
         where: {
-          OR: [
-            { username },
-            { email }
+          AND: [
+            {
+              OR: [
+                { username },
+                { email }
+              ]
+            },
+            { isActive: true } // Sadece aktif kullanıcıları kontrol et
           ]
         }
       })
@@ -230,6 +256,30 @@ export class AdminController {
       
       // Kalıcı silme işlemi
       if (permanent === 'true') {
+        // Önce kullanıcının mevcut bilgilerini al
+        const existingUser = await prisma.user.findUnique({
+          where: { userId }
+        })
+        
+        if (!existingUser) {
+          return res.status(404).json({
+            success: false,
+            message: 'Kullanıcı bulunamadı'
+          })
+        }
+        
+        // Username ve email'i değiştir (gelecekte aynı bilgilerle yeni kullanıcı oluşturulabilsin)
+        const timestamp = Date.now()
+        await prisma.user.update({
+          where: { userId },
+          data: {
+            username: `${existingUser.username}_deleted_${timestamp}`,
+            email: `${existingUser.email}_deleted_${timestamp}`,
+            isActive: false
+          }
+        })
+        
+        // Şimdi kullanıcıyı sil
         await prisma.user.delete({
           where: { userId }
         })
@@ -304,6 +354,27 @@ export class AdminController {
       return res.status(500).json({
         success: false,
         message: error.message || 'Kullanıcı mağazadan kaldırılamadı'
+      })
+    }
+  }
+
+  /**
+   * Kullanıcıyı aktif et
+   */
+  async activateUser(req: Request, res: Response) {
+    try {
+      const { userId } = req.params
+      
+      await userService.activate(userId)
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Kullanıcı aktif edildi'
+      })
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Kullanıcı aktif edilemedi'
       })
     }
   }
