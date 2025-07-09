@@ -222,7 +222,110 @@ Content-Type: application/json
 
 ---
 
-### 3. SİPARİŞ DETAYINI GETİR
+### 3. KULLANICININ TÜM SİPARİŞLERİNİ LİSTELE
+
+**Method**: `GET`  
+**URL**: `/api/orders/my-orders`
+
+Kullanıcının verdiği tüm siparişleri sayfalama ile listeler.
+
+#### Request
+```http
+GET /api/orders/my-orders?page=1&limit=10
+Authorization: Bearer <JWT_TOKEN>
+```
+
+#### Query Parameters
+- `page` (opsiyonel): Sayfa numarası (varsayılan: 1)
+- `limit` (opsiyonel): Sayfa başına sipariş sayısı (varsayılan: 10, maksimum: 50)
+
+#### Response (Success - 200)
+```json
+{
+  "success": true,
+  "data": {
+    "orders": [
+      {
+        "id": "550e8400-e29b-41d4-a716-446655440001",
+        "user_id": "user-uuid",
+        "cart_id": 15,
+        "total_price": "1250.75",
+        "status": "PENDING",
+        
+        // Mağaza adres bilgileri
+        "delivery_address": "Atatürk Cad. No:123 Kadıköy/İstanbul",
+        "store_name": "ABC Halı Mağazası",
+        "store_tax_number": "1234567890",
+        "store_phone": "+90 212 123 45 67",
+        "store_email": "info@abchali.com",
+        
+        "created_at": "2024-01-15T10:30:00.000Z",
+        "updated_at": "2024-01-15T10:30:00.000Z",
+        "items": [
+          {
+            "id": "item-uuid-1",
+            "product_id": "product-uuid",
+            "quantity": 2,
+            "unit_price": "45.50",
+            "total_price": "273.00",
+            "has_fringe": true,
+            "width": "150.00",
+            "height": "200.00",
+            "cut_type": "rectangle",
+            "product": {
+              "productId": "product-uuid",
+              "name": "Premium Halı",
+              "description": "Yüksek kalite halı",
+              "collection": {
+                "name": "Premium Koleksiyon",
+                "code": "PREM"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "550e8400-e29b-41d4-a716-446655440002",
+        "user_id": "user-uuid",
+        "cart_id": 16,
+        "total_price": "890.25",
+        "status": "CONFIRMED",
+        "delivery_address": "Atatürk Cad. No:123 Kadıköy/İstanbul",
+        "store_name": "ABC Halı Mağazası",
+        "created_at": "2024-01-14T15:20:00.000Z",
+        "updated_at": "2024-01-14T16:00:00.000Z",
+        "items": [...]
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 10,
+      "total": 25,
+      "totalPages": 3
+    }
+  }
+}
+```
+
+#### Response (Sipariş Yok - 200)
+```json
+{
+  "success": true,
+  "data": {
+    "orders": [],
+    "pagination": {
+      "page": 1,
+      "limit": 10,
+      "total": 0,
+      "totalPages": 0
+    }
+  }
+}
+```
+
+---
+
+### 4. SİPARİŞ DETAYINI GETİR
 
 **Method**: `GET`  
 **URL**: `/api/orders/{orderId}`
@@ -323,7 +426,11 @@ curl -X POST "http://localhost:3001/api/orders/create-from-cart" \
     "notes": "Acil teslimat"
   }'
 
-# 3. Sipariş detayını kontrol et
+# 3. Tüm siparişleri listele
+curl -X GET "http://localhost:3001/api/orders/my-orders?page=1&limit=5" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+# 4. Belirli bir sipariş detayını kontrol et
 curl -X GET "http://localhost:3001/api/orders/550e8400-e29b-41d4-a716-446655440001" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
@@ -365,6 +472,32 @@ curl -X GET "http://localhost:3001/api/orders/check-limits" \
 # }
 
 # Bu durumda önce ödeme yapılması gerekir
+```
+
+### Senaryo 4: Sipariş Geçmişi Görüntüleme
+
+```bash
+# Tüm siparişleri listele (ilk sayfa)
+curl -X GET "http://localhost:3001/api/orders/my-orders" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+# Sayfalama ile 2. sayfayı getir
+curl -X GET "http://localhost:3001/api/orders/my-orders?page=2&limit=5" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+# Response:
+# {
+#   "success": true,
+#   "data": {
+#     "orders": [...],
+#     "pagination": {
+#       "page": 2,
+#       "limit": 5,
+#       "total": 25,
+#       "totalPages": 5
+#     }
+#   }
+# }
 ```
 
 ---
