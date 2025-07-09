@@ -600,4 +600,38 @@ export class CartService {
       throw error;
     }
   }
+
+  // Sepeti onayla ve sipariş durumuna işaretle
+  async confirmCart(userId: string): Promise<{ success: boolean; message: string; cartId?: number }> {
+    try {
+      const cart = await prisma.carts.findFirst({
+        where: {
+          user_id: userId,
+          is_active: true
+        },
+        include: {
+          cart_items: true
+        }
+      });
+
+      if (!cart || cart.cart_items.length === 0) {
+        return { success: false, message: 'Aktif sepet bulunamadı veya sepet boş' };
+      }
+
+      // Sepeti pasif duruma getir (sipariş oluşturuldu anlamında)
+      await prisma.carts.update({
+        where: { id: cart.id },
+        data: { is_active: false }
+      });
+
+      return { 
+        success: true, 
+        message: 'Sepet onaylandı ve sipariş oluşturuldu',
+        cartId: cart.id
+      };
+    } catch (error) {
+      console.error('Sepet onaylama hatası:', error);
+      return { success: false, message: 'Sepet onaylanırken hata oluştu' };
+    }
+  }
 } 
