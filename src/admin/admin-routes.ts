@@ -1,5 +1,6 @@
 import express from 'express'
 import { AdminController } from './admin-controller'
+import { adminOrderController } from './admin-order-controller'
 import { authMiddleware, authorizeRoles } from '../auth/auth-middleware'
 import storeRoutes from './store-routes'
 
@@ -12,6 +13,15 @@ router.use(authorizeRoles('admin'))
 
 // Mağaza yönetimi rotalarını ekle
 router.use('/stores', storeRoutes)
+
+// Sipariş yönetimi rotaları
+router.get('/orders', adminOrderController.getAllOrders)
+router.get('/orders/stats', adminOrderController.getOrderStats)
+router.get('/orders/:orderId', adminOrderController.getOrderById)
+router.post('/orders/:orderId/confirm', adminOrderController.confirmOrder)
+router.put('/orders/:orderId/status', adminOrderController.updateOrderStatus)
+router.get('/orders/:orderId/qrcodes', adminOrderController.getOrderQRCodes)
+router.post('/scan-qr', adminOrderController.scanQRCode)
 
 // Kullanıcıları listeleme
 router.get('/users', adminController.getAllUsers)
