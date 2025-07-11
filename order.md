@@ -8,9 +8,10 @@ Tüm endpoint'ler JWT authentication gerektirir.
 ### Sipariş Verme Şartları
 
 1. **Fiyat Listesi Limiti**: Mağazaya ait fiyat listesi varsa, sadece o fiyat listesinin limit tutarı kadar alışveriş yapılabilir.
-2. **Açık Hesap Limiti**: Mağazanın açık hesap limiti kontrol edilir:
-   - **Sınırsız**: `limitsiz_acik_hesap = true` ise sipariş verilebilir
-   - **Sınırlı**: `acik_hesap_tutari` limiti kontrol edilir
+2. **Açık Hesap Limiti**: Mağazanın açık hesap bakiyesi kontrol edilir:
+   - **Sınırsız**: `limitsiz_acik_hesap = true` ise limit kontrolü yapılmaz
+   - **Sınırlı**: Sipariş tutarı mevcut `acik_hesap_tutari` bakiyesini aşamaz
+   - **Bakiye Kontrolü**: Direkt bakiye kontrolü yapılır (sipariş tutarı ≤ mevcut bakiye)
 3. **Limit Aşımı**: Limitler aşılırsa uygun hata mesajı döner
 
 ### Sipariş Süreci
@@ -531,6 +532,8 @@ curl -X GET "http://localhost:3001/api/orders/my-orders?page=2&limit=5" \
 2. **Limit Kontrolleri**:
    - Fiyat listesi limiti her zaman açık hesap limitinden önce kontrol edilir
    - Sınırsız açık hesap (`limitsiz_acik_hesap = true`) durumunda sadece fiyat listesi limiti kontrol edilir
+   - **Açık hesap kontrolü**: Direkt mağazanın mevcut bakiyesi ile sipariş tutarı karşılaştırılır
+   - **Güvenli kontrol**: Sipariş tutarı > mevcut bakiye ise red edilir
 
 3. **Güvenlik**: Kullanıcılar sadece kendi siparişlerini görebilir ve oluşturabilir.
 
@@ -625,10 +628,346 @@ Sipariş oluşturulurken mağaza bilgileri otomatik olarak siparişe eklenir. Bu
 
 ---
 
+## 5. QR KOD OKUTMA API'LERİ
+
+### 5.1 TEK QR KOD OKUTMA
+
+**Method**: `POST`  
+**URL**: `/api/admin/scan-qr`
+
+Admin kullanıcı için tek QR kod okutma işlemi. Tüm QR kodlar okunduğunda sipariş otomatik olarak DELIVERED durumuna geçer.
+
+#### Request
+```http
+POST /api/admin/scan-qr
+Authorization: Bearer <ADMIN_JWT_TOKEN>
+Content-Type: application/json
+
+{
+  "qrCode": "PASHA-1641234567890-ABC123DEF456"
+}
+```
+
+#### Response (Success - 200)
+```json
+{
+  "success": true,
+  "message": "QR kod başarıyla okundu",
+  "data": {
+    "qrCode": {
+      "id": "qr-uuid-001",
+      "qr_code": "PASHA-1641234567890-ABC123DEF456",
+      "is_scanned": true,
+      "scanned_at": "2024-01-15T12:30:00.000Z"
+    },
+    "productDetails": {
+      "id": "product-uuid",
+      "name": "Premium Halı",
+      "description": "Yüksek kalite halı"
+    },
+    "order": {
+      "id": "order-uuid-123",
+      "status": "CONFIRMED",
+      "customer": {
+        "name": "Müşteri Adı",
+        "email": "musteri@example.com"
+      }
+    },
+    "deliveryInfo": {
+      "scannedCount": 1,
+      "totalCount": 3,
+      "isOrderCompleted": false,
+      "completionPercentage": 33
+    }
+  }
+}
+```
+
+#### Response (Sipariş Tamamlandı - 200)
+```json
+{
+  "success": true,
+  "message": "QR kod okundu ve sipariş teslim edildi!",
+  "data": {
+    "deliveryInfo": {
+      "scannedCount": 3,
+      "totalCount": 3,
+      "isOrderCompleted": true,
+      "completionPercentage": 100
+    },
+    "order": {
+      "status": "DELIVERED"
+    }
+  }
+}
+```
+
+---
+
+### 5.2 ÇOKLU QR KOD OKUTMA (YENİ!)
+
+**Method**: `POST`  
+**URL**: `/api/admin/scan-qr-multiple`
+
+Admin kullanıcı için birden çok QR kod okutma işlemi. Tüm QR kodlar aynı siparişe ait olmalıdır. Hepsinin başarıyla okunması durumunda sipariş otomatik olarak DELIVERED durumuna geçer.
+
+#### Request
+```http
+POST /api/admin/scan-qr-multiple
+Authorization: Bearer <ADMIN_JWT_TOKEN>
+Content-Type: application/json
+
+{
+  "qrCodes": [
+    "PASHA-1641234567890-ABC123DEF456",
+    "PASHA-1641234567891-DEF456GHI789",
+    "PASHA-1641234567892-GHI789JKL012"
+  ]
+}
+```
+
+#### Response (Success - 200)
+```json
+{
+  "success": true,
+  "message": "3 QR kod başarıyla okundu ve sipariş teslim edildi!",
+  "data": {
+    "results": [
+      {
+        "qrCode": "PASHA-1641234567890-ABC123DEF456",
+        "id": "qr-uuid-001",
+        "productName": "Premium Halı",
+        "scanned_at": "2024-01-15T12:30:00.000Z"
+      },
+      {
+        "qrCode": "PASHA-1641234567891-DEF456GHI789",
+        "id": "qr-uuid-002",
+        "productName": "Lüks Halı",
+        "scanned_at": "2024-01-15T12:30:01.000Z"
+      },
+      {
+        "qrCode": "PASHA-1641234567892-GHI789JKL012",
+        "id": "qr-uuid-003",
+        "productName": "Klasik Halı",
+        "scanned_at": "2024-01-15T12:30:02.000Z"
+      }
+    ],
+    "errors": [],
+    "deliveryInfo": {
+      "scannedCount": 3,
+      "totalCount": 3,
+      "isOrderCompleted": true,
+      "completionPercentage": 100
+    },
+    "orderInfo": {
+      "id": "order-uuid-123",
+      "status": "DELIVERED",
+      "total_price": "1250.75",
+      "customer": {
+        "name": "Müşteri Adı",
+        "email": "musteri@example.com",
+        "store": {
+          "kurum_adi": "ABC Halı Mağazası"
+        }
+      },
+      "updated_at": "2024-01-15T12:30:02.000Z"
+    },
+    "summary": {
+      "totalSubmitted": 3,
+      "successfullyScanned": 3,
+      "failed": 0,
+      "isOrderCompleted": true
+    }
+  }
+}
+```
+
+#### Response (Kısmi Başarı - 200)
+```json
+{
+  "success": true,
+  "message": "2 QR kod başarıyla okundu, 1 QR kod başarısız",
+  "data": {
+    "results": [
+      {
+        "qrCode": "PASHA-1641234567890-ABC123DEF456",
+        "id": "qr-uuid-001",
+        "productName": "Premium Halı",
+        "scanned_at": "2024-01-15T12:30:00.000Z"
+      },
+      {
+        "qrCode": "PASHA-1641234567891-DEF456GHI789",
+        "id": "qr-uuid-002",
+        "productName": "Lüks Halı",
+        "scanned_at": "2024-01-15T12:30:01.000Z"
+      }
+    ],
+    "errors": [
+      {
+        "qrCode": "INVALID-QR-CODE-123",
+        "error": "Geçersiz QR kod"
+      }
+    ],
+    "deliveryInfo": {
+      "scannedCount": 2,
+      "totalCount": 3,
+      "isOrderCompleted": false,
+      "completionPercentage": 67
+    },
+    "orderInfo": null,
+    "summary": {
+      "totalSubmitted": 3,
+      "successfullyScanned": 2,
+      "failed": 1,
+      "isOrderCompleted": false
+    }
+  }
+}
+```
+
+#### Response (Hata Durumları)
+
+**Geçersiz QR Kodlar (400)**
+```json
+{
+  "success": false,
+  "message": "Hiçbir QR kod başarıyla okunamadı"
+}
+```
+
+**Maksimum Limit Aşımı (400)**
+```json
+{
+  "success": false,
+  "message": "Bir seferde maksimum 50 QR kod okutabilirsiniz"
+}
+```
+
+**Farklı Siparişlerden QR Kodlar (400)**
+```json
+{
+  "success": false,
+  "message": "QR kodlar farklı siparişlere ait"
+}
+```
+
+**Yetkisiz Erişim (401)**
+```json
+{
+  "success": false,
+  "message": "Yetkisiz erişim"
+}
+```
+
+---
+
+### QR KOD OKUTMA ÖZELLİKLERİ
+
+#### ✅ Güvenlik
+- Sadece admin kullanıcılar erişebilir
+- JWT token gerekli
+- Tüm QR kodlar aynı siparişe ait olmalı
+
+#### ✅ Performans
+- Maksimum 50 QR kod tek seferde okutulabilir
+- Paralel işlem desteği
+- Hata toleransı (bazı QR kodlar başarısız olsa bile diğerleri işlenir)
+
+#### ✅ Akıllı Sipariş Yönetimi
+- Tüm QR kodlar okunduğunda sipariş otomatik DELIVERED durumuna geçer
+- Kısmi okutma durumunda sipariş durumu değişmez
+- Gerçek zamanlı ilerleme takibi
+
+#### ✅ Hata Yönetimi
+- Geçersiz QR kodlar raporlanır
+- Zaten okunmuş QR kodlar tekrar okunamaz
+- Detaylı hata mesajları
+
+---
+
+### ÖRNEK KULLANIM SENARYOLARI
+
+#### Senaryo 1: Tüm QR Kodları Tek Seferde Okutma
+
+```bash
+# 1. Admin girişi
+curl -X POST "http://localhost:3001/api/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}'
+
+# 2. Siparişin tüm QR kodlarını al
+curl -X GET "http://localhost:3001/api/admin/orders/order-uuid-123/qrcodes" \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+
+# 3. Tüm QR kodları tek seferde okut
+curl -X POST "http://localhost:3001/api/admin/scan-qr-multiple" \
+  -H "Authorization: Bearer ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "qrCodes": [
+      "PASHA-1641234567890-ABC123DEF456",
+      "PASHA-1641234567891-DEF456GHI789",
+      "PASHA-1641234567892-GHI789JKL012"
+    ]
+  }'
+
+# Sonuç: Sipariş DELIVERED durumuna geçer
+```
+
+#### Senaryo 2: Kısmi QR Kod Okutma
+
+```bash
+# Siparişin bazı QR kodlarını okut
+curl -X POST "http://localhost:3001/api/admin/scan-qr-multiple" \
+  -H "Authorization: Bearer ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "qrCodes": [
+      "PASHA-1641234567890-ABC123DEF456",
+      "PASHA-1641234567891-DEF456GHI789"
+    ]
+  }'
+
+# Sonuç: 2/3 QR kod okundu, sipariş hala CONFIRMED durumunda
+
+# Kalan QR kodu da okut
+curl -X POST "http://localhost:3001/api/admin/scan-qr" \
+  -H "Authorization: Bearer ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"qrCode": "PASHA-1641234567892-GHI789JKL012"}'
+
+# Sonuç: Sipariş DELIVERED durumuna geçer
+```
+
+#### Senaryo 3: Hatalı QR Kodlarla Karışık İşlem
+
+```bash
+curl -X POST "http://localhost:3001/api/admin/scan-qr-multiple" \
+  -H "Authorization: Bearer ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "qrCodes": [
+      "PASHA-1641234567890-ABC123DEF456",  // Geçerli
+      "INVALID-QR-CODE",                   // Geçersiz
+      "PASHA-1641234567891-DEF456GHI789"   // Geçerli
+    ]
+  }'
+
+# Sonuç: 
+# - 2 QR kod başarıyla okunur
+# - 1 QR kod hata verir
+# - İşlem devam eder
+```
+
+---
+
 ## GELİŞTİRİCİ NOTLARI
 
 - Tüm fiyat hesaplamaları Decimal tipinde yapılır
 - Sipariş ID'leri UUID formatındadır
 - Sepet ID'leri auto-increment integer'dır
 - Veritabanı işlemleri transaction içinde yapılır
-- Hata durumları detaylı loglanır 
+- Hata durumları detaylı loglanır
+- **QR Kod Formatı**: `PASHA-{timestamp}-{randomHex}`
+- **Çoklu QR Kod Limiti**: Maksimum 50 QR kod tek seferde
+- **Otomatik Sipariş Teslimi**: Tüm QR kodlar okunduğunda DELIVERED durumu 

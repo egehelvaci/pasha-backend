@@ -161,15 +161,28 @@ export class OrderService {
   private async validateOrderLimits(user: any, orderTotal: number): Promise<OrderValidationResult> {
     const store = user.Store;
     
+    console.log(`🔍 Limit kontrolü başlatılıyor:`)
+    console.log(`  - Mağaza: ${store.kurum_adi}`)
+    console.log(`  - Sipariş tutarı: ${orderTotal} TL`)
+    console.log(`  - Açık hesap tutarı: ${store.acik_hesap_tutari} TL`)
+    console.log(`  - Sınırsız açık hesap: ${store.limitsiz_acik_hesap}`)
+    
     // Kullanıcıya ait fiyat listesi var mı kontrol et
     const userPriceList = store.StorePriceList.find((spl: any) => spl.PriceList);
     
     if (userPriceList && userPriceList.PriceList.limit_amount) {
-      // Fiyat listesi limiti kontrol et
-      const currentOrdersTotal = await this.getUserCurrentOrdersTotal(user.userId);
-      const totalWithNewOrder = currentOrdersTotal + orderTotal;
+      console.log(`📋 Fiyat listesi limiti kontrolü:`)
+      console.log(`  - Fiyat listesi limiti: ${userPriceList.PriceList.limit_amount} TL`)
+      
+      // Fiyat listesi limiti kontrol et - bugün itibariyle kullanıcının toplam siparişleri
+      const currentUserTotal = await this.getUserCurrentOrdersTotal(user.userId);
+      const totalWithNewOrder = currentUserTotal + orderTotal;
+      
+      console.log(`  - Kullanıcının mevcut sipariş toplamı: ${currentUserTotal} TL`)
+      console.log(`  - Yeni sipariş ile toplam: ${totalWithNewOrder} TL`)
       
       if (totalWithNewOrder > Number(userPriceList.PriceList.limit_amount)) {
+        console.log(`❌ Fiyat listesi limiti aşıldı!`)
         return {
           isValid: false,
           message: 'Size uygun fiyat listesinden fazla miktarda alışveriş yapamazsınız',
@@ -177,28 +190,34 @@ export class OrderService {
           canProceed: false
         };
       }
+      console.log(`✅ Fiyat listesi limiti uygun`)
     }
 
     // Mağaza açık hesap limiti kontrol et
     if (store.limitsiz_acik_hesap) {
-      // Sınırsız açık hesap - sipariş verilebilir
+      console.log(`✅ Sınırsız açık hesap - sipariş verilebilir`)
       return { isValid: true, canProceed: true };
     }
 
-    // Sınırlı açık hesap - limit kontrolü
-    const currentStoreTotal = await this.getStoreCurrentOrdersTotal(store.store_id);
-    const totalWithNewOrder = currentStoreTotal + orderTotal;
-    const storeLimit = Number(store.acik_hesap_tutari || 0);
+    // Sınırlı açık hesap - gerçek bakiye kontrolü
+    const currentOpenAccountBalance = Number(store.acik_hesap_tutari || 0);
     
-    if (totalWithNewOrder > storeLimit) {
+    console.log(`💰 Açık hesap bakiye kontrolü:`)
+    console.log(`  - Mevcut açık hesap bakiyesi: ${currentOpenAccountBalance} TL`)
+    console.log(`  - Sipariş tutarı: ${orderTotal} TL`)
+    
+    if (orderTotal > currentOpenAccountBalance) {
+      console.log(`❌ Açık hesap bakiyesi yetersiz!`)
+      console.log(`  - Yetersiz: ${orderTotal - currentOpenAccountBalance} TL`)
       return {
         isValid: false,
         message: 'Ödeme yapın',
-        limitAmount: storeLimit,
+        limitAmount: currentOpenAccountBalance,
         canProceed: false
       };
     }
 
+    console.log(`✅ Açık hesap bakiyesi yeterli`)
     return { isValid: true, canProceed: true };
   }
 

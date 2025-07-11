@@ -8,6 +8,7 @@ export class AdminOrderController {
     this.getOrderById = this.getOrderById.bind(this)
     this.confirmOrder = this.confirmOrder.bind(this)
     this.scanQRCode = this.scanQRCode.bind(this)
+    this.scanMultipleQRCodes = this.scanMultipleQRCodes.bind(this)
     this.getOrderQRCodes = this.getOrderQRCodes.bind(this)
     this.getOrderStats = this.getOrderStats.bind(this)
     this.updateOrderStatus = this.updateOrderStatus.bind(this)
@@ -259,7 +260,7 @@ export class AdminOrderController {
 
       return res.status(200).json({
         success: true,
-        message: result.isOrderCompleted 
+        message: result.deliveryInfo.isOrderCompleted 
           ? 'QR kod okundu ve sipariş teslim edildi!' 
           : 'QR kod başarıyla okundu',
         data: result
@@ -268,6 +269,61 @@ export class AdminOrderController {
       return res.status(400).json({
         success: false,
         message: error.message || 'QR kod okutulurken bir hata oluştu'
+      })
+    }
+  }
+
+  /**
+   * Birden çok QR kod okut
+   */
+  async scanMultipleQRCodes(req: Request, res: Response) {
+    try {
+      const { qrCodes } = req.body
+      const adminUserId = req.user?.userId
+
+      if (!adminUserId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Yetkisiz erişim'
+        })
+      }
+
+      if (!qrCodes || !Array.isArray(qrCodes) || qrCodes.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'QR kodlar dizisi zorunludur ve boş olamaz'
+        })
+      }
+
+      // Maksimum 50 QR kod limiti
+      if (qrCodes.length > 50) {
+        return res.status(400).json({
+          success: false,
+          message: 'Bir seferde maksimum 50 QR kod okutabilirsiniz'
+        })
+      }
+
+      const result = await qrCodeService.scanMultipleQRCodes(qrCodes, adminUserId)
+
+      let message = `${result.summary.successfullyScanned} QR kod başarıyla okundu`
+      
+      if (result.summary.failed > 0) {
+        message += `, ${result.summary.failed} QR kod başarısız`
+      }
+      
+      if (result.summary.isOrderCompleted) {
+        message += ' ve sipariş teslim edildi!'
+      }
+
+      return res.status(200).json({
+        success: true,
+        message,
+        data: result
+      })
+    } catch (error: any) {
+      return res.status(400).json({
+        success: false,
+        message: error.message || 'QR kodlar okutulurken bir hata oluştu'
       })
     }
   }
@@ -358,6 +414,66 @@ export class AdminOrderController {
         })
       }
 
+      // Mevcut siparişi kontrol et
+      const existingOrder = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: {
+          qr_codes: true,
+          user: {
+            include: {
+              Store: true
+            }
+          }
+        }
+      })
+
+      if (!existingOrder) {
+        return res.status(404).json({
+          success: false,
+          message: 'Sipariş bulunamadı'
+        })
+      }
+
+      // Sipariş iptal ediliyorsa açık hesap bakiyesini geri ekle
+      if (status === 'CANCELED' && existingOrder.status !== 'CANCELED') {
+        try {
+          const store = existingOrder.user.Store
+          if (store && !store.limitsiz_acik_hesap) {
+            // Açık hesap tutarını geri ekle
+            await prisma.store.update({
+              where: { store_id: store.store_id },
+              data: {
+                acik_hesap_tutari: {
+                  increment: Number(existingOrder.total_price)
+                }
+              }
+            })
+            
+            console.log(`💰 Sipariş ${orderId} iptal edildi - ${existingOrder.total_price} TL açık hesaba geri eklendi`)
+          }
+        } catch (balanceError: any) {
+          console.error('Açık hesap bakiyesi geri ekleme hatası:', balanceError.message)
+          // Hata olsa da sipariş iptal işlemini devam ettir
+        }
+      }
+
+      // Eğer CONFIRMED yapılıyorsa ve QR kodlar yoksa, QR kodları oluştur
+      let qrResult = null
+      if (status === 'CONFIRMED' && existingOrder.qr_codes.length === 0) {
+        try {
+          // QR kodları oluştur
+          qrResult = await qrCodeService.generateQRCodesForOrder(orderId)
+          
+          // Stokları düşür
+          await qrCodeService.reduceStockForOrder(orderId)
+          
+          console.log(`✅ Sipariş ${orderId} CONFIRMED olarak güncellendi - ${qrResult.totalQRCodes} QR kod oluşturuldu`)
+        } catch (qrError: any) {
+          console.error('QR kod oluşturma hatası:', qrError.message)
+          // QR kod hatası olsa da durum güncellemesini devam ettir
+        }
+      }
+
       const order = await prisma.order.update({
         where: { id: orderId },
         data: { 
@@ -374,15 +490,39 @@ export class AdminOrderController {
             include: {
               product: true
             }
-          }
+          },
+          qr_codes: true
         }
       })
 
-      return res.status(200).json({
+      // Response mesajını belirle
+      let message = 'Sipariş durumu güncellendi'
+      if (status === 'CONFIRMED' && qrResult) {
+        message = `Sipariş durumu güncellendi ve ${qrResult.totalQRCodes} QR kod oluşturuldu`
+      } else if (status === 'CANCELED' && existingOrder.status !== 'CANCELED') {
+        const store = existingOrder.user.Store
+        if (store && !store.limitsiz_acik_hesap) {
+          message = `Sipariş iptal edildi ve ${existingOrder.total_price} TL açık hesap bakiyesi geri eklendi`
+        } else {
+          message = 'Sipariş iptal edildi'
+        }
+      }
+
+      const response: any = {
         success: true,
-        message: 'Sipariş durumu güncellendi',
+        message,
         data: order
-      })
+      }
+
+      // QR kod bilgilerini ekle
+      if (qrResult) {
+        response.qrCodes = {
+          totalQRCodes: qrResult.totalQRCodes,
+          created: true
+        }
+      }
+
+      return res.status(200).json(response)
     } catch (error: any) {
       return res.status(500).json({
         success: false,

@@ -22,6 +22,7 @@ router.post('/orders/:orderId/confirm', adminOrderController.confirmOrder)
 router.put('/orders/:orderId/status', adminOrderController.updateOrderStatus)
 router.get('/orders/:orderId/qrcodes', adminOrderController.getOrderQRCodes)
 router.post('/scan-qr', adminOrderController.scanQRCode)
+router.post('/scan-qr-multiple', adminOrderController.scanMultipleQRCodes)
 
 // Kullanıcıları listeleme
 router.get('/users', adminController.getAllUsers)
