@@ -265,19 +265,20 @@ export class OrderService {
       console.log(`📋 Fiyat listesi limiti kontrolü:`)
       console.log(`  - Fiyat listesi limiti: ${userPriceList.PriceList.limit_amount} TL`)
       
-      // Fiyat listesi limiti kontrol et - bugün itibariyle kullanıcının toplam siparişleri
+      // Fiyat listesi limiti kontrol et - sadece pending durumundaki siparişler
       const currentUserTotal = await this.getUserCurrentOrdersTotal(user.userId);
       const totalWithNewOrder = currentUserTotal + orderTotal;
       
-      console.log(`  - Kullanıcının mevcut sipariş toplamı: ${currentUserTotal} TL`)
+      console.log(`  - Kullanıcının pending sipariş tutarı: ${currentUserTotal} TL`)
       console.log(`  - Yeni sipariş ile toplam: ${totalWithNewOrder} TL`)
       
       if (totalWithNewOrder > Number(userPriceList.PriceList.limit_amount)) {
         console.log(`❌ Fiyat listesi limiti aşıldı!`)
-        console.log(`  - Toplam limit: ${userPriceList.PriceList.limit_amount} TL`)
-        console.log(`  - Mevcut sipariş toplamı: ${currentUserTotal} TL`)
-        console.log(`  - Yeni sipariş: ${orderTotal} TL`)
-        console.log(`  - Toplam olacak: ${totalWithNewOrder} TL`)
+        console.log(`  - Fiyat listesi limiti: ${userPriceList.PriceList.limit_amount} TL`)
+        console.log(`  - Mevcut pending sipariş tutarı: ${currentUserTotal} TL`)
+        console.log(`  - Yeni sipariş tutarı: ${orderTotal} TL`)
+        console.log(`  - Toplam olacak tutar: ${totalWithNewOrder} TL`)
+        console.log(`  - Aşan miktar: ${totalWithNewOrder - Number(userPriceList.PriceList.limit_amount)} TL`)
         return {
           isValid: false,
           message: 'PRICE_LIST_LIMIT_EXCEEDED',
@@ -428,14 +429,12 @@ export class OrderService {
     return orderItems;
   }
 
-  // Kullanıcının mevcut toplam sipariş tutarını getir
+  // Kullanıcının mevcut toplam sipariş tutarını getir (sadece pending siparişler)
   private async getUserCurrentOrdersTotal(userId: string): Promise<number> {
     const result = await prisma.order.aggregate({
       where: {
         user_id: userId,
-        status: {
-          in: [OrderStatus.PENDING, OrderStatus.CONFIRMED, OrderStatus.SHIPPED]
-        }
+        status: OrderStatus.PENDING // Sadece bekleyen siparişleri say
       },
       _sum: {
         total_price: true
