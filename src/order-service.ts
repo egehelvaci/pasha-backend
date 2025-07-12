@@ -4,6 +4,9 @@ import { Decimal } from '@prisma/client/runtime/library';
 
 const prisma = new PrismaClient();
 
+// Fiyat listesi minimum eşik değeri - bu değerin altında kaldığında varsayılan listeye geçilir
+const PRICE_LIST_MINIMUM_THRESHOLD = 1500;
+
 export interface CreateOrderFromCartRequest {
   user_id: string;
   cart_id: number;
@@ -30,16 +33,102 @@ export interface OrderValidationResult {
   message?: string;
   limitAmount?: number;
   canProceed?: boolean; // Ödeme gerekip gerekmediğini belirtir
+  minimumPayment?: number; // Minimum ödeme tutarı
 }
 
 export class OrderService {
   
+  // Sepet limitlerini kontrol et (sadece validasyon)
+  async validateCartLimits(userId: string, cartId: number): Promise<{
+    success: boolean;
+    message: string;
+    requiresPayment?: boolean;
+    limitAmount?: number;
+    minimumPayment?: number;
+  }> {
+    try {
+      // Kullanıcı ve mağaza bilgilerini al
+      const user = await prisma.user.findUnique({
+        where: { userId: userId },
+        include: {
+          Store: {
+            include: {
+              StorePriceList: {
+                include: {
+                  PriceList: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      if (!user || !user.Store) {
+        return { success: false, message: 'Kullanıcı veya mağaza bulunamadı' };
+      }
+
+      // Sepeti kontrol et
+      const cart = await prisma.carts.findUnique({
+        where: { 
+          id: cartId,
+          user_id: userId,
+          is_active: true
+        },
+        include: {
+          cart_items: {
+            include: {
+              Product: true
+            }
+          }
+        }
+      });
+
+      if (!cart || cart.cart_items.length === 0) {
+        return { success: false, message: 'Sepet bulunamadı veya boş' };
+      }
+
+      // Sepet tutarını hesapla
+      const cartTotal = await this.calculateCartTotal(cart.cart_items, user.Store.store_id);
+      
+      // Sipariş limitlerini kontrol et
+      const validation = await this.validateOrderLimits(user, cartTotal);
+      if (!validation.isValid) {
+        let message = validation.message!;
+        
+        // Fiyat listesi limiti aşıldığında limit tutarını mesaja ekle
+        if (validation.message === 'PRICE_LIST_LIMIT_EXCEEDED') {
+          message = `Size uygun fiyat listesinden fazla miktarda alışveriş yapamazsınız. Size özel fiyat listesi tutarı: ${validation.limitAmount} TL'dir.`;
+        }
+        // Açık hesap bakiyesi yetersiz olduğunda limit tutarını mesaja ekle
+        else if (validation.message === 'OPEN_ACCOUNT_INSUFFICIENT') {
+          message = `Açık hesap bakiyeniz yetersiz. Mevcut açık hesap bakiyeniz: ${validation.limitAmount} TL'dir. Minimum ödeme tutarı: ${validation.minimumPayment} TL'dir.`;
+        }
+        
+        return { 
+          success: false, 
+          message: message,
+          requiresPayment: !validation.canProceed,
+          limitAmount: validation.limitAmount,
+          minimumPayment: validation.minimumPayment
+        };
+      }
+
+      return { success: true, message: 'Sepet limitleri uygun' };
+
+    } catch (error) {
+      console.error('Sepet limit kontrolü hatası:', error);
+      return { success: false, message: 'Limit kontrolü yapılamadı' };
+    }
+  }
+
   // Sepetten sipariş oluşturma fonksiyonu
   async createOrderFromCart(orderData: CreateOrderFromCartRequest): Promise<{ 
     success: boolean; 
     message: string; 
     order?: Order;
     requiresPayment?: boolean;
+    limitAmount?: number;
+    minimumPayment?: number;
   }> {
     try {
       // Kullanıcı ve mağaza bilgilerini al
@@ -91,7 +180,9 @@ export class OrderService {
         return { 
           success: false, 
           message: validation.message!,
-          requiresPayment: !validation.canProceed
+          requiresPayment: !validation.canProceed,
+          limitAmount: validation.limitAmount,
+          minimumPayment: validation.minimumPayment
         };
       }
 
@@ -170,7 +261,7 @@ export class OrderService {
     // Kullanıcıya ait fiyat listesi var mı kontrol et
     const userPriceList = store.StorePriceList.find((spl: any) => spl.PriceList);
     
-    if (userPriceList && userPriceList.PriceList.limit_amount) {
+    if (userPriceList && userPriceList.PriceList.limit_amount && !userPriceList.PriceList.is_default) {
       console.log(`📋 Fiyat listesi limiti kontrolü:`)
       console.log(`  - Fiyat listesi limiti: ${userPriceList.PriceList.limit_amount} TL`)
       
@@ -183,9 +274,13 @@ export class OrderService {
       
       if (totalWithNewOrder > Number(userPriceList.PriceList.limit_amount)) {
         console.log(`❌ Fiyat listesi limiti aşıldı!`)
+        console.log(`  - Toplam limit: ${userPriceList.PriceList.limit_amount} TL`)
+        console.log(`  - Mevcut sipariş toplamı: ${currentUserTotal} TL`)
+        console.log(`  - Yeni sipariş: ${orderTotal} TL`)
+        console.log(`  - Toplam olacak: ${totalWithNewOrder} TL`)
         return {
           isValid: false,
-          message: 'Size uygun fiyat listesinden fazla miktarda alışveriş yapamazsınız',
+          message: 'PRICE_LIST_LIMIT_EXCEEDED',
           limitAmount: Number(userPriceList.PriceList.limit_amount),
           canProceed: false
         };
@@ -207,12 +302,15 @@ export class OrderService {
     console.log(`  - Sipariş tutarı: ${orderTotal} TL`)
     
     if (orderTotal > currentOpenAccountBalance) {
+      const minimumPayment = Math.ceil(orderTotal - currentOpenAccountBalance); // Tam sayıya yuvarla (üste yuvarla)
       console.log(`❌ Açık hesap bakiyesi yetersiz!`)
-      console.log(`  - Yetersiz: ${orderTotal - currentOpenAccountBalance} TL`)
+      console.log(`  - Yetersiz: ${minimumPayment} TL`)
+      console.log(`  - Minimum ödeme tutarı: ${minimumPayment} TL`)
       return {
         isValid: false,
-        message: 'Ödeme yapın',
+        message: 'OPEN_ACCOUNT_INSUFFICIENT',
         limitAmount: currentOpenAccountBalance,
+        minimumPayment: minimumPayment,
         canProceed: false
       };
     }
@@ -589,8 +687,11 @@ export class OrderService {
           }
         });
 
-        // 3. Limit bittiğinde varsayılan fiyat listesine geç
+        // 3. Limit bittiğinde veya çok az kaldığında varsayılan fiyat listesine geç
+        
         if (newLimit <= 0) {
+          console.log(`📋 Fiyat listesi limiti tamamen bitti (${newLimit} TL) - Varsayılan fiyat listesine geçiliyor`);
+          
           // Mevcut fiyat listesi atamasını kaldır
           await prisma.storePriceList.delete({
             where: {
@@ -613,7 +714,38 @@ export class OrderService {
                 price_list_id: defaultPriceList.price_list_id
               }
             });
+            console.log(`✅ Varsayılan fiyat listesi atandı: ${defaultPriceList.name}`);
           }
+        } else if (newLimit > 0 && newLimit <= PRICE_LIST_MINIMUM_THRESHOLD) {
+          console.log(`📋 Fiyat listesi limiti çok az kaldı (${newLimit} TL) - Minimum eşik: ${PRICE_LIST_MINIMUM_THRESHOLD} TL`);
+          console.log(`📋 Kalan limit çok düşük olduğu için varsayılan fiyat listesine geçiliyor`);
+          
+          // Mevcut fiyat listesi atamasını kaldır
+          await prisma.storePriceList.delete({
+            where: {
+              store_price_list_id: storePriceList.store_price_list_id
+            }
+          });
+
+          // Varsayılan fiyat listesini bul ve ata
+          const defaultPriceList = await prisma.priceList.findFirst({
+            where: { 
+              is_default: true,
+              is_active: true 
+            }
+          });
+
+          if (defaultPriceList) {
+            await prisma.storePriceList.create({
+              data: {
+                store_id: store.store_id,
+                price_list_id: defaultPriceList.price_list_id
+              }
+            });
+            console.log(`✅ Varsayılan fiyat listesi atandı: ${defaultPriceList.name}`);
+          }
+        } else {
+          console.log(`📋 Fiyat listesi limiti güncellendi: ${currentLimit} TL -> ${newLimit} TL`);
         }
       }
 

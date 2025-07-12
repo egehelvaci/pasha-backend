@@ -38,10 +38,23 @@ export const createOrderFromCart = async (req: Request, res: Response) => {
     const result = await orderService.createOrderFromCart(orderData);
 
     if (!result.success) {
+      let message = result.message;
+      
+      // Fiyat listesi limiti aşıldığında limit tutarını mesaja ekle
+      if (result.message?.includes('Size uygun fiyat listesinden fazla miktarda alışveriş yapamazsınız')) {
+        message = result.message; // Zaten düzgün mesaj
+      }
+      // Açık hesap bakiyesi yetersiz olduğunda limit tutarını mesaja ekle
+      else if (result.message?.includes('Açık hesap bakiyeniz yetersiz')) {
+        message = result.message; // Zaten düzgün mesaj
+      }
+      
       return res.status(400).json({
         success: false,
-        message: result.message,
-        requiresPayment: result.requiresPayment
+        message: message,
+        requiresPayment: result.requiresPayment,
+        limitAmount: result.limitAmount,
+        minimumPayment: result.minimumPayment
       });
     }
 
@@ -171,11 +184,8 @@ export const checkCartLimits = async (req: Request, res: Response) => {
       cart_id: cart.id
     };
 
-    // Sadece limit kontrolü yap, sipariş oluşturma
-    const result = await orderService.createOrderFromCart({
-      ...orderData,
-      __checkOnly: true // Bu parametreyi service'te kontrol ederek sadece validasyon yapmak için kullanabiliriz
-    } as any);
+    // Sadece limit kontrolü yap
+    const result = await orderService.validateCartLimits(userId, cart.id);
 
     return res.status(200).json({
       success: true,
@@ -184,6 +194,8 @@ export const checkCartLimits = async (req: Request, res: Response) => {
         canProceed: result.success,
         message: result.message,
         requiresPayment: result.requiresPayment,
+        limitAmount: result.limitAmount,
+        minimumPayment: result.minimumPayment,
         cartTotal: cart.totalPrice
       }
     });
