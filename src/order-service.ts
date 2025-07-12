@@ -264,21 +264,14 @@ export class OrderService {
     if (userPriceList && userPriceList.PriceList.limit_amount && !userPriceList.PriceList.is_default) {
       console.log(`📋 Fiyat listesi limiti kontrolü:`)
       console.log(`  - Fiyat listesi limiti: ${userPriceList.PriceList.limit_amount} TL`)
+      console.log(`  - Mevcut sipariş tutarı: ${orderTotal} TL`)
       
-      // Fiyat listesi limiti kontrol et - sadece pending durumundaki siparişler
-      const currentUserTotal = await this.getUserCurrentOrdersTotal(user.userId);
-      const totalWithNewOrder = currentUserTotal + orderTotal;
-      
-      console.log(`  - Kullanıcının pending sipariş tutarı: ${currentUserTotal} TL`)
-      console.log(`  - Yeni sipariş ile toplam: ${totalWithNewOrder} TL`)
-      
-      if (totalWithNewOrder > Number(userPriceList.PriceList.limit_amount)) {
+      // Fiyat listesi limiti kontrol et - sadece mevcut sipariş tutarı
+      if (orderTotal > Number(userPriceList.PriceList.limit_amount)) {
         console.log(`❌ Fiyat listesi limiti aşıldı!`)
         console.log(`  - Fiyat listesi limiti: ${userPriceList.PriceList.limit_amount} TL`)
-        console.log(`  - Mevcut pending sipariş tutarı: ${currentUserTotal} TL`)
-        console.log(`  - Yeni sipariş tutarı: ${orderTotal} TL`)
-        console.log(`  - Toplam olacak tutar: ${totalWithNewOrder} TL`)
-        console.log(`  - Aşan miktar: ${totalWithNewOrder - Number(userPriceList.PriceList.limit_amount)} TL`)
+        console.log(`  - Sipariş tutarı: ${orderTotal} TL`)
+        console.log(`  - Aşan miktar: ${orderTotal - Number(userPriceList.PriceList.limit_amount)} TL`)
         return {
           isValid: false,
           message: 'PRICE_LIST_LIMIT_EXCEEDED',
@@ -429,20 +422,7 @@ export class OrderService {
     return orderItems;
   }
 
-  // Kullanıcının mevcut toplam sipariş tutarını getir (sadece pending siparişler)
-  private async getUserCurrentOrdersTotal(userId: string): Promise<number> {
-    const result = await prisma.order.aggregate({
-      where: {
-        user_id: userId,
-        status: OrderStatus.PENDING // Sadece bekleyen siparişleri say
-      },
-      _sum: {
-        total_price: true
-      }
-    });
 
-    return Number(result._sum.total_price || 0);
-  }
 
   // Mağazanın mevcut toplam sipariş tutarını getir
   private async getStoreCurrentOrdersTotal(storeId: string): Promise<number> {
