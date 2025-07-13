@@ -15,13 +15,14 @@ export class AdminOrderController {
   }
 
   /**
-   * Tüm siparişleri listele (admin için)
+   * Tüm siparişleri detaylarıyla birlikte listele (admin için)
    */
   async getAllOrders(req: Request, res: Response) {
     try {
       const page = parseInt(req.query.page as string) || 1
       const limit = parseInt(req.query.limit as string) || 20
       const status = req.query.status as string
+      const search = req.query.search as string // Mağaza adı veya kullanıcı adı ile arama
       const skip = (page - 1) * limit
 
       const where: any = {}
@@ -29,24 +30,100 @@ export class AdminOrderController {
         where.status = status
       }
 
+      // Arama filtresi
+      if (search) {
+        where.OR = [
+          {
+            user: {
+              name: {
+                contains: search,
+                mode: 'insensitive'
+              }
+            }
+          },
+          {
+            user: {
+              surname: {
+                contains: search,
+                mode: 'insensitive'
+              }
+            }
+          },
+          {
+            user: {
+              email: {
+                contains: search,
+                mode: 'insensitive'
+              }
+            }
+          },
+          {
+            store_name: {
+              contains: search,
+              mode: 'insensitive'
+            }
+          }
+        ]
+      }
+
       const [orders, totalCount] = await Promise.all([
         prisma.order.findMany({
           where,
           include: {
             user: {
-              include: {
-                Store: true
+              select: {
+                userId: true,
+                name: true,
+                surname: true,
+                email: true,
+                phone: true,
+                Store: {
+                  select: {
+                    store_id: true,
+                    kurum_adi: true,
+                    vergi_numarasi: true,
+                    vergi_dairesi: true,
+                    telefon: true,
+                    eposta: true,
+                    adres: true,
+                    acik_hesap_tutari: true,
+                    limitsiz_acik_hesap: true
+                  }
+                }
               }
             },
             items: {
               include: {
-                product: true
+                product: {
+                  select: {
+                    productId: true,
+                    name: true,
+                    productImage: true,
+                    productCode: true,
+                    collection: {
+                      select: {
+                        collectionId: true,
+                        name: true
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            cart: {
+              select: {
+                id: true,
+                created_at: true,
+                updated_at: true
               }
             },
             qr_codes: {
               select: {
                 id: true,
+                qr_code: true,
+                quantity: true,
                 is_scanned: true,
+                scanned_at: true,
                 created_at: true
               }
             }
@@ -58,20 +135,50 @@ export class AdminOrderController {
         prisma.order.count({ where })
       ])
 
-      // Her sipariş için QR kod istatistiklerini hesapla
-      const ordersWithStats = orders.map(order => ({
-        ...order,
-        qr_stats: {
-          total: order.qr_codes.length,
-          scanned: order.qr_codes.filter(qr => qr.is_scanned).length,
-          pending: order.qr_codes.filter(qr => !qr.is_scanned).length
+      // Her sipariş için detaylı istatistikler hesapla
+      const ordersWithDetails = orders.map(order => {
+        const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0)
+        const totalArea = order.items.reduce((sum, item) => {
+          const area = item.width && item.height ? (Number(item.width) * Number(item.height)) / 10000 : 0
+          return sum + (area * item.quantity)
+        }, 0)
+
+        return {
+          ...order,
+          order_summary: {
+            total_items: totalItems,
+            total_area_m2: Number(totalArea.toFixed(2)),
+            items_with_fringe: order.items.filter(item => item.has_fringe).length,
+            unique_products: order.items.length
+          },
+          qr_stats: {
+            total: order.qr_codes.length,
+            scanned: order.qr_codes.filter(qr => qr.is_scanned).length,
+            pending: order.qr_codes.filter(qr => !qr.is_scanned).length,
+            scanned_percentage: order.qr_codes.length > 0 
+              ? Math.round((order.qr_codes.filter(qr => qr.is_scanned).length / order.qr_codes.length) * 100)
+              : 0
+          },
+          customer_info: {
+            name: `${order.user.name} ${order.user.surname}`,
+            email: order.user.email,
+            phone: order.user.phone,
+            store_name: order.user.Store?.kurum_adi || order.store_name,
+            store_tax_number: order.user.Store?.vergi_numarasi || order.store_tax_number,
+            store_address: order.user.Store?.adres || order.delivery_address
+          },
+          financial_info: {
+            total_price: Number(order.total_price),
+            store_balance: order.user.Store?.acik_hesap_tutari ? Number(order.user.Store.acik_hesap_tutari) : null,
+            unlimited_account: order.user.Store?.limitsiz_acik_hesap || false
+          }
         }
-      }))
+      })
 
       return res.status(200).json({
         success: true,
         data: {
-          orders: ordersWithStats,
+          orders: ordersWithDetails,
           pagination: {
             page,
             limit,
@@ -79,10 +186,15 @@ export class AdminOrderController {
             totalPages: Math.ceil(totalCount / limit),
             hasNext: page * limit < totalCount,
             hasPrev: page > 1
+          },
+          filters: {
+            status: status || 'all',
+            search: search || null
           }
         }
       })
     } catch (error: any) {
+      console.error('Admin getAllOrders error:', error)
       return res.status(500).json({
         success: false,
         message: error.message || 'Siparişler alınırken bir hata oluştu'
