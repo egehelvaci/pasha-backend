@@ -76,7 +76,6 @@ export class AdminOrderController {
                 name: true,
                 surname: true,
                 email: true,
-                phone: true,
                 Store: {
                   select: {
                     store_id: true,
@@ -99,7 +98,6 @@ export class AdminOrderController {
                     productId: true,
                     name: true,
                     productImage: true,
-                    productCode: true,
                     collection: {
                       select: {
                         collectionId: true,
@@ -136,9 +134,9 @@ export class AdminOrderController {
       ])
 
       // Her sipariş için detaylı istatistikler hesapla
-      const ordersWithDetails = orders.map(order => {
-        const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0)
-        const totalArea = order.items.reduce((sum, item) => {
+      const ordersWithDetails = orders.map((order: any) => {
+        const totalItems = order.items.reduce((sum: number, item: any) => sum + item.quantity, 0)
+        const totalArea = order.items.reduce((sum: number, item: any) => {
           const area = item.width && item.height ? (Number(item.width) * Number(item.height)) / 10000 : 0
           return sum + (area * item.quantity)
         }, 0)
@@ -148,21 +146,21 @@ export class AdminOrderController {
           order_summary: {
             total_items: totalItems,
             total_area_m2: Number(totalArea.toFixed(2)),
-            items_with_fringe: order.items.filter(item => item.has_fringe).length,
+            items_with_fringe: order.items.filter((item: any) => item.has_fringe).length,
             unique_products: order.items.length
           },
           qr_stats: {
             total: order.qr_codes.length,
-            scanned: order.qr_codes.filter(qr => qr.is_scanned).length,
-            pending: order.qr_codes.filter(qr => !qr.is_scanned).length,
+            scanned: order.qr_codes.filter((qr: any) => qr.is_scanned).length,
+            pending: order.qr_codes.filter((qr: any) => !qr.is_scanned).length,
             scanned_percentage: order.qr_codes.length > 0 
-              ? Math.round((order.qr_codes.filter(qr => qr.is_scanned).length / order.qr_codes.length) * 100)
+              ? Math.round((order.qr_codes.filter((qr: any) => qr.is_scanned).length / order.qr_codes.length) * 100)
               : 0
           },
           customer_info: {
             name: `${order.user.name} ${order.user.surname}`,
             email: order.user.email,
-            phone: order.user.phone,
+            phone: order.user.Store?.telefon || order.store_phone,
             store_name: order.user.Store?.kurum_adi || order.store_name,
             store_tax_number: order.user.Store?.vergi_numarasi || order.store_tax_number,
             store_address: order.user.Store?.adres || order.delivery_address
