@@ -66,7 +66,8 @@ export class QRCodeService {
         const imageUrl = await uploadService.uploadFile(
           qrImageBuffer,
           'image/png',
-          fileName
+          fileName,
+          'qr_codes' // QR kodları için özel klasör
         )
 
         // Veritabanındaki kaydı güncelle
