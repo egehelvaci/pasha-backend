@@ -1,7 +1,8 @@
 import crypto from 'crypto'
 import prisma from '../utils/prisma'
 import { UploadService } from '../utils/upload-service'
-import * as QRCode from 'qrcode'
+
+const QRCode = require('qrcode');
 
 export class QRCodeService {
   /**
