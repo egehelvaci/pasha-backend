@@ -9,6 +9,7 @@ const adminController = new AdminController()
 
 // QR Kod okutma - Authentication gerektirmez (mobil uygulama için)
 router.post('/scan-qr', adminOrderController.scanQRCode)
+router.get('/scan-qr', adminOrderController.scanQRCode)
 
 // Tüm diğer admin rotaları için önce kimlik doğrulama ve yetkilendirme gerekiyor
 router.use(authMiddleware)

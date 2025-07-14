@@ -237,9 +237,29 @@ export class QRCodeService {
         throw new Error('Geçersiz QR kod formatı')
       }
 
-      // QR kod kontrolü
-      const qrRecord = await prisma.qRCode.findUnique({
-        where: { qr_code: qrCode },
+      // Eğer gelen değer PASHA- ile başlıyorsa, bu QR kod ID'si
+      // Eğer URL formatındaysa, query parameter'dan ID'yi çıkar
+      let qrCodeId = qrCode
+      if (qrCode.includes('/api/admin/scan-qr?qrCode=')) {
+        const urlParts = qrCode.split('qrCode=')
+        if (urlParts.length > 1) {
+          qrCodeId = urlParts[1]
+        }
+      }
+
+      // QR kod formatını kontrol et
+      if (!qrCodeId.startsWith('PASHA-')) {
+        throw new Error('Geçersiz QR kod formatı. QR kod PASHA- ile başlamalıdır.')
+      }
+
+      // QR kod kontrolü - artık URL formatında saklanan QR kodları arayalım
+      const qrRecord = await prisma.qRCode.findFirst({
+        where: { 
+          OR: [
+            { qr_code: qrCode }, // Tam URL eşleşmesi
+            { qr_code: { contains: qrCodeId } } // QR kod ID'si içeren URL
+          ]
+        },
         include: {
           order: {
             include: {
@@ -389,12 +409,16 @@ export class QRCodeService {
   }
 
   /**
-   * Benzersiz QR kod oluştur
+   * Benzersiz QR kod oluştur - URL formatında
    */
   private generateUniqueQRCode(): string {
     const timestamp = Date.now()
     const randomBytes = crypto.randomBytes(8).toString('hex')
-    return `PASHA-${timestamp}-${randomBytes}`.toUpperCase()
+    const qrCodeId = `PASHA-${timestamp}-${randomBytes}`.toUpperCase()
+    
+    // QR kod içeriği olarak doğrudan endpoint URL'si döndür
+    const baseUrl = process.env.PUBLIC_URL || 'https://pasha-backend-production.up.railway.app'
+    return `${baseUrl}/api/admin/scan-qr?qrCode=${qrCodeId}`
   }
 
   /**

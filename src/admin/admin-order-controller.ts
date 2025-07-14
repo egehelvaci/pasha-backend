@@ -54,7 +54,8 @@ export class AdminOrderController {
               include: {
                 product: true
               }
-            }
+            },
+            qr_codes: true
           },
           orderBy,
           skip,
@@ -111,7 +112,8 @@ export class AdminOrderController {
                 }
               }
             }
-          }
+          },
+          qr_codes: true
         }
       })
 
@@ -212,14 +214,19 @@ export class AdminOrderController {
    */
   async scanQRCode(req: Request, res: Response) {
     try {
+      // QR kod hem body'den hem de query parameter'dan alınabilir
       let { qrCode } = req.body
+      if (!qrCode) {
+        qrCode = req.query.qrCode
+      }
+      
       const adminUserId = req.user?.userId || 'mobile-app' // Mobil uygulama için varsayılan değer
 
       // QR kod validasyonu
       if (!qrCode) {
         return res.status(400).json({
           success: false,
-          message: 'QR kod zorunludur',
+          message: 'QR kod zorunludur (body veya query parameter olarak)',
           error_code: 'MISSING_QR_CODE'
         })
       }
@@ -238,11 +245,11 @@ export class AdminOrderController {
         })
       }
 
-      // QR kod formatını kontrol et (PASHA- ile başlamalı)
-      if (!qrCode.startsWith('PASHA-')) {
+      // QR kod formatını kontrol et (PASHA- içermeli veya scan-qr URL'si olmalı)
+      if (!qrCode.includes('PASHA-') && !qrCode.includes('/api/admin/scan-qr')) {
         return res.status(400).json({
           success: false,
-          message: 'Geçersiz QR kod formatı. QR kod PASHA- ile başlamalıdır.',
+          message: 'Geçersiz QR kod formatı. QR kod PASHA- içermeli veya geçerli scan-qr URL\'si olmalıdır.',
           error_code: 'INVALID_QR_FORMAT'
         })
       }
