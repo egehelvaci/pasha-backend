@@ -55,7 +55,16 @@ export class AdminOrderController {
                 product: true
               }
             },
-            qr_codes: true
+            qr_codes: {
+              include: {
+                order_item: {
+                  include: {
+                    product: true
+                  }
+                },
+                product: true
+              }
+            }
           },
           orderBy,
           skip,
@@ -122,7 +131,16 @@ export class AdminOrderController {
               }
             }
           },
-          qr_codes: true
+          qr_codes: {
+            include: {
+              order_item: {
+                include: {
+                  product: true
+                }
+              },
+              product: true
+            }
+          }
         }
       })
 
@@ -188,7 +206,7 @@ export class AdminOrderController {
         })
       }
 
-      // QR kod oluştur ve siparişi onayla
+      // QR kodlar oluştur ve siparişi onayla
       const qrResult = await qrCodeService.generateQRCodesForOrder(orderId)
       
       // Stokları düşür
@@ -207,6 +225,16 @@ export class AdminOrderController {
             include: {
               product: true
             }
+          },
+          qr_codes: {
+            include: {
+              order_item: {
+                include: {
+                  product: true
+                }
+              },
+              product: true
+            }
           }
         }
       })
@@ -222,10 +250,14 @@ export class AdminOrderController {
 
       return res.status(200).json({
         success: true,
-        message: 'Sipariş başarıyla onaylandı ve QR kod oluşturuldu',
+        message: `Sipariş başarıyla onaylandı ve ${qrResult.totalQRCodes} QR kod oluşturuldu`,
         data: {
           order: processedUpdatedOrder,
-          qrCode: qrResult.qrCode
+          qrCodes: qrResult.qrCodes,
+          qrCodeStats: {
+            totalGenerated: qrResult.totalQRCodes,
+            itemBreakdown: qrResult.itemBreakdown
+          }
         }
       })
     } catch (error: any) {
@@ -452,7 +484,7 @@ export class AdminOrderController {
               ${result.message}
             </div>
             <div class="status">
-              Tarama Durumu: ${result.deliveryInfo.scan_count}/${result.deliveryInfo.required_scans}
+              Tarama Durumu: ${result.deliveryInfo.completed_qr_codes}/${result.deliveryInfo.total_qr_codes}
             </div>
           </div>
         </body>
@@ -747,7 +779,11 @@ export class AdminOrderController {
 
       // QR kod bilgilerini ekle
       if (qrResult) {
-        response.qrCode = qrResult.qrCode
+        response.qrCodes = qrResult.qrCodes
+        response.qrCodeStats = {
+          totalGenerated: qrResult.totalQRCodes,
+          itemBreakdown: qrResult.itemBreakdown
+        }
       }
 
       return res.status(200).json(response)

@@ -7,6 +7,7 @@ const QRCode = require('qrcode');
 export class QRCodeService {
   /**
    * Sipariş için QR kod görselleri oluşturur, Tebi'ye yükler ve DB'yi günceller
+   * Item bazlı sistem için güncellendi
    */
   async generateQRCodeImagesForOrder(orderId: string) {
     const uploadService = new UploadService()
@@ -25,74 +26,83 @@ export class QRCodeService {
       throw new Error(`QR kod görselleri sadece 'ONAYLANMIŞ' (CONFIRMED) siparişler için oluşturulabilir. Bu siparişin durumu: ${order.status}`);
     }
 
-    // Siparişe ait QR kod kaydını bul (sipariş başına tek QR kod)
-    const qrRecord = await prisma.qRCode.findUnique({
+    // Siparişe ait QR kodları bul
+    const qrRecords = await prisma.qRCode.findMany({
       where: {
         order_id: orderId
       },
       select: {
         id: true,
         qr_code: true,
-        required_scans: true,
         qrCodeImageUrl: true
       }
     })
 
-    if (!qrRecord) {
+    if (qrRecords.length === 0) {
       throw new Error('Bu sipariş için QR kod bulunamadı.');
     }
 
-    if (qrRecord.qrCodeImageUrl) {
+    // Zaten görseli olan QR kodları filtrele
+    const qrCodesNeedingImages = qrRecords.filter(qr => !qr.qrCodeImageUrl)
+
+    if (qrCodesNeedingImages.length === 0) {
       return {
         success: true,
-        message: 'Bu sipariş için QR kod görseli zaten mevcut.',
+        message: 'Bu sipariş için tüm QR kod görselleri zaten mevcut.',
         processedCount: 0,
         generatedImages: []
       }
     }
 
-    try {
-      // QR kod verisinden PNG formatında bir buffer oluştur
-      const qrImageBuffer = await QRCode.toBuffer(qrRecord.qr_code, {
-        type: 'png',
-        width: 300,
-        margin: 1,
-        errorCorrectionLevel: 'H'
-      })
+    let successCount = 0
+    const generatedImages = []
 
-      // Dosyayı Tebi'ye yükle
-      const fileName = `${qrRecord.qr_code}.png`
-      const imageUrl = await uploadService.uploadFile(
-        qrImageBuffer,
-        'image/png',
-        fileName,
-        'qr_codes' // QR kodları için özel klasör
-      )
+    // Her QR kod için görsel oluştur
+    for (const qrRecord of qrCodesNeedingImages) {
+      try {
+        // QR kod verisinden PNG formatında bir buffer oluştur
+        const qrImageBuffer = await QRCode.toBuffer(qrRecord.qr_code, {
+          type: 'png',
+          width: 300,
+          margin: 1,
+          errorCorrectionLevel: 'H'
+        })
 
-      // Veritabanındaki kaydı güncelle
-      await prisma.qRCode.update({
-        where: { id: qrRecord.id },
-        data: { qrCodeImageUrl: imageUrl }
-      })
+        // Dosyayı Tebi'ye yükle
+        const fileName = `${qrRecord.qr_code}.png`
+        const imageUrl = await uploadService.uploadFile(
+          qrImageBuffer,
+          'image/png',
+          fileName,
+          'qr_codes' // QR kodları için özel klasör
+        )
 
-      return {
-        success: true,
-        message: 'QR kod görseli başarıyla oluşturuldu ve yüklendi.',
-        processedCount: 1,
-        generatedImages: [{ 
+        // Veritabanındaki kaydı güncelle
+        await prisma.qRCode.update({
+          where: { id: qrRecord.id },
+          data: { qrCodeImageUrl: imageUrl }
+        })
+
+        generatedImages.push({ 
           qr_code: qrRecord.qr_code, 
-          imageUrl: imageUrl,
-          required_scans: qrRecord.required_scans 
-        }]
+          imageUrl: imageUrl
+        })
+        successCount++
+      } catch (error) {
+        console.error(`QR kod ${qrRecord.qr_code} için görsel oluşturulurken veya yüklenirken hata oluştu:`, error)
       }
-    } catch (error) {
-      console.error(`QR kod ${qrRecord.qr_code} için görsel oluşturulurken veya yüklenirken hata oluştu:`, error)
-      throw new Error(`QR kod görseli oluşturulurken hata oluştu: ${error}`)
+    }
+
+    return {
+      success: true,
+      message: `${successCount} QR kod görseli başarıyla oluşturuldu ve yüklendi.`,
+      processedCount: successCount,
+      generatedImages: generatedImages
     }
   }
 
   /**
-   * Sipariş için QR kod oluştur - Her sipariş için tek QR kod
+   * Sipariş için item bazlı QR kodlar oluştur - Her farklı ürün tipi için 1 QR kod
    */
   async generateQRCodesForOrder(orderId: string) {
     try {
@@ -113,31 +123,41 @@ export class QRCodeService {
         throw new Error('Sipariş bulunamadı')
       }
 
-      // Eğer mevcut QR kod varsa, yeniden oluşturma
-      if (order.qr_codes) {
-        console.log(`✅ Sipariş ${orderId} için QR kod zaten mevcut: ${order.qr_codes.qr_code}`)
+      // Eğer mevcut QR kodlar varsa, bunları kontrol et
+      if (order.qr_codes && order.qr_codes.length > 0) {
+        console.log(`✅ Sipariş ${orderId} için ${order.qr_codes.length} QR kod zaten mevcut`)
         return {
           success: true,
-          qrCode: order.qr_codes,
-          message: 'Sipariş için QR kod zaten mevcut'
+          qrCodes: order.qr_codes,
+          message: `Sipariş için ${order.qr_codes.length} QR kod zaten mevcut`
         }
       }
 
-      // Sipariş için tek QR kod oluştur
-      const qrCodeString = this.generateUniqueQRCode()
-      
-      console.log(`🚀 Sipariş ${orderId} için QR kod oluşturuluyor: ${qrCodeString}`)
-      
-      const createdQRCode = await prisma.qRCode.create({
-        data: {
-          order_id: orderId,
-          qr_code: qrCodeString,
-          required_scans: 2, // İlk okutma: SHIPPED, ikinci okutma: DELIVERED
-          scan_count: 0 // Henüz taranmadı
-        }
-      })
+      const createdQRCodes = []
 
-      console.log(`✅ QR kod oluşturuldu: ${createdQRCode.qr_code}, Required Scans: ${createdQRCode.required_scans}`)
+      // Her sipariş item'ı için 1 QR kod oluştur (quantity'den bağımsız)
+      for (const item of order.items) {
+        console.log(`🚀 Item ${item.id} için 1 adet QR kod oluşturuluyor (Ürün: ${item.product_id}, Miktar: ${item.quantity})`)
+        
+        const qrCodeString = this.generateUniqueQRCode()
+        
+        const createdQRCode = await prisma.qRCode.create({
+          data: {
+            order_id: orderId,
+            order_item_id: item.id,
+            product_id: item.product_id,
+            qr_code: `https://pasha-backend-production.up.railway.app/api/admin/scan-qr?qrCode=${qrCodeString}`,
+            is_scanned: false,
+            scan_count: 0,
+            required_scans: item.quantity // Item'ın quantity'si kadar okutulması gerekiyor
+          }
+        })
+
+        createdQRCodes.push(createdQRCode)
+        console.log(`✅ QR kod oluşturuldu: ${createdQRCode.qr_code}`)
+      }
+
+      console.log(`✅ Toplam ${createdQRCodes.length} QR kod oluşturuldu (${order.items.length} farklı ürün tipi için)`)
 
       // Siparişi onaylandı olarak işaretle
       await prisma.order.update({
@@ -150,8 +170,15 @@ export class QRCodeService {
 
       return {
         success: true,
-        qrCode: createdQRCode,
-        message: 'Sipariş için QR kod başarıyla oluşturuldu'
+        qrCodes: createdQRCodes,
+        message: `Sipariş için ${createdQRCodes.length} QR kod başarıyla oluşturuldu (${order.items.length} farklı ürün tipi)`,
+        totalQRCodes: createdQRCodes.length,
+        itemBreakdown: order.items.map(item => ({
+          itemId: item.id,
+          productId: item.product_id,
+          quantity: item.quantity,
+          qrCodesGenerated: 1 // Her item için 1 QR kod
+        }))
       }
     } catch (error: any) {
       console.error('QR kod oluşturma hatası:', error)
@@ -226,9 +253,8 @@ export class QRCodeService {
   }
 
   /**
-   * QR kod okut ve sipariş durumunu güncelle
-   * 1. okutma: SHIPPED (Teslimatta)
-   * 2. okutma: DELIVERED (Tamamlandı)
+   * QR kod okut ve sipariş durumunu güncelle - Item bazlı sistem
+   * Tüm item'lar okutulduğunda sipariş DELIVERED olur
    */
   async scanQRCode(qrCode: string, adminUserId: string) {
     try {
@@ -279,7 +305,13 @@ export class QRCodeService {
                 }
               }
             }
-          }
+          },
+          order_item: {
+            include: {
+              product: true
+            }
+          },
+          product: true
         }
       })
 
@@ -288,48 +320,55 @@ export class QRCodeService {
       }
 
       // QR kodun tamamlanıp tamamlanmadığını kontrol et
-      if (qrRecord.scan_count >= qrRecord.required_scans) {
-        throw new Error(`Bu QR kod zaten tamamlanmış (${qrRecord.scan_count}/${qrRecord.required_scans} tarama)`)
+      const currentScanCount = qrRecord.scan_count || 0
+      const requiredScans = qrRecord.required_scans || 1
+      
+      if (currentScanCount >= requiredScans) {
+        throw new Error(`Bu QR kod zaten tamamlandı (${currentScanCount}/${requiredScans} okutma)`)
       }
 
-      // Tarama sayısını artır
-      const newScanCount = qrRecord.scan_count + 1
-      const isCompleted = newScanCount >= qrRecord.required_scans
+      // Scan count'u artır
+      const newScanCount = currentScanCount + 1
+      const isCompleted = newScanCount >= requiredScans
+      
+      await prisma.qRCode.update({
+        where: { id: qrRecord.id },
+        data: {
+          scan_count: newScanCount,
+          is_scanned: isCompleted, // Gerekli sayıda okutulduğunda true
+          last_scan_at: new Date(),
+          scanned_at: isCompleted ? new Date() : qrRecord.scanned_at
+        }
+      })
 
-      // Sipariş durumunu belirle
+      // Siparişteki tüm QR kodları kontrol et
+      const allQRCodes = await prisma.qRCode.findMany({
+        where: { order_id: qrRecord.order_id }
+      })
+
+      const scannedQRCodes = allQRCodes.filter(qr => qr.is_scanned)
+      const allScanned = scannedQRCodes.length === allQRCodes.length
+
       let newOrderStatus = qrRecord.order.status
-      if (newScanCount === 1) {
-        newOrderStatus = 'SHIPPED' // İlk okutma: Teslimatta
-      } else if (newScanCount >= 2) {
-        newOrderStatus = 'DELIVERED' // İkinci okutma: Tamamlandı
+      let message = `QR kod okutuldu (${newScanCount}/${requiredScans})`
+
+      // Eğer bu QR kod tamamlandıysa
+      if (isCompleted) {
+        message = `QR kod tamamlandı! (${newScanCount}/${requiredScans})`
       }
 
-      // QR kod ve sipariş durumunu güncelle
-      await prisma.$transaction([
-        prisma.qRCode.update({
-          where: { id: qrRecord.id },
-          data: {
-            scan_count: newScanCount,
-            is_scanned: isCompleted,
-            last_scan_at: new Date(),
-            scanned_at: isCompleted ? new Date() : qrRecord.scanned_at
-          }
-        }),
-        prisma.order.update({
+      // Tüm QR kodlar tamamlandıysa siparişi DELIVERED yap
+      if (allScanned) {
+        newOrderStatus = 'DELIVERED'
+        message = 'Tüm QR kodlar tamamlandı, sipariş teslim edildi!'
+        
+        await prisma.order.update({
           where: { id: qrRecord.order_id },
           data: {
-            status: newOrderStatus,
+            status: 'DELIVERED',
             updated_at: new Date()
           }
         })
-      ])
-
-      // Mesaj belirleme
-      let message = ''
-      if (newScanCount === 1) {
-        message = 'QR kod okundu, sipariş teslimatta durumuna geçti'
-      } else if (newScanCount >= 2) {
-        message = 'QR kod okundu, sipariş tamamlandı!'
       }
 
       return {
@@ -338,10 +377,10 @@ export class QRCodeService {
         qrCode: {
           id: qrRecord.id,
           qr_code: qrRecord.qr_code,
-          is_scanned: isCompleted,
           scan_count: newScanCount,
-          required_scans: qrRecord.required_scans,
-          scanned_at: isCompleted ? new Date() : qrRecord.scanned_at,
+          required_scans: requiredScans,
+          is_completed: isCompleted,
+          last_scan_at: new Date(),
           created_at: qrRecord.created_at
         },
         order: {
@@ -357,11 +396,28 @@ export class QRCodeService {
           created_at: qrRecord.order.created_at,
           updated_at: new Date()
         },
+        item: qrRecord.order_item ? {
+          id: qrRecord.order_item.id,
+          product_name: qrRecord.order_item.product.name,
+          quantity: qrRecord.order_item.quantity,
+          unit_price: qrRecord.order_item.unit_price
+        } : null,
+        product: qrRecord.product ? {
+          id: qrRecord.product.productId,
+          name: qrRecord.product.name
+        } : null,
         deliveryInfo: {
-          scan_count: newScanCount,
-          required_scans: qrRecord.required_scans,
-          is_completed: isCompleted,
-          order_status: newOrderStatus
+          completed_qr_codes: scannedQRCodes.length,
+          total_qr_codes: allQRCodes.length,
+          is_order_completed: allScanned,
+          completion_percentage: Math.round((scannedQRCodes.length / allQRCodes.length) * 100),
+          order_status: newOrderStatus,
+          qr_details: allQRCodes.map(qr => ({
+            qr_id: qr.id,
+            scan_count: qr.scan_count || 0,
+            required_scans: qr.required_scans || 1,
+            is_completed: (qr.scan_count || 0) >= (qr.required_scans || 1)
+          }))
         }
       }
     } catch (error: any) {
@@ -370,37 +426,40 @@ export class QRCodeService {
   }
 
   /**
-   * Sipariş için QR kod bilgisini getir
+   * Sipariş için QR kod bilgisini getir - Item bazlı sistem
    */
   async getQRCodesForOrder(orderId: string) {
     try {
-      const qrCode = await prisma.qRCode.findUnique({
+      const qrCodes = await prisma.qRCode.findMany({
         where: { order_id: orderId },
         include: {
-          order: {
+          order_item: {
             include: {
-              items: {
-                include: {
-                  product: true
-                }
-              }
+              product: true
             }
-          }
+          },
+          product: true
+        },
+        orderBy: {
+          created_at: 'asc'
         }
       })
 
-      if (!qrCode) {
+      if (qrCodes.length === 0) {
         throw new Error('Bu sipariş için QR kod bulunamadı')
       }
 
+      const scannedCount = qrCodes.filter(qr => qr.is_scanned).length
+      const totalCount = qrCodes.length
+
       return {
         success: true,
-        qrCode,
+        qrCodes: qrCodes,
         scanInfo: {
-          scan_count: qrCode.scan_count,
-          required_scans: qrCode.required_scans,
-          is_completed: qrCode.is_scanned,
-          progress_percentage: Math.round((qrCode.scan_count / qrCode.required_scans) * 100)
+          scanned_count: scannedCount,
+          total_count: totalCount,
+          is_completed: scannedCount === totalCount,
+          progress_percentage: Math.round((scannedCount / totalCount) * 100)
         }
       }
     } catch (error: any) {
@@ -409,20 +468,16 @@ export class QRCodeService {
   }
 
   /**
-   * Benzersiz QR kod oluştur - URL formatında
+   * Benzersiz QR kod üret
    */
   private generateUniqueQRCode(): string {
     const timestamp = Date.now()
-    const randomBytes = crypto.randomBytes(8).toString('hex')
-    const qrCodeId = `PASHA-${timestamp}-${randomBytes}`.toUpperCase()
-    
-    // QR kod içeriği olarak doğrudan endpoint URL'si döndür
-    const baseUrl = process.env.PUBLIC_URL || 'https://pasha-backend-production.up.railway.app'
-    return `${baseUrl}/api/admin/scan-qr?qrCode=${qrCodeId}`
+    const randomBytes = crypto.randomBytes(8).toString('hex').toUpperCase()
+    return `PASHA-${timestamp}-${randomBytes}`
   }
 
   /**
-   * QR kod istatistikleri
+   * QR kod istatistikleri - Item bazlı sistem
    */
   async getQRCodeStats(orderId?: string) {
     try {
@@ -432,16 +487,51 @@ export class QRCodeService {
       const totalQRCodes = allQRCodes.length
       
       // QR kodları durumuna göre grupla
-      const notScannedQRCodes = allQRCodes.filter(qr => qr.scan_count === 0)
-      const shippedQRCodes = allQRCodes.filter(qr => qr.scan_count === 1)
-      const deliveredQRCodes = allQRCodes.filter(qr => qr.scan_count >= 2)
+      const scannedQRCodes = allQRCodes.filter(qr => qr.is_scanned)
+      const pendingQRCodes = allQRCodes.filter(qr => !qr.is_scanned)
+
+      // Sipariş bazlı istatistikler
+      if (orderId) {
+        return {
+          total: totalQRCodes,
+          scanned: scannedQRCodes.length,
+          pending: pendingQRCodes.length,
+          completion_rate: totalQRCodes > 0 ? Math.round((scannedQRCodes.length / totalQRCodes) * 100) : 0
+        }
+      }
+
+      // Genel istatistikler - sipariş bazında
+      const orders = await prisma.order.findMany({
+        include: {
+          qr_codes: true
+        }
+      })
+
+      const orderStats = orders.map(order => {
+        const qrCodes = order.qr_codes
+        const scanned = qrCodes.filter(qr => qr.is_scanned).length
+        const total = qrCodes.length
+        
+        return {
+          order_id: order.id,
+          status: order.status,
+          total_qr_codes: total,
+          scanned_qr_codes: scanned,
+          is_completed: total > 0 && scanned === total
+        }
+      })
+
+      const completedOrders = orderStats.filter(o => o.is_completed).length
+      const totalOrdersWithQR = orderStats.filter(o => o.total_qr_codes > 0).length
 
       return {
-        total: totalQRCodes,
-        not_scanned: notScannedQRCodes.length,
-        shipped: shippedQRCodes.length, // 1 kere okunmuş
-        delivered: deliveredQRCodes.length, // 2 kere okunmuş
-        completion_rate: totalQRCodes > 0 ? Math.round((deliveredQRCodes.length / totalQRCodes) * 100) : 0
+        total_qr_codes: totalQRCodes,
+        scanned_qr_codes: scannedQRCodes.length,
+        pending_qr_codes: pendingQRCodes.length,
+        total_orders_with_qr: totalOrdersWithQR,
+        completed_orders: completedOrders,
+        order_completion_rate: totalOrdersWithQR > 0 ? Math.round((completedOrders / totalOrdersWithQR) * 100) : 0,
+        qr_scan_rate: totalQRCodes > 0 ? Math.round((scannedQRCodes.length / totalQRCodes) * 100) : 0
       }
     } catch (error: any) {
       throw new Error(`İstatistik hatası: ${error.message}`)
