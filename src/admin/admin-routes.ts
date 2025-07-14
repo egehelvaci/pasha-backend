@@ -7,7 +7,10 @@ import storeRoutes from './store-routes'
 const router = express.Router()
 const adminController = new AdminController()
 
-// Tüm admin rotaları için önce kimlik doğrulama ve yetkilendirme gerekiyor
+// QR Kod okutma - Authentication gerektirmez (mobil uygulama için)
+router.post('/scan-qr', adminOrderController.scanQRCode)
+
+// Tüm diğer admin rotaları için önce kimlik doğrulama ve yetkilendirme gerekiyor
 router.use(authMiddleware)
 router.use(authorizeRoles('admin'))
 
@@ -19,17 +22,14 @@ router.get('/orders', adminOrderController.getAllOrders)
 router.get('/orders/stats', adminOrderController.getOrderStats)
 router.get('/orders/:orderId', adminOrderController.getOrderById)
 router.post('/orders/:orderId/confirm', adminOrderController.confirmOrder)
-// Mevcut siparişin QR kodlarını (yeniden) oluşturur
+
+// QR Kod yönetimi rotaları
 router.post('/orders/:orderId/generate-qr', adminOrderController.generateQRCodes);
-
-// Siparişin QR kodları için görselleri oluşturur ve yükler
 router.post('/orders/:orderId/generate-qr-images', adminOrderController.generateQRCodeImages);
-
-// Siparişin durumunu günceller
-router.put('/orders/:orderId/status', adminOrderController.updateOrderStatus)
 router.get('/orders/:orderId/qrcodes', adminOrderController.getOrderQRCodes)
-router.post('/scan-qr', adminOrderController.scanQRCode)
-router.post('/scan-qr-multiple', adminOrderController.scanMultipleQRCodes)
+
+// Sipariş durumu güncelleme
+router.put('/orders/:orderId/status', adminOrderController.updateOrderStatus)
 
 // Kullanıcıları listeleme
 router.get('/users', adminController.getAllUsers)

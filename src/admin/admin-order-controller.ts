@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
-import prisma from '../utils/prisma'
 import { qrCodeService } from '../services/qr-code-service'
+import prisma from '../utils/prisma'
 
 export class AdminOrderController {
   constructor() {
@@ -8,202 +8,87 @@ export class AdminOrderController {
     this.getOrderById = this.getOrderById.bind(this)
     this.confirmOrder = this.confirmOrder.bind(this)
     this.scanQRCode = this.scanQRCode.bind(this)
-    this.scanMultipleQRCodes = this.scanMultipleQRCodes.bind(this)
     this.getOrderQRCodes = this.getOrderQRCodes.bind(this)
     this.getOrderStats = this.getOrderStats.bind(this)
     this.updateOrderStatus = this.updateOrderStatus.bind(this)
+    this.generateQRCodes = this.generateQRCodes.bind(this)
+    this.generateQRCodeImages = this.generateQRCodeImages.bind(this)
   }
 
   /**
-   * Tüm siparişleri detaylarıyla birlikte listele (admin için)
+   * Tüm siparişleri listele
    */
   async getAllOrders(req: Request, res: Response) {
     try {
-      const page = parseInt(req.query.page as string) || 1
-      const limit = parseInt(req.query.limit as string) || 20
-      const status = req.query.status as string
-      const search = req.query.search as string // Mağaza adı veya kullanıcı adı ile arama
-      const skip = (page - 1) * limit
+      const { 
+        page = 1, 
+        limit = 10, 
+        status, 
+        userId,
+        sortBy = 'created_at',
+        sortOrder = 'desc'
+      } = req.query
 
+      const skip = (Number(page) - 1) * Number(limit)
+      
+      // Filtreleme koşulları
       const where: any = {}
-      if (status) {
-        where.status = status
-      }
+      if (status) where.status = status
+      if (userId) where.user_id = userId
 
-      // Arama filtresi
-      if (search) {
-        where.OR = [
-          {
-            user: {
-              name: {
-                contains: search,
-                mode: 'insensitive'
-              }
-            }
-          },
-          {
-            user: {
-              surname: {
-                contains: search,
-                mode: 'insensitive'
-              }
-            }
-          },
-          {
-            user: {
-              email: {
-                contains: search,
-                mode: 'insensitive'
-              }
-            }
-          },
-          {
-            store_name: {
-              contains: search,
-              mode: 'insensitive'
-            }
-          }
-        ]
-      }
+      // Sıralama
+      const orderBy: any = {}
+      orderBy[sortBy as string] = sortOrder
 
       const [orders, totalCount] = await Promise.all([
         prisma.order.findMany({
           where,
           include: {
             user: {
-              select: {
-                userId: true,
-                name: true,
-                surname: true,
-                email: true,
-                Store: {
-                  select: {
-                    store_id: true,
-                    kurum_adi: true,
-                    vergi_numarasi: true,
-                    vergi_dairesi: true,
-                    telefon: true,
-                    eposta: true,
-                    adres: true,
-                    acik_hesap_tutari: true,
-                    limitsiz_acik_hesap: true
-                  }
-                }
+              include: {
+                Store: true,
+                userType: true
               }
             },
             items: {
               include: {
-                product: {
-                  select: {
-                    productId: true,
-                    name: true,
-                    productImage: true,
-                    collection: {
-                      select: {
-                        collectionId: true,
-                        name: true
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            cart: {
-              select: {
-                id: true,
-                created_at: true,
-                updated_at: true
-              }
-            },
-            qr_codes: {
-              select: {
-                id: true,
-                qr_code: true,
-                qrCodeImageUrl: true,
-                required_scans: true,
-                scan_count: true,
-                is_scanned: true,
-                scanned_at: true,
-                created_at: true
+                product: true
               }
             }
           },
-          orderBy: { created_at: 'desc' },
+          orderBy,
           skip,
-          take: limit
+          take: Number(limit)
         }),
         prisma.order.count({ where })
       ])
 
-      // Her sipariş için detaylı istatistikler hesapla
-      const ordersWithDetails = orders.map((order: any) => {
-        const totalItems = order.items.reduce((sum: number, item: any) => sum + item.quantity, 0)
-        const totalArea = order.items.reduce((sum: number, item: any) => {
-          const area = item.width && item.height ? (Number(item.width) * Number(item.height)) / 10000 : 0
-          return sum + (area * item.quantity)
-        }, 0)
-
-        return {
-          ...order,
-          order_summary: {
-            total_items: totalItems,
-            total_area_m2: Number(totalArea.toFixed(2)),
-            items_with_fringe: order.items.filter((item: any) => item.has_fringe).length,
-            unique_products: order.items.length
-          },
-          qr_stats: {
-            total: order.qr_codes.length,
-            scanned: order.qr_codes.filter((qr: any) => qr.is_scanned).length,
-            pending: order.qr_codes.filter((qr: any) => !qr.is_scanned).length,
-            scanned_percentage: order.qr_codes.length > 0 
-              ? Math.round((order.qr_codes.filter((qr: any) => qr.is_scanned).length / order.qr_codes.length) * 100)
-              : 0
-          },
-          customer_info: {
-            name: `${order.user.name} ${order.user.surname}`,
-            email: order.user.email,
-            phone: order.user.Store?.telefon || order.store_phone,
-            store_name: order.user.Store?.kurum_adi || order.store_name,
-            store_tax_number: order.user.Store?.vergi_numarasi || order.store_tax_number,
-            store_address: order.user.Store?.adres || order.delivery_address
-          },
-          financial_info: {
-            total_price: Number(order.total_price),
-            store_balance: order.user.Store?.acik_hesap_tutari ? Number(order.user.Store.acik_hesap_tutari) : null,
-            unlimited_account: order.user.Store?.limitsiz_acik_hesap || false
-          }
-        }
-      })
+      const totalPages = Math.ceil(totalCount / Number(limit))
 
       return res.status(200).json({
         success: true,
         data: {
-          orders: ordersWithDetails,
+          orders,
           pagination: {
-            page,
-            limit,
-            total: totalCount,
-            totalPages: Math.ceil(totalCount / limit),
-            hasNext: page * limit < totalCount,
-            hasPrev: page > 1
-          },
-          filters: {
-            status: status || 'all',
-            search: search || null
+            page: Number(page),
+            limit: Number(limit),
+            totalCount,
+            totalPages,
+            hasNext: Number(page) < totalPages,
+            hasPrev: Number(page) > 1
           }
         }
       })
     } catch (error: any) {
-      console.error('Admin getAllOrders error:', error)
       return res.status(500).json({
         success: false,
-        message: error.message || 'Siparişler alınırken bir hata oluştu'
+        message: error.message || 'Siparişler listelenirken bir hata oluştu'
       })
     }
   }
 
   /**
-   * Belirli bir siparişin detaylarını getir
+   * Belirli bir siparişi getir
    */
   async getOrderById(req: Request, res: Response) {
     try {
@@ -226,19 +111,6 @@ export class AdminOrderController {
                 }
               }
             }
-          },
-          qr_codes: {
-            select: {
-              id: true,
-              qr_code: true,
-              qrCodeImageUrl: true, // Görsel URL'ini de ekleyelim
-              required_scans: true,
-              scan_count: true,
-              is_scanned: true,
-              scanned_at: true,
-              created_at: true
-            },
-            orderBy: { created_at: 'asc' }
           }
         }
       })
@@ -250,51 +122,34 @@ export class AdminOrderController {
         })
       }
 
-      // QR kod istatistikleri
-      const qrStats = {
-        total: order.qr_codes.length,
-        scanned: order.qr_codes.filter(qr => qr.is_scanned).length,
-        pending: order.qr_codes.filter(qr => !qr.is_scanned).length,
-        completionPercentage: order.qr_codes.length > 0 
-          ? Math.round((order.qr_codes.filter(qr => qr.is_scanned).length / order.qr_codes.length) * 100) 
-          : 0
-      }
-
       return res.status(200).json({
         success: true,
-        data: {
-          ...order,
-          qr_stats: qrStats
-        }
+        data: order
       })
     } catch (error: any) {
       return res.status(500).json({
         success: false,
-        message: error.message || 'Sipariş bilgileri alınırken bir hata oluştu'
+        message: error.message || 'Sipariş getirilirken bir hata oluştu'
       })
     }
   }
 
   /**
-   * Siparişi onayla - QR kodları oluştur ve stokları düşür
+   * Siparişi onayla ve QR kod oluştur
    */
   async confirmOrder(req: Request, res: Response) {
     try {
       const { orderId } = req.params
-      const adminUserId = req.user?.userId
 
-      if (!adminUserId) {
-        return res.status(401).json({
-          success: false,
-          message: 'Yetkisiz erişim'
-        })
-      }
-
-      // Sipariş durumu kontrolü
+      // Siparişin varlığını kontrol et
       const order = await prisma.order.findUnique({
         where: { id: orderId },
         include: {
-          items: true
+          user: {
+            include: {
+              Store: true
+            }
+          }
         }
       })
 
@@ -305,7 +160,7 @@ export class AdminOrderController {
         })
       }
 
-      // Sipariş durumu kontrolü - sadece iptal edilmiş siparişler onaylanamaz
+      // Sipariş durumu kontrolü
       if (order.status === 'CANCELED') {
         return res.status(400).json({
           success: false,
@@ -313,7 +168,7 @@ export class AdminOrderController {
         })
       }
 
-      // QR kodları oluştur ve siparişi onayla
+      // QR kod oluştur ve siparişi onayla
       const qrResult = await qrCodeService.generateQRCodesForOrder(orderId)
       
       // Stokları düşür
@@ -332,18 +187,16 @@ export class AdminOrderController {
             include: {
               product: true
             }
-          },
-          qr_codes: true
+          }
         }
       })
 
       return res.status(200).json({
         success: true,
-        message: 'Sipariş başarıyla onaylandı',
+        message: 'Sipariş başarıyla onaylandı ve QR kod oluşturuldu',
         data: {
           order: updatedOrder,
-          qrCodes: qrResult.qrCodes,
-          totalQRCodes: qrResult.totalQRCodes
+          qrCode: qrResult.qrCode
         }
       })
     } catch (error: any) {
@@ -355,24 +208,42 @@ export class AdminOrderController {
   }
 
   /**
-   * QR kod okut
+   * QR kod okut - Authentication gerektirmez (mobil uygulama için)
    */
   async scanQRCode(req: Request, res: Response) {
     try {
-      const { qrCode } = req.body
-      const adminUserId = req.user?.userId
+      let { qrCode } = req.body
+      const adminUserId = req.user?.userId || 'mobile-app' // Mobil uygulama için varsayılan değer
 
-      if (!adminUserId) {
-        return res.status(401).json({
-          success: false,
-          message: 'Yetkisiz erişim'
-        })
-      }
-
+      // QR kod validasyonu
       if (!qrCode) {
         return res.status(400).json({
           success: false,
-          message: 'QR kod zorunludur'
+          message: 'QR kod zorunludur',
+          error_code: 'MISSING_QR_CODE'
+        })
+      }
+
+      // Eğer qrCode array olarak gelirse, ilk elemanını al
+      if (Array.isArray(qrCode)) {
+        qrCode = qrCode[0]
+      }
+
+      // qrCode'un string olduğundan emin ol
+      if (typeof qrCode !== 'string') {
+        return res.status(400).json({
+          success: false,
+          message: 'QR kod string formatında olmalıdır',
+          error_code: 'INVALID_QR_FORMAT'
+        })
+      }
+
+      // QR kod formatını kontrol et (PASHA- ile başlamalı)
+      if (!qrCode.startsWith('PASHA-')) {
+        return res.status(400).json({
+          success: false,
+          message: 'Geçersiz QR kod formatı. QR kod PASHA- ile başlamalıdır.',
+          error_code: 'INVALID_QR_FORMAT'
         })
       }
 
@@ -380,76 +251,26 @@ export class AdminOrderController {
 
       return res.status(200).json({
         success: true,
-        message: result.deliveryInfo.isOrderCompleted 
-          ? 'QR kod okundu ve sipariş teslim edildi!' 
-          : 'QR kod başarıyla okundu',
-        data: result
+        message: result.message,
+        data: {
+          qr_code: result.qrCode,
+          order: result.order,
+          delivery_info: result.deliveryInfo
+        }
       })
     } catch (error: any) {
+      console.error('QR kod tarama hatası:', error)
+      
       return res.status(400).json({
         success: false,
-        message: error.message || 'QR kod okutulurken bir hata oluştu'
+        message: error.message || 'QR kod okutulurken bir hata oluştu',
+        error_code: 'QR_SCAN_ERROR'
       })
     }
   }
 
   /**
-   * Birden çok QR kod okut
-   */
-  async scanMultipleQRCodes(req: Request, res: Response) {
-    try {
-      const { qrCodes } = req.body
-      const adminUserId = req.user?.userId
-
-      if (!adminUserId) {
-        return res.status(401).json({
-          success: false,
-          message: 'Yetkisiz erişim'
-        })
-      }
-
-      if (!qrCodes || !Array.isArray(qrCodes) || qrCodes.length === 0) {
-        return res.status(400).json({
-          success: false,
-          message: 'QR kodlar dizisi zorunludur ve boş olamaz'
-        })
-      }
-
-      // Maksimum 50 QR kod limiti
-      if (qrCodes.length > 50) {
-        return res.status(400).json({
-          success: false,
-          message: 'Bir seferde maksimum 50 QR kod okutabilirsiniz'
-        })
-      }
-
-      const result = await qrCodeService.scanMultipleQRCodes(qrCodes, adminUserId)
-
-      let message = `${result.summary.successfullyScanned} QR kod başarıyla okundu`
-      
-      if (result.summary.failed > 0) {
-        message += `, ${result.summary.failed} QR kod başarısız`
-      }
-      
-      if (result.summary.isOrderCompleted) {
-        message += ' ve sipariş teslim edildi!'
-      }
-
-      return res.status(200).json({
-        success: true,
-        message,
-        data: result
-      })
-    } catch (error: any) {
-      return res.status(400).json({
-        success: false,
-        message: error.message || 'QR kodlar okutulurken bir hata oluştu'
-      })
-    }
-  }
-
-  /**
-   * Sipariş için QR kodlarını listele
+   * Sipariş için QR kod bilgilerini getir
    */
   async getOrderQRCodes(req: Request, res: Response) {
     try {
@@ -462,9 +283,9 @@ export class AdminOrderController {
         data: result
       })
     } catch (error: any) {
-      return res.status(500).json({
+      return res.status(404).json({
         success: false,
-        message: error.message || 'QR kodları alınırken bir hata oluştu'
+        message: error.message || 'QR kod bilgileri alınırken bir hata oluştu'
       })
     }
   }
@@ -478,6 +299,7 @@ export class AdminOrderController {
         totalOrders,
         pendingOrders,
         confirmedOrders,
+        shippedOrders,
         deliveredOrders,
         canceledOrders,
         qrStats
@@ -485,6 +307,7 @@ export class AdminOrderController {
         prisma.order.count(),
         prisma.order.count({ where: { status: 'PENDING' } }),
         prisma.order.count({ where: { status: 'CONFIRMED' } }),
+        prisma.order.count({ where: { status: 'SHIPPED' } }),
         prisma.order.count({ where: { status: 'DELIVERED' } }),
         prisma.order.count({ where: { status: 'CANCELED' } }),
         qrCodeService.getQRCodeStats()
@@ -497,10 +320,11 @@ export class AdminOrderController {
             total: totalOrders,
             pending: pendingOrders,
             confirmed: confirmedOrders,
+            shipped: shippedOrders,
             delivered: deliveredOrders,
             canceled: canceledOrders
           },
-          qrCodes: qrStats
+          qr_codes: qrStats
         }
       })
     } catch (error: any) {
@@ -522,15 +346,16 @@ export class AdminOrderController {
       if (!status) {
         return res.status(400).json({
           success: false,
-          message: 'Sipariş durumu zorunludur'
+          message: 'Durum bilgisi zorunludur'
         })
       }
 
+      // Geçerli durumlar kontrolü
       const validStatuses = ['PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELED']
       if (!validStatuses.includes(status)) {
         return res.status(400).json({
           success: false,
-          message: 'Geçersiz sipariş durumu'
+          message: 'Geçersiz durum bilgisi'
         })
       }
 
@@ -538,7 +363,6 @@ export class AdminOrderController {
       const existingOrder = await prisma.order.findUnique({
         where: { id: orderId },
         include: {
-          qr_codes: true,
           user: {
             include: {
               Store: true
@@ -554,71 +378,58 @@ export class AdminOrderController {
         })
       }
 
-      // Sipariş iptal ediliyorsa açık hesap bakiyesini geri ekle
-      if (status === 'CANCELED' && existingOrder.status !== 'CANCELED') {
-        try {
-          const store = existingOrder.user.Store
-          if (store && !store.limitsiz_acik_hesap) {
-            // Açık hesap tutarını geri ekle
-            await prisma.store.update({
-              where: { store_id: store.store_id },
-              data: {
-                acik_hesap_tutari: {
-                  increment: Number(existingOrder.total_price)
-                }
-              }
-            })
-            
-            console.log(`💰 Sipariş ${orderId} iptal edildi - ${existingOrder.total_price} TL açık hesaba geri eklendi`)
-          }
-        } catch (balanceError: any) {
-          console.error('Açık hesap bakiyesi geri ekleme hatası:', balanceError.message)
-          // Hata olsa da sipariş iptal işlemini devam ettir
-        }
-      }
-
-      // Eğer CONFIRMED yapılıyorsa, QR kodları oluştur (eski sistem varsa yenile)
       let qrResult = null
-      if (status === 'CONFIRMED') {
+
+      // CONFIRMED durumuna geçerken QR kod oluştur
+      if (status === 'CONFIRMED' && existingOrder.status !== 'CONFIRMED') {
         try {
-          // QR kodları oluştur
           qrResult = await qrCodeService.generateQRCodesForOrder(orderId)
-          
-          // Stokları düşür
           await qrCodeService.reduceStockForOrder(orderId)
-          
-          console.log(`✅ Sipariş ${orderId} CONFIRMED olarak güncellendi - ${qrResult.totalQRCodes} QR kod oluşturuldu`)
-        } catch (qrError: any) {
-          console.error('QR kod oluşturma hatası:', qrError.message)
-          // QR kod hatası olsa da durum güncellemesini devam ettir
+          console.log(`✅ Sipariş ${orderId} CONFIRMED olarak güncellendi - QR kod oluşturuldu`)
+        } catch (qrError) {
+          console.error('QR kod oluşturma hatası:', qrError)
+          // QR kod hatası durumunda bile sipariş durumunu güncelle
         }
       }
 
+      // İptal durumunda açık hesap bakiyesini geri ekle
+      if (status === 'CANCELED' && existingOrder.status !== 'CANCELED') {
+        const store = existingOrder.user.Store
+        if (store && !store.limitsiz_acik_hesap) {
+          const newBalance = Number(store.acik_hesap_tutari) + Number(existingOrder.total_price)
+          await prisma.store.update({
+            where: { store_id: store.store_id },
+            data: { acik_hesap_tutari: newBalance }
+          })
+        }
+      }
+
+      // Sipariş durumunu güncelle
       const order = await prisma.order.update({
         where: { id: orderId },
         data: { 
-          status,
+          status: status,
           updated_at: new Date()
         },
         include: {
           user: {
             include: {
-              Store: true
+              Store: true,
+              userType: true
             }
           },
           items: {
             include: {
               product: true
             }
-          },
-          qr_codes: true
+          }
         }
       })
 
       // Response mesajını belirle
       let message = 'Sipariş durumu güncellendi'
       if (status === 'CONFIRMED' && qrResult) {
-        message = `Sipariş durumu güncellendi ve ${qrResult.totalQRCodes} QR kod oluşturuldu`
+        message = 'Sipariş durumu güncellendi ve QR kod oluşturuldu'
       } else if (status === 'CANCELED' && existingOrder.status !== 'CANCELED') {
         const store = existingOrder.user.Store
         if (store && !store.limitsiz_acik_hesap) {
@@ -636,10 +447,7 @@ export class AdminOrderController {
 
       // QR kod bilgilerini ekle
       if (qrResult) {
-        response.qrCodes = {
-          totalQRCodes: qrResult.totalQRCodes,
-          created: true
-        }
+        response.qrCode = qrResult.qrCode
       }
 
       return res.status(200).json(response)
