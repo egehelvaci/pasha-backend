@@ -224,11 +224,50 @@ export class AdminOrderController {
 
       // QR kod validasyonu
       if (!qrCode) {
-        return res.status(400).json({
-          success: false,
-          message: 'QR kod zorunludur (body veya query parameter olarak)',
-          error_code: 'MISSING_QR_CODE'
-        })
+        const missingQrHtml = `
+          <!DOCTYPE html>
+          <html lang="tr">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>QR Kod Gerekli</title>
+            <style>
+              body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                margin: 0;
+                background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+                color: #333;
+              }
+              .container {
+                text-align: center;
+                background: rgba(255, 255, 255, 0.9);
+                padding: 2rem;
+                border-radius: 15px;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+                max-width: 400px;
+              }
+              .warning-icon {
+                font-size: 4rem;
+                margin-bottom: 1rem;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="warning-icon">⚠️</div>
+              <div class="message">
+                <strong>QR Kod Gerekli!</strong><br>
+                Lütfen geçerli bir QR kod taratın.
+              </div>
+            </div>
+          </body>
+          </html>
+        `
+        return res.status(400).send(missingQrHtml)
       }
 
       // Eğer qrCode array olarak gelirse, ilk elemanını al
@@ -238,41 +277,225 @@ export class AdminOrderController {
 
       // qrCode'un string olduğundan emin ol
       if (typeof qrCode !== 'string') {
-        return res.status(400).json({
-          success: false,
-          message: 'QR kod string formatında olmalıdır',
-          error_code: 'INVALID_QR_FORMAT'
-        })
+        const invalidFormatHtml = `
+          <!DOCTYPE html>
+          <html lang="tr">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Geçersiz Format</title>
+            <style>
+              body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                margin: 0;
+                background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+                color: #333;
+              }
+              .container {
+                text-align: center;
+                background: rgba(255, 255, 255, 0.9);
+                padding: 2rem;
+                border-radius: 15px;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+                max-width: 400px;
+              }
+              .warning-icon {
+                font-size: 4rem;
+                margin-bottom: 1rem;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="warning-icon">⚠️</div>
+              <div class="message">
+                <strong>Geçersiz QR Kod Formatı!</strong><br>
+                Lütfen doğru formatta bir QR kod taratın.
+              </div>
+            </div>
+          </body>
+          </html>
+        `
+        return res.status(400).send(invalidFormatHtml)
       }
 
       // QR kod formatını kontrol et (PASHA- içermeli veya scan-qr URL'si olmalı)
       if (!qrCode.includes('PASHA-') && !qrCode.includes('/api/admin/scan-qr')) {
-        return res.status(400).json({
-          success: false,
-          message: 'Geçersiz QR kod formatı. QR kod PASHA- içermeli veya geçerli scan-qr URL\'si olmalıdır.',
-          error_code: 'INVALID_QR_FORMAT'
-        })
+        const invalidQrHtml = `
+          <!DOCTYPE html>
+          <html lang="tr">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Geçersiz QR Kod</title>
+            <style>
+              body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                margin: 0;
+                background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+                color: #333;
+              }
+              .container {
+                text-align: center;
+                background: rgba(255, 255, 255, 0.9);
+                padding: 2rem;
+                border-radius: 15px;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+                max-width: 400px;
+              }
+              .warning-icon {
+                font-size: 4rem;
+                margin-bottom: 1rem;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="warning-icon">🚫</div>
+              <div class="message">
+                <strong>Tanınmayan QR Kod!</strong><br>
+                Bu QR kod Pasha sistemine ait değil.
+              </div>
+            </div>
+          </body>
+          </html>
+        `
+        return res.status(400).send(invalidQrHtml)
       }
 
       const result = await qrCodeService.scanQRCode(qrCode, adminUserId)
 
-      return res.status(200).json({
-        success: true,
-        message: result.message,
-        data: {
-          qr_code: result.qrCode,
-          order: result.order,
-          delivery_info: result.deliveryInfo
-        }
-      })
+      // QR kod tarama başarılı - basit HTML response döndür
+      const htmlResponse = `
+        <!DOCTYPE html>
+        <html lang="tr">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>QR Kod Tarama Sonucu</title>
+          <style>
+            body {
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              min-height: 100vh;
+              margin: 0;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              color: white;
+            }
+            .container {
+              text-align: center;
+              background: rgba(255, 255, 255, 0.1);
+              padding: 2rem;
+              border-radius: 15px;
+              backdrop-filter: blur(10px);
+              box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+              max-width: 400px;
+            }
+            .success-icon {
+              font-size: 4rem;
+              margin-bottom: 1rem;
+            }
+            .message {
+              font-size: 1.2rem;
+              margin-bottom: 1rem;
+              line-height: 1.4;
+            }
+            .status {
+              font-size: 0.9rem;
+              opacity: 0.8;
+              margin-top: 1rem;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="success-icon">✅</div>
+            <div class="message">
+              <strong>QR Kod Başarıyla Okundu!</strong><br>
+              ${result.message}
+            </div>
+            <div class="status">
+              Tarama Durumu: ${result.deliveryInfo.scan_count}/${result.deliveryInfo.required_scans}
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+
+      return res.status(200).send(htmlResponse)
     } catch (error: any) {
       console.error('QR kod tarama hatası:', error)
       
-      return res.status(400).json({
-        success: false,
-        message: error.message || 'QR kod okutulurken bir hata oluştu',
-        error_code: 'QR_SCAN_ERROR'
-      })
+      // Hata durumunda da HTML response döndür
+      const errorHtmlResponse = `
+        <!DOCTYPE html>
+        <html lang="tr">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>QR Kod Tarama Hatası</title>
+          <style>
+            body {
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              min-height: 100vh;
+              margin: 0;
+              background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%);
+              color: white;
+            }
+            .container {
+              text-align: center;
+              background: rgba(255, 255, 255, 0.1);
+              padding: 2rem;
+              border-radius: 15px;
+              backdrop-filter: blur(10px);
+              box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+              max-width: 400px;
+            }
+            .error-icon {
+              font-size: 4rem;
+              margin-bottom: 1rem;
+            }
+            .message {
+              font-size: 1.2rem;
+              margin-bottom: 1rem;
+              line-height: 1.4;
+            }
+            .error-detail {
+              font-size: 0.9rem;
+              opacity: 0.8;
+              margin-top: 1rem;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="error-icon">❌</div>
+            <div class="message">
+              <strong>QR Kod Tarama Hatası!</strong><br>
+              ${error.message || 'QR kod okutulurken bir hata oluştu'}
+            </div>
+            <div class="error-detail">
+              Lütfen geçerli bir QR kod ile tekrar deneyin.
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+      
+      return res.status(400).send(errorHtmlResponse)
     }
   }
 
@@ -399,15 +622,47 @@ export class AdminOrderController {
         }
       }
 
-      // İptal durumunda açık hesap bakiyesini geri ekle
+      // İptal durumunda açık hesap bakiyesini ve fiyat listesi limitini geri ekle
+      // NOT: Sadece PENDING durumdaki siparişler iptal edilebilir
       if (status === 'CANCELED' && existingOrder.status !== 'CANCELED') {
+        // PENDING durumu dışındaki siparişlerin iptal edilmesini engelle
+        if (existingOrder.status !== 'PENDING') {
+          return res.status(400).json({
+            success: false,
+            message: `${existingOrder.status} durumundaki siparişler iptal edilemez. Sadece PENDING durumdaki siparişler iptal edilebilir.`
+          })
+        }
         const store = existingOrder.user.Store
+        const orderTotal = Number(existingOrder.total_price)
+        
+        // 1. Açık hesap tutarını iade et (sınırsız olmayan mağazalar için)
         if (store && !store.limitsiz_acik_hesap) {
-          const newBalance = Number(store.acik_hesap_tutari) + Number(existingOrder.total_price)
+          const newBalance = Number(store.acik_hesap_tutari) + orderTotal
           await prisma.store.update({
             where: { store_id: store.store_id },
             data: { acik_hesap_tutari: newBalance }
           })
+        }
+
+        // 2. Fiyat listesi limitini iade et
+        if (store) {
+          // Mağazanın fiyat listesini bul
+          const storePriceList = await prisma.storePriceList.findFirst({
+            where: { store_id: store.store_id },
+            include: { PriceList: true }
+          })
+          
+          if (storePriceList && storePriceList.PriceList && storePriceList.PriceList.limit_amount) {
+            const currentLimit = Number(storePriceList.PriceList.limit_amount)
+            const newLimit = currentLimit + orderTotal
+            
+            await prisma.priceList.update({
+              where: { price_list_id: storePriceList.PriceList.price_list_id },
+              data: { limit_amount: newLimit }
+            })
+            
+            console.log(`💰 Fiyat listesi limiti iade edildi: ${currentLimit} → ${newLimit} TL`)
+          }
         }
       }
 
@@ -439,10 +694,12 @@ export class AdminOrderController {
         message = 'Sipariş durumu güncellendi ve QR kod oluşturuldu'
       } else if (status === 'CANCELED' && existingOrder.status !== 'CANCELED') {
         const store = existingOrder.user.Store
+        const orderTotal = Number(existingOrder.total_price)
+        
         if (store && !store.limitsiz_acik_hesap) {
-          message = `Sipariş iptal edildi ve ${existingOrder.total_price} TL açık hesap bakiyesi geri eklendi`
+          message = `Sipariş iptal edildi. ${orderTotal} TL açık hesap bakiyesi ve fiyat listesi limiti geri eklendi.`
         } else {
-          message = 'Sipariş iptal edildi'
+          message = `Sipariş iptal edildi. ${orderTotal} TL fiyat listesi limiti geri eklendi.`
         }
       }
 
