@@ -66,10 +66,19 @@ export class AdminOrderController {
 
       const totalPages = Math.ceil(totalCount / Number(limit))
 
+      // Orders'ta cut_type'ları rectangle'dan standart'a dönüştür
+      const processedOrders = orders.map(order => ({
+        ...order,
+        items: order.items.map(item => ({
+          ...item,
+          cut_type: item.cut_type === 'rectangle' ? 'standart' : item.cut_type
+        }))
+      }))
+
       return res.status(200).json({
         success: true,
         data: {
-          orders,
+          orders: processedOrders,
           pagination: {
             page: Number(page),
             limit: Number(limit),
@@ -124,9 +133,18 @@ export class AdminOrderController {
         })
       }
 
+      // Order'da cut_type'ları rectangle'dan standart'a dönüştür
+      const processedOrder = {
+        ...order,
+        items: order.items.map(item => ({
+          ...item,
+          cut_type: item.cut_type === 'rectangle' ? 'standart' : item.cut_type
+        }))
+      }
+
       return res.status(200).json({
         success: true,
-        data: order
+        data: processedOrder
       })
     } catch (error: any) {
       return res.status(500).json({
@@ -193,11 +211,20 @@ export class AdminOrderController {
         }
       })
 
+      // UpdatedOrder'da cut_type'ları rectangle'dan standart'a dönüştür
+      const processedUpdatedOrder = {
+        ...updatedOrder,
+        items: updatedOrder?.items.map(item => ({
+          ...item,
+          cut_type: item.cut_type === 'rectangle' ? 'standart' : item.cut_type
+        })) || []
+      }
+
       return res.status(200).json({
         success: true,
         message: 'Sipariş başarıyla onaylandı ve QR kod oluşturuldu',
         data: {
-          order: updatedOrder,
+          order: processedUpdatedOrder,
           qrCode: qrResult.qrCode
         }
       })
@@ -703,10 +730,19 @@ export class AdminOrderController {
         }
       }
 
+      // Order'da cut_type'ları rectangle'dan standart'a dönüştür
+      const processedOrderForStatus = {
+        ...order,
+        items: order.items.map(item => ({
+          ...item,
+          cut_type: item.cut_type === 'rectangle' ? 'standart' : item.cut_type
+        }))
+      }
+
       const response: any = {
         success: true,
         message,
-        data: order
+        data: processedOrderForStatus
       }
 
       // QR kod bilgilerini ekle
