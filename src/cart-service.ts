@@ -13,7 +13,7 @@ export interface AddToCartRequest {
   width: number;
   height: number;
   hasFringe: boolean;
-  cutType: 'rectangle' | 'round' | 'oval' | 'custom';
+  cutType: 'standart' | 'round' | 'oval' | 'custom';
   notes?: string;
 }
 
@@ -23,7 +23,7 @@ export interface UpdateCartItemRequest {
   width?: number;
   height?: number;
   hasFringe?: boolean;
-  cutType?: 'rectangle' | 'round' | 'oval' | 'custom';
+  cutType?: 'standart' | 'round' | 'oval' | 'custom';
   notes?: string;
 }
 
@@ -112,11 +112,11 @@ export class CartService {
         'post kesim': $Enums.cut_type_enum.custom
       };
 
-      // İlk önce gelen değeri mapping'den kontrol et
-      const mappedCutType = cutTypeMapping[requestedCutType];
-      if (!mappedCutType) {
-        throw new Error(`Geçersiz kesim türü: ${data.cutType}. Geçerli değerler: rectangle, round, oval, custom, standart, daire`);
-      }
+              // İlk önce gelen değeri mapping'den kontrol et
+        const mappedCutType = cutTypeMapping[requestedCutType];
+        if (!mappedCutType) {
+          throw new Error(`Geçersiz kesim türü: ${data.cutType}. Geçerli değerler: standart, round, oval, custom, daire`);
+        }
 
       // API'deki cutTypes'tan validasyon yap ama enum değerini kullan
       const isValidCutType = validCutTypes.some(apiCutType => {
@@ -306,7 +306,7 @@ export class CartService {
         // İlk önce gelen değeri mapping'den kontrol et
         const mappedCutType = cutTypeMapping[requestedCutType];
         if (!mappedCutType) {
-          throw new Error(`Geçersiz kesim türü: ${data.cutType}. Geçerli değerler: rectangle, round, oval, custom, standart, daire`);
+          throw new Error(`Geçersiz kesim türü: ${data.cutType}. Geçerli değerler: standart, round, oval, custom, daire`);
         }
 
         // API'deki cutTypes'tan validasyon yap ama enum değerini kullan
@@ -411,7 +411,7 @@ export class CartService {
               unit_price: item.unit_price,
               total_price: item.total_price,
               has_fringe: item.has_fringe,
-              cut_type: item.cut_type,
+              cut_type: item.cut_type === 'rectangle' ? 'standart' : item.cut_type,
               notes: item.notes,
               created_at: item.created_at,
               updated_at: item.updated_at,
@@ -445,7 +445,7 @@ export class CartService {
               unit_price: item.unit_price,
               total_price: item.total_price,
               has_fringe: item.has_fringe,
-              cut_type: item.cut_type,
+              cut_type: item.cut_type === 'rectangle' ? 'standart' : item.cut_type,
               notes: item.notes,
               created_at: item.created_at,
               updated_at: item.updated_at,

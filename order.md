@@ -166,7 +166,7 @@ Content-Type: application/json
           "has_fringe": true,
           "width": "150.00",
           "height": "200.00",
-          "cut_type": "rectangle",
+          "cut_type": "standart",
           "product": {
             "productId": "product-uuid",
             "name": "Premium Halı",
@@ -272,7 +272,7 @@ Authorization: Bearer <JWT_TOKEN>
             "has_fringe": true,
             "width": "150.00",
             "height": "200.00",
-            "cut_type": "rectangle",
+            "cut_type": "standart",
             "product": {
               "productId": "product-uuid",
               "name": "Premium Halı",
@@ -371,7 +371,7 @@ Authorization: Bearer <JWT_TOKEN>
         "has_fringe": true,
         "width": "150.00",
         "height": "200.00",
-        "cut_type": "rectangle",
+        "cut_type": "standart",
         "product": {
           "productId": "product-uuid",
           "name": "Premium Halı",

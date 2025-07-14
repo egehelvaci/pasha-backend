@@ -149,7 +149,7 @@ Authorization: Bearer <admin_token>
             "width": "150.00",
             "height": "200.00",
             "has_fringe": true,
-            "cut_type": "rectangle",
+            "cut_type": "standart",
             "product": {
               "name": "Premium Anadolu Halısı",
               "description": "El dokuması geleneksel desen halı",

@@ -88,7 +88,7 @@ Authorization: Bearer <ADMIN_JWT_TOKEN>
             "has_fringe": true,
             "width": "100.00",
             "height": "150.00",
-            "cut_type": "rectangle",
+            "cut_type": "standart",
             "product": {
               "productId": "product123",
               "name": "Halı Model A",
