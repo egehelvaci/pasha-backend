@@ -19,6 +19,13 @@ router.get('/orders', adminOrderController.getAllOrders)
 router.get('/orders/stats', adminOrderController.getOrderStats)
 router.get('/orders/:orderId', adminOrderController.getOrderById)
 router.post('/orders/:orderId/confirm', adminOrderController.confirmOrder)
+// Mevcut siparişin QR kodlarını (yeniden) oluşturur
+router.post('/orders/:orderId/generate-qr', adminOrderController.generateQRCodes);
+
+// Siparişin QR kodları için görselleri oluşturur ve yükler
+router.post('/orders/:orderId/generate-qr-images', adminOrderController.generateQRCodeImages);
+
+// Siparişin durumunu günceller
 router.put('/orders/:orderId/status', adminOrderController.updateOrderStatus)
 router.get('/orders/:orderId/qrcodes', adminOrderController.getOrderQRCodes)
 router.post('/scan-qr', adminOrderController.scanQRCode)

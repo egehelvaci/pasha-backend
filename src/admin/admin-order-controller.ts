@@ -119,7 +119,9 @@ export class AdminOrderController {
               select: {
                 id: true,
                 qr_code: true,
-                quantity: true,
+                qrCodeImageUrl: true,
+                required_scans: true,
+                scan_count: true,
                 is_scanned: true,
                 scanned_at: true,
                 created_at: true
@@ -226,8 +228,15 @@ export class AdminOrderController {
             }
           },
           qr_codes: {
-            include: {
-              product: true
+            select: {
+              id: true,
+              qr_code: true,
+              qrCodeImageUrl: true, // Görsel URL'ini de ekleyelim
+              required_scans: true,
+              scan_count: true,
+              is_scanned: true,
+              scanned_at: true,
+              created_at: true
             },
             orderBy: { created_at: 'asc' }
           }
@@ -296,10 +305,11 @@ export class AdminOrderController {
         })
       }
 
-      if (order.status !== 'PENDING') {
+      // Sipariş durumu kontrolü - sadece iptal edilmiş siparişler onaylanamaz
+      if (order.status === 'CANCELED') {
         return res.status(400).json({
           success: false,
-          message: 'Sadece bekleyen siparişler onaylanabilir'
+          message: 'İptal edilmiş siparişler onaylanamaz'
         })
       }
 
@@ -567,9 +577,9 @@ export class AdminOrderController {
         }
       }
 
-      // Eğer CONFIRMED yapılıyorsa ve QR kodlar yoksa, QR kodları oluştur
+      // Eğer CONFIRMED yapılıyorsa, QR kodları oluştur (eski sistem varsa yenile)
       let qrResult = null
-      if (status === 'CONFIRMED' && existingOrder.qr_codes.length === 0) {
+      if (status === 'CONFIRMED') {
         try {
           // QR kodları oluştur
           qrResult = await qrCodeService.generateQRCodesForOrder(orderId)
@@ -638,6 +648,26 @@ export class AdminOrderController {
         success: false,
         message: error.message || 'Sipariş durumu güncellenirken bir hata oluştu'
       })
+    }
+  }
+
+  async generateQRCodes(req: Request, res: Response): Promise<void> {
+    try {
+      const { orderId } = req.params;
+      const result = await qrCodeService.generateQRCodesForOrder(orderId);
+      res.status(200).json(result);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  async generateQRCodeImages(req: Request, res: Response): Promise<void> {
+    try {
+      const { orderId } = req.params;
+      const result = await qrCodeService.generateQRCodeImagesForOrder(orderId);
+      res.status(200).json(result);
+    } catch (error: any) {
+      res.status(500).json({ message: 'QR kod görselleri oluşturulurken bir hata oluştu.', error: error.message });
     }
   }
 }

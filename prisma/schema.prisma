@@ -275,19 +275,22 @@ enum OrderStatus {
 }
 
 model QRCode {
-  id          String   @id @default(uuid())
-  order_id    String
-  product_id  String   @db.VarChar(36)
-  order_item_id String
-  qr_code     String   @unique
-  quantity    Int      @default(1)
-  is_scanned  Boolean  @default(false)
-  scanned_at  DateTime?
-  created_at  DateTime @default(now())
+  id              String     @id @default(uuid())
+  order_id        String
+  product_id      String
+  order_item_id   String?    @unique // Her order item için bir QR kod
+  qr_code         String     @unique
+  qrCodeImageUrl  String?    @map("qr_code_image_url")
+  scan_count      Int        @default(0)
+  required_scans  Int        @default(1)
+  last_scan_at    DateTime?
+  is_scanned      Boolean    @default(false) // scan_count >= required_scans olduğunda true
+  scanned_at      DateTime?
+  created_at      DateTime @default(now())
   
-  order      Order     @relation(fields: [order_id], references: [id], onDelete: Cascade)
-  product    Product   @relation(fields: [product_id], references: [productId])
-  order_item OrderItem @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  order      Order      @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  product    Product    @relation(fields: [product_id], references: [productId])
+  order_item OrderItem? @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
 }
 
 model PasswordResetToken {
