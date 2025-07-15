@@ -109,14 +109,42 @@ export class AuthService {
 
       console.log(`${user.username} kullanıcısı için yeni token oluşturuldu. JTI: ${jti}, Zaman: ${timestamp}`);
 
-      // Şifreyi hariç tutarak tüm kullanıcı bilgilerini döndür
+      // Login response için kullanıcı bilgilerini hazırla
       const { password, ...userWithoutPassword } = user;
+
+      // Store bilgileri varsa bakiye ve taksit bilgilerini ekle
+      let storeInfo = null;
+      if (user.Store) {
+        storeInfo = {
+          store_id: user.Store.store_id,
+          kurum_adi: user.Store.kurum_adi,
+          vergi_numarasi: user.Store.vergi_numarasi,
+          telefon: user.Store.telefon,
+          eposta: user.Store.eposta,
+          adres: user.Store.adres,
+          bakiye: user.Store.bakiye || 0,
+          acik_hesap_tutari: user.Store.acik_hesap_tutari || 0,
+          maksimum_taksit: user.Store.maksimum_taksit || 1,
+          limitsiz_acik_hesap: user.Store.limitsiz_acik_hesap || false,
+          // Toplam kullanılabilir tutar hesapla
+          toplam_kullanilabilir: Number(user.Store.bakiye || 0) + Number(user.Store.acik_hesap_tutari || 0)
+        };
+      }
 
       return {
         token,
         user: {
-          ...userWithoutPassword,
-          userType: user.userType.name
+          userId: user.userId,
+          username: user.username,
+          name: user.name,
+          surname: user.surname,
+          email: user.email,
+          phoneNumber: user.phoneNumber,
+          isActive: user.isActive,
+          createdAt: user.createdAt,
+          userTypeId: user.userTypeId,
+          userType: user.userType.name,
+          store: storeInfo
         }
       }
     } catch (error) {

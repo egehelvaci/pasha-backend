@@ -164,6 +164,62 @@ Bakiye += İptal Edilen Sipariş Tutarı
 }
 ```
 
+### Authentication API
+
+#### Login Response (POST `/api/auth/login`)
+
+**Yeni Response Format:**
+```json
+{
+  "success": true,
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+      "userId": "user-uuid",
+      "username": "magaza_user",
+      "name": "Ahmet",
+      "surname": "Yılmaz",
+      "email": "ahmet@example.com",
+      "userType": "store_user",
+      "store": {                              // 🆕 Mağaza bilgileri
+        "store_id": "store-uuid",
+        "kurum_adi": "ABC Mağaza",
+        "vergi_numarasi": "1234567890",
+        "telefon": "0212 555 0123",
+        "eposta": "info@abc.com",
+        "adres": "İstanbul",
+        "bakiye": 15000.00,                   // 🆕 Mağaza bakiyesi
+        "acik_hesap_tutari": 10000.00,        // Açık hesap limiti
+        "maksimum_taksit": 12,                // 🆕 Maksimum taksit sayısı
+        "limitsiz_acik_hesap": false,
+        "toplam_kullanilabilir": 25000.00     // 🆕 Bakiye + açık hesap toplamı
+      }
+      // ❌ "credit": 1000.00,               // KALDIRILDI
+      // ❌ "debit": 500.00                  // KALDIRILDI
+    }
+  }
+}
+```
+
+**Admin User Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+      "userId": "admin-uuid",
+      "username": "admin",
+      "name": "Admin",
+      "surname": "User",
+      "email": "admin@example.com",
+      "userType": "admin",
+      "store": null                           // Admin kullanıcılarının mağazası yok
+    }
+  }
+}
+```
+
 ### Sipariş API Değişiklikleri
 
 #### Limit Kontrol Response
