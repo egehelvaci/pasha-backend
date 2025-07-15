@@ -151,7 +151,7 @@ export class ProductService {
         }
       });
       
-      // Ürünlere fiyat bilgisi ekle
+      // Ürünlere fiyat bilgisi ve kural bilgilerini ekle
       for (const product of products as ExtendedProduct[]) {
         // Eğer kullanıcı ID'si belirtilmişse fiyat bilgisini ekle
         if (userId) {
@@ -229,6 +229,82 @@ export class ProductService {
           } catch (userError) {
             console.error("Kullanıcı bilgileri alınırken hata:", userError);
           }
+        }
+
+        // Ürünün rule_id'si varsa kuralları al (tüm ürünler için)
+        if (product.rule_id) {
+          try {
+            // Kural bilgisini getir
+            const rule = await prisma.productrules.findUnique({
+              where: { id: product.rule_id }
+            });
+            
+            if (rule) {
+              // Saçak bilgisini ekle
+              product.canHaveFringe = rule.can_have_fringe;
+              product.hasFringe = false;
+              
+              // Kesim tiplerini getir
+              const cutTypes = await prisma.productrulecuttypes.findMany({
+                where: { rule_id: product.rule_id },
+                include: {
+                  cuttypes: true
+                }
+              });
+              
+              if (cutTypes && cutTypes.length > 0) {
+                product.cutTypes = cutTypes.map(ct => ({
+                  id: ct.cuttypes.id,
+                  name: ct.cuttypes.name
+                }));
+              } else {
+                product.cutTypes = [];
+              }
+              
+              // Boyut seçeneklerini getir
+              const sizeOptions = await prisma.productsizeoptions.findMany({
+                where: { rule_id: product.rule_id }
+              });
+              
+              // Mevcut stok varyasyonlarını getir
+              const variations = await prisma.productvariations.findMany({
+                where: { product_id: product.productId }
+              });
+              
+              if (sizeOptions && sizeOptions.length > 0) {
+                // Her bir boyut seçeneği için stok bilgisini ekle
+                product.sizeOptions = sizeOptions.map(so => {
+                  // Her zaman spesifik boyut için stok ara (tam eşleşme)
+                  const stockForSize = variations.find(v => 
+                    v.width === so.width && v.height === so.height
+                  );
+                  
+                  return {
+                    id: so.id,
+                    width: so.width,
+                    height: so.height,
+                    is_optional_height: so.is_optional_height || false,
+                    stockQuantity: stockForSize ? stockForSize.stock_quantity : 0
+                  };
+                });
+              } else {
+                product.sizeOptions = [];
+              }
+            }
+          } catch (ruleError) {
+            console.error("Ürün kuralları alınırken hata:", ruleError);
+            // Hata durumunda boş değerler ata
+            product.cutTypes = [];
+            product.sizeOptions = [];
+            product.canHaveFringe = false;
+            product.hasFringe = false;
+          }
+        } else {
+          // Kural yoksa boş değerler ata
+          product.cutTypes = [];
+          product.sizeOptions = [];
+          product.canHaveFringe = false;
+          product.hasFringe = false;
         }
       }
 
@@ -501,6 +577,82 @@ export class ProductService {
           } catch (userError) {
             console.error("Kullanıcı bilgileri alınırken hata:", userError);
           }
+        }
+
+        // Ürünün rule_id'si varsa kuralları al (tüm ürünler için)
+        if (product.rule_id) {
+          try {
+            // Kural bilgisini getir
+            const rule = await prisma.productrules.findUnique({
+              where: { id: product.rule_id }
+            });
+            
+            if (rule) {
+              // Saçak bilgisini ekle
+              product.canHaveFringe = rule.can_have_fringe;
+              product.hasFringe = false;
+              
+              // Kesim tiplerini getir
+              const cutTypes = await prisma.productrulecuttypes.findMany({
+                where: { rule_id: product.rule_id },
+                include: {
+                  cuttypes: true
+                }
+              });
+              
+              if (cutTypes && cutTypes.length > 0) {
+                product.cutTypes = cutTypes.map(ct => ({
+                  id: ct.cuttypes.id,
+                  name: ct.cuttypes.name
+                }));
+              } else {
+                product.cutTypes = [];
+              }
+              
+              // Boyut seçeneklerini getir
+              const sizeOptions = await prisma.productsizeoptions.findMany({
+                where: { rule_id: product.rule_id }
+              });
+              
+              // Mevcut stok varyasyonlarını getir
+              const variations = await prisma.productvariations.findMany({
+                where: { product_id: product.productId }
+              });
+              
+              if (sizeOptions && sizeOptions.length > 0) {
+                // Her bir boyut seçeneği için stok bilgisini ekle
+                product.sizeOptions = sizeOptions.map(so => {
+                  // Her zaman spesifik boyut için stok ara (tam eşleşme)
+                  const stockForSize = variations.find(v => 
+                    v.width === so.width && v.height === so.height
+                  );
+                  
+                  return {
+                    id: so.id,
+                    width: so.width,
+                    height: so.height,
+                    is_optional_height: so.is_optional_height || false,
+                    stockQuantity: stockForSize ? stockForSize.stock_quantity : 0
+                  };
+                });
+              } else {
+                product.sizeOptions = [];
+              }
+            }
+          } catch (ruleError) {
+            console.error("Ürün kuralları alınırken hata:", ruleError);
+            // Hata durumunda boş değerler ata
+            product.cutTypes = [];
+            product.sizeOptions = [];
+            product.canHaveFringe = false;
+            product.hasFringe = false;
+          }
+        } else {
+          // Kural yoksa boş değerler ata
+          product.cutTypes = [];
+          product.sizeOptions = [];
+          product.canHaveFringe = false;
+          product.hasFringe = false;
         }
       }
 
