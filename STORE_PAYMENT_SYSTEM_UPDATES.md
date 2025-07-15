@@ -405,6 +405,56 @@ curl -X POST "/api/admin/users" \
   }'
 ```
 
+### Test 4: Login API
+
+```bash
+# Mağaza kullanıcısı login (yeni response formatı)
+curl -X POST "/api/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "magaza_user",
+    "password": "password123"
+  }'
+
+# Expected Response:
+# {
+#   "success": true,
+#   "data": {
+#     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+#     "user": {
+#       "userId": "user-uuid",
+#       "username": "magaza_user",
+#       "userType": "store_user",
+#       "store": {
+#         "bakiye": 15000.00,
+#         "acik_hesap_tutari": 10000.00,
+#         "maksimum_taksit": 12,
+#         "toplam_kullanilabilir": 25000.00
+#       }
+#     }
+#   }
+# }
+
+# Admin kullanıcısı login
+curl -X POST "/api/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "admin",
+    "password": "admin123"
+  }'
+
+# Expected Response:
+# {
+#   "success": true,
+#   "data": {
+#     "user": {
+#       "userType": "admin",
+#       "store": null
+#     }
+#   }
+# }
+```
+
 ---
 
 ## 🚨 Dikkat Edilmesi Gerekenler
@@ -415,7 +465,9 @@ curl -X POST "/api/admin/users" \
 
 ### 2. API Breaking Changes
 - ❌ User API'lerinde `credit`/`debit` parametreleri artık geçersiz
+- ❌ **Login API response formatı değişti**: User objesi artık `store` objesi içeriyor
 - ❌ Sipariş kontrol response formatı değişti
+- ❌ **Frontend uygulamaları login response'unu güncellemeli**
 
 ### 3. Backward Compatibility
 - ✅ Mevcut sipariş sistemi çalışmaya devam eder
