@@ -10,7 +10,10 @@ import {
   uploadProductImage,
   updateProductStock,
   getAllProductRules,
-  getProductVariationOptions
+  getProductVariationOptions,
+  regenerateProductVariations,
+  regenerateVariationsForRule,
+  regenerateAllVariations
 } from '../controllers/productController';
 import { verifyToken, isAdmin } from '../middleware/authMiddleware';
 
@@ -27,6 +30,15 @@ router.get('/by-collection/:collectionId', verifyToken, getProductsByCollection)
 
 // Sadece admin erişebilir - Ürünün stok varyasyon seçeneklerini getir
 router.get('/:id/variations', isAdmin, getProductVariationOptions);
+
+// Sadece admin erişebilir - Ürünün varyasyonlarını yeniden oluştur
+router.post('/:id/regenerate-variations', isAdmin, regenerateProductVariations);
+
+// Sadece admin erişebilir - Belirli kurala sahip ürünlerin varyasyonlarını yeniden oluştur
+router.post('/regenerate-variations/rule/:ruleId', isAdmin, regenerateVariationsForRule);
+
+// Sadece admin erişebilir - Tüm ürünlerin varyasyonlarını yeniden oluştur
+router.post('/regenerate-variations/all', isAdmin, regenerateAllVariations);
 
 // Sadece giriş yapmış kullanıcılar - ID'ye göre ürün getir
 router.get('/:id', verifyToken, getProductById);

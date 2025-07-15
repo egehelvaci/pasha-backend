@@ -115,9 +115,16 @@ export const getAllProductRules = async (req: Request, res: Response) => {
       where: { is_active: true },
       orderBy: { name: 'asc' }
     });
+    
+    // ID'leri number olarak formatla
+    const formattedRules = rules.map(rule => ({
+      ...rule,
+      id: Number(rule.id)
+    }));
+    
     return res.status(200).json({
       success: true,
-      data: rules
+      data: formattedRules
     });
   } catch (error: any) {
     return res.status(500).json({
@@ -384,6 +391,70 @@ export const getProductVariationOptions = async (req: Request, res: Response) =>
     return res.status(500).json({
       success: false,
       message: error.message || 'Ürün varyasyon seçenekleri getirilemedi'
+    });
+  }
+};
+
+// Ürünün varyasyonlarını yeniden oluştur
+export const regenerateProductVariations = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    await productService.regenerateVariationsForProduct(id);
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Ürün varyasyonları başarıyla yeniden oluşturuldu'
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Ürün varyasyonları yeniden oluşturulamadı'
+    });
+  }
+};
+
+// Belirli bir kurala sahip tüm ürünlerin varyasyonlarını yeniden oluştur
+export const regenerateVariationsForRule = async (req: Request, res: Response) => {
+  try {
+    const { ruleId } = req.params;
+    
+    if (!ruleId || isNaN(parseInt(ruleId))) {
+      return res.status(400).json({
+        success: false,
+        message: 'Geçerli bir kural ID gönderilmelidir'
+      });
+    }
+    
+    const result = await productService.regenerateVariationsForRule(parseInt(ruleId));
+    
+    return res.status(200).json({
+      success: true,
+      message: `${result.processedProducts} ürünün varyasyonları başarıyla yeniden oluşturuldu`,
+      data: result
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Kural bazlı varyasyon güncelleme başarısız'
+    });
+  }
+};
+
+// Tüm ürünlerin varyasyonlarını yeniden oluştur
+export const regenerateAllVariations = async (req: Request, res: Response) => {
+  try {
+    const result = await productService.regenerateAllVariations();
+    
+    return res.status(200).json({
+      success: true,
+      message: `${result.successCount}/${result.totalProducts} ürünün varyasyonları başarıyla yeniden oluşturuldu`,
+      data: result
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Tüm varyasyonları güncelleme başarısız'
     });
   }
 }; 

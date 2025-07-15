@@ -42,6 +42,9 @@ router.delete('/:ruleId/size-options/:sizeId', productRulesController.deleteSize
 // Kesim türlerini ata
 router.post('/:ruleId/cut-types', productRulesController.assignCutTypes)
 
+// Kural bazlı varyasyon güncelleme
+router.post('/:ruleId/regenerate-variations', productRulesController.regenerateVariationsForRule)
+
 // Kesim türü atamasını kaldır
 router.delete('/:ruleId/cut-types/:cutTypeId', productRulesController.removeCutType)
 

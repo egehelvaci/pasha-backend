@@ -69,20 +69,27 @@ export class ProductService {
         }
       });
 
-      // Ürün varyasyonu oluştur
+      // Kurala göre varyasyonları oluştur
       try {
-        await prisma.productvariations.create({
-          data: {
-            product_id: product.productId,
-            width: 100, // Default width
-            height: 100, // Default height
-            stock_quantity: 0, // Default stock
-            has_fringe: false // Default fringe status
-          }
-        });
-        console.log('Ürün varyasyonu başarıyla oluşturuldu');
+        await this.regenerateVariationsForProduct(product.productId);
+        console.log('Ürün varyasyonları kurala göre başarıyla oluşturuldu');
       } catch (variationError) {
         console.error('Ürün varyasyonu oluşturulurken hata:', variationError);
+        // Fallback olarak temel varyasyon oluştur
+        try {
+          await prisma.productvariations.create({
+            data: {
+              product_id: product.productId,
+              width: 100,
+              height: 100,
+              stock_quantity: 0,
+              has_fringe: false
+            }
+          });
+          console.log('Fallback varyasyon oluşturuldu');
+        } catch (fallbackError) {
+          console.error('Fallback varyasyon hatası:', fallbackError);
+        }
       }
       
       return product;
@@ -517,6 +524,112 @@ export class ProductService {
   }
   
   /**
+   * Ürün kuralına göre varyasyonları yeniden oluştur
+   */
+  async regenerateVariationsForProduct(productId: string) {
+    try {
+      const product = await prisma.product.findUnique({
+        where: { productId },
+        include: {
+          productrules: {
+            include: {
+              productsizeoptions: true,
+              productrulecuttypes: {
+                include: {
+                  cuttypes: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      if (!product) {
+        throw new Error('Ürün bulunamadı');
+      }
+
+      // Eğer ürünün kuralı yoksa, sadece temel varyasyon oluştur
+      if (!product.rule_id || !product.productrules) {
+        // Mevcut varyasyonları sil
+        await prisma.productvariations.deleteMany({
+          where: { product_id: productId }
+        });
+
+        // Temel varyasyon oluştur
+        await prisma.productvariations.create({
+          data: {
+            product_id: productId,
+            width: 100,
+            height: 100,
+            stock_quantity: 0,
+            has_fringe: false
+          }
+        });
+
+        console.log(`Ürün ${productId} için temel varyasyon oluşturuldu`);
+        return;
+      }
+
+      const rule = product.productrules;
+      
+      // Mevcut stok bilgilerini koru
+      const existingVariations = await prisma.productvariations.findMany({
+        where: { product_id: productId }
+      });
+
+      // Mevcut varyasyonları sil
+      await prisma.productvariations.deleteMany({
+        where: { product_id: productId }
+      });
+
+      // Yeni varyasyonları oluştur
+      const sizeOptions = rule.productsizeoptions;
+      
+      if (sizeOptions && sizeOptions.length > 0) {
+        for (const sizeOption of sizeOptions) {
+          // Mevcut stok bilgisini bul
+          const existingStock = existingVariations.find(v => 
+            v.width === sizeOption.width && v.height === sizeOption.height
+          );
+
+          // Varyasyon oluştur
+          await prisma.productvariations.create({
+            data: {
+              product_id: productId,
+              width: sizeOption.width,
+              height: sizeOption.height,
+              stock_quantity: existingStock ? existingStock.stock_quantity : 0,
+              has_fringe: false,
+              cut_type_id: null
+            }
+          });
+        }
+      } else {
+        // Boyut seçeneği yoksa varsayılan varyasyon oluştur
+        const existingStock = existingVariations.find(v => 
+          v.width === 100 && v.height === 100
+        );
+
+        await prisma.productvariations.create({
+          data: {
+            product_id: productId,
+            width: 100,
+            height: 100,
+            stock_quantity: existingStock ? existingStock.stock_quantity : 0,
+            has_fringe: false,
+            cut_type_id: null
+          }
+        });
+      }
+
+      console.log(`Ürün ${productId} için varyasyonlar yeniden oluşturuldu`);
+    } catch (error) {
+      console.error('Varyasyon yeniden oluşturma hatası:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Ürün güncelle
    */
   async updateProduct(productId: string, data: {
@@ -527,6 +640,15 @@ export class ProductService {
     rule_id?: number | null
   }) {
     try {
+      // Mevcut ürün bilgisini al
+      const currentProduct = await prisma.product.findUnique({
+        where: { productId }
+      });
+
+      if (!currentProduct) {
+        throw new Error('Ürün bulunamadı');
+      }
+
       const updateData: Prisma.ProductUncheckedUpdateInput = {};
       
       // Sadece belirtilen alanları güncelle
@@ -548,6 +670,9 @@ export class ProductService {
         updateData.collectionId = data.collectionId;
       }
       
+      // Kural değişip değişmediğini kontrol et
+      const ruleChanged = data.rule_id !== undefined && data.rule_id !== currentProduct.rule_id;
+      
       const updatedProduct = await prisma.product.update({
         where: { productId },
         data: updateData,
@@ -555,6 +680,12 @@ export class ProductService {
           collection: true
         }
       }) as ExtendedProduct;
+
+      // Eğer kural değiştiyse varyasyonları yeniden oluştur
+      if (ruleChanged) {
+        await this.regenerateVariationsForProduct(productId);
+        console.log(`Ürün ${productId} kuralı değiştiği için varyasyonlar yeniden oluşturuldu`);
+      }
       
       return updatedProduct;
     } catch (error) {
@@ -709,6 +840,72 @@ export class ProductService {
     } catch (error) {
       console.error('Ürün kuralları getirme hatası:', error);
       throw new Error('Ürün kuralları getirilemedi');
+    }
+  }
+
+  /**
+   * Belirli bir kurala sahip tüm ürünlerin varyasyonlarını yeniden oluştur
+   */
+  async regenerateVariationsForRule(ruleId: number) {
+    try {
+      const products = await prisma.product.findMany({
+        where: { rule_id: ruleId }
+      });
+
+      console.log(`Kural ${ruleId} için ${products.length} ürünün varyasyonları yeniden oluşturuluyor...`);
+
+      for (const product of products) {
+        try {
+          await this.regenerateVariationsForProduct(product.productId);
+          console.log(`✓ Ürün ${product.productId} (${product.name}) varyasyonları güncellendi`);
+        } catch (error) {
+          console.error(`✗ Ürün ${product.productId} için varyasyon güncelleme hatası:`, error);
+        }
+      }
+
+      return {
+        success: true,
+        processedProducts: products.length,
+        ruleId: ruleId
+      };
+    } catch (error) {
+      console.error('Toplu varyasyon güncelleme hatası:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Tüm ürünlerin varyasyonlarını yeniden oluştur
+   */
+  async regenerateAllVariations() {
+    try {
+      const products = await prisma.product.findMany();
+
+      console.log(`Tüm ${products.length} ürünün varyasyonları yeniden oluşturuluyor...`);
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const product of products) {
+        try {
+          await this.regenerateVariationsForProduct(product.productId);
+          successCount++;
+          console.log(`✓ Ürün ${product.productId} (${product.name}) varyasyonları güncellendi`);
+        } catch (error) {
+          errorCount++;
+          console.error(`✗ Ürün ${product.productId} için varyasyon güncelleme hatası:`, error);
+        }
+      }
+
+      return {
+        success: true,
+        totalProducts: products.length,
+        successCount: successCount,
+        errorCount: errorCount
+      };
+    } catch (error) {
+      console.error('Tüm varyasyonları güncelleme hatası:', error);
+      throw error;
     }
   }
 
