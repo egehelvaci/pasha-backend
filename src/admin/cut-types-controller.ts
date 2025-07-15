@@ -6,7 +6,6 @@ export class CutTypesController {
   constructor() {
     this.getAllCutTypes = this.getAllCutTypes.bind(this)
     this.getCutTypeById = this.getCutTypeById.bind(this)
-    this.createCutType = this.createCutType.bind(this)
     this.updateCutType = this.updateCutType.bind(this)
     this.deleteCutType = this.deleteCutType.bind(this)
   }
@@ -175,56 +174,6 @@ export class CutTypesController {
     } catch (error) {
       console.error('Kesim türü getirme hatası:', error)
       const errorMessage = error instanceof Error ? error.message : 'Kesim türü getirilirken bir hata oluştu'
-      
-      return res.status(500).json({
-        success: false,
-        message: errorMessage
-      })
-    }
-  }
-
-  /**
-   * Yeni kesim türü oluştur
-   */
-  async createCutType(req: Request, res: Response) {
-    try {
-      const { name } = req.body
-      
-      // Zorunlu alanların kontrolü
-      if (!name || typeof name !== 'string' || name.trim().length === 0) {
-        return res.status(400).json({
-          success: false,
-          message: 'Kesim türü adı zorunludur ve boş olamaz'
-        })
-      }
-      
-      // Aynı isimde kesim türü var mı kontrol et
-      const existingCutType = await prisma.cuttypes.findUnique({
-        where: { name: name.trim() }
-      })
-      
-      if (existingCutType) {
-        return res.status(400).json({
-          success: false,
-          message: 'Bu isimde bir kesim türü zaten mevcut'
-        })
-      }
-      
-      // Yeni kesim türü oluştur
-      const newCutType = await prisma.cuttypes.create({
-        data: {
-          name: name.trim()
-        }
-      })
-      
-      return res.status(201).json({
-        success: true,
-        message: 'Kesim türü başarıyla oluşturuldu',
-        data: newCutType
-      })
-    } catch (error) {
-      console.error('Kesim türü oluşturma hatası:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Kesim türü oluşturulurken bir hata oluştu'
       
       return res.status(500).json({
         success: false,

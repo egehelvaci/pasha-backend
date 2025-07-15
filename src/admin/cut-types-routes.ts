@@ -17,9 +17,6 @@ router.get('/', cutTypesController.getAllCutTypes)
 // Belirli bir kesim türünü getir
 router.get('/:cutTypeId', cutTypesController.getCutTypeById)
 
-// Yeni kesim türü oluştur
-router.post('/', cutTypesController.createCutType)
-
 // Kesim türünü güncelle
 router.put('/:cutTypeId', cutTypesController.updateCutType)
 
