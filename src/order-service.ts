@@ -288,28 +288,32 @@ export class OrderService {
       return { isValid: true, canProceed: true };
     }
 
-    // Sınırlı açık hesap - gerçek bakiye kontrolü
-    const currentOpenAccountBalance = Number(store.acik_hesap_tutari || 0);
+    // Bakiye + açık hesap limiti toplamı kontrolü
+    const currentBalance = Number(store.bakiye || 0);
+    const currentOpenAccountLimit = Number(store.acik_hesap_tutari || 0);
+    const totalAvailableAmount = currentBalance + currentOpenAccountLimit;
     
-    console.log(`💰 Açık hesap bakiye kontrolü:`)
-    console.log(`  - Mevcut açık hesap bakiyesi: ${currentOpenAccountBalance} TL`)
+    console.log(`💰 Bakiye + açık hesap limiti kontrolü:`)
+    console.log(`  - Mevcut bakiye: ${currentBalance} TL`)
+    console.log(`  - Açık hesap limiti: ${currentOpenAccountLimit} TL`)
+    console.log(`  - Toplam kullanılabilir tutar: ${totalAvailableAmount} TL`)
     console.log(`  - Sipariş tutarı: ${orderTotal} TL`)
     
-    if (orderTotal > currentOpenAccountBalance) {
-      const minimumPayment = Math.ceil(orderTotal - currentOpenAccountBalance); // Tam sayıya yuvarla (üste yuvarla)
-      console.log(`❌ Açık hesap bakiyesi yetersiz!`)
+    if (orderTotal > totalAvailableAmount) {
+      const minimumPayment = Math.ceil(orderTotal - totalAvailableAmount);
+      console.log(`❌ Bakiye + açık hesap limiti yetersiz!`)
       console.log(`  - Yetersiz: ${minimumPayment} TL`)
       console.log(`  - Minimum ödeme tutarı: ${minimumPayment} TL`)
       return {
         isValid: false,
-        message: 'OPEN_ACCOUNT_INSUFFICIENT',
-        limitAmount: currentOpenAccountBalance,
+        message: 'BALANCE_INSUFFICIENT',
+        limitAmount: totalAvailableAmount,
         minimumPayment: minimumPayment,
         canProceed: false
       };
     }
 
-    console.log(`✅ Açık hesap bakiyesi yeterli`)
+    console.log(`✅ Bakiye + açık hesap limiti yeterli`)
     return { isValid: true, canProceed: true };
   }
 
@@ -640,16 +644,33 @@ export class OrderService {
     const store = user.Store;
     
     try {
-      // 1. Açık hesap tutarını düşür
+      // 1. Bakiyeden önce düşür, yetersizse açık hesap limitinden düş
       if (!store.limitsiz_acik_hesap) {
-        await prisma.store.update({
-          where: { store_id: store.store_id },
-          data: {
-            acik_hesap_tutari: {
-              decrement: orderTotal
+        const currentBalance = Number(store.bakiye || 0);
+        
+        if (currentBalance >= orderTotal) {
+          // Bakiye yeterli, sadece bakiyeden düş
+          await prisma.store.update({
+            where: { store_id: store.store_id },
+            data: {
+              bakiye: {
+                decrement: orderTotal
+              }
             }
-          }
-        });
+          });
+        } else {
+          // Bakiye yetersiz, bakiyeyi sıfırla ve kalanı açık hesap limitinden düş
+          const remainingAmount = orderTotal - currentBalance;
+          await prisma.store.update({
+            where: { store_id: store.store_id },
+            data: {
+              bakiye: 0,
+              acik_hesap_tutari: {
+                decrement: remainingAmount
+              }
+            }
+          });
+        }
       }
 
       // 2. Fiyat listesi limitini güncelle

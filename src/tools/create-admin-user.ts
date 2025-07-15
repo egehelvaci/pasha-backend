@@ -61,8 +61,6 @@ async function createAdminUser() {
         surname: adminUser.surname,
         email: adminUser.email,
         isActive: true,
-        credit: 0,
-        debit: 0,
         userTypeId: adminUserType.id
       }
     })

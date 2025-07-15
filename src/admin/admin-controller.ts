@@ -83,9 +83,7 @@ export class AdminController {
         userTypeId, 
         userTypeName, 
         storeId, 
-        store_id,
-        credit,
-        debit 
+        store_id
       } = req.body
       
       // Zorunlu alanları kontrol et
@@ -158,9 +156,7 @@ export class AdminController {
           surname,
           phoneNumber: phoneNumber || null,
           userTypeId: parseInt(finalUserTypeId),
-          store_id: finalStoreId,
-          credit: credit ? parseFloat(credit) : 0,
-          debit: debit ? parseFloat(debit) : 0
+          store_id: finalStoreId
         },
         include: {
           userType: true,
@@ -197,9 +193,7 @@ export class AdminController {
         userTypeId, 
         userTypeName,
         store_id, 
-        storeId,
-        credit,
-        debit 
+        storeId
       } = req.body
       
       console.log('Update User Request:', { userId, body: req.body })
@@ -239,8 +233,6 @@ export class AdminController {
       if (userTypeId !== undefined) updateData.userTypeId = parseInt(userTypeId)
       if (store_id !== undefined) updateData.store_id = store_id
       if (storeId !== undefined) updateData.store_id = storeId
-      if (credit !== undefined) updateData.credit = parseFloat(credit)
-      if (debit !== undefined) updateData.debit = parseFloat(debit)
       
       // UserType name'e göre ID bul
       if (userTypeName && !userTypeId) {

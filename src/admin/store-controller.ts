@@ -100,7 +100,9 @@ export class StoreController {
         faks_numarasi, 
         aciklama, 
         limitsiz_acik_hesap, 
-        acik_hesap_tutari 
+        acik_hesap_tutari,
+        bakiye,
+        maksimum_taksit
       } = req.body
       
       // Zorunlu alanların kontrolü
@@ -126,6 +128,8 @@ export class StoreController {
           aciklama,
           limitsiz_acik_hesap: limitsiz_acik_hesap || false,
           acik_hesap_tutari: acik_hesap_tutari ? parseFloat(acik_hesap_tutari) : 0,
+          bakiye: bakiye ? parseFloat(bakiye) : 0,
+          maksimum_taksit: maksimum_taksit ? parseInt(maksimum_taksit) : 1,
           is_active: true
         }
       })
@@ -163,6 +167,8 @@ export class StoreController {
         aciklama, 
         limitsiz_acik_hesap, 
         acik_hesap_tutari,
+        bakiye,
+        maksimum_taksit,
         is_active 
       } = req.body
       
@@ -193,6 +199,8 @@ export class StoreController {
       if (aciklama !== undefined) updateData.aciklama = aciklama
       if (limitsiz_acik_hesap !== undefined) updateData.limitsiz_acik_hesap = limitsiz_acik_hesap
       if (acik_hesap_tutari !== undefined) updateData.acik_hesap_tutari = parseFloat(acik_hesap_tutari)
+      if (bakiye !== undefined) updateData.bakiye = parseFloat(bakiye)
+      if (maksimum_taksit !== undefined) updateData.maksimum_taksit = parseInt(maksimum_taksit)
       if (is_active !== undefined) updateData.is_active = is_active
       
       // Mağazayı güncelle
