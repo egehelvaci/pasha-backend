@@ -75,7 +75,7 @@ export const createOrderFromCart = async (req: Request, res: Response) => {
   }
 };
 
-// Kullanıcının siparişlerini listele
+// Kullanıcının siparişlerini listelee
 export const getUserOrders = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.userId;
