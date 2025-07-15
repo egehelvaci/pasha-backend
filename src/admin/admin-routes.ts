@@ -4,6 +4,8 @@ import { adminOrderController } from './admin-order-controller'
 import { adminStatisticsController } from './admin-statistics-controller'
 import { authMiddleware, authorizeRoles } from '../auth/auth-middleware'
 import storeRoutes from './store-routes'
+import productRulesRoutes from './product-rules-routes'
+import cutTypesRoutes from './cut-types-routes'
 
 const router = express.Router()
 const adminController = new AdminController()
@@ -18,6 +20,12 @@ router.use(authorizeRoles('admin'))
 
 // Mağaza yönetimi rotalarını ekle
 router.use('/stores', storeRoutes)
+
+// Ürün kuralları yönetimi rotalarını ekle
+router.use('/product-rules', productRulesRoutes)
+
+// Kesim türleri yönetimi rotalarını ekle
+router.use('/cut-types', cutTypesRoutes)
 
 // Sipariş yönetimi rotaları
 router.get('/orders', adminOrderController.getAllOrders)
