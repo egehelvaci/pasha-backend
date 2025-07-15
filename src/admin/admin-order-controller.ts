@@ -694,19 +694,25 @@ export class AdminOrderController {
         const store = existingOrder.user.Store
         const orderTotal = Number(existingOrder.total_price)
         
-        // 1. Bakiye ve açık hesap limitini iade et (sınırsız olmayan mağazalar için)
+        // 1. Bakiyeye iade et (sınırsız olmayan mağazalar için)
         if (store && !store.limitsiz_acik_hesap) {
-          // Önce bakiyeye iade et, sonra açık hesap limitine
           const currentBalance = Number(store.bakiye || 0)
-          const currentOpenAccountLimit = Number(store.acik_hesap_tutari || 0)
           
+          // İptal edilen sipariş tutarını tamamen bakiyeye iade et
+          // Açık hesap limiti değişmez
           await prisma.store.update({
             where: { store_id: store.store_id },
             data: { 
               bakiye: currentBalance + orderTotal,
-              // Açık hesap limiti değişmez, sadece bakiye artırılır
+              // Açık hesap limiti değişmez
             }
           })
+
+          console.log(`💰 İptal iadesi yapıldı:`)
+          console.log(`  - Önceki bakiye: ${currentBalance} TL`)
+          console.log(`  - İade tutarı: ${orderTotal} TL`)
+          console.log(`  - Yeni bakiye: ${currentBalance + orderTotal} TL`)
+          console.log(`  - Açık hesap limiti değişmez`)
         }
 
         // 2. Fiyat listesi limitini iade et

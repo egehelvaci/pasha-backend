@@ -99,9 +99,9 @@ export class OrderService {
         if (validation.message === 'PRICE_LIST_LIMIT_EXCEEDED') {
           message = `Size uygun fiyat listesinden fazla miktarda alışveriş yapamazsınız. Size özel fiyat listesi tutarı: ${validation.limitAmount} TL'dir.`;
         }
-        // Açık hesap bakiyesi yetersiz olduğunda limit tutarını mesaja ekle
-        else if (validation.message === 'OPEN_ACCOUNT_INSUFFICIENT') {
-          message = `Açık hesap bakiyeniz yetersiz. Mevcut açık hesap bakiyeniz: ${validation.limitAmount} TL'dir. Minimum ödeme tutarı: ${validation.minimumPayment} TL'dir.`;
+        // Bakiye + açık hesap limiti toplamı yetersiz olduğunda
+        else if (validation.message === 'BALANCE_INSUFFICIENT') {
+          message = `Bakiye + açık hesap limitiniz yetersiz. Toplam kullanılabilir tutarınız: ${validation.limitAmount} TL'dir. Minimum ödeme tutarı: ${validation.minimumPayment} TL'dir.`;
         }
         
         return { 
@@ -644,33 +644,29 @@ export class OrderService {
     const store = user.Store;
     
     try {
-      // 1. Bakiyeden önce düşür, yetersizse açık hesap limitinden düş
+      // 1. YENİ MANTIK: Sadece bakiyeden düş, açık hesap limiti değişmez
+      // Bakiye + açık hesap limiti toplam kontrol zaten yapıldı, güvenle bakiyeden düşebiliriz
       if (!store.limitsiz_acik_hesap) {
         const currentBalance = Number(store.bakiye || 0);
+        const currentOpenAccountLimit = Number(store.acik_hesap_tutari || 0);
         
-        if (currentBalance >= orderTotal) {
-          // Bakiye yeterli, sadece bakiyeden düş
-          await prisma.store.update({
-            where: { store_id: store.store_id },
-            data: {
-              bakiye: {
-                decrement: orderTotal
-              }
-            }
-          });
-        } else {
-          // Bakiye yetersiz, bakiyeyi sıfırla ve kalanı açık hesap limitinden düş
-          const remainingAmount = orderTotal - currentBalance;
-          await prisma.store.update({
-            where: { store_id: store.store_id },
-            data: {
-              bakiye: 0,
-              acik_hesap_tutari: {
-                decrement: remainingAmount
-              }
-            }
-          });
-        }
+        // Bakiyeden sipariş tutarını düş
+        // Bakiye negatif olmayacak şekilde sınırla (en fazla açık hesap limiti kadar düşebilir)
+        const newBalance = Math.max(currentBalance - orderTotal, -currentOpenAccountLimit);
+        
+        await prisma.store.update({
+          where: { store_id: store.store_id },
+          data: {
+            bakiye: newBalance
+            // açık hesap limiti değişmez
+          }
+        });
+
+        console.log(`💰 Bakiye güncellendi:`)
+        console.log(`  - Önceki bakiye: ${currentBalance} TL`)
+        console.log(`  - Sipariş tutarı: ${orderTotal} TL`)
+        console.log(`  - Yeni bakiye: ${newBalance} TL`)
+        console.log(`  - Açık hesap limiti: ${currentOpenAccountLimit} TL (değişmez)`)
       }
 
       // 2. Fiyat listesi limitini güncelle

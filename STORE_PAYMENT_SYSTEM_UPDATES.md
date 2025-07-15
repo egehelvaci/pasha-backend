@@ -91,15 +91,16 @@ Açık Hesap Tutarı -= Sipariş Tutarı
 
 **Yeni Sistem:**
 ```javascript
-if (Bakiye >= Sipariş Tutarı) {
-    // Sadece bakiyeden düş
-    Bakiye -= Sipariş Tutarı
-} else {
-    // Bakiye yetersiz, ikisinden de düş
-    Kalan Tutar = Sipariş Tutarı - Bakiye
-    Bakiye = 0
-    Açık Hesap Tutarı -= Kalan Tutar
-}
+// Açık hesap limiti asla değişmez, sadece bakiye düşer
+Yeni Bakiye = Math.max(Mevcut Bakiye - Sipariş Tutarı, -Açık Hesap Limiti)
+
+// Örnekler:
+// Bakiye: 5000 TL, Açık Hesap Limiti: 10000 TL, Sipariş: 3000 TL
+// Yeni Bakiye = Math.max(5000 - 3000, -10000) = 2000 TL
+
+// Bakiye: 2000 TL, Açık Hesap Limiti: 5000 TL, Sipariş: 4000 TL  
+// Yeni Bakiye = Math.max(2000 - 4000, -5000) = -2000 TL
+// (Bakiye negatif olabilir, ama -5000 TL'den düşük olamaz)
 ```
 
 ### 3. Sipariş İptal İadesi
@@ -285,8 +286,8 @@ Sipariş Sonrası:
 ```
 ✅ Sipariş verilebilir
 Sipariş Sonrası:
-- Bakiye: 0 TL (tamamı kullanıldı)
-- Açık Hesap Limiti: 3,000 TL (5,000 - 2,000)
+- Bakiye: -2,000 TL (2,000 - 4,000, negatif bakiye)
+- Açık Hesap Limiti: 5,000 TL (değişmez)
 ```
 
 ### Senaryo 3: Toplam Yetersiz
