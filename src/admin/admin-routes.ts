@@ -1,6 +1,7 @@
 import express from 'express'
 import { AdminController } from './admin-controller'
 import { adminOrderController } from './admin-order-controller'
+import { adminStatisticsController } from './admin-statistics-controller'
 import { authMiddleware, authorizeRoles } from '../auth/auth-middleware'
 import storeRoutes from './store-routes'
 
@@ -31,6 +32,12 @@ router.get('/orders/:orderId/qrcodes', adminOrderController.getOrderQRCodes)
 
 // Sipariş durumu güncelleme
 router.put('/orders/:orderId/status', adminOrderController.updateOrderStatus)
+
+// İstatistik API'leri
+router.get('/statistics/top-stores', adminStatisticsController.getTopStores)
+router.get('/statistics/top-products', adminStatisticsController.getTopProducts)
+router.get('/statistics/orders-over-time', adminStatisticsController.getOrdersOverTime)
+router.get('/statistics/totals', adminStatisticsController.getTotalStatistics)
 
 // Kullanıcıları listeleme
 router.get('/users', adminController.getAllUsers)
