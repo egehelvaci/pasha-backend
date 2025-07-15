@@ -483,8 +483,42 @@ export class OrderService {
     try {
       const skip = (page - 1) * limit;
       
+      // Önce kullanıcının mağaza bilgisini al
+      const user = await prisma.user.findUnique({
+        where: { userId },
+        select: { store_id: true, userType: { select: { name: true } } }
+      });
+
+      if (!user) {
+        throw new Error('Kullanıcı bulunamadı');
+      }
+
+      let whereCondition: any;
+
+      // Eğer kullanıcı bir mağazaya bağlıysa, o mağazadaki tüm siparişleri getir
+      if (user.store_id) {
+        // Mağazadaki tüm kullanıcıları bul
+        const storeUsers = await prisma.user.findMany({
+          where: { store_id: user.store_id },
+          select: { userId: true }
+        });
+
+        const storeUserIds = storeUsers.map(u => u.userId);
+
+        whereCondition = {
+          user_id: {
+            in: storeUserIds
+          }
+        };
+      } else {
+        // Kullanıcı mağazaya bağlı değilse sadece kendi siparişlerini getir
+        whereCondition = {
+          user_id: userId
+        };
+      }
+      
       const orders = await prisma.order.findMany({
-        where: { user_id: userId },
+        where: whereCondition,
         include: {
           items: {
             include: {
@@ -494,6 +528,14 @@ export class OrderService {
                 }
               }
             }
+          },
+          user: {
+            select: {
+              name: true,
+              surname: true,
+              email: true,
+              username: true
+            }
           }
         },
         orderBy: { created_at: 'desc' },
@@ -502,7 +544,7 @@ export class OrderService {
       });
 
       const totalCount = await prisma.order.count({
-        where: { user_id: userId }
+        where: whereCondition
       });
 
       return {
