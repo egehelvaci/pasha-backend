@@ -8,6 +8,7 @@ import {
   getCollectionsForPriceList,
   assignPriceListToStore,
   getStorePriceLists,
+  getUserStorePriceLists,
   removeStorePriceList
 } from '../controllers/priceListController';
 import { authMiddleware, authorizeRoles } from '../auth/auth-middleware';
@@ -25,6 +26,9 @@ router.get('/collections/list', getCollectionsForPriceList);
 
 // Belirli bir fiyat listesini getir - tüm kullanıcılar erişebilir (giriş yapmış olması yeterli)
 router.get('/:id', getPriceList);
+
+// Kullanıcının Mağazasının Fiyat Listesini Getir - token'dan store_id alınır
+router.get('/my-store/price-list', getUserStorePriceLists);
 
 // Mağazanın Fiyat Listesi Atamasını Getir - tüm kullanıcılar erişebilir (giriş yapmış olması yeterli)
 router.get('/store-assignments/:storeId', getStorePriceLists);

@@ -531,7 +531,177 @@ export const assignPriceListToStore = async (req: Request, res: Response) => {
   }
 };
 
-// Mağazanın fiyat listesi atamalarını getir
+// Kullanıcının mağazasının fiyat listesi atamalarını getir
+export const getUserStorePriceLists = async (req: Request, res: Response) => {
+  try {
+    // Token'dan kullanıcı bilgisini al
+    const tokenUser = (req as any).user;
+    
+    if (!tokenUser) {
+      return res.status(401).json({
+        success: false,
+        message: 'Kimlik doğrulama gerekli'
+      });
+    }
+
+    // Kullanıcının store_id bilgisini veritabanından al
+    const user = await prisma.user.findUnique({
+      where: { userId: tokenUser.userId },
+      select: { store_id: true }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Kullanıcı bulunamadı'
+      });
+    }
+
+    const storeId = user.store_id;
+
+    if (!storeId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Kullanıcı bir mağazaya bağlı değil'
+      });
+    }
+
+    // Mağazanın varlığını kontrol et
+    const store = await prisma.store.findUnique({
+      where: { store_id: storeId }
+    });
+
+    if (!store) {
+      return res.status(404).json({
+        success: false,
+        message: 'Mağaza bulunamadı'
+      });
+    }
+
+    // Varsayılan fiyat listesini getirme fonksiyonu
+    const getDefaultPriceList = async () => {
+      const defaultPriceList = await prisma.priceList.findFirst({
+        where: { is_default: true },
+        include: {
+          PriceListDetail: {
+            include: {
+              Collection: true
+            }
+          }
+        }
+      });
+
+      if (defaultPriceList) {
+        return {
+          priceList: defaultPriceList,
+          isDefault: true,
+          message: "Varsayılan fiyat listesi gösteriliyor"
+        };
+      }
+      return null;
+    };
+
+    // Fiyat listesinin geçerliliğini kontrol et
+    const isPriceListValid = (priceList: any): boolean => {
+      const now = new Date();
+      
+      // Aktiflik kontrolü
+      if (priceList.is_active === false) {
+        return false; // Pasif durumdaki fiyat listesi
+      }
+      
+      // Başlangıç tarihi kontrolü
+      if (priceList.valid_from && new Date(priceList.valid_from) > now) {
+        return false; // Henüz başlamamış
+      }
+      
+      // Bitiş tarihi kontrolü
+      if (priceList.valid_to && new Date(priceList.valid_to) < now) {
+        return false; // Süresi dolmuş
+      }
+      
+      // Limit kontrolü - Bu kısmı şimdilik devre dışı bırakalım, çünkü
+      // harcama hesaplama işlevselliği henüz yok
+      // if (priceList.limit_amount) {
+      //   // Limit aşım kontrolü...
+      // }
+      
+      return true; // Tüm kontrollerden geçti
+    };
+
+    // Mağazanın fiyat listesi atamalarını getir
+    const storePriceLists = await prisma.storePriceList.findMany({
+      where: { store_id: storeId },
+      include: {
+        PriceList: {
+          include: {
+            PriceListDetail: {
+              include: {
+                Collection: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Mağazaya atanmış fiyat listesi var mı kontrol et
+    if (storePriceLists.length > 0) {
+      const assignedPriceList = storePriceLists[0].PriceList;
+      
+      // Fiyat listesinin geçerliliğini kontrol et
+      if (isPriceListValid(assignedPriceList)) {
+        // Fiyat listesi geçerli, döndür
+        return res.status(200).json({
+          success: true,
+          data: assignedPriceList,
+          is_default: false,
+          is_valid: true
+        });
+      } else {
+        // Fiyat listesi geçerli değil, varsayılan listeyi kullan
+        const defaultResult = await getDefaultPriceList();
+        if (defaultResult) {
+          return res.status(200).json({
+            success: true,
+            data: defaultResult.priceList,
+            is_default: true,
+            is_valid: true,
+            message: assignedPriceList.is_active === false 
+              ? "Atanan fiyat listesi pasif durumda, varsayılan fiyat listesi gösteriliyor" 
+              : "Atanan fiyat listesi artık geçerli değil, varsayılan fiyat listesi gösteriliyor"
+          });
+        }
+      }
+    }
+
+    // Atanmış fiyat listesi yoksa, varsayılan fiyat listesini getir
+    const defaultResult = await getDefaultPriceList();
+    if (defaultResult) {
+      return res.status(200).json({
+        success: true,
+        data: defaultResult.priceList,
+        is_default: true,
+        is_valid: true,
+        message: defaultResult.message
+      });
+    }
+
+    // Hiç fiyat listesi bulunamadı
+    return res.status(404).json({
+      success: false,
+      message: 'Mağaza için fiyat listesi bulunamadı ve varsayılan fiyat listesi tanımlanmamış'
+    });
+  } catch (error) {
+    console.error('Mağaza fiyat listeleri getirilirken hata oluştu:', error);
+    return res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Sunucu hatası'
+    });
+  }
+};
+
+// Mağazanın fiyat listesi atamalarını getir (Admin için - mevcut fonksiyon)
 export const getStorePriceLists = async (req: Request, res: Response) => {
   try {
     const { storeId } = req.params;
