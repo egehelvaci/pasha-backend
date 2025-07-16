@@ -7,6 +7,9 @@ const router = express.Router()
 // Tüm rotalar için authentication gerekli
 router.use(verifyToken)
 
+// Mağaza bakiye bilgileri
+router.get('/balance', storeStatisticsController.getMyStoreBalance)
+
 // Mağaza genel istatistikleri
 router.get('/dashboard', storeStatisticsController.getMyStoreStats)
 

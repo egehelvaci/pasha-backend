@@ -7,6 +7,131 @@ export class StoreStatisticsController {
     this.getMyOrdersOverTime = this.getMyOrdersOverTime.bind(this)
     this.getMyTopProducts = this.getMyTopProducts.bind(this)
     this.getMyTotalStats = this.getMyTotalStats.bind(this)
+    this.getMyStoreBalance = this.getMyStoreBalance.bind(this)
+  }
+
+  /**
+   * Kullanıcının mağazasının bakiye bilgilerini getir
+   * 
+   * @route GET /api/my-statistics/balance
+   * @access Authenticated (Giriş yapmış kullanıcılar)
+   * @description Kullanıcının bağlı olduğu mağazanın tüm bakiye bilgilerini döner
+   * 
+   * @returns {Object} response
+   * @returns {boolean} response.success - İşlem başarı durumu
+   * @returns {Object} response.data - Mağaza ve bakiye bilgileri
+   * @returns {Object} response.data.store_info - Mağaza temel bilgileri
+   * @returns {string} response.data.store_info.store_id - Mağaza ID'si
+   * @returns {string} response.data.store_info.kurum_adi - Mağaza adı
+   * @returns {string} response.data.store_info.vergi_numarasi - Vergi numarası
+   * @returns {string} response.data.store_info.telefon - Telefon numarası
+   * @returns {string} response.data.store_info.eposta - E-posta adresi
+   * @returns {string} response.data.store_info.adres - Adres bilgisi
+   * @returns {Object} response.data.balance_info - Bakiye bilgileri
+   * @returns {number} response.data.balance_info.bakiye - Mevcut bakiye (TL)
+   * @returns {number} response.data.balance_info.acik_hesap_tutari - Açık hesap limiti (TL)
+   * @returns {number} response.data.balance_info.toplam_kullanilabilir - Toplam kullanılabilir tutar (TL)
+   * @returns {number} response.data.balance_info.maksimum_taksit - Maksimum taksit sayısı
+   * @returns {boolean} response.data.balance_info.limitsiz_acik_hesap - Sınırsız açık hesap durumu
+   * @returns {string} response.data.balance_info.currency - Para birimi (TRY)
+   * 
+   * @example
+   * // GET /api/my-statistics/balance
+   * // Authorization: Bearer <token>
+   * // Response:
+   * {
+   *   "success": true,
+   *   "data": {
+   *     "store_info": {
+   *       "store_id": "abc-123-def",
+   *       "kurum_adi": "ABC Mağaza",
+   *       "vergi_numarasi": "1234567890",
+   *       "telefon": "0212 555 0123",
+   *       "eposta": "info@abc.com",
+   *       "adres": "İstanbul"
+   *     },
+   *     "balance_info": {
+   *       "bakiye": 15000.00,
+   *       "acik_hesap_tutari": 10000.00,
+   *       "toplam_kullanilabilir": 25000.00,
+   *       "maksimum_taksit": 12,
+   *       "limitsiz_acik_hesap": false,
+   *       "currency": "TRY"
+   *     }
+   *   }
+   * }
+   */
+  async getMyStoreBalance(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user?.userId
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Kullanıcı kimlik doğrulaması gerekli'
+        })
+      }
+
+      // Kullanıcının mağaza bilgilerini getir
+      const user = await prisma.user.findUnique({
+        where: { userId },
+        include: {
+          Store: true
+        }
+      })
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'Kullanıcı bulunamadı'
+        })
+      }
+
+      if (!user.Store) {
+        return res.status(400).json({
+          success: false,
+          message: 'Kullanıcı bir mağazaya bağlı değil'
+        })
+      }
+
+      const store = user.Store
+
+      // Bakiye bilgilerini hazırla
+      const bakiye = Number(store.bakiye || 0)
+      const acikHesapTutari = Number(store.acik_hesap_tutari || 0)
+      const toplamKullanilabilir = bakiye + acikHesapTutari
+      const maksimumTaksit = store.maksimum_taksit || 1
+      const limitsizAcikHesap = store.limitsiz_acik_hesap || false
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          store_info: {
+            store_id: store.store_id,
+            kurum_adi: store.kurum_adi,
+            vergi_numarasi: store.vergi_numarasi,
+            telefon: store.telefon,
+            eposta: store.eposta,
+            adres: store.adres
+          },
+          balance_info: {
+            bakiye: bakiye,
+            acik_hesap_tutari: acikHesapTutari,
+            toplam_kullanilabilir: toplamKullanilabilir,
+            maksimum_taksit: maksimumTaksit,
+            limitsiz_acik_hesap: limitsizAcikHesap,
+            currency: 'TRY'
+          }
+        }
+      })
+
+    } catch (error: any) {
+      console.error('Mağaza bakiye bilgileri getirilirken hata:', error)
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Bakiye bilgileri alınırken bir hata oluştu'
+      })
+    }
   }
 
   /**
