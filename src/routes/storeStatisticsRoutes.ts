@@ -10,6 +10,9 @@ router.use(verifyToken)
 // Mağaza bakiye bilgileri
 router.get('/balance', storeStatisticsController.getMyStoreBalance)
 
+// Kullanıcı kendi istatistikleri
+router.get('/user-stats', storeStatisticsController.getMyUserStatistics)
+
 // Mağaza genel istatistikleri
 router.get('/dashboard', storeStatisticsController.getMyStoreStats)
 

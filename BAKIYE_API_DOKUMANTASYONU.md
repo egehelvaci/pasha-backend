@@ -441,7 +441,13 @@ const getStoreBalanceWithMonitoring = async () => {
 
 ---
 
-## 📝 Changelog
+## �� Changelog
+
+### v1.1.0 (2024)
+- 🐛 **Floating Point Precision Düzeltmesi**: `limitAmount` değerlerinde ondalık hassasiyet sorunu çözüldü
+- ✅ Para tutarları artık 2 ondalık basamakla yuvarlanıyor
+- ✅ `2220.800000000003` gibi değerler artık `2220.80` olarak döndürülüyor
+- ✅ Yeni `number-utils` modülü eklendi (para hesaplamaları için)
 
 ### v1.0.0 (2024)
 - ✅ Mağaza bakiye bilgileri API'si eklendi
