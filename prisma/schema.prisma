@@ -33,6 +33,7 @@ model User {
   passwordResetTokens PasswordResetToken[]
   orders      Order[]
   accountingTransactions AccountingTransaction[]
+  adminOctetPayments OctetPayment[] @relation("AdminOctetPayments")
 }
 
 model Collection {
@@ -115,6 +116,8 @@ model Store {
   StorePriceList      StorePriceList[]
   User                User[]
   accountingTransactions AccountingTransaction[]
+  octetPayments       OctetPayment[]
+  installmentLimits   StoreInstallmentLimit[]
 }
 
 model StorePriceList {
@@ -352,4 +355,70 @@ model AccountingTransaction {
   product         Product? @relation(fields: [product_id], references: [productId])
   
   @@map("accounting_transactions")
+}
+
+// Octet Ödeme Sistemi Tabloları
+
+model OctetPayment {
+  id                    String           @id @default(uuid())
+  store_id              String           @db.Uuid // Hangi mağaza için
+  admin_id              String           // Hangi admin başlattı
+  amount                Decimal          @db.Decimal(15, 2) // Ödeme tutarı
+  currency              String           @default("TRY") @db.VarChar(3) // Para birimi
+  api_reference_id      String           @unique // Octet API referans ID
+  common_payment_url    String?          // Octet'ten dönen ödeme linki
+  
+  // Taksit bilgileri
+  consumer_installment_limit     String?  // Bireysel kart taksit limiti (1,3,6,9)
+  commercial_installment_limit   String?  // Ticari kart taksit limiti (1,2)
+  
+  // Mağaza bilgileri (snapshot)
+  buyer_name            String           // Mağaza adı
+  buyer_email           String           // Mağaza e-postası
+  buyer_phone           String           // Mağaza telefonu
+  buyer_company_name    String?          // Mağaza ünvanı
+  buyer_tckn            String?          // Vergi/TC numarası
+  
+  // Ödeme durumu
+  status                OctetPaymentStatus @default(PENDING)
+  expire_date_time      DateTime         // Link bitiş tarihi
+  
+  // Ödeme tamamlandıktan sonra dolacak alanlar
+  payment_date          DateTime?        // Ödeme tarihi
+  installment_count     Int?             // Seçilen taksit sayısı
+  payment_to_seller_amount Decimal?      @db.Decimal(15, 2) // Mağazaya geçecek tutar
+  octet_transaction_id  String?          // Octet işlem ID'si
+  
+  created_at            DateTime         @default(now())
+  updated_at            DateTime         @updatedAt
+  
+  // İlişkiler
+  store                 Store            @relation(fields: [store_id], references: [store_id])
+  admin                 User             @relation("AdminOctetPayments", fields: [admin_id], references: [userId])
+  
+  @@map("octet_payments")
+}
+
+model StoreInstallmentLimit {
+  id                           String   @id @default(uuid())
+  store_id                     String   @db.Uuid
+  consumer_installment_limit   String   // Bireysel kart taksit limiti (1,3,6,9)
+  commercial_installment_limit String   // Ticari kart taksit limiti (1,2)
+  is_active                    Boolean  @default(true)
+  created_at                   DateTime @default(now())
+  updated_at                   DateTime @updatedAt
+  
+  // İlişkiler
+  store                        Store    @relation(fields: [store_id], references: [store_id])
+  
+  @@unique([store_id]) // Her mağaza için tek kayıt
+  @@map("store_installment_limits")
+}
+
+enum OctetPaymentStatus {
+  PENDING    // Ödeme linki oluşturuldu, ödeme bekleniyor
+  COMPLETED  // Ödeme başarıyla tamamlandı
+  FAILED     // Ödeme başarısız
+  EXPIRED    // Ödeme linki süresi doldu
+  CANCELLED  // Ödeme iptal edildi
 }

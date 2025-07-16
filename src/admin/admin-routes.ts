@@ -6,6 +6,7 @@ import { authMiddleware, authorizeRoles } from '../auth/auth-middleware'
 import storeRoutes from './store-routes'
 import productRulesRoutes from './product-rules-routes'
 import cutTypesRoutes from './cut-types-routes'
+import octetPaymentRoutes from './octet-payment-routes'
 
 import { createAccountingTransaction, getAllAccountingTransactions } from './accounting-transaction-controller'
 
@@ -29,7 +30,8 @@ router.use('/product-rules', productRulesRoutes)
 // Kesim türleri yönetimi rotalarını ekle
 router.use('/cut-types', cutTypesRoutes)
 
-
+// Octet ödeme sistemi rotalarını ekle
+router.use('/octet', octetPaymentRoutes)
 
 // Sipariş yönetimi rotaları
 router.get('/orders', adminOrderController.getAllOrders)
