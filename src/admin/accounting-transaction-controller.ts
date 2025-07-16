@@ -3,7 +3,7 @@ import prisma from '../utils/prisma';
 
 export const getAllAccountingTransactions = async (req: Request, res: Response) => {
   try {
-    const { page = 1, limit = 50, store_id, customer_id, product_id, transaction_type, is_expense, start_date, end_date } = req.query;
+    const { page = 1, limit = 50, store_id, customer_id, collection_id, transaction_type, is_expense, start_date, end_date } = req.query;
 
     // Sayfa ve limit validasyonu
     const pageNum = parseInt(page as string) || 1;
@@ -19,8 +19,8 @@ export const getAllAccountingTransactions = async (req: Request, res: Response) 
       whereConditions.store_id = filterStoreId as string;
     }
 
-    if (product_id) {
-      whereConditions.product_id = product_id as string;
+    if (collection_id) {
+      whereConditions.collection_id = collection_id as string;
     }
 
     if (transaction_type) {
@@ -63,11 +63,12 @@ export const getAllAccountingTransactions = async (req: Request, res: Response) 
             username: true
           }
         },
-        product: {
+        collection: {
           select: {
-            productId: true,
+            collectionId: true,
             name: true,
-            description: true
+            description: true,
+            code: true
           }
         }
       },
@@ -160,7 +161,7 @@ export const createAccountingTransaction = async (req: Request, res: Response) =
     const {
       store_id,
       customer_id, // Geriye dönük uyumluluk için
-      product_id,
+      collection_id,
       square_meters,
       transaction_type,
       amount,
@@ -200,16 +201,16 @@ export const createAccountingTransaction = async (req: Request, res: Response) =
       });
     }
 
-    // Eğer product_id varsa, ürünün var olup olmadığını kontrol et
-    if (product_id) {
-      const product = await prisma.product.findUnique({
-        where: { productId: product_id }
+    // Eğer collection_id varsa, koleksiyonun var olup olmadığını kontrol et
+    if (collection_id) {
+      const collection = await prisma.collection.findUnique({
+        where: { collectionId: collection_id }
       });
 
-      if (!product) {
+      if (!collection) {
         return res.status(404).json({
           success: false,
-          message: 'Ürün bulunamadı'
+          message: 'Koleksiyon bulunamadı'
         });
       }
     }
@@ -237,7 +238,7 @@ export const createAccountingTransaction = async (req: Request, res: Response) =
         data: {
           customer_id: finalStoreId, // store_id'yi customer_id alanına kaydet (schema uyumluluğu için)
           store_id: finalStoreId,
-          product_id: product_id || null,
+          collection_id: collection_id || null,
           square_meters: square_meters || null,
           transaction_type,
           amount,
@@ -252,10 +253,11 @@ export const createAccountingTransaction = async (req: Request, res: Response) =
               kurum_adi: true
             }
           },
-          product: {
+          collection: {
             select: {
-              productId: true,
-              name: true
+              collectionId: true,
+              name: true,
+              code: true
             }
           }
         }

@@ -149,7 +149,7 @@ Muhasebe hareketleri Excel'i şu kolonları içerir:
 | Tutar (TL) | İşlem tutarı (renkli) |
 | Tür | GELİR/GİDER (renkli) |
 | Metrekare | İlgili alan bilgisi |
-| Ürün | İlişkili ürün (varsa) |
+| Koleksiyon | İlişkili koleksiyon (varsa) |
 | Açıklama | İşlem detayı |
 
 ### Özel Özellikler

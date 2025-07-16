@@ -211,11 +211,12 @@ export class ExcelExportController {
               kurum_adi: true
             }
           },
-          product: {
+          collection: {
             select: {
-              productId: true,
+              collectionId: true,
               name: true,
-              description: true
+              description: true,
+              code: true
             }
           }
         },
@@ -511,7 +512,7 @@ export class ExcelExportController {
       'Tutar (TL)',
       'Tür',
       'Metrekare',
-      'Ürün',
+      'Koleksiyon',
       'Açıklama'
     ])
 
@@ -542,7 +543,7 @@ export class ExcelExportController {
         Number(transaction.amount),
         transaction.is_expense ? 'GİDER' : 'GELİR',
         transaction.square_meters ? Number(transaction.square_meters) : '',
-        transaction.product?.name || '',
+        transaction.collection?.name || '',
         transaction.description
       ])
 
