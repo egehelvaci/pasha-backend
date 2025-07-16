@@ -3,7 +3,7 @@ import prisma from '../utils/prisma';
 
 export const getAllAccountingTransactions = async (req: Request, res: Response) => {
   try {
-    const { page = 1, limit = 50, customer_id, product_id, transaction_type, is_expense, start_date, end_date } = req.query;
+    const { page = 1, limit = 50, store_id, customer_id, product_id, transaction_type, is_expense, start_date, end_date } = req.query;
 
     // Sayfa ve limit validasyonu
     const pageNum = parseInt(page as string) || 1;
@@ -13,8 +13,10 @@ export const getAllAccountingTransactions = async (req: Request, res: Response) 
     // Filtre koşulları oluştur
     const whereConditions: any = {};
 
-    if (customer_id) {
-      whereConditions.customer_id = customer_id as string;
+    // store_id öncelikli, yoksa customer_id kullan (geriye dönük uyumluluk)
+    const filterStoreId = store_id || customer_id;
+    if (filterStoreId) {
+      whereConditions.store_id = filterStoreId as string;
     }
 
     if (product_id) {
@@ -156,7 +158,8 @@ export const getAllAccountingTransactions = async (req: Request, res: Response) 
 export const createAccountingTransaction = async (req: Request, res: Response) => {
   try {
     const {
-      customer_id,
+      store_id,
+      customer_id, // Geriye dönük uyumluluk için
       product_id,
       square_meters,
       transaction_type,
@@ -166,33 +169,34 @@ export const createAccountingTransaction = async (req: Request, res: Response) =
       description
     } = req.body;
 
+    // store_id öncelikli, yoksa customer_id kullan (geriye dönük uyumluluk)
+    const finalStoreId = store_id || customer_id;
+
     // Zorunlu alanları kontrol et
-    if (!customer_id || !transaction_type || !amount || is_expense === undefined || !transaction_date || !description) {
+    if (!finalStoreId || !transaction_type || !amount || is_expense === undefined || !transaction_date || !description) {
       return res.status(400).json({
         success: false,
-        message: 'Zorunlu alanlar eksik: customer_id, transaction_type, amount, is_expense, transaction_date, description'
+        message: 'Zorunlu alanlar eksik: store_id, transaction_type, amount, is_expense, transaction_date, description'
       });
     }
 
-    // Müşteri var mı ve mağaza bilgisi var mı kontrol et
-    const customer = await prisma.user.findUnique({
-      where: { userId: customer_id },
-      include: {
-        Store: true
-      }
+    // Mağazanın var olup olmadığını kontrol et
+    const store = await prisma.store.findUnique({
+      where: { store_id: finalStoreId }
     });
 
-    if (!customer) {
+    if (!store) {
       return res.status(404).json({
         success: false,
-        message: 'Müşteri bulunamadı'
+        message: 'Mağaza bulunamadı'
       });
     }
 
-    if (!customer.store_id) {
+    // Mağaza aktif mi kontrol et
+    if (!store.is_active) {
       return res.status(400).json({
         success: false,
-        message: 'Müşteri bir mağazaya ait değil'
+        message: 'Mağaza aktif değil'
       });
     }
 
@@ -231,8 +235,8 @@ export const createAccountingTransaction = async (req: Request, res: Response) =
       // Muhasebe hareketi oluştur
       const accountingTransaction = await tx.accountingTransaction.create({
         data: {
-          customer_id,
-          store_id: customer.store_id!,
+          customer_id: finalStoreId, // store_id'yi customer_id alanına kaydet (schema uyumluluğu için)
+          store_id: finalStoreId,
           product_id: product_id || null,
           square_meters: square_meters || null,
           transaction_type,
@@ -242,14 +246,6 @@ export const createAccountingTransaction = async (req: Request, res: Response) =
           description
         },
         include: {
-          customer: {
-            select: {
-              userId: true,
-              name: true,
-              surname: true,
-              email: true
-            }
-          },
           store: {
             select: {
               store_id: true,
@@ -270,7 +266,7 @@ export const createAccountingTransaction = async (req: Request, res: Response) =
       const bakiyeGuncelleme = is_expense ? -amount : amount;
       
       await tx.store.update({
-        where: { store_id: customer.store_id! },
+        where: { store_id: finalStoreId },
         data: {
           bakiye: {
             increment: bakiyeGuncelleme

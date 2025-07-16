@@ -131,7 +131,7 @@ curl -X GET "http://localhost:3001/api/admin/export/orders?period=yearly&status=
 | `period` | string | Hayır | Zaman aralığı (varsayılan: custom) | `daily`, `weekly`, `monthly`, `yearly`, `custom` |
 | `start_date` | string | Evet* | Başlangıç tarihi (custom için zorunlu) | `2024-01-01` |
 | `end_date` | string | Evet* | Bitiş tarihi (custom için zorunlu) | `2024-12-31` |
-| `customer_id` | string | Hayır | Müşteri ID filtresi | `user-uuid-123` |
+| `store_id` | string | Hayır | Mağaza ID filtresi | `store-uuid-123` |
 | `transaction_type` | string | Hayır | İşlem türü filtresi | `OCTET_PAYMENT`, `BALANCE_UPDATE` |
 | `is_expense` | string | Hayır | Gelir/Gider filtresi | `true`, `false` |
 
@@ -174,10 +174,10 @@ curl -X GET "http://localhost:3001/api/admin/export/accounting-transactions?peri
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
   --output "muhasebe_hareketleri.xlsx"
 
-# Belirli müşterinin hareketleri
-curl -X GET "http://localhost:3001/api/admin/export/accounting-transactions?period=custom&start_date=2024-01-01&end_date=2024-12-31&customer_id=user-123" \
+# Belirli mağazanın hareketleri
+curl -X GET "http://localhost:3001/api/admin/export/accounting-transactions?period=custom&start_date=2024-01-01&end_date=2024-12-31&store_id=store-123" \
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
-  --output "musteri_hareketleri.xlsx"
+  --output "magaza_hareketleri.xlsx"
 
 # Sadece gelir kalemleri
 curl -X GET "http://localhost:3001/api/admin/export/accounting-transactions?period=yearly&is_expense=false" \

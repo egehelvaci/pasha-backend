@@ -132,6 +132,7 @@ export class ExcelExportController {
         period = 'custom', 
         start_date, 
         end_date,
+        store_id,
         customer_id,
         transaction_type,
         is_expense
@@ -174,8 +175,10 @@ export class ExcelExportController {
         }
       }
 
-      if (customer_id) {
-        whereConditions.customer_id = customer_id
+      // store_id öncelikli, yoksa customer_id kullan (geriye dönük uyumluluk)
+      const filterStoreId = store_id || customer_id;
+      if (filterStoreId) {
+        whereConditions.store_id = filterStoreId as string;
       }
 
       if (transaction_type) {
