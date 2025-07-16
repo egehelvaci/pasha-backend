@@ -270,8 +270,9 @@ export const createAccountingTransaction = async (req: Request, res: Response) =
       });
 
       // Mağaza bakiyesini güncelle
-      // is_expense true ise bakiyeden çıkar (borç), false ise bakiyeye ekle (alacak)
-      const bakiyeGuncelleme = is_expense ? -amount : amount;
+      // is_expense=true: Mağaza gider yapmış, admin'den borç almış → bakiye artar (+) → admin alacaklı
+      // is_expense=false: Mağaza ödeme yapmış, admin'e para vermiş → bakiye azalır (-) → admin borçlu
+      const bakiyeGuncelleme = is_expense ? amount : -amount;
       
       await tx.store.update({
         where: { store_id: finalStoreId },
