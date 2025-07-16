@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
 import prisma from '../utils/prisma'
 import { roundCurrency, addCurrency } from '../utils/number-utils'
+import { OrderStatus } from '../../generated/prisma'
 
 export class StoreStatisticsController {
   constructor() {
@@ -13,55 +14,7 @@ export class StoreStatisticsController {
   }
 
   /**
-   * Kullanıcının mağazasının bakiye bilgilerini getir
-   * 
-   * @route GET /api/my-statistics/balance
-   * @access Authenticated (Giriş yapmış kullanıcılar)
-   * @description Kullanıcının bağlı olduğu mağazanın tüm bakiye bilgilerini döner
-   * 
-   * @returns {Object} response
-   * @returns {boolean} response.success - İşlem başarı durumu
-   * @returns {Object} response.data - Mağaza ve bakiye bilgileri
-   * @returns {Object} response.data.store_info - Mağaza temel bilgileri
-   * @returns {string} response.data.store_info.store_id - Mağaza ID'si
-   * @returns {string} response.data.store_info.kurum_adi - Mağaza adı
-   * @returns {string} response.data.store_info.vergi_numarasi - Vergi numarası
-   * @returns {string} response.data.store_info.telefon - Telefon numarası
-   * @returns {string} response.data.store_info.eposta - E-posta adresi
-   * @returns {string} response.data.store_info.adres - Adres bilgisi
-   * @returns {Object} response.data.balance_info - Bakiye bilgileri
-   * @returns {number} response.data.balance_info.bakiye - Mevcut bakiye (TL)
-   * @returns {number} response.data.balance_info.acik_hesap_tutari - Açık hesap limiti (TL)
-   * @returns {number} response.data.balance_info.toplam_kullanilabilir - Toplam kullanılabilir tutar (TL)
-   * @returns {number} response.data.balance_info.maksimum_taksit - Maksimum taksit sayısı
-   * @returns {boolean} response.data.balance_info.limitsiz_acik_hesap - Sınırsız açık hesap durumu
-   * @returns {string} response.data.balance_info.currency - Para birimi (TRY)
-   * 
-   * @example
-   * // GET /api/my-statistics/balance
-   * // Authorization: Bearer <token>
-   * // Response:
-   * {
-   *   "success": true,
-   *   "data": {
-   *     "store_info": {
-   *       "store_id": "abc-123-def",
-   *       "kurum_adi": "ABC Mağaza",
-   *       "vergi_numarasi": "1234567890",
-   *       "telefon": "0212 555 0123",
-   *       "eposta": "info@abc.com",
-   *       "adres": "İstanbul"
-   *     },
-   *     "balance_info": {
-   *       "bakiye": 15000.00,
-   *       "acik_hesap_tutari": 10000.00,
-   *       "toplam_kullanilabilir": 25000.00,
-   *       "maksimum_taksit": 12,
-   *       "limitsiz_acik_hesap": false,
-   *       "currency": "TRY"
-   *     }
-   *   }
-   * }
+   * Mağaza bakiye bilgilerini getir
    */
   async getMyStoreBalance(req: Request, res: Response) {
     try {
@@ -137,7 +90,7 @@ export class StoreStatisticsController {
   }
 
   /**
-   * Mağazanın genel istatistikleri
+   * Mağazanın genel istatistikleri - DÜZELTILMIŞ (Sadece onaylanmış siparişler)
    */
   async getMyStoreStats(req: Request, res: Response) {
     try {
@@ -168,30 +121,34 @@ export class StoreStatisticsController {
           break
       }
 
+      // Sadece onaylanmış siparişler için where clause
+      const confirmedOrdersWhere = {
+        user_id: userId,
+        created_at: {
+          gte: startDate
+        },
+        status: {
+          in: [OrderStatus.CONFIRMED, OrderStatus.SHIPPED, OrderStatus.DELIVERED] // Sadece onaylanmış siparişler
+        }
+      }
+
       // Mağazanın siparişlerini getir
       const [
-        totalOrders,
+        totalConfirmedOrders,
         pendingOrders,
         confirmedOrders,
         deliveredOrders,
+        shippedOrders,
         totalAmount,
         totalProducts,
         recentOrders
       ] = await Promise.all([
-        // Toplam sipariş sayısı
+        // Toplam onaylanmış sipariş sayısı (istatistikler için)
         prisma.order.count({
-          where: {
-            user_id: userId,
-            created_at: {
-              gte: startDate
-            },
-            status: {
-              not: 'CANCELED'
-            }
-          }
+          where: confirmedOrdersWhere
         }),
 
-        // Bekleyen siparişler
+        // Bekleyen siparişler (ayrı gösterim için)
         prisma.order.count({
           where: {
             user_id: userId,
@@ -215,41 +172,33 @@ export class StoreStatisticsController {
           }
         }),
 
-        // Toplam tutar
+        // Kargoya verilen siparişler
+        prisma.order.count({
+          where: {
+            user_id: userId,
+            status: 'SHIPPED'
+          }
+        }),
+
+        // Toplam tutar (sadece onaylanmış siparişlerden)
         prisma.order.aggregate({
           _sum: {
             total_price: true
           },
-          where: {
-            user_id: userId,
-            created_at: {
-              gte: startDate
-            },
-            status: {
-              not: 'CANCELED'
-            }
-          }
+          where: confirmedOrdersWhere
         }),
 
-        // Toplam ürün adedi
+        // Toplam ürün adedi (sadece onaylanmış siparişlerden)
         prisma.orderItem.aggregate({
           _sum: {
             quantity: true
           },
           where: {
-            order: {
-              user_id: userId,
-              created_at: {
-                gte: startDate
-              },
-              status: {
-                not: 'CANCELED'
-              }
-            }
+            order: confirmedOrdersWhere
           }
         }),
 
-        // Son 5 sipariş
+        // Son 5 sipariş (tüm durumlar)
         prisma.order.findMany({
           where: {
             user_id: userId
@@ -272,6 +221,13 @@ export class StoreStatisticsController {
         })
       ])
 
+      console.log('Kullanıcı İstatistik Raporu (Sadece Onaylanmış Siparişler):')
+      console.log('- Kullanıcı ID:', userId)
+      console.log('- Zaman aralığı:', startDate, 'dan', now, 'a kadar')
+      console.log('- Dahil edilen durumlar: CONFIRMED, SHIPPED, DELIVERED')
+      console.log('- Toplam onaylanmış sipariş sayısı:', totalConfirmedOrders)
+      console.log('- Toplam tutar:', Number(totalAmount._sum?.total_price || 0))
+
       return res.status(200).json({
         success: true,
         data: {
@@ -279,16 +235,17 @@ export class StoreStatisticsController {
           start_date: startDate,
           end_date: now,
           orders: {
-            total: totalOrders,
+            total_confirmed: totalConfirmedOrders, // Sadece onaylanmış siparişler
             pending: pendingOrders,
             confirmed: confirmedOrders,
+            shipped: shippedOrders,
             delivered: deliveredOrders
           },
           financial: {
-            total_amount: Number(totalAmount._sum.total_price || 0)
+            total_amount: Number(totalAmount._sum?.total_price || 0) // Sadece onaylanmış siparişlerden
           },
           products: {
-            total_quantity: totalProducts._sum.quantity || 0
+            total_quantity: totalProducts._sum?.quantity || 0 // Sadece onaylanmış siparişlerden
           },
           recent_orders: recentOrders.map(order => ({
             id: order.id,
@@ -296,7 +253,12 @@ export class StoreStatisticsController {
             status: order.status,
             created_at: order.created_at,
             total_items: order.items.reduce((sum, item) => sum + item.quantity, 0)
-          }))
+          })),
+          // Debug bilgileri
+          debug: {
+            included_statuses: ['CONFIRMED', 'SHIPPED', 'DELIVERED'],
+            excluded_statuses: ['PENDING', 'CANCELED']
+          }
         }
       })
 
@@ -310,134 +272,12 @@ export class StoreStatisticsController {
   }
 
   /**
-   * Mağazanın zaman bazlı sipariş grafiği
-   */
-  async getMyOrdersOverTime(req: Request, res: Response) {
-    try {
-      const userId = (req as any).user?.userId
-      const { period = '1_year', groupBy = 'month' } = req.query
-
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          message: 'Kullanıcı kimlik doğrulaması gerekli'
-        })
-      }
-
-      // Zaman aralığını belirle
-      let startDate: Date
-      const now = new Date()
-      
-      switch (period) {
-        case '1_month':
-          startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
-          break
-        case '3_months':
-          startDate = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate())
-          break
-        case '1_year':
-        default:
-          startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate())
-          break
-      }
-
-      // Mağazanın siparişlerini getir
-      const orders = await prisma.order.findMany({
-        where: {
-          user_id: userId,
-          created_at: {
-            gte: startDate
-          },
-          status: {
-            not: 'CANCELED'
-          }
-        },
-        include: {
-          cart: {
-            include: {
-              cart_items: true
-            }
-          }
-        }
-      })
-
-      // Manuel gruplandırma
-      const groupedData: Record<string, {
-        time_period: string,
-        order_count: number,
-        total_amount: number,
-        total_area_m2: number
-      }> = {}
-
-      orders.forEach(order => {
-        let timePeriod: string
-        const orderDate = new Date(order.created_at)
-        
-        switch (groupBy) {
-          case 'day':
-            timePeriod = orderDate.toISOString().split('T')[0]
-            break
-          case 'week':
-            const year = orderDate.getFullYear()
-            const week = Math.ceil((orderDate.getTime() - new Date(year, 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000))
-            timePeriod = `${year}-W${week.toString().padStart(2, '0')}`
-            break
-          case 'month':
-          default:
-            timePeriod = `${orderDate.getFullYear()}-${(orderDate.getMonth() + 1).toString().padStart(2, '0')}`
-            break
-        }
-
-        if (!groupedData[timePeriod]) {
-          groupedData[timePeriod] = {
-            time_period: timePeriod,
-            order_count: 0,
-            total_amount: 0,
-            total_area_m2: 0
-          }
-        }
-
-        groupedData[timePeriod].order_count += 1
-        groupedData[timePeriod].total_amount += Number(order.total_price)
-        
-        if (order.cart?.cart_items) {
-          order.cart.cart_items.forEach(item => {
-            groupedData[timePeriod].total_area_m2 += Number(item.area_m2) * item.quantity
-          })
-        }
-      })
-
-      const chartData = Object.values(groupedData).sort((a, b) => 
-        a.time_period.localeCompare(b.time_period)
-      )
-
-      return res.status(200).json({
-        success: true,
-        data: {
-          chart_data: chartData,
-          period,
-          group_by: groupBy,
-          start_date: startDate,
-          end_date: now
-        }
-      })
-
-    } catch (error: any) {
-      console.error('Mağaza zaman bazlı verileri getirilirken hata:', error)
-      return res.status(500).json({
-        success: false,
-        message: error.message || 'İstatistikler alınırken bir hata oluştu'
-      })
-    }
-  }
-
-  /**
-   * Mağazanın en çok sipariş ettiği ürünler
+   * Mağazanın ürün bazlı istatistikleri - DÜZELTILMIŞ
    */
   async getMyTopProducts(req: Request, res: Response) {
     try {
       const userId = (req as any).user?.userId
-      const { period = '1_year', limit = 5 } = req.query
+      const { period = '1_year' } = req.query
 
       if (!userId) {
         return res.status(401).json({
@@ -472,7 +312,7 @@ export class StoreStatisticsController {
               gte: startDate
             },
             status: {
-              not: 'CANCELED'
+              in: [OrderStatus.CONFIRMED, OrderStatus.SHIPPED, OrderStatus.DELIVERED] // Sadece onaylanmış siparişler
             }
           }
         },
@@ -485,7 +325,7 @@ export class StoreStatisticsController {
             quantity: 'desc'
           }
         },
-        take: Number(limit)
+        take: 10
       })
 
       // Ürün bilgilerini getir
@@ -515,12 +355,15 @@ export class StoreStatisticsController {
         data: {
           products: productData,
           period,
-          total_products: productData.length
+          start_date: startDate,
+          end_date: now,
+          total_products: productData.length,
+          included_statuses: ['CONFIRMED', 'SHIPPED', 'DELIVERED']
         }
       })
 
     } catch (error: any) {
-      console.error('Mağaza top ürünleri getirilirken hata:', error)
+      console.error('En çok sipariş edilen ürünler getirilirken hata:', error)
       return res.status(500).json({
         success: false,
         message: error.message || 'İstatistikler alınırken bir hata oluştu'
@@ -529,7 +372,129 @@ export class StoreStatisticsController {
   }
 
   /**
-   * Mağazanın toplam istatistikleri
+   * Mağazanın zaman bazlı sipariş grafiği - DÜZELTILMIŞ
+   */
+  async getMyOrdersOverTime(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user?.userId
+      const { period = '1_year', groupBy = 'month' } = req.query
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Kullanıcı kimlik doğrulaması gerekli'
+        })
+      }
+
+      // Zaman aralığını belirle
+      let startDate: Date
+      const now = new Date()
+      
+      switch (period) {
+        case '1_month':
+          startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
+          break
+        case '3_months':
+          startDate = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate())
+          break
+        case '1_year':
+        default:
+          startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate())
+          break
+      }
+
+      const ordersWithItems = await prisma.order.findMany({
+        where: {
+          user_id: userId,
+          created_at: {
+            gte: startDate
+          },
+          status: {
+            in: [OrderStatus.CONFIRMED, OrderStatus.SHIPPED, OrderStatus.DELIVERED] // Sadece onaylanmış siparişler
+          }
+        },
+        include: {
+          items: true
+        }
+      })
+
+      // Manuel gruplandırma
+      const groupedData: Record<string, {
+        time_period: string,
+        order_count: number,
+        total_amount: number,
+        total_area_m2: number
+      }> = {}
+
+      ordersWithItems.forEach(order => {
+        let timePeriod: string
+        const orderDate = new Date(order.created_at)
+        
+        switch (groupBy) {
+          case 'day':
+            timePeriod = orderDate.toISOString().split('T')[0]
+            break
+          case 'week':
+            const year = orderDate.getFullYear()
+            const week = Math.ceil((orderDate.getTime() - new Date(year, 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000))
+            timePeriod = `${year}-W${week.toString().padStart(2, '0')}`
+            break
+          case 'month':
+          default:
+            timePeriod = `${orderDate.getFullYear()}-${(orderDate.getMonth() + 1).toString().padStart(2, '0')}`
+            break
+        }
+
+        if (!groupedData[timePeriod]) {
+          groupedData[timePeriod] = {
+            time_period: timePeriod,
+            order_count: 0,
+            total_amount: 0,
+            total_area_m2: 0
+          }
+        }
+
+        groupedData[timePeriod].order_count += 1
+        groupedData[timePeriod].total_amount += Number(order.total_price)
+        
+        // OrderItem'lardan alan hesapla
+        if (order.items) {
+          order.items.forEach(item => {
+            if (item.width && item.height) {
+              const areaM2 = (Number(item.width) * Number(item.height) * item.quantity) / 10000
+              groupedData[timePeriod].total_area_m2 += areaM2
+            }
+          })
+        }
+      })
+
+      const timeBasedOrders = Object.values(groupedData).sort((a, b) => 
+        a.time_period.localeCompare(b.time_period)
+      )
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          chart_data: timeBasedOrders,
+          period,
+          group_by: groupBy,
+          start_date: startDate,
+          end_date: now,
+          included_statuses: ['CONFIRMED', 'SHIPPED', 'DELIVERED']
+        }
+      })
+
+    } catch (error: any) {
+      console.error('Zaman bazlı sipariş verileri getirilirken hata:', error)
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'İstatistikler alınırken bir hata oluştu'
+      })
+    }
+  }
+
+  /**
+   * Mağazanın toplam istatistikleri - DÜZELTILMIŞ (Sadece onaylanmış siparişler)
    */
   async getMyTotalStats(req: Request, res: Response) {
     try {
@@ -560,39 +525,45 @@ export class StoreStatisticsController {
           break
       }
 
+      // Sadece onaylanmış siparişler için where clause
+      const whereClause = {
+        user_id: userId,
+        created_at: {
+          gte: startDate
+        },
+        status: {
+          in: [OrderStatus.CONFIRMED, OrderStatus.SHIPPED, OrderStatus.DELIVERED]
+        }
+      }
+
       const [
         totalOrdersResult,
-        totalAmountResult,
+        totalAmountFromOrders,
+        totalAmountFromOrderItems,
         totalQuantityResult,
-        totalAreaResult,
+        orderItemsForArea,
         userInfo
       ] = await Promise.all([
         // Toplam sipariş sayısı
         prisma.order.count({
-          where: {
-            user_id: userId,
-            created_at: {
-              gte: startDate
-            },
-            status: {
-              not: 'CANCELED'
-            }
-          }
+          where: whereClause
         }),
 
-        // Toplam tutar
+        // Order tablosundan toplam tutar
         prisma.order.aggregate({
           _sum: {
             total_price: true
           },
+          where: whereClause
+        }),
+
+        // OrderItem tablosundan toplam tutar (doğrulama için)
+        prisma.orderItem.aggregate({
+          _sum: {
+            total_price: true
+          },
           where: {
-            user_id: userId,
-            created_at: {
-              gte: startDate
-            },
-            status: {
-              not: 'CANCELED'
-            }
+            order: whereClause
           }
         }),
 
@@ -602,28 +573,25 @@ export class StoreStatisticsController {
             quantity: true
           },
           where: {
-            order: {
-              user_id: userId,
-              created_at: {
-                gte: startDate
-              },
-              status: {
-                not: 'CANCELED'
-              }
-            }
+            order: whereClause
           }
         }),
 
-        // Toplam metrekare
-        prisma.$queryRaw`
-          SELECT COALESCE(SUM(ci.area_m2 * ci.quantity), 0)::float as total_area_m2
-          FROM "Order" o
-          INNER JOIN carts c ON o.cart_id = c.id
-          INNER JOIN cart_items ci ON c.id = ci.cart_id
-          WHERE o.user_id = ${userId}
-            AND o.created_at >= ${startDate}
-            AND o.status != 'CANCELED'
-        `,
+        // Metrekare hesaplama için OrderItem'lar
+        prisma.orderItem.findMany({
+          where: {
+            order: whereClause,
+            AND: [
+              { width: { not: null } },
+              { height: { not: null } }
+            ]
+          },
+          select: {
+            width: true,
+            height: true,
+            quantity: true
+          }
+        }),
 
         // Kullanıcı ve mağaza bilgisi
         prisma.user.findUnique({
@@ -634,8 +602,26 @@ export class StoreStatisticsController {
         })
       ])
 
-      const totalAreaData = totalAreaResult as any[]
-      const totalArea = totalAreaData[0]?.total_area_m2 || 0
+      // Metrekare hesaplama
+      let totalAreaM2 = 0
+      orderItemsForArea.forEach(item => {
+        if (item.width && item.height) {
+          const areaM2 = (Number(item.width) * Number(item.height) * item.quantity) / 10000
+          totalAreaM2 += areaM2
+        }
+      })
+
+      const totalAmount = Number(totalAmountFromOrders._sum?.total_price || 0)
+      const totalAmountFromItems = Number(totalAmountFromOrderItems._sum?.total_price || 0)
+
+      console.log('Kullanıcı Toplam İstatistik Raporu (Sadece Onaylanmış Siparişler):')
+      console.log('- Kullanıcı ID:', userId)
+      console.log('- Zaman aralığı:', startDate, 'dan', now, 'a kadar')
+      console.log('- Dahil edilen durumlar: CONFIRMED, SHIPPED, DELIVERED')
+      console.log('- Toplam sipariş sayısı:', totalOrdersResult)
+      console.log('- Order tablosundan toplam tutar:', totalAmount)
+      console.log('- OrderItem tablosundan toplam tutar:', totalAmountFromItems)
+      console.log('- Hesaplanan toplam metrekare:', totalAreaM2)
 
       return res.status(200).json({
         success: true,
@@ -646,18 +632,24 @@ export class StoreStatisticsController {
           },
           totals: {
             total_orders: totalOrdersResult,
-            total_amount: Number(totalAmountResult._sum.total_price || 0),
-            total_product_quantity: totalQuantityResult._sum.quantity || 0,
-            total_area_m2: totalArea
+            total_amount: totalAmount,
+            total_amount_from_items: totalAmountFromItems,
+            total_product_quantity: totalQuantityResult._sum?.quantity || 0,
+            total_area_m2: Math.round(totalAreaM2 * 100) / 100,
+            period,
+            start_date: startDate,
+            end_date: now
           },
-          period,
-          start_date: startDate,
-          end_date: now
+          debug: {
+            included_statuses: ['CONFIRMED', 'SHIPPED', 'DELIVERED'],
+            area_calculated_items: orderItemsForArea.length,
+            amount_difference: Math.abs(totalAmount - totalAmountFromItems)
+          }
         }
       })
 
     } catch (error: any) {
-      console.error('Mağaza toplam istatistikleri getirilirken hata:', error)
+      console.error('Toplam istatistikler getirilirken hata:', error)
       return res.status(500).json({
         success: false,
         message: error.message || 'İstatistikler alınırken bir hata oluştu'
@@ -666,51 +658,7 @@ export class StoreStatisticsController {
   }
 
   /**
-   * Kullanıcının kendi istatistiklerini getir
-   * 
-   * @route GET /api/my-statistics/user-stats
-   * @access Authenticated (Giriş yapmış kullanıcılar)
-   * @description Kullanıcının sipariş istatistiklerini, en çok sipariş verdiği ürünleri, koleksiyonları ve m2 bilgilerini döner
-   * 
-   * @returns {Object} response
-   * @returns {boolean} response.success - İşlem başarı durumu
-   * @returns {Object} response.data - Kullanıcı istatistik bilgileri
-   * @returns {Object} response.data.user_info - Kullanıcı temel bilgileri
-   * @returns {Object} response.data.order_statistics - Sipariş istatistikleri
-   * @returns {number} response.data.order_statistics.total_orders - Toplam sipariş sayısı
-   * @returns {number} response.data.order_statistics.total_amount - Toplam harcama (TL)
-   * @returns {number} response.data.order_statistics.total_area_m2 - Toplam sipariş alanı (m²)
-   * @returns {number} response.data.order_statistics.pending_orders - Bekleyen siparişler
-   * @returns {number} response.data.order_statistics.completed_orders - Tamamlanan siparişler
-   * @returns {Array} response.data.top_products - En çok sipariş verilen ürünler
-   * @returns {Array} response.data.top_collections - En çok sipariş verilen koleksiyonlar
-   * @returns {Array} response.data.monthly_orders - Aylık sipariş dağılımı
-   * 
-   * @example
-   * // GET /api/my-statistics/user-stats?period=1_year
-   * // Authorization: Bearer <token>
-   * // Response:
-   * {
-   *   "success": true,
-   *   "data": {
-   *     "user_info": {
-   *       "user_id": "user-123",
-   *       "name": "Ahmet Yılmaz",
-   *       "email": "ahmet@example.com",
-   *       "store_name": "ABC Mağaza"
-   *     },
-   *     "order_statistics": {
-   *       "total_orders": 25,
-   *       "total_amount": 45750.50,
-   *       "total_area_m2": 125.75,
-   *       "pending_orders": 3,
-   *       "completed_orders": 20
-   *     },
-   *     "top_products": [...],
-   *     "top_collections": [...],
-   *     "monthly_orders": [...]
-   *   }
-   * }
+   * Kullanıcının kendi istatistikleri - DÜZELTILMIŞ (Sadece onaylanmış siparişler için ciro)
    */
   async getMyUserStatistics(req: Request, res: Response) {
     try {
@@ -765,9 +713,9 @@ export class StoreStatisticsController {
         topProductsData,
         topCollectionsData,
         monthlyOrdersData,
-        totalAreaData
+        orderItemsForArea
       ] = await Promise.all([
-        // Temel sipariş istatistikleri
+        // Temel sipariş istatistikleri (tüm durumları göster ama tutarları sadece onaylanmışlardan al)
         prisma.order.groupBy({
           by: ['status'],
           where: {
@@ -784,7 +732,7 @@ export class StoreStatisticsController {
           }
         }),
 
-        // En çok sipariş verilen ürünler (Top 10)
+        // En çok sipariş verilen ürünler (Top 10) - Sadece onaylanmış siparişlerden
         prisma.orderItem.groupBy({
           by: ['product_id'],
           where: {
@@ -794,7 +742,7 @@ export class StoreStatisticsController {
                 gte: startDate
               },
               status: {
-                not: 'CANCELED'
+                in: [OrderStatus.CONFIRMED, OrderStatus.SHIPPED, OrderStatus.DELIVERED] // Sadece onaylanmış siparişler
               }
             }
           },
@@ -813,7 +761,7 @@ export class StoreStatisticsController {
           take: 10
         }),
 
-        // En çok sipariş verilen koleksiyonlar (Top 5)
+        // En çok sipariş verilen koleksiyonlar (Top 5) - Sadece onaylanmış siparişlerden
         prisma.$queryRaw`
           SELECT 
             p.collection_id,
@@ -828,13 +776,13 @@ export class StoreStatisticsController {
           INNER JOIN "Collection" c ON p.collection_id = c.collection_id
           WHERE o.user_id = ${userId}
             AND o.created_at >= ${startDate}
-            AND o.status != 'CANCELED'
+            AND o.status IN ('CONFIRMED', 'SHIPPED', 'DELIVERED')
           GROUP BY p.collection_id, c.name, c.code
           ORDER BY total_quantity DESC
           LIMIT 5
         `,
 
-        // Aylık sipariş dağılımı (Son 12 ay)
+        // Aylık sipariş dağılımı (Son 12 ay) - Sadece onaylanmış siparişlerden
         prisma.$queryRaw`
           SELECT 
             DATE_TRUNC('month', o.created_at) as month,
@@ -843,36 +791,50 @@ export class StoreStatisticsController {
           FROM "Order" o
           WHERE o.user_id = ${userId}
             AND o.created_at >= ${startDate}
-            AND o.status != 'CANCELED'
+            AND o.status IN ('CONFIRMED', 'SHIPPED', 'DELIVERED')
           GROUP BY DATE_TRUNC('month', o.created_at)
           ORDER BY month DESC
           LIMIT 12
         `,
 
-        // Toplam metrekare hesaplama
-        prisma.$queryRaw`
-          SELECT 
-            COALESCE(SUM(ci.area_m2 * ci.quantity), 0)::float as total_area_m2
-          FROM "Order" o
-          INNER JOIN carts c ON o.cart_id = c.id
-          INNER JOIN cart_items ci ON c.id = ci.cart_id
-          WHERE o.user_id = ${userId}
-            AND o.created_at >= ${startDate}
-            AND o.status != 'CANCELED'
-        `
+        // Metrekare hesaplama için OrderItem'lar - Sadece onaylanmış siparişlerden
+        prisma.orderItem.findMany({
+          where: {
+            order: {
+              user_id: userId,
+              created_at: {
+                gte: startDate
+              },
+              status: {
+                in: [OrderStatus.CONFIRMED, OrderStatus.SHIPPED, OrderStatus.DELIVERED]
+              }
+            },
+            AND: [
+              { width: { not: null } },
+              { height: { not: null } }
+            ]
+          },
+          select: {
+            width: true,
+            height: true,
+            quantity: true
+          }
+        })
       ])
 
       // Sipariş istatistiklerini hesapla
       let totalOrders = 0
-      let totalAmount = 0
+      let totalAmountAllOrders = 0 // Tüm siparişler
+      let confirmedOrdersAmount = 0 // Sadece onaylanmış siparişler
       let pendingOrders = 0
       let confirmedOrders = 0
+      let shippedOrders = 0
       let deliveredOrders = 0
       let canceledOrders = 0
 
       orderStatistics.forEach(stat => {
         totalOrders += stat._count.id
-        totalAmount += Number(stat._sum.total_price || 0)
+        totalAmountAllOrders += Number(stat._sum.total_price || 0)
         
         switch (stat.status) {
           case 'PENDING':
@@ -880,9 +842,15 @@ export class StoreStatisticsController {
             break
           case 'CONFIRMED':
             confirmedOrders = stat._count.id
+            confirmedOrdersAmount += Number(stat._sum.total_price || 0)
+            break
+          case 'SHIPPED':
+            shippedOrders = stat._count.id
+            confirmedOrdersAmount += Number(stat._sum.total_price || 0)
             break
           case 'DELIVERED':
             deliveredOrders = stat._count.id
+            confirmedOrdersAmount += Number(stat._sum.total_price || 0)
             break
           case 'CANCELED':
             canceledOrders = stat._count.id
@@ -912,9 +880,14 @@ export class StoreStatisticsController {
         })
       )
 
-      // Toplam alan hesapla
-      const totalAreaResult = totalAreaData as any[]
-      const totalArea = roundCurrency(totalAreaResult[0]?.total_area_m2 || 0)
+      // Metrekare hesaplama
+      let totalAreaM2 = 0
+      orderItemsForArea.forEach(item => {
+        if (item.width && item.height) {
+          const areaM2 = (Number(item.width) * Number(item.height) * item.quantity) / 10000
+          totalAreaM2 += areaM2
+        }
+      })
 
       // Aylık verileri formatla
       const monthlyOrders = (monthlyOrdersData as any[]).map(month => ({
@@ -933,6 +906,13 @@ export class StoreStatisticsController {
         order_count: collection.order_count || 0
       }))
 
+      console.log('Kullanıcı Detaylı İstatistik Raporu:')
+      console.log('- Kullanıcı ID:', userId)
+      console.log('- Zaman aralığı:', startDate, 'dan', now, 'a kadar')
+      console.log('- Tüm siparişlerden toplam tutar:', totalAmountAllOrders)
+      console.log('- Sadece onaylanmış siparişlerden tutar:', confirmedOrdersAmount)
+      console.log('- Hesaplanan toplam metrekare:', totalAreaM2)
+
       return res.status(200).json({
         success: true,
         data: {
@@ -944,14 +924,16 @@ export class StoreStatisticsController {
             store_id: user.store_id
           },
           order_statistics: {
-            total_orders: totalOrders,
-            total_amount: roundCurrency(totalAmount),
-            total_area_m2: totalArea,
+            total_orders: totalOrders, // Tüm siparişler
+            total_amount: roundCurrency(confirmedOrdersAmount), // Sadece onaylanmış siparişlerden
+            total_amount_all_orders: roundCurrency(totalAmountAllOrders), // Karşılaştırma için
+            total_area_m2: roundCurrency(totalAreaM2),
             pending_orders: pendingOrders,
             confirmed_orders: confirmedOrders,
+            shipped_orders: shippedOrders,
             delivered_orders: deliveredOrders,
             canceled_orders: canceledOrders,
-            completed_orders: confirmedOrders + deliveredOrders
+            completed_orders: confirmedOrders + shippedOrders + deliveredOrders
           },
           top_products: topProducts,
           top_collections: topCollections,
@@ -960,6 +942,11 @@ export class StoreStatisticsController {
             period: period as string,
             start_date: startDate,
             end_date: now
+          },
+          debug: {
+            calculation_note: 'Toplam tutar ve metrekare sadece onaylanmış siparişlerden (CONFIRMED, SHIPPED, DELIVERED) hesaplanır',
+            included_statuses_for_amount: ['CONFIRMED', 'SHIPPED', 'DELIVERED'],
+            area_calculated_items: orderItemsForArea.length
           }
         }
       })

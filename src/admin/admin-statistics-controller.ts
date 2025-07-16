@@ -1,5 +1,6 @@
 import { Request, Response } from 'express'
 import prisma from '../utils/prisma'
+import { OrderStatus } from '../../generated/prisma'
 
 export class AdminStatisticsController {
   constructor() {
@@ -14,9 +15,8 @@ export class AdminStatisticsController {
    */
   async getTopStores(req: Request, res: Response) {
     try {
-      const { period = '1_year' } = req.query // 1_month, 3_months, 1_year
+      const { period = '1_year' } = req.query
 
-      // Zaman aralığını belirle
       let startDate: Date
       const now = new Date()
       
@@ -40,7 +40,7 @@ export class AdminStatisticsController {
             gte: startDate
           },
           status: {
-            not: 'CANCELED'
+            in: [OrderStatus.CONFIRMED, OrderStatus.SHIPPED, OrderStatus.DELIVERED] // Sadece onaylanmış siparişler
           }
         },
         _count: {
@@ -57,7 +57,6 @@ export class AdminStatisticsController {
         take: 5
       })
 
-      // Mağaza bilgilerini getir
       const storeData = await Promise.all(
         topStores.map(async (store) => {
           const user = await prisma.user.findUnique({
@@ -101,9 +100,8 @@ export class AdminStatisticsController {
    */
   async getTopProducts(req: Request, res: Response) {
     try {
-      const { period = '1_year' } = req.query // 1_month, 3_months, 1_year
+      const { period = '1_year' } = req.query
 
-      // Zaman aralığını belirle
       let startDate: Date
       const now = new Date()
       
@@ -128,7 +126,7 @@ export class AdminStatisticsController {
               gte: startDate
             },
             status: {
-              not: 'CANCELED'
+              in: [OrderStatus.CONFIRMED, OrderStatus.SHIPPED, OrderStatus.DELIVERED] // Sadece onaylanmış siparişler
             }
           }
         },
@@ -144,7 +142,6 @@ export class AdminStatisticsController {
         take: 5
       })
 
-      // Ürün bilgilerini getir
       const productData = await Promise.all(
         topProducts.map(async (item) => {
           const product = await prisma.product.findUnique({
@@ -185,13 +182,12 @@ export class AdminStatisticsController {
   }
 
   /**
-   * Zaman bazlı sipariş grafiği (metrekare bazında)
+   * Zaman bazlı sipariş grafiği
    */
   async getOrdersOverTime(req: Request, res: Response) {
     try {
-      const { period = '1_year', groupBy = 'month' } = req.query // month, week, day
+      const { period = '1_year', groupBy = 'month' } = req.query
 
-      // Zaman aralığını belirle
       let startDate: Date
       const now = new Date()
       
@@ -208,41 +204,20 @@ export class AdminStatisticsController {
           break
       }
 
-      // SQL sorgusu için format belirleme
-      let dateFormat: string
-      switch (groupBy) {
-        case 'day':
-          dateFormat = 'YYYY-MM-DD'
-          break
-        case 'week':
-          dateFormat = 'YYYY-"W"WW'
-          break
-        case 'month':
-        default:
-          dateFormat = 'YYYY-MM'
-          break
-      }
-
-      // Önce siparişleri grupla
-      const ordersByPeriod = await prisma.order.findMany({
+      const ordersWithItems = await prisma.order.findMany({
         where: {
           created_at: {
             gte: startDate
           },
           status: {
-            not: 'CANCELED'
+            in: [OrderStatus.CONFIRMED, OrderStatus.SHIPPED, OrderStatus.DELIVERED] // Sadece onaylanmış siparişler
           }
         },
         include: {
-          cart: {
-            include: {
-              cart_items: true
-            }
-          }
+          items: true
         }
       })
 
-      // Manuel gruplandırma
       const groupedData: Record<string, {
         time_period: string,
         order_count: number,
@@ -250,13 +225,13 @@ export class AdminStatisticsController {
         total_area_m2: number
       }> = {}
 
-      ordersByPeriod.forEach(order => {
+      ordersWithItems.forEach(order => {
         let timePeriod: string
         const orderDate = new Date(order.created_at)
         
         switch (groupBy) {
           case 'day':
-            timePeriod = orderDate.toISOString().split('T')[0] // YYYY-MM-DD
+            timePeriod = orderDate.toISOString().split('T')[0]
             break
           case 'week':
             const year = orderDate.getFullYear()
@@ -281,15 +256,16 @@ export class AdminStatisticsController {
         groupedData[timePeriod].order_count += 1
         groupedData[timePeriod].total_amount += Number(order.total_price)
         
-        // Sepet itemlarından alan hesapla
-        if (order.cart?.cart_items) {
-          order.cart.cart_items.forEach(item => {
-            groupedData[timePeriod].total_area_m2 += Number(item.area_m2) * item.quantity
+        if (order.items) {
+          order.items.forEach(item => {
+            if (item.width && item.height) {
+              const areaM2 = (Number(item.width) * Number(item.height) * item.quantity) / 10000
+              groupedData[timePeriod].total_area_m2 += areaM2
+            }
           })
         }
       })
 
-      // Array'e çevir ve sırala
       const timeBasedOrders = Object.values(groupedData).sort((a, b) => 
         a.time_period.localeCompare(b.time_period)
       )
@@ -315,13 +291,12 @@ export class AdminStatisticsController {
   }
 
   /**
-   * Toplam istatistikler
+   * Toplam istatistikler - SADECE ONAYLANMIŞ SİPARİŞLER
    */
   async getTotalStatistics(req: Request, res: Response) {
     try {
-      const { period = '1_year' } = req.query // 1_month, 3_months, 1_year
+      const { period = '1_year' } = req.query
 
-      // Zaman aralığını belirle
       let startDate: Date
       const now = new Date()
       
@@ -338,36 +313,43 @@ export class AdminStatisticsController {
           break
       }
 
+      // Sadece onaylanmış siparişler
+      const whereClause = {
+        created_at: {
+          gte: startDate
+        },
+        status: {
+          in: [OrderStatus.CONFIRMED, OrderStatus.SHIPPED, OrderStatus.DELIVERED]
+        }
+      }
+
       const [
         totalOrdersResult,
-        totalAmountResult,
+        totalAmountFromOrders,
+        totalAmountFromOrderItems,
         totalQuantityResult,
-        totalAreaResult
+        orderItemsForArea
       ] = await Promise.all([
         // Toplam sipariş sayısı
         prisma.order.count({
-          where: {
-            created_at: {
-              gte: startDate
-            },
-            status: {
-              not: 'CANCELED'
-            }
-          }
+          where: whereClause
         }),
 
-        // Toplam tutar
+        // Order tablosundan toplam tutar
         prisma.order.aggregate({
           _sum: {
             total_price: true
           },
+          where: whereClause
+        }),
+
+        // OrderItem tablosundan toplam tutar
+        prisma.orderItem.aggregate({
+          _sum: {
+            total_price: true
+          },
           where: {
-            created_at: {
-              gte: startDate
-            },
-            status: {
-              not: 'CANCELED'
-            }
+            order: whereClause
           }
         }),
 
@@ -377,41 +359,63 @@ export class AdminStatisticsController {
             quantity: true
           },
           where: {
-            order: {
-              created_at: {
-                gte: startDate
-              },
-              status: {
-                not: 'CANCELED'
-              }
-            }
+            order: whereClause
           }
         }),
 
-        // Toplam metrekare (sepet itemlarından)
-        prisma.$queryRaw`
-          SELECT COALESCE(SUM(ci.area_m2 * ci.quantity), 0)::float as total_area_m2
-          FROM "Order" o
-          INNER JOIN carts c ON o.cart_id = c.id
-          INNER JOIN cart_items ci ON c.id = ci.cart_id
-          WHERE o.created_at >= ${startDate}
-            AND o.status != 'CANCELED'
-        `
+        // Metrekare hesaplama için OrderItem'lar
+        prisma.orderItem.findMany({
+          where: {
+            order: whereClause,
+            AND: [
+              { width: { not: null } },
+              { height: { not: null } }
+            ]
+          },
+          select: {
+            width: true,
+            height: true,
+            quantity: true
+          }
+        })
       ])
 
-      const totalAreaData = totalAreaResult as any[]
-      const totalArea = totalAreaData[0]?.total_area_m2 || 0
+      // Metrekare hesaplama
+      let totalAreaM2 = 0
+      orderItemsForArea.forEach(item => {
+        if (item.width && item.height) {
+          const areaM2 = (Number(item.width) * Number(item.height) * item.quantity) / 10000
+          totalAreaM2 += areaM2
+        }
+      })
+
+      const totalAmount = Number(totalAmountFromOrders._sum?.total_price || 0)
+      const totalAmountFromItems = Number(totalAmountFromOrderItems._sum?.total_price || 0)
+
+      console.log('İstatistik Raporu (Sadece Onaylanmış Siparişler):')
+      console.log('- Zaman aralığı:', startDate, 'dan', now, 'a kadar')
+      console.log('- Dahil edilen durumlar: CONFIRMED, SHIPPED, DELIVERED')
+      console.log('- Toplam sipariş sayısı:', totalOrdersResult)
+      console.log('- Order tablosundan toplam tutar:', totalAmount)
+      console.log('- OrderItem tablosundan toplam tutar:', totalAmountFromItems)
+      console.log('- Hesaplanan toplam metrekare:', totalAreaM2)
 
       return res.status(200).json({
         success: true,
         data: {
           total_orders: totalOrdersResult,
-          total_amount: Number(totalAmountResult._sum.total_price || 0),
-          total_product_quantity: totalQuantityResult._sum.quantity || 0,
-          total_area_m2: totalArea,
+          total_amount: totalAmount,
+          total_amount_from_items: totalAmountFromItems,
+          total_product_quantity: totalQuantityResult._sum?.quantity || 0,
+          total_area_m2: Math.round(totalAreaM2 * 100) / 100,
           period,
           start_date: startDate,
-          end_date: now
+          end_date: now,
+          included_statuses: ['CONFIRMED', 'SHIPPED', 'DELIVERED'],
+          debug: {
+            area_calculated_items: orderItemsForArea.length,
+            amount_difference: Math.abs(totalAmount - totalAmountFromItems)
+          }
         }
       })
 
