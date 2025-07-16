@@ -181,14 +181,9 @@ export const createAccountingTransaction = async (req: Request, res: Response) =
       });
     }
 
-    // Mağazanın var olup olmadığını kontrol et ve mağazaya ait bir user bul
+    // Mağazanın var olup olmadığını kontrol et
     const store = await prisma.store.findUnique({
-      where: { store_id: finalStoreId },
-      include: {
-        User: {
-          take: 1 // Mağazaya ait ilk user'ı al
-        }
-      }
+      where: { store_id: finalStoreId }
     });
 
     if (!store) {
@@ -205,16 +200,6 @@ export const createAccountingTransaction = async (req: Request, res: Response) =
         message: 'Mağaza aktif değil'
       });
     }
-
-    // Mağazaya ait user var mı kontrol et
-    if (!store.User || store.User.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Bu mağazaya ait kullanıcı bulunamadı'
-      });
-    }
-
-    const storeUser = store.User[0]; // İlk user'ı al
 
     // Eğer collection_id varsa, koleksiyonun var olup olmadığını kontrol et
     if (collection_id) {
@@ -251,7 +236,7 @@ export const createAccountingTransaction = async (req: Request, res: Response) =
       // Muhasebe hareketi oluştur
       const accountingTransaction = await tx.accountingTransaction.create({
         data: {
-          customer_id: storeUser.userId, // Store'a ait user'ın ID'sini kullan
+          customer_id: null, // Mağaza bazlı işlem, customer_id gerekmez
           store_id: finalStoreId,
           collection_id: collection_id || null,
           square_meters: square_meters || null,

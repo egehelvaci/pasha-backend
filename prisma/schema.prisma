@@ -337,7 +337,7 @@ enum cut_type_enum {
 
 model AccountingTransaction {
   id              String   @id @default(uuid())
-  customer_id     String   // Müşteri ID (User ID)
+  customer_id     String?  // Müşteri ID (opsiyonel, geriye dönük uyumluluk için)
   store_id        String   @db.Uuid // Mağaza ID (zorunlu)
   collection_id   String?  @db.VarChar(36) // Koleksiyon ID (opsiyonel)
   square_meters   Decimal? @db.Decimal(10, 2) // Metrekare (opsiyonel)
@@ -350,7 +350,7 @@ model AccountingTransaction {
   updated_at      DateTime @updatedAt
   
   // İlişkiler
-  customer        User     @relation(fields: [customer_id], references: [userId])
+  customer        User?    @relation(fields: [customer_id], references: [userId])
   store           Store    @relation(fields: [store_id], references: [store_id])
   collection      Collection? @relation(fields: [collection_id], references: [collectionId])
   
