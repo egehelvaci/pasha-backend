@@ -128,6 +128,8 @@ Bakiye += İptal Edilen Sipariş Tutarı
 {
   "kurum_adi": "ABC Mağaza",
   "vergi_numarasi": "1234567890",
+  "vergi_dairesi": "Kadıköy Vergi Dairesi",
+  "tckn": "12345678901",            // 🆕 T.C. Kimlik Numarası
   "yetkili_adi": "Ahmet",
   "yetkili_soyadi": "Yılmaz",
   "telefon": "0212 555 0123",
@@ -189,6 +191,7 @@ Bakiye += İptal Edilen Sipariş Tutarı
         "store_id": "store-uuid",
         "kurum_adi": "ABC Mağaza",
         "vergi_numarasi": "1234567890",
+        "tckn": "12345678901",                // 🆕 T.C. Kimlik Numarası
         "telefon": "0212 555 0123",
         "eposta": "info@abc.com",
         "adres": "İstanbul",

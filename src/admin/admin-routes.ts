@@ -6,6 +6,8 @@ import { authMiddleware, authorizeRoles } from '../auth/auth-middleware'
 import storeRoutes from './store-routes'
 import productRulesRoutes from './product-rules-routes'
 import cutTypesRoutes from './cut-types-routes'
+import paymentRoutes from '../routes/paymentRoutes'
+import { createAccountingTransaction, getAllAccountingTransactions } from './accounting-transaction-controller'
 
 const router = express.Router()
 const adminController = new AdminController()
@@ -26,6 +28,9 @@ router.use('/product-rules', productRulesRoutes)
 
 // Kesim türleri yönetimi rotalarını ekle
 router.use('/cut-types', cutTypesRoutes)
+
+// Ödeme ve bakiye yönetimi rotalarını ekle (admin endpoint'leri)
+router.use('/payment', paymentRoutes)
 
 // Sipariş yönetimi rotaları
 router.get('/orders', adminOrderController.getAllOrders)
@@ -67,5 +72,9 @@ router.post('/users/:userId/assign-store', adminController.assignUserToStore)
 
 // Kullanıcıyı mağazadan kaldır
 router.delete('/users/:userId/remove-store', adminController.removeUserFromStore)
+
+// Muhasebe hareketleri API'si
+router.get('/accounting-transactions', getAllAccountingTransactions)
+router.post('/accounting-transactions', createAccountingTransaction)
 
 export default router 

@@ -32,6 +32,7 @@ model User {
   carts       carts[]
   passwordResetTokens PasswordResetToken[]
   orders      Order[]
+  accountingTransactions AccountingTransaction[]
 }
 
 model Collection {
@@ -61,6 +62,7 @@ model Product {
   productvariations productvariations[]
   orderItems        OrderItem[]
   qr_codes          QRCode[]
+  accountingTransactions AccountingTransaction[]
 }
 
 model PriceList {
@@ -112,6 +114,7 @@ model Store {
   updated_at          DateTime?        @default(now()) @db.Timestamp(6)
   StorePriceList      StorePriceList[]
   User                User[]
+  payments            Payment[]
 }
 
 model StorePriceList {
@@ -323,4 +326,65 @@ enum cut_type_enum {
   round
   oval
   custom
+}
+
+model Payment {
+  id                String    @id @default(uuid())
+  store_id          String    @db.Uuid // Mağaza ID'si
+  payment_reference String    @unique // Benzersiz ödeme referansı (sipariş yerine)
+  api_reference_id  String    @unique // Octet API reference ID
+  total_amount      Decimal   @db.Decimal(12, 2)
+  status            PaymentStatus @default(INITIATED)
+  payment_type      PaymentType @default(BALANCE_TOP_UP) // Ödeme tipi
+  description       String?   // Ödeme açıklaması
+  
+  // Octet API yanıtları
+  octet_response    Json?     // CREATE_COMMON_PAYMENT_PAGE_REQUEST yanıtı
+  callback_data     Json?     // Callback'te gelen veriler
+  final_response    Json?     // GET_COMMON_PAYMENT_REQUEST yanıtı
+  
+  // Zaman damgaları
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+  callback_time     DateTime?
+  finalized_at      DateTime?
+  
+  // İlişkiler
+  store             Store     @relation(fields: [store_id], references: [store_id])
+  
+  @@map("payments")
+}
+
+enum PaymentStatus {
+  INITIATED         // Ödeme başlatıldı
+  CALLBACK_RECEIVED // Callback alındı
+  SUCCESS          // Ödeme başarılı
+  ERROR            // Ödeme başarısız
+  PENDING          // Beklemede
+}
+
+enum PaymentType {
+  BALANCE_TOP_UP    // Bakiye yükleme
+  ORDER_PAYMENT     // Sipariş ödemesi (gelecekte kullanılabilir)
+  REFUND           // İade (gelecekte kullanılabilir)
+}
+
+model AccountingTransaction {
+  id              String   @id @default(uuid())
+  customer_id     String   // Müşteri ID (User ID)
+  product_id      String?  @db.VarChar(36) // Ürün ID (opsiyonel)
+  square_meters   Decimal? @db.Decimal(10, 2) // Metrekare (opsiyonel)
+  transaction_type String  // İşlem Türü (zorunlu)
+  amount          Decimal  @db.Decimal(15, 2) // Tutar (zorunlu)
+  is_expense      Boolean  // Harcama=true ya da false (zorunlu)
+  transaction_date DateTime // Tarih (zorunlu)
+  description     String   // Açıklama (zorunlu)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  
+  // İlişkiler
+  customer        User     @relation(fields: [customer_id], references: [userId])
+  product         Product? @relation(fields: [product_id], references: [productId])
+  
+  @@map("accounting_transactions")
 }
