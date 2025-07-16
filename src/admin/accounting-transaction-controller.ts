@@ -95,27 +95,28 @@ export const getAllAccountingTransactions = async (req: Request, res: Response) 
     });
 
     // Admin perspektifinden borç ve alacak hesapla
-    let adminDebt = 0;    // Admin'in borcu (mağazaların negatif bakiyeleri)
-    let adminCredit = 0;  // Admin'in alacağı (mağazaların pozitif bakiyeleri)
+    let adminDebt = 0;    // Admin'in borcu (mağazaların pozitif bakiyeleri)
+    let adminCredit = 0;  // Admin'in alacağı (mağazaların negatif bakiyeleri)
     let totalBalance = 0; // Net bakiye
 
     stores.forEach(store => {
       const balance = parseFloat(store.bakiye?.toString() || '0');
       totalBalance += balance;
       
-      if (balance > 0) {
-        // Mağaza bakiyesi pozitif = Mağaza admin'e borçlu = Admin alacaklı
-        adminCredit += balance;
-      } else if (balance < 0) {
-        // Mağaza bakiyesi negatif = Mağaza admin'den alacaklı = Admin borçlu
-        adminDebt += Math.abs(balance);
+      if (balance < 0) {
+        // Mağaza bakiyesi negatif = Mağaza admin'e BORÇLU = Admin ALACAKLI
+        adminCredit += Math.abs(balance);
+      } else if (balance > 0) {
+        // Mağaza bakiyesi pozitif = Admin mağazaya BORÇLU = Admin BORÇLU
+        adminDebt += balance;
       }
     });
 
-    // Admin'in net durumu
-    const netAdminStatus = totalBalance >= 0 
-      ? { type: 'ALACAKLI', amount: totalBalance }  // Admin net alacaklı
-      : { type: 'BORÇLU', amount: Math.abs(totalBalance) };  // Admin net borçlu
+    // Admin'in net durumu (toplam alacak - toplam borç)
+    const netAdminBalance = adminCredit - adminDebt;
+    const netAdminStatus = netAdminBalance >= 0 
+      ? { type: 'ALACAKLI', amount: netAdminBalance }  // Admin net alacaklı
+      : { type: 'BORÇLU', amount: Math.abs(netAdminBalance) };  // Admin net borçlu
 
     res.status(200).json({
       success: true,
@@ -133,7 +134,7 @@ export const getAllAccountingTransactions = async (req: Request, res: Response) 
           total_stores: stores.length,
           admin_debt: adminDebt, // Admin'in toplam borcu
           admin_credit: adminCredit, // Admin'in toplam alacağı
-          net_balance: totalBalance, // Net bakiye
+          net_balance: netAdminBalance, // Admin'in net bakiyesi
           admin_status: {
             description: `Admin olarak ${netAdminStatus.type.toLowerCase()} durumundasınız`,
             type: netAdminStatus.type,
@@ -145,8 +146,8 @@ export const getAllAccountingTransactions = async (req: Request, res: Response) 
               store_id: store.store_id,
               store_name: store.kurum_adi,
               balance: storeBalance,
-              // Mağaza perspektifinden durum
-              status: storeBalance > 0 ? 'BORÇLU' : storeBalance < 0 ? 'ALACAKLI' : 'NÖTR'
+              // Mağaza durumu: Negatif = Admin'e borçlu, Pozitif = Admin'den alacaklı
+              status: storeBalance < 0 ? 'BORÇLU' : storeBalance > 0 ? 'ALACAKLI' : 'NÖTR'
             };
           })
         }
@@ -270,9 +271,9 @@ export const createAccountingTransaction = async (req: Request, res: Response) =
       });
 
       // Mağaza bakiyesini güncelle
-      // is_expense=true: Mağaza gider yapmış, admin'den borç almış → bakiye artar (+) → admin alacaklı
-      // is_expense=false: Mağaza ödeme yapmış, admin'e para vermiş → bakiye azalır (-) → admin borçlu
-      const bakiyeGuncelleme = is_expense ? amount : -amount;
+      // is_expense=true: Mağaza borç almış → bakiye AZALIR (-amount) → mağaza borçlu → admin alacaklı
+      // is_expense=false: Mağaza ödeme yapmış → bakiye ARTAR (+amount) → admin borçlu
+      const bakiyeGuncelleme = is_expense ? -amount : amount;
       
       await tx.store.update({
         where: { store_id: finalStoreId },
