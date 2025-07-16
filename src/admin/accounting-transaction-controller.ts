@@ -79,6 +79,39 @@ export const getAllAccountingTransactions = async (req: Request, res: Response) 
     // Toplam sayfa sayısını hesapla
     const totalPages = Math.ceil(totalCount / limitNum);
 
+    // Tüm mağazaların bakiyelerini topla (negatif bakiyeler borç, pozitif bakiyeler alacak)
+    const stores = await prisma.store.findMany({
+      where: {
+        is_active: true
+      },
+      select: {
+        store_id: true,
+        kurum_adi: true,
+        bakiye: true
+      }
+    });
+
+    // Toplam borç ve alacak hesapla
+    let totalDebt = 0; // Toplam borç (negatif bakiyeler)
+    let totalCredit = 0; // Toplam alacak (pozitif bakiyeler)
+    let totalBalance = 0; // Net bakiye
+
+    stores.forEach(store => {
+      const balance = parseFloat(store.bakiye?.toString() || '0');
+      totalBalance += balance;
+      
+      if (balance < 0) {
+        totalDebt += Math.abs(balance); // Negatif bakiyeleri pozitif olarak borç hesabına ekle
+      } else if (balance > 0) {
+        totalCredit += balance; // Pozitif bakiyeleri alacak hesabına ekle
+      }
+    });
+
+    // Net durum hesapla
+    const netStatus = totalBalance >= 0 
+      ? { type: 'ALACAK', amount: totalBalance }
+      : { type: 'BORÇ', amount: Math.abs(totalBalance) };
+
     res.status(200).json({
       success: true,
       message: 'Muhasebe hareketleri başarıyla getirildi',
@@ -90,6 +123,23 @@ export const getAllAccountingTransactions = async (req: Request, res: Response) 
           totalCount,
           hasNextPage: pageNum < totalPages,
           hasPrevPage: pageNum > 1
+        },
+        financial_summary: {
+          total_stores: stores.length,
+          total_debt: totalDebt, // Mağazaların toplam borcu
+          total_credit: totalCredit, // Mağazaların toplam alacağı
+          net_balance: totalBalance, // Net bakiye
+          admin_status: {
+            description: `Admin olarak ${netStatus.type.toLowerCase()} durumundasınız`,
+            type: netStatus.type,
+            amount: netStatus.amount
+          },
+          store_breakdown: stores.map(store => ({
+            store_id: store.store_id,
+            store_name: store.kurum_adi,
+            balance: parseFloat(store.bakiye?.toString() || '0'),
+            status: parseFloat(store.bakiye?.toString() || '0') >= 0 ? 'ALACAKLI' : 'BORÇLU'
+          }))
         }
       }
     });
@@ -124,15 +174,25 @@ export const createAccountingTransaction = async (req: Request, res: Response) =
       });
     }
 
-    // Müşteri var mı kontrol et
+    // Müşteri var mı ve mağaza bilgisi var mı kontrol et
     const customer = await prisma.user.findUnique({
-      where: { userId: customer_id }
+      where: { userId: customer_id },
+      include: {
+        Store: true
+      }
     });
 
     if (!customer) {
       return res.status(404).json({
         success: false,
         message: 'Müşteri bulunamadı'
+      });
+    }
+
+    if (!customer.store_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Müşteri bir mağazaya ait değil'
       });
     }
 
@@ -166,40 +226,65 @@ export const createAccountingTransaction = async (req: Request, res: Response) =
       });
     }
 
-    // Muhasebe hareketi oluştur
-    const accountingTransaction = await prisma.accountingTransaction.create({
-      data: {
-        customer_id,
-        product_id: product_id || null,
-        square_meters: square_meters || null,
-        transaction_type,
-        amount,
-        is_expense,
-        transaction_date: new Date(transaction_date),
-        description
-      },
-      include: {
-        customer: {
-          select: {
-            userId: true,
-            name: true,
-            surname: true,
-            email: true
-          }
+    // Transaction ile hem muhasebe hareketi oluştur hem de mağaza bakiyesini güncelle
+    const result = await prisma.$transaction(async (tx) => {
+      // Muhasebe hareketi oluştur
+      const accountingTransaction = await tx.accountingTransaction.create({
+        data: {
+          customer_id,
+          store_id: customer.store_id!,
+          product_id: product_id || null,
+          square_meters: square_meters || null,
+          transaction_type,
+          amount,
+          is_expense,
+          transaction_date: new Date(transaction_date),
+          description
         },
-        product: {
-          select: {
-            productId: true,
-            name: true
+        include: {
+          customer: {
+            select: {
+              userId: true,
+              name: true,
+              surname: true,
+              email: true
+            }
+          },
+          store: {
+            select: {
+              store_id: true,
+              kurum_adi: true
+            }
+          },
+          product: {
+            select: {
+              productId: true,
+              name: true
+            }
           }
         }
-      }
+      });
+
+      // Mağaza bakiyesini güncelle
+      // is_expense true ise bakiyeden çıkar (borç), false ise bakiyeye ekle (alacak)
+      const bakiyeGuncelleme = is_expense ? -amount : amount;
+      
+      await tx.store.update({
+        where: { store_id: customer.store_id! },
+        data: {
+          bakiye: {
+            increment: bakiyeGuncelleme
+          }
+        }
+      });
+
+      return accountingTransaction;
     });
 
     res.status(200).json({
       success: true,
-      message: 'Muhasebe hareketi başarıyla oluşturuldu',
-      data: accountingTransaction
+      message: 'Muhasebe hareketi başarıyla oluşturuldu ve mağaza bakiyesi güncellendi',
+      data: result
     });
 
   } catch (error) {

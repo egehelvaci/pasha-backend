@@ -115,6 +115,7 @@ model Store {
   StorePriceList      StorePriceList[]
   User                User[]
   payments            Payment[]
+  accountingTransactions AccountingTransaction[]
 }
 
 model StorePriceList {
@@ -372,6 +373,7 @@ enum PaymentType {
 model AccountingTransaction {
   id              String   @id @default(uuid())
   customer_id     String   // Müşteri ID (User ID)
+  store_id        String   @db.Uuid // Mağaza ID (zorunlu)
   product_id      String?  @db.VarChar(36) // Ürün ID (opsiyonel)
   square_meters   Decimal? @db.Decimal(10, 2) // Metrekare (opsiyonel)
   transaction_type String  // İşlem Türü (zorunlu)
@@ -384,6 +386,7 @@ model AccountingTransaction {
   
   // İlişkiler
   customer        User     @relation(fields: [customer_id], references: [userId])
+  store           Store    @relation(fields: [store_id], references: [store_id])
   product         Product? @relation(fields: [product_id], references: [productId])
   
   @@map("accounting_transactions")
