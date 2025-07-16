@@ -6,7 +6,7 @@ import { authMiddleware, authorizeRoles } from '../auth/auth-middleware'
 import storeRoutes from './store-routes'
 import productRulesRoutes from './product-rules-routes'
 import cutTypesRoutes from './cut-types-routes'
-import paymentRoutes from '../routes/paymentRoutes'
+
 import { createAccountingTransaction, getAllAccountingTransactions } from './accounting-transaction-controller'
 
 const router = express.Router()
@@ -29,8 +29,7 @@ router.use('/product-rules', productRulesRoutes)
 // Kesim türleri yönetimi rotalarını ekle
 router.use('/cut-types', cutTypesRoutes)
 
-// Ödeme ve bakiye yönetimi rotalarını ekle (admin endpoint'leri)
-router.use('/payment', paymentRoutes)
+
 
 // Sipariş yönetimi rotaları
 router.get('/orders', adminOrderController.getAllOrders)
