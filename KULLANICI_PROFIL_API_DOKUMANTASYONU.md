@@ -59,6 +59,7 @@ Authorization: Bearer <JWT_TOKEN>
       "kurum_adi": "ABC Halı Mağazası",
       "vergi_numarasi": "1234567890",
       "vergi_dairesi": "Kadıköy Vergi Dairesi",
+      "tckn": "12345678901",
       "yetkili_adi": "Mehmet",
       "yetkili_soyadi": "Demir",
       "telefon": "0212 555 0123",
@@ -102,6 +103,7 @@ Authorization: Bearer <JWT_TOKEN>
   "kurum_adi": "ABC Halı Mağazası Ltd. Şti.", // Zorunlu
   "vergi_numarasi": "1234567890", // Opsiyonel (10-11 haneli)
   "vergi_dairesi": "Kadıköy Vergi Dairesi", // Opsiyonel
+  "tckn": "12345678901", // Opsiyonel (11 haneli)
   "yetkili_adi": "Mehmet", // Opsiyonel
   "yetkili_soyadi": "Demir", // Opsiyonel
   "telefon": "0212 555 0123", // Opsiyonel (Türkiye formatı)
@@ -113,6 +115,7 @@ Authorization: Bearer <JWT_TOKEN>
 
 #### Validation Kuralları
 - **kurum_adi**: Zorunlu, boş olamaz
+- **tckn**: Opsiyonel, 11 haneli sayısal değer olmalıdır
 - **vergi_numarasi**: 10-11 haneli sayısal değer (opsiyonel)
 - **telefon**: Türkiye telefon formatı `0XXX XXX XX XX` veya `+90XXX XXX XX XX` (opsiyonel)
 - **eposta**: Geçerli email formatı (opsiyonel)

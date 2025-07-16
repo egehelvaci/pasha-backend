@@ -65,6 +65,7 @@ export class UserProfileController {
             kurum_adi: user.Store.kurum_adi,
             vergi_numarasi: user.Store.vergi_numarasi,
             vergi_dairesi: user.Store.vergi_dairesi,
+            tckn: user.Store.tckn,
             yetkili_adi: user.Store.yetkili_adi,
             yetkili_soyadi: user.Store.yetkili_soyadi,
             telefon: user.Store.telefon,
@@ -119,6 +120,7 @@ export class UserProfileController {
         kurum_adi,
         vergi_numarasi,
         vergi_dairesi,
+        tckn,
         yetkili_adi,
         yetkili_soyadi,
         telefon,
@@ -190,6 +192,17 @@ export class UserProfileController {
         }
       }
 
+      // TCKN format kontrolü (eğer verilmişse)
+      if (tckn && tckn.trim().length > 0) {
+        const tcknRegex = /^[0-9]{11}$/
+        if (!tcknRegex.test(tckn.replace(/\s/g, ''))) {
+          return res.status(400).json({
+            success: false,
+            message: 'TCKN 11 haneli sayısal değer olmalıdır'
+          })
+        }
+      }
+
       // Güncelleme verilerini hazırla
       const updateData: any = {
         kurum_adi: kurum_adi.trim(),
@@ -202,6 +215,9 @@ export class UserProfileController {
       }
       if (vergi_dairesi !== undefined) {
         updateData.vergi_dairesi = vergi_dairesi?.trim() || null
+      }
+      if (tckn !== undefined) {
+        updateData.tckn = tckn?.trim() || null
       }
       if (yetkili_adi !== undefined) {
         updateData.yetkili_adi = yetkili_adi?.trim() || null
@@ -236,6 +252,7 @@ export class UserProfileController {
           kurum_adi: updatedStore.kurum_adi,
           vergi_numarasi: updatedStore.vergi_numarasi,
           vergi_dairesi: updatedStore.vergi_dairesi,
+          tckn: updatedStore.tckn,
           yetkili_adi: updatedStore.yetkili_adi,
           yetkili_soyadi: updatedStore.yetkili_soyadi,
           telefon: updatedStore.telefon,

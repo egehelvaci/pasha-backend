@@ -95,6 +95,7 @@ model Store {
   kurum_adi           String           @db.VarChar(255)
   vergi_numarasi      String?          @db.VarChar(20)
   vergi_dairesi       String?          @db.VarChar(100)
+  tckn                String?          @db.VarChar(11)
   yetkili_adi         String?          @db.VarChar(100)
   yetkili_soyadi      String?          @db.VarChar(100)
   telefon             String?          @db.VarChar(20)

@@ -121,6 +121,7 @@ export class AuthService {
           store_id: user.Store.store_id,
           kurum_adi: user.Store.kurum_adi,
           vergi_numarasi: user.Store.vergi_numarasi,
+          tckn: user.Store.tckn,
           telefon: user.Store.telefon,
           eposta: user.Store.eposta,
           adres: user.Store.adres,

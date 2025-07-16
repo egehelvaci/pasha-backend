@@ -31,6 +31,9 @@ ALTER TABLE "Store" ADD COLUMN "maksimum_taksit" INTEGER DEFAULT 1;
 model Store {
   store_id            String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   kurum_adi           String           @db.VarChar(255)
+  vergi_numarasi      String?          @db.VarChar(20)
+  vergi_dairesi       String?          @db.VarChar(100)
+  tckn                String?          @db.VarChar(11)                  // 🆕 T.C. Kimlik Numarası
   // ... diğer alanlar ...
   limitsiz_acik_hesap Boolean?         @default(false)
   acik_hesap_tutari   Decimal?         @default(0) @db.Decimal(15, 2)  // Açık hesap limiti

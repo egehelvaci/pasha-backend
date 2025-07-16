@@ -92,6 +92,7 @@ export class StoreController {
         kurum_adi, 
         vergi_numarasi, 
         vergi_dairesi, 
+        tckn,
         yetkili_adi, 
         yetkili_soyadi, 
         telefon, 
@@ -119,6 +120,7 @@ export class StoreController {
           kurum_adi,
           vergi_numarasi,
           vergi_dairesi,
+          tckn,
           yetkili_adi,
           yetkili_soyadi,
           telefon,
@@ -158,6 +160,7 @@ export class StoreController {
         kurum_adi, 
         vergi_numarasi, 
         vergi_dairesi, 
+        tckn,
         yetkili_adi, 
         yetkili_soyadi, 
         telefon, 
@@ -190,6 +193,7 @@ export class StoreController {
       if (kurum_adi !== undefined) updateData.kurum_adi = kurum_adi
       if (vergi_numarasi !== undefined) updateData.vergi_numarasi = vergi_numarasi
       if (vergi_dairesi !== undefined) updateData.vergi_dairesi = vergi_dairesi
+      if (tckn !== undefined) updateData.tckn = tckn
       if (yetkili_adi !== undefined) updateData.yetkili_adi = yetkili_adi
       if (yetkili_soyadi !== undefined) updateData.yetkili_soyadi = yetkili_soyadi
       if (telefon !== undefined) updateData.telefon = telefon

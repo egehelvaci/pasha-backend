@@ -61,14 +61,15 @@ export class StoreStatisticsController {
       return res.status(200).json({
         success: true,
         data: {
-          store_info: {
-            store_id: store.store_id,
-            kurum_adi: store.kurum_adi,
-            vergi_numarasi: store.vergi_numarasi,
-            telefon: store.telefon,
-            eposta: store.eposta,
-            adres: store.adres
-          },
+                  store_info: {
+          store_id: store.store_id,
+          kurum_adi: store.kurum_adi,
+          vergi_numarasi: store.vergi_numarasi,
+          tckn: store.tckn,
+          telefon: store.telefon,
+          eposta: store.eposta,
+          adres: store.adres
+        },
           balance_info: {
             bakiye: bakiye,
             acik_hesap_tutari: acikHesapTutari,

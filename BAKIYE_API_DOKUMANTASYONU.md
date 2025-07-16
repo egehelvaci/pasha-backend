@@ -45,6 +45,7 @@ Bu endpoint herhangi bir parametre gerektirmez.
       "store_id": "abc-123-def-456",
       "kurum_adi": "ABC Mağaza Ltd. Şti.",
       "vergi_numarasi": "1234567890",
+      "tckn": "12345678901",
       "telefon": "0212 555 0123",
       "eposta": "info@abcmagaza.com",
       "adres": "Kadıköy/İstanbul"
@@ -69,7 +70,8 @@ Bu endpoint herhangi bir parametre gerektirmez.
 |------|-----|---------|----------|
 | `store_id` | `string` | ✅ | Mağaza benzersiz kimliği (UUID) |
 | `kurum_adi` | `string` | ✅ | Mağaza/kurum adı |
-| `vergi_numarasi` | `string` | ❌ | Vergi numarası (10 haneli) |
+| `vergi_numarasi` | `string` | ❌ | Vergi numarası (10-11 haneli) |
+| `tckn` | `string` | ❌ | T.C. Kimlik Numarası (11 haneli) |
 | `telefon` | `string` | ❌ | Telefon numarası |
 | `eposta` | `string` | ❌ | E-posta adresi |
 | `adres` | `string` | ❌ | Tam adres bilgisi |
