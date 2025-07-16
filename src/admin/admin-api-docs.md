@@ -205,6 +205,53 @@ GET /api/admin/orders/stats
 Authorization: Bearer <ADMIN_JWT_TOKEN>
 ```
 
+### 5. EXCEL EXPORT İŞLEMLERİ
+
+#### Sipariş Excel Export
+**Method**: `GET`  
+**URL**: `/api/admin/export/orders`
+
+**Query Parametreleri:**
+- `period`: Zaman aralığı (`daily`, `weekly`, `monthly`, `yearly`, `custom`)
+- `start_date`: Başlangıç tarihi (YYYY-MM-DD) - custom için zorunlu
+- `end_date`: Bitiş tarihi (YYYY-MM-DD) - custom için zorunlu  
+- `status`: Sipariş durumu filtresi (isteğe bağlı)
+- `format`: Export formatı (`summary`, `detailed`)
+
+#### Muhasebe Excel Export
+**Method**: `GET`  
+**URL**: `/api/admin/export/accounting-transactions`
+
+**Query Parametreleri:**
+- `period`: Zaman aralığı (`daily`, `weekly`, `monthly`, `yearly`, `custom`)
+- `start_date`: Başlangıç tarihi (YYYY-MM-DD) - custom için zorunlu
+- `end_date`: Bitiş tarihi (YYYY-MM-DD) - custom için zorunlu
+- `customer_id`: Müşteri ID filtresi (isteğe bağlı)
+- `transaction_type`: İşlem türü filtresi (isteğe bağlı)
+- `is_expense`: Gelir/gider filtresi (`true`/`false`)
+
+#### Request Örnekleri
+```http
+# Aylık sipariş özeti
+GET /api/admin/export/orders?period=monthly&format=summary
+Authorization: Bearer <ADMIN_JWT_TOKEN>
+
+# Detaylı sipariş listesi (özel tarih)
+GET /api/admin/export/orders?period=custom&start_date=2024-01-01&end_date=2024-06-30&format=detailed
+Authorization: Bearer <ADMIN_JWT_TOKEN>
+
+# Muhasebe hareketleri
+GET /api/admin/export/accounting-transactions?period=yearly&is_expense=false
+Authorization: Bearer <ADMIN_JWT_TOKEN>
+```
+
+#### Response
+- **Content-Type**: `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+- **Content-Disposition**: `attachment; filename="dosya_adi.xlsx"`
+- Excel dosyası binary data olarak döner
+
+**Detaylı dokümantasyon**: `EXCEL_EXPORT_API_DOKUMANTASYONU.md`
+
 ---
 
 ## KULLANIM ÖRNEKLERİ
