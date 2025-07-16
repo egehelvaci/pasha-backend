@@ -94,26 +94,28 @@ export const getAllAccountingTransactions = async (req: Request, res: Response) 
       }
     });
 
-    // Toplam borç ve alacak hesapla
-    let totalDebt = 0; // Toplam borç (negatif bakiyeler)
-    let totalCredit = 0; // Toplam alacak (pozitif bakiyeler)
+    // Admin perspektifinden borç ve alacak hesapla
+    let adminDebt = 0;    // Admin'in borcu (mağazaların negatif bakiyeleri)
+    let adminCredit = 0;  // Admin'in alacağı (mağazaların pozitif bakiyeleri)
     let totalBalance = 0; // Net bakiye
 
     stores.forEach(store => {
       const balance = parseFloat(store.bakiye?.toString() || '0');
       totalBalance += balance;
       
-      if (balance < 0) {
-        totalDebt += Math.abs(balance); // Negatif bakiyeleri pozitif olarak borç hesabına ekle
-      } else if (balance > 0) {
-        totalCredit += balance; // Pozitif bakiyeleri alacak hesabına ekle
+      if (balance > 0) {
+        // Mağaza bakiyesi pozitif = Mağaza admin'e borçlu = Admin alacaklı
+        adminCredit += balance;
+      } else if (balance < 0) {
+        // Mağaza bakiyesi negatif = Mağaza admin'den alacaklı = Admin borçlu
+        adminDebt += Math.abs(balance);
       }
     });
 
-    // Net durum hesapla
-    const netStatus = totalBalance >= 0 
-      ? { type: 'ALACAK', amount: totalBalance }
-      : { type: 'BORÇ', amount: Math.abs(totalBalance) };
+    // Admin'in net durumu
+    const netAdminStatus = totalBalance >= 0 
+      ? { type: 'ALACAKLI', amount: totalBalance }  // Admin net alacaklı
+      : { type: 'BORÇLU', amount: Math.abs(totalBalance) };  // Admin net borçlu
 
     res.status(200).json({
       success: true,
@@ -129,20 +131,24 @@ export const getAllAccountingTransactions = async (req: Request, res: Response) 
         },
         financial_summary: {
           total_stores: stores.length,
-          total_debt: totalDebt, // Mağazaların toplam borcu
-          total_credit: totalCredit, // Mağazaların toplam alacağı
+          admin_debt: adminDebt, // Admin'in toplam borcu
+          admin_credit: adminCredit, // Admin'in toplam alacağı
           net_balance: totalBalance, // Net bakiye
           admin_status: {
-            description: `Admin olarak ${netStatus.type.toLowerCase()} durumundasınız`,
-            type: netStatus.type,
-            amount: netStatus.amount
+            description: `Admin olarak ${netAdminStatus.type.toLowerCase()} durumundasınız`,
+            type: netAdminStatus.type,
+            amount: netAdminStatus.amount
           },
-          store_breakdown: stores.map(store => ({
-            store_id: store.store_id,
-            store_name: store.kurum_adi,
-            balance: parseFloat(store.bakiye?.toString() || '0'),
-            status: parseFloat(store.bakiye?.toString() || '0') >= 0 ? 'ALACAKLI' : 'BORÇLU'
-          }))
+          store_breakdown: stores.map(store => {
+            const storeBalance = parseFloat(store.bakiye?.toString() || '0');
+            return {
+              store_id: store.store_id,
+              store_name: store.kurum_adi,
+              balance: storeBalance,
+              // Mağaza perspektifinden durum
+              status: storeBalance > 0 ? 'BORÇLU' : storeBalance < 0 ? 'ALACAKLI' : 'NÖTR'
+            };
+          })
         }
       }
     });
