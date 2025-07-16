@@ -1,5 +1,6 @@
 import { Request, Response } from 'express'
 import prisma from '../utils/prisma'
+import { roundCurrency, addCurrency } from '../utils/number-utils'
 
 export class StoreStatisticsController {
   constructor() {
@@ -97,9 +98,9 @@ export class StoreStatisticsController {
       const store = user.Store
 
       // Bakiye bilgilerini hazırla
-      const bakiye = Number(store.bakiye || 0)
-      const acikHesapTutari = Number(store.acik_hesap_tutari || 0)
-      const toplamKullanilabilir = bakiye + acikHesapTutari
+      const bakiye = roundCurrency(Number(store.bakiye || 0))
+      const acikHesapTutari = roundCurrency(Number(store.acik_hesap_tutari || 0))
+      const toplamKullanilabilir = addCurrency(bakiye, acikHesapTutari)
       const maksimumTaksit = store.maksimum_taksit || 1
       const limitsizAcikHesap = store.limitsiz_acik_hesap || false
 

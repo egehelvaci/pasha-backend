@@ -1,8 +1,10 @@
+import jwt, { SignOptions } from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
-import jwt, { Secret, SignOptions } from 'jsonwebtoken'
-import { randomBytes } from 'crypto'
-import prisma from '../utils/prisma'
 import crypto from 'crypto'
+import { v4 as uuidv4 } from 'uuid'
+import prisma from '../utils/prisma'
+import { UserService } from '../user-service'
+import { roundCurrency, addCurrency } from '../utils/number-utils'
 
 interface LoginCredentials {
   username: string
@@ -18,7 +20,7 @@ interface TokenPayload {
 }
 
 export class AuthService {
-  private readonly jwtSecret: Secret
+  private readonly jwtSecret: string
   private readonly jwtExpiresIn: number
   // Logout olan tokenları takip etmek için blacklist
   // NOT: In-memory blacklist kullanımı sunucu yeniden başlatıldığında sıfırlanır
@@ -127,7 +129,7 @@ export class AuthService {
           maksimum_taksit: user.Store.maksimum_taksit || 1,
           limitsiz_acik_hesap: user.Store.limitsiz_acik_hesap || false,
           // Toplam kullanılabilir tutar hesapla
-          toplam_kullanilabilir: Number(user.Store.bakiye || 0) + Number(user.Store.acik_hesap_tutari || 0)
+          toplam_kullanilabilir: addCurrency(Number(user.Store.bakiye || 0), Number(user.Store.acik_hesap_tutari || 0))
         };
       }
 

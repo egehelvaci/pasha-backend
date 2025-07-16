@@ -1,6 +1,7 @@
 import { PrismaClient, OrderStatus, Order, OrderItem } from '../generated/prisma';
 import { v4 as uuidv4 } from 'uuid';
 import { Decimal } from '@prisma/client/runtime/library';
+import { roundCurrency, addCurrency } from './utils/number-utils';
 
 const prisma = new PrismaClient();
 
@@ -275,7 +276,7 @@ export class OrderService {
         return {
           isValid: false,
           message: 'PRICE_LIST_LIMIT_EXCEEDED',
-          limitAmount: Number(userPriceList.PriceList.limit_amount),
+          limitAmount: roundCurrency(userPriceList.PriceList.limit_amount),
           canProceed: false
         };
       }
@@ -289,9 +290,9 @@ export class OrderService {
     }
 
     // Bakiye + açık hesap limiti toplamı kontrolü
-    const currentBalance = Number(store.bakiye || 0);
-    const currentOpenAccountLimit = Number(store.acik_hesap_tutari || 0);
-    const totalAvailableAmount = currentBalance + currentOpenAccountLimit;
+    const currentBalance = roundCurrency(store.bakiye || 0);
+    const currentOpenAccountLimit = roundCurrency(store.acik_hesap_tutari || 0);
+    const totalAvailableAmount = addCurrency(currentBalance, currentOpenAccountLimit);
     
     console.log(`💰 Bakiye + açık hesap limiti kontrolü:`)
     console.log(`  - Mevcut bakiye: ${currentBalance} TL`)
