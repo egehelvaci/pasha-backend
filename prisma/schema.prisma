@@ -32,7 +32,6 @@ model User {
   carts       carts[]
   passwordResetTokens PasswordResetToken[]
   orders      Order[]
-  accountingTransactions AccountingTransaction[]
   adminOctetPayments OctetPayment[] @relation("AdminOctetPayments")
 }
 
@@ -46,7 +45,6 @@ model Collection {
   updatedAt       DateTime          @updatedAt @map("updated_at")
   PriceListDetail PriceListDetail[]
   products        Product[]
-  accountingTransactions AccountingTransaction[]
 }
 
 model Product {
@@ -109,15 +107,16 @@ model Store {
   limitsiz_acik_hesap Boolean?         @default(false)
   acik_hesap_tutari   Decimal?         @default(0) @db.Decimal(15, 2)
   bakiye              Decimal?         @default(0) @db.Decimal(15, 2)
+  cari_bakiye         Decimal?         @default(0) @db.Decimal(12, 2)
   maksimum_taksit     Int?             @default(1)
   is_active           Boolean?         @default(true)
   created_at          DateTime?        @default(now()) @db.Timestamp(6)
   updated_at          DateTime?        @default(now()) @db.Timestamp(6)
   StorePriceList      StorePriceList[]
   User                User[]
-  accountingTransactions AccountingTransaction[]
   octetPayments       OctetPayment[]
   installmentLimits   StoreInstallmentLimit[]
+  muhasebeHareketleri MuhasebeHareketleri[]
 }
 
 model StorePriceList {
@@ -335,27 +334,7 @@ enum cut_type_enum {
 
 
 
-model AccountingTransaction {
-  id              String   @id @default(uuid())
-  customer_id     String?  // Müşteri ID (opsiyonel, geriye dönük uyumluluk için)
-  store_id        String   @db.Uuid // Mağaza ID (zorunlu)
-  collection_id   String?  @db.VarChar(36) // Koleksiyon ID (opsiyonel)
-  square_meters   Decimal? @db.Decimal(10, 2) // Metrekare (opsiyonel)
-  transaction_type String  // İşlem Türü (zorunlu)
-  amount          Decimal  @db.Decimal(15, 2) // Tutar (zorunlu)
-  is_expense      Boolean  // Harcama=true ya da false (zorunlu)
-  transaction_date DateTime // Tarih (zorunlu)
-  description     String   // Açıklama (zorunlu)
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
-  
-  // İlişkiler
-  customer        User?    @relation(fields: [customer_id], references: [userId])
-  store           Store    @relation(fields: [store_id], references: [store_id])
-  collection      Collection? @relation(fields: [collection_id], references: [collectionId])
-  
-  @@map("accounting_transactions")
-}
+
 
 // Octet Ödeme Sistemi Tabloları
 
@@ -421,4 +400,29 @@ enum OctetPaymentStatus {
   FAILED     // Ödeme başarısız
   EXPIRED    // Ödeme linki süresi doldu
   CANCELLED  // Ödeme iptal edildi
+}
+
+// Muhasebe Hareketleri
+model MuhasebeHareketleri {
+  id          Int      @id @default(autoincrement())
+  storeId     String   @map("store_id") @db.Uuid
+  islemTuru   String   @map("islem_turu") @db.VarChar(255)
+  tutar       Decimal  @db.Decimal(10, 2)
+  harcama     Boolean
+  tarih       DateTime
+  aciklama    String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  // İlişkiler
+  store       Store    @relation(fields: [storeId], references: [store_id])
+
+  @@map("muhasebe_hareketleri")
+}
+
+// Admin Varlıkları (Kasa Bakiyesi)
+model AdminVarliklari {
+  id           Int     @id @default(1)
+  kasaBakiyesi Decimal @map("kasa_bakiyesi") @default(0) @db.Decimal(15, 2)
+
+  @@map("admin_varliklari")
 }

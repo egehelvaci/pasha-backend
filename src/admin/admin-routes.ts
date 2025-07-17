@@ -7,8 +7,8 @@ import storeRoutes from './store-routes'
 import productRulesRoutes from './product-rules-routes'
 import cutTypesRoutes from './cut-types-routes'
 import octetPaymentRoutes from './octet-payment-routes'
+import muhasebeRoutes from './muhasebe-routes'
 
-import { createAccountingTransaction, getAllAccountingTransactions, getTransactionTypes } from './accounting-transaction-controller'
 import { excelExportController } from './excel-export-controller'
 
 const router = express.Router()
@@ -33,6 +33,9 @@ router.use('/cut-types', cutTypesRoutes)
 
 // Octet ödeme sistemi rotalarını ekle
 router.use('/octet', octetPaymentRoutes)
+
+// Muhasebe hareketleri rotalarını ekle
+router.use('/', muhasebeRoutes)
 
 // Sipariş yönetimi rotaları
 router.get('/orders', adminOrderController.getAllOrders)
@@ -75,13 +78,7 @@ router.post('/users/:userId/assign-store', adminController.assignUserToStore)
 // Kullanıcıyı mağazadan kaldır
 router.delete('/users/:userId/remove-store', adminController.removeUserFromStore)
 
-// Muhasebe hareketleri API'si
-router.get('/accounting-transactions', getAllAccountingTransactions)
-router.post('/accounting-transactions', createAccountingTransaction)
-router.get('/accounting-transactions/types', getTransactionTypes)
-
 // Excel Export API'leri
 router.get('/export/orders', excelExportController.exportOrders)
-router.get('/export/accounting-transactions', excelExportController.exportAccountingTransactions)
 
 export default router 
