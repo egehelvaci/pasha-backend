@@ -115,12 +115,31 @@ export class MuhasebeController {
         where: { id: 1 }
       })
 
+      // Toplam alacak hesaplama (sadece negatif cari bakiyeler)
+      const toplamAlacak = magazaData
+        .filter(magaza => magaza.cari_bakiye && magaza.cari_bakiye.toNumber() < 0)
+        .reduce((toplam, magaza) => {
+          return toplam + Math.abs(magaza.cari_bakiye?.toNumber() || 0)
+        }, 0)
+
+      // Borçlu ve alacaklı mağaza sayıları
+      const borcluMagazaSayisi = magazaData.filter(magaza => 
+        magaza.cari_bakiye && magaza.cari_bakiye.toNumber() < 0
+      ).length
+
+      const alacakliMagazaSayisi = magazaData.filter(magaza => 
+        magaza.cari_bakiye && magaza.cari_bakiye.toNumber() > 0
+      ).length
+
       return res.status(200).json({
         success: true,
         data: {
           hareketler,
           magazaBakiyeleri,
-          adminKasaBakiyesi: adminVarliklar?.kasaBakiyesi || 0
+          adminKasaBakiyesi: adminVarliklar?.kasaBakiyesi || 0,
+          toplamAlacak,
+          borcluMagazaSayisi,
+          alacakliMagazaSayisi
         }
       })
     } catch (error: any) {

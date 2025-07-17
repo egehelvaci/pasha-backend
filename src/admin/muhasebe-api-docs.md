@@ -17,6 +17,108 @@ Authorization: Bearer <ADMIN_JWT_TOKEN>
 
 ---
 
+## MUHASEBE HAREKETLERİ
+
+### 1. TÜM MUHASEBE HAREKETLERİNİ LİSTELE
+
+**Method**: `GET`  
+**URL**: `/api/admin/muhasebe-hareketleri`
+
+Tüm muhasebe hareketlerini tarih sırasına göre (en yeni önce) listeler ve mağaza bakiye durumlarını gösterir.
+
+#### Yanıt Alanları Açıklaması
+- `hesap_bakiyesi`: Mağazanın kendi hesap bakiyesi (para yüklemesi yapılan bakiye)
+- `durum`: Mağazanın Admin'e olan durumu
+  - `ALACAKLI`: Mağaza Admin'den alacaklı
+  - `BORCLU`: Mağaza Admin'e borçlu  
+  - `DENGEDE`: Mağaza ile Admin arasında borç/alacak yok
+- `tutar`: Borç/alacak tutarı (mutlak değer)
+- `cari_bakiye`: Ham cari bakiye değeri (+ alacak, - borç)
+
+#### Request
+```http
+GET /api/admin/muhasebe-hareketleri
+Authorization: Bearer <ADMIN_JWT_TOKEN>
+```
+
+#### Response (Success - 200)
+```json
+{
+  "success": true,
+  "data": {
+    "hareketler": [
+      {
+        "id": 1,
+        "storeId": "store-001",
+        "islemTuru": "Parekende Satış",
+        "tutar": "2500.00",
+        "harcama": false,
+        "tarih": "2025-07-17T10:00:00.000Z",
+        "aciklama": "Mağaza satışı",
+        "createdAt": "2025-07-17T10:05:00.000Z",
+        "store": {
+          "store_id": "store-001",
+          "kurum_adi": "ABC Mağazası",
+          "hesap_bakiyesi": 50000.00,
+          "durum": "ALACAKLI",
+          "tutar": 15000.00,
+          "cari_bakiye": 15000.00
+        }
+      },
+      {
+        "id": 2,
+        "storeId": "store-002",
+        "islemTuru": "Kira / Aidat Giderleri",
+        "tutar": "10000.00",
+        "harcama": true,
+        "tarih": "2025-07-17T11:30:00.000Z",
+        "aciklama": "Depo kira ödemesi",
+        "createdAt": "2025-07-17T11:35:00.000Z",
+        "store": {
+          "store_id": "store-002",
+          "kurum_adi": "XYZ Depo",
+          "hesap_bakiyesi": 25000.00,
+          "durum": "BORCLU",
+          "tutar": 5000.00,
+          "cari_bakiye": -5000.00
+        }
+      }
+    ],
+    "magazaBakiyeleri": [
+      {
+        "store_id": "store-001",
+        "kurum_adi": "ABC Mağazası",
+        "hesap_bakiyesi": 50000.00,
+        "durum": "ALACAKLI",
+        "tutar": 15000.00,
+        "cari_bakiye": 15000.00,
+        "is_active": true
+      },
+      {
+        "store_id": "store-002",
+        "kurum_adi": "XYZ Depo",
+        "hesap_bakiyesi": 25000.00,
+        "durum": "BORCLU",
+        "tutar": 5000.00,
+        "cari_bakiye": -5000.00,
+        "is_active": true
+      },
+      {
+        "store_id": "store-003",
+        "kurum_adi": "DEF Şirketi",
+        "hesap_bakiyesi": 75000.00,
+        "durum": "DENGEDE",
+        "tutar": 0.00,
+        "cari_bakiye": 0.00,
+        "is_active": true
+      }
+    ],
+    "adminKasaBakiyesi": "125000.00",
+    "toplamAlacak": 5000.00,
+    "borcluMagazaSayisi": 1,
+    "alacakliMagazaSayisi": 1
+  }
+}
 ```
 
 ### 2. YENİ MUHASEBE HAREKETİ OLUŞTUR
