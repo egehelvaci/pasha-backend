@@ -128,11 +128,11 @@ export class WebhookController {
         `);
       }
 
-      // Basit test webhook data'sı oluştur - sellerReference kullan
+      // Basit test webhook data'sı oluştur - sellerReference kullan (BAŞARILI)
       const mockWebhookData = {
-        NotificationId: `TEST_${Date.now()}`,
+        NotificationId: `TEST_SUCCESS_${Date.now()}`,
         TransactionType: 1,
-        TransactionState: 3,
+        TransactionState: 3, // 3 = Başarılı ödeme
         PaymentAmount: Number(transaction.amount),
         OrderNumber: transaction.sellerReference, // sellerReference kullan
         PaymentDate: new Date().toISOString(),
@@ -147,22 +147,78 @@ export class WebhookController {
       if (result.success) {
         return res.send(`
           <!DOCTYPE html>
-          <html>
+          <html lang="tr">
           <head>
-            <title>Ödeme Başarılı</title>
             <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Ödeme Başarılı</title>
             <style>
-              body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-              .success { color: #28a745; }
-              .loading { animation: spin 1s linear infinite; }
-              @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+              * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+              }
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              }
+              .container {
+                background: white;
+                padding: 2rem;
+                border-radius: 16px;
+                box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+                text-align: center;
+                max-width: 400px;
+                width: 90%;
+              }
+              .icon {
+                font-size: 4rem;
+                margin-bottom: 1rem;
+              }
+              h1 {
+                color: #2d3748;
+                font-size: 1.5rem;
+                margin-bottom: 0.5rem;
+                font-weight: 600;
+              }
+              p {
+                color: #718096;
+                font-size: 1rem;
+                margin-bottom: 1.5rem;
+                line-height: 1.5;
+              }
+              .redirect-info {
+                background: #f7fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                padding: 1rem;
+                font-size: 0.9rem;
+                color: #4a5568;
+              }
+              .spinner {
+                display: inline-block;
+                animation: spin 1s linear infinite;
+                margin-right: 0.5rem;
+              }
+              @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+              }
             </style>
           </head>
           <body>
-            <div class="success">
-              <h1>✅ Ödeme Başarılı!</h1>
+            <div class="container">
+              <div class="icon">✅</div>
+              <h1>Ödeme Başarılı</h1>
               <p>Ödemeniz başarıyla tamamlandı.</p>
-              <p class="loading">🔄 Yönlendiriliyor...</p>
+              <div class="redirect-info">
+                <span class="spinner">⟳</span>
+                3 saniye içinde yönlendirileceksiniz...
+              </div>
             </div>
             <script>
               setTimeout(() => {
@@ -175,14 +231,57 @@ export class WebhookController {
       } else {
         return res.status(400).send(`
           <!DOCTYPE html>
-          <html>
+          <html lang="tr">
           <head>
-            <title>Ödeme Hatası</title>
             <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Ödeme Hatası</title>
+            <style>
+              * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+              }
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              }
+              .container {
+                background: white;
+                padding: 2rem;
+                border-radius: 16px;
+                box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+                text-align: center;
+                max-width: 400px;
+                width: 90%;
+              }
+              .icon {
+                font-size: 4rem;
+                margin-bottom: 1rem;
+              }
+              h1 {
+                color: #2d3748;
+                font-size: 1.5rem;
+                margin-bottom: 1rem;
+                font-weight: 600;
+              }
+              p {
+                color: #718096;
+                font-size: 1rem;
+                line-height: 1.5;
+              }
+            </style>
           </head>
           <body>
-            <h1>❌ Ödeme Hatası</h1>
-            <p>${result.message}</p>
+            <div class="container">
+              <div class="icon">⚠️</div>
+              <h1>Ödeme Hatası</h1>
+              <p>${result.message}</p>
+            </div>
           </body>
           </html>
         `);
@@ -192,14 +291,57 @@ export class WebhookController {
       console.error('❌ Legacy success webhook hatası:', error);
       return res.status(500).send(`
         <!DOCTYPE html>
-        <html>
+        <html lang="tr">
         <head>
-          <title>Sunucu Hatası</title>
           <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Sunucu Hatası</title>
+          <style>
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              min-height: 100vh;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            .container {
+              background: white;
+              padding: 2rem;
+              border-radius: 16px;
+              box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+              text-align: center;
+              max-width: 400px;
+              width: 90%;
+            }
+            .icon {
+              font-size: 4rem;
+              margin-bottom: 1rem;
+            }
+            h1 {
+              color: #2d3748;
+              font-size: 1.5rem;
+              margin-bottom: 1rem;
+              font-weight: 600;
+            }
+            p {
+              color: #718096;
+              font-size: 1rem;
+              line-height: 1.5;
+            }
+          </style>
         </head>
         <body>
-          <h1>❌ Sunucu Hatası</h1>
-          <p>Ödeme işlemi sırasında bir hata oluştu.</p>
+          <div class="container">
+            <div class="icon">🔧</div>
+            <h1>Sunucu Hatası</h1>
+            <p>Ödeme işlemi sırasında bir hata oluştu.</p>
+          </div>
         </body>
         </html>
       `);
@@ -255,7 +397,7 @@ export class WebhookController {
       const mockWebhookData = {
         NotificationId: `TEST_FAIL_${Date.now()}`,
         TransactionType: 1,
-        TransactionState: 1, // Başarısız
+        TransactionState: 1, // 1 = Başarısız ödeme
         PaymentAmount: Number(transaction.amount),
         OrderNumber: transaction.sellerReference, // sellerReference kullan
         PaymentDate: new Date().toISOString(),
@@ -269,22 +411,78 @@ export class WebhookController {
       
       return res.send(`
         <!DOCTYPE html>
-        <html>
+        <html lang="tr">
         <head>
-          <title>Ödeme Başarısız</title>
           <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Ödeme Başarısız</title>
           <style>
-            body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-            .error { color: #dc3545; }
-            .loading { animation: spin 1s linear infinite; }
-            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+              background: linear-gradient(135deg, #fc466b 0%, #3f5efb 100%);
+              min-height: 100vh;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            .container {
+              background: white;
+              padding: 2rem;
+              border-radius: 16px;
+              box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+              text-align: center;
+              max-width: 400px;
+              width: 90%;
+            }
+            .icon {
+              font-size: 4rem;
+              margin-bottom: 1rem;
+            }
+            h1 {
+              color: #2d3748;
+              font-size: 1.5rem;
+              margin-bottom: 0.5rem;
+              font-weight: 600;
+            }
+            p {
+              color: #718096;
+              font-size: 1rem;
+              margin-bottom: 1.5rem;
+              line-height: 1.5;
+            }
+            .redirect-info {
+              background: #fef5e7;
+              border: 1px solid #f6ad55;
+              border-radius: 8px;
+              padding: 1rem;
+              font-size: 0.9rem;
+              color: #c05621;
+            }
+            .spinner {
+              display: inline-block;
+              animation: spin 1s linear infinite;
+              margin-right: 0.5rem;
+            }
+            @keyframes spin {
+              from { transform: rotate(0deg); }
+              to { transform: rotate(360deg); }
+            }
           </style>
         </head>
         <body>
-          <div class="error">
-            <h1>❌ Ödeme Başarısız</h1>
+          <div class="container">
+            <div class="icon">❌</div>
+            <h1>Ödeme Başarısız</h1>
             <p>Ödemeniz tamamlanamadı. Lütfen tekrar deneyiniz.</p>
-            <p class="loading">🔄 Yönlendiriliyor...</p>
+            <div class="redirect-info">
+              <span class="spinner">⟳</span>
+              3 saniye içinde yönlendirileceksiniz...
+            </div>
           </div>
           <script>
             setTimeout(() => {
