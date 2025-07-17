@@ -45,7 +45,11 @@ export class WebhookService {
       });
       
       if (!dbyeConfig || !dbyeConfig.isActive) {
-        console.error('❌ DBYE konfigürasyonu bulunamadı veya aktif değil');
+        console.error('❌ DBYE konfigürasyonu bulunamadı veya aktif değil:', {
+          configExists: !!dbyeConfig,
+          isActive: dbyeConfig?.isActive,
+          orderNumber: data.OrderNumber
+        });
         return false;
       }
       
@@ -93,13 +97,17 @@ export class WebhookService {
         isValid: calculatedHash === data.Hash
       });
       
-      // Test amaçlı: Eğer gelen hash 'test-hash' ise doğrulamayı atla
-      if (data.Hash === 'test-hash') {
-        console.log('⚠️  Test hash tespit edildi, doğrulama atlanıyor');
-        return true;
+      const isValid = calculatedHash === data.Hash;
+      
+      if (!isValid) {
+        console.error('❌ Hash doğrulama başarısız!', {
+          expected: calculatedHash,
+          received: data.Hash,
+          environment: process.env.NODE_ENV
+        });
       }
       
-      return calculatedHash === data.Hash;
+      return isValid;
     } catch (error) {
       console.error('❌ Hash validation error:', error);
       return false;
@@ -119,8 +127,12 @@ export class WebhookService {
       // Hash doğrulaması
       const hashValid = await this.validateHash(webhookData);
       if (!hashValid) {
-        console.error('❌ Hash doğrulaması başarısız');
-        return { success: false, message: 'Hash doğrulaması başarısız' };
+        console.error('❌ Başarılı ödeme hash doğrulaması başarısız:', {
+          orderNumber: webhookData.OrderNumber,
+          receivedHash: webhookData.Hash.substring(0, 10) + '...',
+          environment: process.env.NODE_ENV
+        });
+        return { success: false, message: 'Hash doğrulaması başarısız - güvenlik ihlali' };
       }
 
       // Transaction state kontrol et (3 = Başarılı olmalı)
@@ -263,8 +275,12 @@ export class WebhookService {
       // Hash doğrulaması
       const hashValid = await this.validateHash(webhookData);
       if (!hashValid) {
-        console.error('❌ Hash doğrulaması başarısız');
-        return { success: false, message: 'Hash doğrulaması başarısız' };
+        console.error('❌ Başarısız/İptal ödeme hash doğrulaması başarısız:', {
+          orderNumber: webhookData.OrderNumber,
+          receivedHash: webhookData.Hash.substring(0, 10) + '...',
+          environment: process.env.NODE_ENV
+        });
+        return { success: false, message: 'Hash doğrulaması başarısız - güvenlik ihlali' };
       }
 
       // Transaction state kontrol et (1 = Başarısız, 2 = İptal)

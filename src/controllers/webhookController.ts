@@ -128,16 +128,36 @@ export class WebhookController {
         `);
       }
 
-      // Basit test webhook data'sı oluştur - sellerReference kullan (BAŞARILI)
+      // Test webhook data'sı oluştur - gerçek hash ile (BAŞARILI)
+      const notificationId = `TEST_SUCCESS_${Date.now()}`;
+      const paymentDate = new Date().toISOString();
+      const hashParameters = 'OrderNumber|PaymentAmount|TransactionState';
+      
+      // Hash hesapla
+      const { PrismaClient: PrismaClientType } = require('../../generated/prisma');
+      const tempPrisma = new PrismaClientType();
+      const dbyeConfig = await tempPrisma.dbyeConfig.findUnique({ where: { id: 1 } });
+      await tempPrisma.$disconnect();
+      
+      let calculatedHash = 'test-hash'; // Fallback
+      if (dbyeConfig && dbyeConfig.webhookSecret) {
+        const crypto = require('crypto');
+        const hashString = `${transaction.sellerReference}|${Number(transaction.amount)}|3`;
+        calculatedHash = crypto
+          .createHmac('sha512', dbyeConfig.webhookSecret)
+          .update(hashString)
+          .digest('hex');
+      }
+      
       const mockWebhookData = {
-        NotificationId: `TEST_SUCCESS_${Date.now()}`,
+        NotificationId: notificationId,
         TransactionType: 1,
         TransactionState: 3, // 3 = Başarılı ödeme
         PaymentAmount: Number(transaction.amount),
         OrderNumber: transaction.sellerReference, // sellerReference kullan
-        PaymentDate: new Date().toISOString(),
-        Hash: 'test-hash',
-        HashParameters: 'OrderNumber|PaymentAmount|TransactionState'
+        PaymentDate: paymentDate,
+        Hash: calculatedHash,
+        HashParameters: hashParameters
       };
       
       await prisma.$disconnect();
@@ -393,16 +413,36 @@ export class WebhookController {
         `);
       }
 
-      // Basit test webhook data'sı oluştur (başarısız) - sellerReference kullan
+      // Test webhook data'sı oluştur - gerçek hash ile (BAŞARISIZ)
+      const notificationId = `TEST_FAIL_${Date.now()}`;
+      const paymentDate = new Date().toISOString();
+      const hashParameters = 'OrderNumber|PaymentAmount|TransactionState';
+      
+      // Hash hesapla
+      const { PrismaClient: PrismaClientType } = require('../../generated/prisma');
+      const tempPrisma = new PrismaClientType();
+      const dbyeConfig = await tempPrisma.dbyeConfig.findUnique({ where: { id: 1 } });
+      await tempPrisma.$disconnect();
+      
+      let calculatedHash = 'test-hash'; // Fallback
+      if (dbyeConfig && dbyeConfig.webhookSecret) {
+        const crypto = require('crypto');
+        const hashString = `${transaction.sellerReference}|${Number(transaction.amount)}|1`;
+        calculatedHash = crypto
+          .createHmac('sha512', dbyeConfig.webhookSecret)
+          .update(hashString)
+          .digest('hex');
+      }
+      
       const mockWebhookData = {
-        NotificationId: `TEST_FAIL_${Date.now()}`,
+        NotificationId: notificationId,
         TransactionType: 1,
         TransactionState: 1, // 1 = Başarısız ödeme
         PaymentAmount: Number(transaction.amount),
         OrderNumber: transaction.sellerReference, // sellerReference kullan
-        PaymentDate: new Date().toISOString(),
-        Hash: 'test-hash',
-        HashParameters: 'OrderNumber|PaymentAmount|TransactionState'
+        PaymentDate: paymentDate,
+        Hash: calculatedHash,
+        HashParameters: hashParameters
       };
       
       await prisma.$disconnect();
