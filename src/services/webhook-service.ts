@@ -102,8 +102,7 @@ export class WebhookService {
       if (!isValid) {
         console.error('❌ Hash doğrulama başarısız!', {
           expected: calculatedHash,
-          received: data.Hash,
-          environment: process.env.NODE_ENV
+          received: data.Hash
         });
       }
       
@@ -129,8 +128,7 @@ export class WebhookService {
       if (!hashValid) {
         console.error('❌ Başarılı ödeme hash doğrulaması başarısız:', {
           orderNumber: webhookData.OrderNumber,
-          receivedHash: webhookData.Hash.substring(0, 10) + '...',
-          environment: process.env.NODE_ENV
+          receivedHash: webhookData.Hash.substring(0, 10) + '...'
         });
         return { success: false, message: 'Hash doğrulaması başarısız - güvenlik ihlali' };
       }
@@ -277,8 +275,7 @@ export class WebhookService {
       if (!hashValid) {
         console.error('❌ Başarısız/İptal ödeme hash doğrulaması başarısız:', {
           orderNumber: webhookData.OrderNumber,
-          receivedHash: webhookData.Hash.substring(0, 10) + '...',
-          environment: process.env.NODE_ENV
+          receivedHash: webhookData.Hash.substring(0, 10) + '...'
         });
         return { success: false, message: 'Hash doğrulaması başarısız - güvenlik ihlali' };
       }
