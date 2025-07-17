@@ -8,7 +8,7 @@ import productRulesRoutes from './product-rules-routes'
 import cutTypesRoutes from './cut-types-routes'
 import octetPaymentRoutes from './octet-payment-routes'
 
-import { createAccountingTransaction, getAllAccountingTransactions } from './accounting-transaction-controller'
+import { createAccountingTransaction, getAllAccountingTransactions, getTransactionTypes } from './accounting-transaction-controller'
 import { excelExportController } from './excel-export-controller'
 
 const router = express.Router()
@@ -78,6 +78,7 @@ router.delete('/users/:userId/remove-store', adminController.removeUserFromStore
 // Muhasebe hareketleri API'si
 router.get('/accounting-transactions', getAllAccountingTransactions)
 router.post('/accounting-transactions', createAccountingTransaction)
+router.get('/accounting-transactions/types', getTransactionTypes)
 
 // Excel Export API'leri
 router.get('/export/orders', excelExportController.exportOrders)
