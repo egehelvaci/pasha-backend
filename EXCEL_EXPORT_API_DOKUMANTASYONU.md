@@ -132,7 +132,7 @@ curl -X GET "http://localhost:3001/api/admin/export/orders?period=yearly&status=
 | `start_date` | string | Evet* | Başlangıç tarihi (custom için zorunlu) | `2024-01-01` |
 | `end_date` | string | Evet* | Bitiş tarihi (custom için zorunlu) | `2024-12-31` |
 | `store_id` | string | Hayır | Mağaza ID filtresi | `store-uuid-123` |
-| `transaction_type` | string | Hayır | İşlem türü filtresi | `OCTET_PAYMENT`, `BALANCE_UPDATE` |
+| `transaction_type` | string | Hayır | İşlem türü filtresi | `BALANCE_UPDATE` |
 | `is_expense` | string | Hayır | Gelir/Gider filtresi | `true`, `false` |
 
 ### Excel Format
@@ -183,11 +183,6 @@ curl -X GET "http://localhost:3001/api/admin/export/accounting-transactions?peri
 curl -X GET "http://localhost:3001/api/admin/export/accounting-transactions?period=yearly&is_expense=false" \
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
   --output "gelir_kayitlari.xlsx"
-
-# Octet ödemeleri
-curl -X GET "http://localhost:3001/api/admin/export/accounting-transactions?period=yearly&transaction_type=OCTET_PAYMENT" \
-  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
-  --output "octet_odemeler.xlsx"
 ```
 
 ---

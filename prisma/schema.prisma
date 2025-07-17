@@ -114,6 +114,8 @@ model Store {
   User                User[]
   installmentLimits   StoreInstallmentLimit[]
   muhasebeHareketleri MuhasebeHareketleri[]
+  paymentTransactions PaymentTransaction[]
+  adminStoreConfig    AdminStoreConfig?
 }
 
 model StorePriceList {
@@ -376,4 +378,72 @@ model AdminVarliklari {
   kasaBakiyesi Decimal @map("kasa_bakiyesi") @default(0) @db.Decimal(15, 2)
 
   @@map("admin_varliklari")
+}
+
+// Admin Store Konfigürasyonu
+model AdminStoreConfig {
+  id              Int     @id @default(autoincrement())
+  storeId         String  @unique @map("store_id") @db.Uuid
+  isAdminStore    Boolean @default(true) @map("is_admin_store")
+  description     String? @map("description")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  
+  store           Store   @relation(fields: [storeId], references: [store_id], onDelete: Cascade)
+
+  @@map("admin_store_config")
+}
+
+// DBYE Ödeme Login Tablosu
+model DbyeOdemeLogin {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  url       String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("dbye_odeme_login")
+}
+
+// DBYE Konfigürasyon Tablosu
+model DbyeConfig {
+  id                Int      @id @default(1)
+  webhookSecret     String   @map("webhook_secret") @db.VarChar(500)
+  backendUrl        String   @map("backend_url") @db.VarChar(500)
+  isActive          Boolean  @default(true) @map("is_active")
+  description       String?  @map("description")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("dbye_config")
+}
+
+// Payment Transactions Tablosu
+model PaymentTransaction {
+  id                  String   @id @default(uuid())
+  storeId             String   @map("store_id") @db.Uuid
+  sellerReference     String   @unique @map("seller_reference")
+  apiReferenceNumber  String   @unique @map("api_reference_number")
+  amount              Decimal  @db.Decimal(10, 2)
+  description         String   @map("description")
+  status              PaymentStatus @default(PENDING)
+  webhookToken        String?  @map("webhook_token") // Güvenlik için
+  webhookData         Json?    @map("webhook_data") // Webhook'tan gelen tüm data
+  octetPaymentId      String?  @map("octet_payment_id") // Octet'ten gelen payment ID
+  paymentDate         DateTime? @map("payment_date")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  // İlişkiler
+  store               Store    @relation(fields: [storeId], references: [store_id])
+
+  @@map("payment_transactions")
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
 }
