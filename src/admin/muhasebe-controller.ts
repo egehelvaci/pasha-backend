@@ -42,16 +42,19 @@ export class MuhasebeController {
   }
 
   /**
-   * Tüm muhasebe hareketlerini listele
+   * Tüm muhasebe hareketlerini ve mağaza bakiyelerini listele
    */
   async getAllMuhasebeHareketleri(req: Request, res: Response) {
     try {
-      const hareketler = await prisma.muhasebeHareketleri.findMany({
+      // Muhasebe hareketlerini getir
+      const hareketlerData = await prisma.muhasebeHareketleri.findMany({
         include: {
           store: {
             select: {
               store_id: true,
-              kurum_adi: true
+              kurum_adi: true,
+              cari_bakiye: true,
+              bakiye: true
             }
           }
         },
@@ -60,9 +63,65 @@ export class MuhasebeController {
         }
       })
 
+      // Hareketlerdeki store bilgilerini de borç/alacak formatında düzenle
+      const hareketler = hareketlerData.map(hareket => {
+        const cariBakiye = hareket.store.cari_bakiye?.toNumber() || 0
+        return {
+          ...hareket,
+          store: {
+            store_id: hareket.store.store_id,
+            kurum_adi: hareket.store.kurum_adi,
+            hesap_bakiyesi: hareket.store.bakiye?.toNumber() || 0,
+            durum: cariBakiye === 0 ? 'DENGEDE' : cariBakiye > 0 ? 'ALACAKLI' : 'BORCLU',
+            tutar: Math.abs(cariBakiye),
+            cari_bakiye: cariBakiye
+          }
+        }
+      })
+
+      // Tüm mağazaların bakiyelerini getir
+      const magazaData = await prisma.store.findMany({
+        select: {
+          store_id: true,
+          kurum_adi: true,
+          cari_bakiye: true,
+          bakiye: true,
+          is_active: true
+        },
+        where: {
+          is_active: true
+        },
+        orderBy: {
+          kurum_adi: 'asc'
+        }
+      })
+
+      // Bakiye bilgilerini borç/alacak formatında düzenle
+      const magazaBakiyeleri = magazaData.map(magaza => {
+        const cariBakiye = magaza.cari_bakiye?.toNumber() || 0
+        return {
+          store_id: magaza.store_id,
+          kurum_adi: magaza.kurum_adi,
+          hesap_bakiyesi: magaza.bakiye?.toNumber() || 0,
+          durum: cariBakiye === 0 ? 'DENGEDE' : cariBakiye > 0 ? 'ALACAKLI' : 'BORCLU',
+          tutar: Math.abs(cariBakiye),
+          cari_bakiye: cariBakiye, // Ham değer de dönsün ihtiyaç olursa
+          is_active: magaza.is_active
+        }
+      })
+
+      // Admin kasa bakiyesi
+      const adminVarliklar = await prisma.adminVarliklari.findFirst({
+        where: { id: 1 }
+      })
+
       return res.status(200).json({
         success: true,
-        data: hareketler
+        data: {
+          hareketler,
+          magazaBakiyeleri,
+          adminKasaBakiyesi: adminVarliklar?.kasaBakiyesi || 0
+        }
       })
     } catch (error: any) {
       console.error('Muhasebe hareketleri listesi hatası:', error)
@@ -177,11 +236,14 @@ export class MuhasebeController {
           })
         }
 
-        // Mağaza cari bakiyesini güncelle
+        // Mağaza cari bakiyesini ve hesap bakiyesini güncelle
         await tx.store.update({
           where: { store_id: storeId },
           data: {
             cari_bakiye: {
+              increment: harcama ? -tutar : tutar
+            },
+            bakiye: {
               increment: harcama ? -tutar : tutar
             }
           }

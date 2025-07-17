@@ -17,56 +17,6 @@ Authorization: Bearer <ADMIN_JWT_TOKEN>
 
 ---
 
-## MUHASEBE HAREKETLERİ
-
-### 1. TÜM MUHASEBE HAREKETLERİNİ LİSTELE
-
-**Method**: `GET`  
-**URL**: `/api/admin/muhasebe-hareketleri`
-
-Tüm muhasebe hareketlerini tarih sırasına göre (en yeni önce) listeler.
-
-#### Request
-```http
-GET /api/admin/muhasebe-hareketleri
-Authorization: Bearer <ADMIN_JWT_TOKEN>
-```
-
-#### Response (Success - 200)
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": 1,
-      "storeId": "store-001",
-      "islemTuru": "Parekende Satış",
-      "tutar": "2500.00",
-      "harcama": false,
-      "tarih": "2025-07-17T10:00:00.000Z",
-      "aciklama": "Mağaza satışı",
-      "createdAt": "2025-07-17T10:05:00.000Z",
-      "store": {
-        "store_id": "store-001",
-        "kurum_adi": "ABC Mağazası"
-      }
-    },
-    {
-      "id": 2,
-      "storeId": "store-002",
-      "islemTuru": "Kira / Aidat Giderleri",
-      "tutar": "10000.00",
-      "harcama": true,
-      "tarih": "2025-07-17T11:30:00.000Z",
-      "aciklama": "Depo kira ödemesi",
-      "createdAt": "2025-07-17T11:35:00.000Z",
-      "store": {
-        "store_id": "store-002",
-        "kurum_adi": "XYZ Depo"
-      }
-    }
-  ]
-}
 ```
 
 ### 2. YENİ MUHASEBE HAREKETİ OLUŞTUR
