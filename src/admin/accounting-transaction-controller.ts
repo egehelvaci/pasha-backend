@@ -4,6 +4,9 @@ import prisma from '../utils/prisma';
 export const getAllAccountingTransactions = async (req: Request, res: Response) => {
   try {
     const { page = 1, limit = 50, store_id, customer_id, collection_id, transaction_type, is_expense, start_date, end_date } = req.query;
+    
+    // Admin'in kendi mağaza ID'si
+    const adminStoreId = req.user?.store_id;
 
     // Sayfa ve limit validasyonu
     const pageNum = parseInt(page as string) || 1;
@@ -63,6 +66,15 @@ export const getAllAccountingTransactions = async (req: Request, res: Response) 
             username: true
           }
         },
+        store: {
+          select: {
+            store_id: true,
+            kurum_adi: true,
+            vergi_numarasi: true,
+            telefon: true,
+            eposta: true
+          }
+        },
         collection: {
           select: {
             collectionId: true,
@@ -118,6 +130,21 @@ export const getAllAccountingTransactions = async (req: Request, res: Response) 
       ? { type: 'ALACAKLI', amount: netAdminBalance }  // Admin net alacaklı
       : { type: 'BORÇLU', amount: Math.abs(netAdminBalance) };  // Admin net borçlu
 
+    // Admin'in kendi mağaza bilgisi
+    let adminStoreInfo = null;
+    if (adminStoreId) {
+      const adminStore = stores.find(store => store.store_id === adminStoreId);
+      if (adminStore) {
+        const adminBalance = parseFloat(adminStore.bakiye?.toString() || '0');
+        adminStoreInfo = {
+          store_id: adminStore.store_id,
+          store_name: adminStore.kurum_adi,
+          balance: adminBalance,
+          status: adminBalance < 0 ? 'BORÇLU' : adminBalance > 0 ? 'ALACAKLI' : 'NÖTR'
+        };
+      }
+    }
+
     res.status(200).json({
       success: true,
       message: 'Muhasebe hareketleri başarıyla getirildi',
@@ -140,6 +167,7 @@ export const getAllAccountingTransactions = async (req: Request, res: Response) 
             type: netAdminStatus.type,
             amount: netAdminStatus.amount
           },
+          admin_store: adminStoreInfo, // Admin'in kendi mağaza durumu
           store_breakdown: stores.map(store => {
             const storeBalance = parseFloat(store.bakiye?.toString() || '0');
             return {

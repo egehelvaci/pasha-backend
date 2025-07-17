@@ -15,6 +15,7 @@ interface TokenPayload {
   userId: string
   username: string
   userType: string
+  store_id?: string  // Kullanıcının bağlı olduğu mağaza ID'si
   iat?: number       // Token oluşturma zamanı (issue at)
   randomSeed?: string // Rastgele değer
 }
@@ -98,6 +99,7 @@ export class AuthService {
         userId: user.userId,
         username: user.username,
         userType: user.userType.name,
+        store_id: user.Store?.store_id, // Kullanıcının mağaza ID'si
         iat: timestamp, // Token oluşturma zamanı
         randomSeed // Her login işleminde değişecek rastgele değer
       }

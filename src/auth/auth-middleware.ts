@@ -11,6 +11,7 @@ declare global {
         userId: string
         username: string
         userType: string
+        store_id?: string
       }
     }
   }
@@ -41,7 +42,8 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     req.user = {
       userId: decodedToken.userId,
       username: decodedToken.username,
-      userType: decodedToken.userType
+      userType: decodedToken.userType,
+      store_id: decodedToken.store_id
     }
 
     // İşleme devam et
