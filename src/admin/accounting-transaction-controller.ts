@@ -106,15 +106,21 @@ export const getAllAccountingTransactions = async (req: Request, res: Response) 
       }
     });
 
-    // Admin perspektifinden borç ve alacak hesapla
-    let adminDebt = 0;    // Admin'in borcu (mağazaların pozitif bakiyeleri)
-    let adminCredit = 0;  // Admin'in alacağı (mağazaların negatif bakiyeleri)
-    let totalBalance = 0; // Net bakiye
+    // Admin perspektifinden borç ve alacak hesapla (admin'in kendi mağazası hariç)
+    let adminDebt = 0;    // Admin'in borcu (diğer mağazaların pozitif bakiyeleri)
+    let adminCredit = 0;  // Admin'in alacağı (diğer mağazaların negatif bakiyeleri)
+    let adminOwnStoreBalance = 0; // Admin'in kendi mağaza bakiyesi
 
     stores.forEach(store => {
       const balance = parseFloat(store.bakiye?.toString() || '0');
-      totalBalance += balance;
       
+      // Admin'in kendi mağazası ise ayrı tut
+      if (adminStoreId && store.store_id === adminStoreId) {
+        adminOwnStoreBalance = balance;
+        return; // Bu mağazayı genel hesaba katma
+      }
+      
+      // Diğer mağazalar için normal hesaplama
       if (balance < 0) {
         // Mağaza bakiyesi negatif = Mağaza admin'e BORÇLU = Admin ALACAKLI
         adminCredit += Math.abs(balance);
@@ -124,8 +130,8 @@ export const getAllAccountingTransactions = async (req: Request, res: Response) 
       }
     });
 
-    // Admin'in net durumu (toplam alacak - toplam borç)
-    const netAdminBalance = adminCredit - adminDebt;
+    // Admin'in net durumu = (diğer mağazalardan alacak - diğer mağazalara borç) + kendi mağaza bakiyesi
+    const netAdminBalance = (adminCredit - adminDebt) + adminOwnStoreBalance;
     const netAdminStatus = netAdminBalance >= 0 
       ? { type: 'ALACAKLI', amount: netAdminBalance }  // Admin net alacaklı
       : { type: 'BORÇLU', amount: Math.abs(netAdminBalance) };  // Admin net borçlu
@@ -135,12 +141,11 @@ export const getAllAccountingTransactions = async (req: Request, res: Response) 
     if (adminStoreId) {
       const adminStore = stores.find(store => store.store_id === adminStoreId);
       if (adminStore) {
-        const adminBalance = parseFloat(adminStore.bakiye?.toString() || '0');
         adminStoreInfo = {
           store_id: adminStore.store_id,
           store_name: adminStore.kurum_adi,
-          balance: adminBalance,
-          status: adminBalance < 0 ? 'BORÇLU' : adminBalance > 0 ? 'ALACAKLI' : 'NÖTR'
+          balance: adminOwnStoreBalance,
+          status: adminOwnStoreBalance < 0 ? 'BORÇLU' : adminOwnStoreBalance > 0 ? 'ALACAKLI' : 'NÖTR'
         };
       }
     }
