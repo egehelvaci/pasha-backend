@@ -49,8 +49,7 @@ async function main() {
         surname: 'Admin',
         email: 'admin@example.com',
         phoneNumber: '+905551234567',
-        userTypeId: adminType.id,
-        avatar: 'https://ui-avatars.com/api/?name=Test+Admin'
+        userTypeId: adminType.id
       }
     });
     console.log('Admin kullanıcısı oluşturuldu:', admin);
@@ -63,9 +62,7 @@ async function main() {
       create: {
         name: 'Yaz Koleksiyonu 2024',
         description: 'Yaz sezonu için özel tasarımlar',
-        code: 'YAZ2024',
-        catalogOrder: 1,
-        currency: Currency.TRY
+        code: 'YAZ2024'
       }
     });
 
@@ -75,9 +72,7 @@ async function main() {
       create: {
         name: 'Kış Koleksiyonu 2024',
         description: 'Kış sezonu için özel tasarımlar',
-        code: 'KIS2024',
-        catalogOrder: 2,
-        currency: Currency.TRY
+        code: 'KIS2024'
       }
     });
 
@@ -87,9 +82,7 @@ async function main() {
       create: {
         name: 'Özel Koleksiyon 2024',
         description: 'Sınırlı sayıda üretim özel parçalar',
-        code: 'OZEL2024',
-        catalogOrder: 3,
-        currency: Currency.USD
+        code: 'OZEL2024'
       }
     });
 

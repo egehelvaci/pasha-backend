@@ -306,16 +306,48 @@ export class OctetPaymentService {
             }
           })
 
-          // Muhasebe kaydı oluştur
-          await tx.accountingTransaction.create({
+          // Muhasebe hareketi kaydı oluştur
+          await tx.muhasebeHareketleri.create({
             data: {
-              customer_id: payment.admin_id,
-              store_id: payment.store_id,
-              transaction_type: 'OCTET_PAYMENT',
-              amount: amountToAdd,
-              is_expense: false, // Gelir
-              transaction_date: new Date(),
-              description: `Octet ödeme sistemi ile bakiye yükleme - ${installmentCount || 1} taksit`,
+              storeId: payment.store_id,
+              islemTuru: 'Diğer Gelirler',
+              tutar: amountToAdd,
+              harcama: false, // Gelir
+              tarih: new Date(),
+              aciklama: `Octet ödeme sistemi ile bakiye yükleme - ${installmentCount || 1} taksit`,
+            }
+          })
+
+          // Admin kasa bakiyesini güncelle
+          const adminVarliklar = await tx.adminVarliklari.findFirst({
+            where: { id: 1 }
+          })
+
+          if (!adminVarliklar) {
+            await tx.adminVarliklari.create({
+              data: {
+                id: 1,
+                kasaBakiyesi: amountToAdd
+              }
+            })
+          } else {
+            await tx.adminVarliklari.update({
+              where: { id: 1 },
+              data: {
+                kasaBakiyesi: {
+                  increment: amountToAdd
+                }
+              }
+            })
+          }
+
+          // Mağaza cari bakiyesini güncelle
+          await tx.store.update({
+            where: { store_id: payment.store_id },
+            data: {
+              cari_bakiye: {
+                increment: amountToAdd
+              }
             }
           })
         })
