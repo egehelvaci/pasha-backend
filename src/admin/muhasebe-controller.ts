@@ -153,6 +153,7 @@ export class MuhasebeController {
   async createMuhasebeHareketi(req: Request, res: Response) {
     try {
       const { storeId, islemTuru, tutar, tarih, aciklama } = req.body
+      const adminStoreId = (req as any).user?.store_id
 
       // Girdi doğrulama
       if (!storeId || !islemTuru || !tutar || !tarih || !aciklama) {
@@ -204,6 +205,9 @@ export class MuhasebeController {
         })
       }
 
+      // Admin kendi mağazasına mı işlem yapıyor kontrolü
+      const isAdminOwnStore = adminStoreId === storeId
+
       // Transaction başlat
       const result = await prisma.$transaction(async (tx) => {
         // Yeni muhasebe hareketi oluştur
@@ -251,15 +255,17 @@ export class MuhasebeController {
           })
         }
 
-        // Mağaza bakiyesini güncelle
-        await tx.store.update({
-          where: { store_id: storeId },
-          data: {
-            bakiye: {
-              increment: harcama ? -tutar : tutar
+        // Mağaza bakiyesini güncelle (sadece admin kendi mağazasına işlem yapmıyorsa)
+        if (!isAdminOwnStore) {
+          await tx.store.update({
+            where: { store_id: storeId },
+            data: {
+              bakiye: {
+                increment: harcama ? -tutar : tutar
+              }
             }
-          }
-        })
+          })
+        }
 
         return yeniHareket
       })

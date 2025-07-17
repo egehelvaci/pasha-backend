@@ -278,6 +278,14 @@ Admin'in kasa bakiyesi, toplam alacağı ve mağaza borç/alacak durumlarını l
    - Admin kasa bakiyesi azalır
    - Mağaza cari bakiyesi azalır (borcu artar veya alacağı azalır)
 
+### ÖZELLİK: Admin Kendi Mağazasına İşlem
+
+Admin kendi mağazasına gelir veya gider eklemesi durumunda:
+- **Sadece admin kasa bakiyesi güncellenir**
+- **Mağaza cari bakiyesi değişmez**
+- Bu sayede admin'in kendi mağazasından alacak/borç durumu oluşmaz
+- Hareket kaydı yine oluşturulur ancak borç/alacak hesabına yansımaz
+
 ### Cari Bakiye Yorumlama
 
 - **Pozitif (+)**: Mağaza Admin'den alacaklıdır
