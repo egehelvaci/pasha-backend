@@ -103,17 +103,44 @@ export class WebhookController {
         `);
       }
 
-      // Basit test webhook data'sı oluştur
+      // Token ile transaction'ı bul
+      const { PrismaClient } = require('../../generated/prisma');
+      const prisma = new PrismaClient();
+      
+      const transaction = await prisma.paymentTransaction.findFirst({
+        where: { webhookToken: token }
+      });
+      
+      if (!transaction) {
+        await prisma.$disconnect();
+        return res.status(404).send(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Transaction Bulunamadı</title>
+            <meta charset="utf-8">
+          </head>
+          <body>
+            <h1>❌ Transaction Bulunamadı</h1>
+            <p>Geçersiz webhook token'ı.</p>
+          </body>
+          </html>
+        `);
+      }
+
+      // Basit test webhook data'sı oluştur - sellerReference kullan
       const mockWebhookData = {
         NotificationId: `TEST_${Date.now()}`,
         TransactionType: 1,
         TransactionState: 3,
-        PaymentAmount: 100,
-        OrderNumber: token, // Test için token'ı orderNumber olarak kullan
+        PaymentAmount: Number(transaction.amount),
+        OrderNumber: transaction.sellerReference, // sellerReference kullan
         PaymentDate: new Date().toISOString(),
         Hash: 'test-hash',
         HashParameters: 'OrderNumber|PaymentAmount|TransactionState'
       };
+      
+      await prisma.$disconnect();
 
       const result = await webhookService.processWebhook(mockWebhookData);
       
@@ -199,17 +226,44 @@ export class WebhookController {
         `);
       }
 
-      // Basit test webhook data'sı oluştur (başarısız)
+      // Token ile transaction'ı bul
+      const { PrismaClient } = require('../../generated/prisma');
+      const prisma = new PrismaClient();
+      
+      const transaction = await prisma.paymentTransaction.findFirst({
+        where: { webhookToken: token }
+      });
+      
+      if (!transaction) {
+        await prisma.$disconnect();
+        return res.status(404).send(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Transaction Bulunamadı</title>
+            <meta charset="utf-8">
+          </head>
+          <body>
+            <h1>❌ Transaction Bulunamadı</h1>
+            <p>Geçersiz webhook token'ı.</p>
+          </body>
+          </html>
+        `);
+      }
+
+      // Basit test webhook data'sı oluştur (başarısız) - sellerReference kullan
       const mockWebhookData = {
         NotificationId: `TEST_FAIL_${Date.now()}`,
         TransactionType: 1,
         TransactionState: 1, // Başarısız
-        PaymentAmount: 100,
-        OrderNumber: token,
+        PaymentAmount: Number(transaction.amount),
+        OrderNumber: transaction.sellerReference, // sellerReference kullan
         PaymentDate: new Date().toISOString(),
         Hash: 'test-hash',
         HashParameters: 'OrderNumber|PaymentAmount|TransactionState'
       };
+      
+      await prisma.$disconnect();
 
       const result = await webhookService.processWebhook(mockWebhookData);
       
