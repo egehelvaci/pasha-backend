@@ -6,7 +6,6 @@ import { authMiddleware, authorizeRoles } from '../auth/auth-middleware'
 import storeRoutes from './store-routes'
 import productRulesRoutes from './product-rules-routes'
 import cutTypesRoutes from './cut-types-routes'
-import octetPaymentRoutes from './octet-payment-routes'
 import muhasebeRoutes from './muhasebe-routes'
 
 import { excelExportController } from './excel-export-controller'
@@ -30,9 +29,6 @@ router.use('/product-rules', productRulesRoutes)
 
 // Kesim türleri yönetimi rotalarını ekle
 router.use('/cut-types', cutTypesRoutes)
-
-// Octet ödeme sistemi rotalarını ekle
-router.use('/octet', octetPaymentRoutes)
 
 // Muhasebe hareketleri rotalarını ekle
 router.use('/', muhasebeRoutes)

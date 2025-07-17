@@ -13,8 +13,6 @@ import authRoutes from './auth/auth-routes'
 import storeRoutes from './admin/store-routes'
 import storeStatisticsRoutes from './routes/storeStatisticsRoutes'
 import userProfileRoutes from './routes/userProfileRoutes'
-import octetPaymentRoutes from './routes/octet-payment-routes'
-import userPaymentRoutes from './routes/userPaymentRoutes'
 
 import { CatalogService } from './catalog-service'
 import path from 'path'
@@ -73,8 +71,6 @@ app.use('/api/auth', authRoutes)
 app.use('/api/stores', storeRoutes)
 app.use('/api/profile', userProfileRoutes)
 app.use('/api/my-statistics', storeStatisticsRoutes)
-app.use('/api/payments', octetPaymentRoutes)
-app.use('/api/user', userPaymentRoutes)
 
 // Kök rota - Railway proxy için basit yanıt
 app.get('/', (req, res) => {
