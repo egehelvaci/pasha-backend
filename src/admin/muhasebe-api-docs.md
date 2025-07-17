@@ -27,13 +27,12 @@ Authorization: Bearer <ADMIN_JWT_TOKEN>
 Tüm muhasebe hareketlerini tarih sırasına göre (en yeni önce) listeler ve mağaza bakiye durumlarını gösterir.
 
 #### Yanıt Alanları Açıklaması
-- `hesap_bakiyesi`: Mağazanın kendi hesap bakiyesi (para yüklemesi yapılan bakiye)
-- `durum`: Mağazanın Admin'e olan durumu
-  - `ALACAKLI`: Mağaza Admin'den alacaklı
-  - `BORCLU`: Mağaza Admin'e borçlu  
-  - `DENGEDE`: Mağaza ile Admin arasında borç/alacak yok
-- `tutar`: Borç/alacak tutarı (mutlak değer)
-- `cari_bakiye`: Ham cari bakiye değeri (+ alacak, - borç)
+- `bakiye`: Mağazanın ana bakiyesi (sipariş, ödeme, muhasebe hareketleri ile değişir)
+- `durum`: Mağaza bakiyesine göre durumu
+  - `BORCLU`: Mağaza bakiyesi negatif (-), mağaza borçlu
+  - `ALACAKLI`: Mağaza bakiyesi pozitif (+), mağaza alacaklı  
+  - `DENGEDE`: Mağaza bakiyesi sıfır (0), borç/alacak yok
+- `tutar`: Bakiye tutarı (mutlak değer)
 
 #### Request
 ```http
@@ -59,10 +58,9 @@ Authorization: Bearer <ADMIN_JWT_TOKEN>
         "store": {
           "store_id": "store-001",
           "kurum_adi": "ABC Mağazası",
-          "hesap_bakiyesi": 50000.00,
+          "bakiye": 15000.00,
           "durum": "ALACAKLI",
-          "tutar": 15000.00,
-          "cari_bakiye": 15000.00
+          "tutar": 15000.00
         }
       },
       {
@@ -77,10 +75,9 @@ Authorization: Bearer <ADMIN_JWT_TOKEN>
         "store": {
           "store_id": "store-002",
           "kurum_adi": "XYZ Depo",
-          "hesap_bakiyesi": 25000.00,
+          "bakiye": -5000.00,
           "durum": "BORCLU",
-          "tutar": 5000.00,
-          "cari_bakiye": -5000.00
+          "tutar": 5000.00
         }
       }
     ],
@@ -88,35 +85,32 @@ Authorization: Bearer <ADMIN_JWT_TOKEN>
       {
         "store_id": "store-001",
         "kurum_adi": "ABC Mağazası",
-        "hesap_bakiyesi": 50000.00,
+        "bakiye": 15000.00,
         "durum": "ALACAKLI",
         "tutar": 15000.00,
-        "cari_bakiye": 15000.00,
         "is_active": true
       },
       {
         "store_id": "store-002",
         "kurum_adi": "XYZ Depo",
-        "hesap_bakiyesi": 25000.00,
+        "bakiye": -5000.00,
         "durum": "BORCLU",
         "tutar": 5000.00,
-        "cari_bakiye": -5000.00,
         "is_active": true
       },
       {
         "store_id": "store-003",
         "kurum_adi": "DEF Şirketi",
-        "hesap_bakiyesi": 75000.00,
+        "bakiye": 0.00,
         "durum": "DENGEDE",
         "tutar": 0.00,
-        "cari_bakiye": 0.00,
         "is_active": true
       }
     ],
     "adminKasaBakiyesi": "125000.00",
     "toplamAlacak": 5000.00,
-    "borcluMagazaSayisi": 1,
-    "alacakliMagazaSayisi": 1
+    "adminAlacakliMagazaSayisi": 1,
+    "adminVerecekMagazaSayisi": 1
   }
 }
 ```

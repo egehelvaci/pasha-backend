@@ -341,15 +341,7 @@ export class OctetPaymentService {
             })
           }
 
-          // Mağaza cari bakiyesini güncelle
-          await tx.store.update({
-            where: { store_id: payment.store_id },
-            data: {
-              cari_bakiye: {
-                increment: amountToAdd
-              }
-            }
-          })
+          // Not: Mağaza bakiyesi zaten yukarıda güncellendi, cari_bakiye artık kullanılmıyor
         })
 
         console.log(`✅ Ödeme başarıyla işlendi: ${payment.buyer_name} - ${amountToAdd} ${payment.currency}`)

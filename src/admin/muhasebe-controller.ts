@@ -50,12 +50,11 @@ export class MuhasebeController {
       const hareketlerData = await prisma.muhasebeHareketleri.findMany({
         include: {
           store: {
-            select: {
-              store_id: true,
-              kurum_adi: true,
-              cari_bakiye: true,
-              bakiye: true
-            }
+                    select: {
+          store_id: true,
+          kurum_adi: true,
+          bakiye: true
+        }
           }
         },
         orderBy: {
@@ -65,16 +64,15 @@ export class MuhasebeController {
 
       // Hareketlerdeki store bilgilerini de borç/alacak formatında düzenle
       const hareketler = hareketlerData.map(hareket => {
-        const cariBakiye = hareket.store.cari_bakiye?.toNumber() || 0
+        const bakiye = hareket.store.bakiye?.toNumber() || 0
         return {
           ...hareket,
           store: {
             store_id: hareket.store.store_id,
             kurum_adi: hareket.store.kurum_adi,
-            hesap_bakiyesi: hareket.store.bakiye?.toNumber() || 0,
-            durum: cariBakiye === 0 ? 'DENGEDE' : cariBakiye > 0 ? 'ALACAKLI' : 'BORCLU',
-            tutar: Math.abs(cariBakiye),
-            cari_bakiye: cariBakiye
+            bakiye: bakiye,
+            durum: bakiye === 0 ? 'DENGEDE' : bakiye < 0 ? 'BORCLU' : 'ALACAKLI',
+            tutar: Math.abs(bakiye)
           }
         }
       })
@@ -84,7 +82,6 @@ export class MuhasebeController {
         select: {
           store_id: true,
           kurum_adi: true,
-          cari_bakiye: true,
           bakiye: true,
           is_active: true
         },
@@ -98,14 +95,13 @@ export class MuhasebeController {
 
       // Bakiye bilgilerini borç/alacak formatında düzenle
       const magazaBakiyeleri = magazaData.map(magaza => {
-        const cariBakiye = magaza.cari_bakiye?.toNumber() || 0
+        const bakiye = magaza.bakiye?.toNumber() || 0
         return {
           store_id: magaza.store_id,
           kurum_adi: magaza.kurum_adi,
-          hesap_bakiyesi: magaza.bakiye?.toNumber() || 0,
-          durum: cariBakiye === 0 ? 'DENGEDE' : cariBakiye > 0 ? 'ALACAKLI' : 'BORCLU',
-          tutar: Math.abs(cariBakiye),
-          cari_bakiye: cariBakiye, // Ham değer de dönsün ihtiyaç olursa
+          bakiye: bakiye,
+          durum: bakiye === 0 ? 'DENGEDE' : bakiye < 0 ? 'BORCLU' : 'ALACAKLI',
+          tutar: Math.abs(bakiye),
           is_active: magaza.is_active
         }
       })
@@ -115,20 +111,20 @@ export class MuhasebeController {
         where: { id: 1 }
       })
 
-      // Toplam alacak hesaplama (sadece negatif cari bakiyeler)
+      // Toplam alacak hesaplama (sadece negatif bakiyeler - Admin'in alacağı)
       const toplamAlacak = magazaData
-        .filter(magaza => magaza.cari_bakiye && magaza.cari_bakiye.toNumber() < 0)
+        .filter(magaza => magaza.bakiye && magaza.bakiye.toNumber() < 0)
         .reduce((toplam, magaza) => {
-          return toplam + Math.abs(magaza.cari_bakiye?.toNumber() || 0)
+          return toplam + Math.abs(magaza.bakiye?.toNumber() || 0)
         }, 0)
 
-      // Borçlu ve alacaklı mağaza sayıları
-      const borcluMagazaSayisi = magazaData.filter(magaza => 
-        magaza.cari_bakiye && magaza.cari_bakiye.toNumber() < 0
+      // Admin alacaklı ve Admin verecek mağaza sayıları
+      const adminAlacakliMagazaSayisi = magazaData.filter(magaza => 
+        magaza.bakiye && magaza.bakiye.toNumber() < 0
       ).length
 
-      const alacakliMagazaSayisi = magazaData.filter(magaza => 
-        magaza.cari_bakiye && magaza.cari_bakiye.toNumber() > 0
+      const adminVerecekMagazaSayisi = magazaData.filter(magaza => 
+        magaza.bakiye && magaza.bakiye.toNumber() > 0
       ).length
 
       return res.status(200).json({
@@ -138,8 +134,8 @@ export class MuhasebeController {
           magazaBakiyeleri,
           adminKasaBakiyesi: adminVarliklar?.kasaBakiyesi || 0,
           toplamAlacak,
-          borcluMagazaSayisi,
-          alacakliMagazaSayisi
+          adminAlacakliMagazaSayisi,
+          adminVerecekMagazaSayisi
         }
       })
     } catch (error: any) {
@@ -255,13 +251,10 @@ export class MuhasebeController {
           })
         }
 
-        // Mağaza cari bakiyesini ve hesap bakiyesini güncelle
+        // Mağaza bakiyesini güncelle
         await tx.store.update({
           where: { store_id: storeId },
           data: {
-            cari_bakiye: {
-              increment: harcama ? -tutar : tutar
-            },
             bakiye: {
               increment: harcama ? -tutar : tutar
             }
@@ -328,32 +321,32 @@ export class MuhasebeController {
         where: { id: 1 }
       })
 
-      // Tüm mağazaların cari bakiyeleri
+      // Tüm mağazaların bakiyeleri
       const magazalar = await prisma.store.findMany({
         select: {
           store_id: true,
           kurum_adi: true,
-          cari_bakiye: true
+          bakiye: true
         },
         where: {
           is_active: true
         }
       })
 
-      // Toplam alacak hesaplama (sadece negatif bakiyeler)
+      // Toplam alacak hesaplama (sadece negatif bakiyeler - borçlu mağazalar)
       const toplamAlacak = magazalar
-        .filter(magaza => magaza.cari_bakiye && magaza.cari_bakiye.toNumber() < 0)
+        .filter(magaza => magaza.bakiye && magaza.bakiye.toNumber() < 0)
         .reduce((toplam, magaza) => {
-          return toplam + Math.abs(magaza.cari_bakiye?.toNumber() || 0)
+          return toplam + Math.abs(magaza.bakiye?.toNumber() || 0)
         }, 0)
 
       // Borçlu ve alacaklı mağazalar
       const borcluMagazalar = magazalar.filter(magaza => 
-        magaza.cari_bakiye && magaza.cari_bakiye.toNumber() < 0
+        magaza.bakiye && magaza.bakiye.toNumber() < 0
       )
 
       const alacakliMagazalar = magazalar.filter(magaza => 
-        magaza.cari_bakiye && magaza.cari_bakiye.toNumber() > 0
+        magaza.bakiye && magaza.bakiye.toNumber() > 0
       )
 
       return res.status(200).json({
@@ -364,12 +357,12 @@ export class MuhasebeController {
           borcluMagazalar: borcluMagazalar.map(magaza => ({
             store_id: magaza.store_id,
             kurum_adi: magaza.kurum_adi,
-            borc: Math.abs(magaza.cari_bakiye?.toNumber() || 0)
+            borc: Math.abs(magaza.bakiye?.toNumber() || 0)
           })),
           alacakliMagazalar: alacakliMagazalar.map(magaza => ({
             store_id: magaza.store_id,
             kurum_adi: magaza.kurum_adi,
-            alacak: magaza.cari_bakiye?.toNumber() || 0
+            alacak: magaza.bakiye?.toNumber() || 0
           })),
           borcluMagazaSayisi: borcluMagazalar.length,
           alacakliMagazaSayisi: alacakliMagazalar.length

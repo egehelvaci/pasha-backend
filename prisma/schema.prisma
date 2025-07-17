@@ -107,7 +107,6 @@ model Store {
   limitsiz_acik_hesap Boolean?         @default(false)
   acik_hesap_tutari   Decimal?         @default(0) @db.Decimal(15, 2)
   bakiye              Decimal?         @default(0) @db.Decimal(15, 2)
-  cari_bakiye         Decimal?         @default(0) @db.Decimal(12, 2)
   maksimum_taksit     Int?             @default(1)
   is_active           Boolean?         @default(true)
   created_at          DateTime?        @default(now()) @db.Timestamp(6)
