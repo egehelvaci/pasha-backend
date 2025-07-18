@@ -185,18 +185,27 @@ model MuhasebeHareketleri {
 5. Store bakiyesi artırılır
 6. Muhasebe hareketi eklenir (İşlem Türü: "ÖDEME", Harcama: false)
 
+### Başarılı Ödeme (TransactionState: 3)
+
+1. Hash doğrulaması yapılır
+2. Transaction PENDING durumunda olmalı
+3. Tutar kontrolü yapılır
+4. Transaction durumu COMPLETED olarak güncellenir
+5. Store bakiyesi artırılır
+6. Muhasebe hareketi eklenir (İşlem Türü: "ÖDEME", Açıklama: "Sanal POS Ödemesi - {tutar} TL - Onay Kodu: {kod}")
+
 ### Başarısız Ödeme (TransactionState: 1)
 
 1. Hash doğrulaması yapılır
 2. Transaction durumu FAILED olarak güncellenir
-3. Muhasebe kaydı eklenir (İşlem Türü: "ÖDEME_BAŞARISIZ")
+3. ❌ **Muhasebe kaydı EKLENMEMELİ** (başarısız ödemeler muhasebe kayıtlarına eklenmez)
 4. Store bakiyesi değişmez
 
 ### İptal Edilen Ödeme (TransactionState: 2)
 
 1. Hash doğrulaması yapılır
 2. Transaction durumu CANCELLED olarak güncellenir
-3. Muhasebe kaydı eklenir (İşlem Türü: "ÖDEME_İPTAL")
+3. ❌ **Muhasebe kaydı EKLENMEMELİ** (iptal edilen ödemeler muhasebe kayıtlarına eklenmez)
 4. Store bakiyesi değişmez
 
 ## Database Konfigürasyonu

@@ -233,7 +233,7 @@ export class WebhookService {
           tutar: webhookData.PaymentAmount,
           harcama: false, // Gelir
           tarih: new Date(webhookData.PaymentDate),
-          aciklama: `DBYE ${isAdminStore ? 'Admin' : 'Store'} Ödeme - ${webhookData.OrderNumber} - Onay Kodu: ${webhookData.ApprovalCode || 'N/A'}`
+          aciklama: `Sanal POS Ödemesi - ${webhookData.PaymentAmount} TL - Onay Kodu: ${webhookData.ApprovalCode || 'N/A'}`
         }
       });
 
@@ -323,18 +323,8 @@ export class WebhookService {
         }
       });
 
-      // Muhasebe hareketi ekle (gelir değil, sadece kayıt tutma amaçlı)
-      const islemTuru = webhookData.TransactionState === 1 ? 'ÖDEME_BAŞARISIZ' : 'ÖDEME_İPTAL';
-      await prisma.muhasebeHareketleri.create({
-        data: {
-          storeId: transaction.storeId,
-          islemTuru,
-          tutar: webhookData.PaymentAmount,
-          harcama: false, // Harcama değil, sadece kayıt
-          tarih: new Date(webhookData.PaymentDate),
-          aciklama: `DBYE ${islemTuru} - ${webhookData.OrderNumber}`
-        }
-      });
+      // BAŞARISIZ/İPTAL ödemeler için muhasebe hareketi EKLENMEMELİ
+      // Sadece transaction durumu güncelleniyor
 
       console.log(`✅ ${status} ödeme işlendi:`, {
         transactionId: transaction.id,
