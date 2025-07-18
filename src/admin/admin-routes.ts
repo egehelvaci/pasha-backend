@@ -2,6 +2,7 @@ import express from 'express'
 import { AdminController } from './admin-controller'
 import { adminOrderController } from './admin-order-controller'
 import { adminStatisticsController } from './admin-statistics-controller'
+import { AdminPaymentController } from './admin-payment-controller'
 import { authMiddleware, authorizeRoles } from '../auth/auth-middleware'
 import storeRoutes from './store-routes'
 import productRulesRoutes from './product-rules-routes'
@@ -12,6 +13,7 @@ import { excelExportController } from './excel-export-controller'
 
 const router = express.Router()
 const adminController = new AdminController()
+const adminPaymentController = new AdminPaymentController()
 
 // QR Kod okutma - Authentication gerektirmez (mobil uygulama için)
 router.post('/scan-qr', adminOrderController.scanQRCode)
@@ -76,5 +78,8 @@ router.delete('/users/:userId/remove-store', adminController.removeUserFromStore
 
 // Excel Export API'leri
 router.get('/export/orders', excelExportController.exportOrders)
+
+// Payment API'leri
+router.get('/payments', adminPaymentController.getAllPayments)
 
 export default router 
