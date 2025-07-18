@@ -1268,10 +1268,10 @@ export class CatalogService {
       // Load images for this batch only
       const batchWithImages = await this.loadProductImagesInBatchesOptimized(batch);
       
-      // Clear any temporary data
-      if (global.gc) {
-        global.gc();
-      }
+             // Clear any temporary data
+       if (global.gc) {
+         global.gc!();
+       }
       
       return batchWithImages;
     } catch (error) {
@@ -1369,10 +1369,10 @@ export class CatalogService {
         this.imageCache.clear();
       }
       
-      // Force garbage collection if available
-      if (global.gc) {
-        global.gc();
-      }
+             // Force garbage collection if available
+       if (global.gc) {
+         global.gc!();
+       }
       
       // Small delay to allow cleanup
       await new Promise(resolve => setTimeout(resolve, 100));

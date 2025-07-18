@@ -122,7 +122,7 @@ app.use((err: any, req: any, res: any, next: any) => {
 // Memory optimization for large catalogs
 if (global.gc) {
   setInterval(() => {
-    global.gc();
+    global.gc!();
   }, 300000); // Force GC every 5 minutes
 }
 
