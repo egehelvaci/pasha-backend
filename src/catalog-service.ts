@@ -53,14 +53,16 @@ export class CatalogService {
   private robotoRegularFontPath = path.resolve(__dirname, 'assets/fonts/Roboto-Regular.ttf');
   private robotoBoldFontPath = path.resolve(__dirname, 'assets/fonts/Roboto-Bold.ttf');
   
-  // 🚀 Performance optimizations - 300 ürün için optimize edildi
+  // 🚀 Optimized settings for large catalogs (500+ products)
   private static browserInstance: Browser | null = null;
   private imageCache = new Map<string, string>();
-  private readonly MAX_CONCURRENT_IMAGES = 20; // 300 ürün için paralel resim yükleme limiti artırıldı
-  private readonly IMAGE_TIMEOUT = 5000; // 5 saniye resim timeout (3'ten artırıldı)
-  private readonly BROWSER_TIMEOUT = 60000; // 60 saniye browser timeout (30'dan artırıldı)
-  private readonly PDF_TIMEOUT = 120000; // 120 saniye PDF timeout
-  private readonly HTML_LOAD_TIMEOUT = 45000; // 45 saniye HTML yükleme timeout
+  private readonly MAX_CONCURRENT_IMAGES = 10; // Reduced for memory
+  private readonly IMAGE_TIMEOUT = 8000; // Increased timeout
+  private readonly BROWSER_TIMEOUT = 120000; // 2 minutes
+  private readonly PDF_TIMEOUT = 300000; // 5 minutes for large catalogs
+  private readonly HTML_LOAD_TIMEOUT = 90000; // 1.5 minutes
+  private readonly MAX_PRODUCTS_PER_BATCH = 50; // Process in batches
+  private readonly MEMORY_CLEANUP_INTERVAL = 25; // Cleanup every 25 products
 
   constructor() {
     // Handlebars yardımcı fonksiyonları
@@ -84,8 +86,11 @@ export class CatalogService {
       return `${day}/${month}/${year}`;
     });
     
-    console.log('🚀 Optimized CatalogService başlatıldı');
+    console.log('🚀 Optimized CatalogService başlatıldı (Large Catalog Support)');
     console.log('Çalışma dizini (CWD):', process.cwd());
+    
+    // Memory monitoring
+    this.logMemoryUsage('Constructor');
   }
 
   async generateCatalog(options: {
@@ -96,37 +101,73 @@ export class CatalogService {
     const { productIds, companyName = "Şirket Adı", companyLogoUrl } = options;
     
     const startTime = Date.now();
-    console.log('🚀 Katalog oluşturma başladı...');
+    console.log('🚀 Large Catalog oluşturma başladı...');
+    this.logMemoryUsage('Start');
     
     try {
-      // 1. Ürünleri getir (optimize edilmiş)
+      // 1. Get products with pagination approach
       let products: ProductType[] = [];
       if (productIds?.length) {
-        products = await this.getProductsByIds(productIds);
+        products = await this.getProductsByIdsOptimized(productIds);
       } else {
-        products = await this.getAllProducts();
+        products = await this.getAllProductsOptimized();
       }
       
       console.log(`✅ ${products.length} ürün alındı (${Date.now() - startTime}ms)`);
+      this.logMemoryUsage('Products Loaded');
       
-      // 2. Şablon verisini hazırla (paralel resim yükleme ile)
-      const templateData = await this.prepareTemplateDataOptimized(products, companyName, companyLogoUrl);
+      // 2. Split into smaller batches for memory management
+      const batches = this.splitIntoBatches(products, this.MAX_PRODUCTS_PER_BATCH);
+      console.log(`📦 ${batches.length} batch'e bölündü (batch başına ${this.MAX_PRODUCTS_PER_BATCH} ürün)`);
+      
+      // 3. Process batches sequentially to prevent memory overflow
+      const processedBatches: ProductType[][] = [];
+      for (let i = 0; i < batches.length; i++) {
+        const batch = batches[i];
+        console.log(`⚡ Batch ${i + 1}/${batches.length} işleniyor (${batch.length} ürün)...`);
+        
+        const processedBatch = await this.processBatchOptimized(batch);
+        processedBatches.push(processedBatch);
+        
+        // Memory cleanup between batches
+        if (i % this.MEMORY_CLEANUP_INTERVAL === 0) {
+          await this.performMemoryCleanup();
+          this.logMemoryUsage(`After Batch ${i + 1}`);
+        }
+      }
+      
+      // 4. Combine all processed products
+      const allProcessedProducts = processedBatches.flat();
+      console.log(`✅ Tüm batch'ler işlendi (${Date.now() - startTime}ms)`);
+      
+      // 5. Prepare template data with optimized approach
+      const templateData = await this.prepareTemplateDataMemoryOptimized(
+        allProcessedProducts, 
+        companyName, 
+        companyLogoUrl
+      );
       console.log(`✅ Template data hazırlandı (${Date.now() - startTime}ms)`);
+      this.logMemoryUsage('Template Ready');
       
-      // 3. HTML oluştur
+      // 6. Generate HTML with streaming approach
       const html = await this.generateHTML(templateData);
       console.log(`✅ HTML oluşturuldu (${Date.now() - startTime}ms)`);
       
-      // 4. PDF oluştur (optimize edilmiş)
-      const pdfBuffer = await this.generatePDFFromHTMLOptimized(html);
+      // 7. Generate PDF with optimized settings
+      const pdfBuffer = await this.generatePDFFromHTMLMemoryOptimized(html);
       
       const totalTime = Date.now() - startTime;
-      console.log(`🎉 Katalog başarıyla oluşturuldu! Toplam süre: ${totalTime}ms`);
+      console.log(`🎉 Large Catalog başarıyla oluşturuldu! Toplam süre: ${totalTime}ms`);
+      this.logMemoryUsage('Complete');
       
       return pdfBuffer;
     } catch (error: any) {
       console.error('❌ Katalog oluşturma hatası:', error);
+      this.logMemoryUsage('Error');
       throw new Error(`Katalog oluşturulurken bir hata oluştu: ${error.message}`);
+    } finally {
+      // Final cleanup
+      await this.performMemoryCleanup();
     }
   }
 
@@ -965,5 +1006,378 @@ export class CatalogService {
     const fallbackPath = path.join(process.cwd(), 'public', 'black-logo.svg');
     console.warn('Logo dosyası bulunamadı, fallback kullanılıyor:', fallbackPath);
     return fallbackPath;
+  }
+
+  /**
+   * Memory-optimized PDF generation
+   */
+  private async generatePDFFromHTMLMemoryOptimized(html: string): Promise<Buffer> {
+    let browser: Browser | null = null;
+    let page: Page | null = null;
+    
+    try {
+      console.log('🚀 Memory-optimized PDF oluşturuluyor...');
+      
+      // Launch browser with memory optimization
+      browser = await puppeteer.launch({
+        headless: true,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-accelerated-2d-canvas',
+          '--disable-gpu',
+          '--memory-pressure-off',
+          '--max-old-space-size=2048', // Limit memory usage
+          '--disable-background-timer-throttling',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-renderer-backgrounding'
+        ],
+        timeout: this.BROWSER_TIMEOUT
+      });
+      
+      page = await browser.newPage();
+      
+      // Set memory limits
+      await page.setDefaultNavigationTimeout(this.HTML_LOAD_TIMEOUT);
+      await page.setDefaultTimeout(this.HTML_LOAD_TIMEOUT);
+      
+      // Set content with error handling
+      await page.setContent(html, { 
+        waitUntil: 'networkidle0',
+        timeout: this.HTML_LOAD_TIMEOUT 
+      });
+      
+      console.log('📄 HTML içeriği yüklendi, PDF oluşturuluyor...');
+      
+      // Generate PDF with optimization
+      const pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: {
+          top: '0.5cm',
+          right: '0.5cm',
+          bottom: '0.5cm',
+          left: '0.5cm'
+        },
+        timeout: this.PDF_TIMEOUT
+      });
+      
+      console.log(`✅ PDF oluşturuldu (${pdfBuffer.length} bytes)`);
+      return pdfBuffer;
+      
+    } catch (error) {
+      console.error('❌ PDF oluşturma hatası:', error);
+      throw new Error(`PDF oluşturulamadı: ${error.message}`);
+    } finally {
+      // Always cleanup
+      try {
+        if (page) await page.close();
+        if (browser) await browser.close();
+      } catch (cleanupError) {
+        console.warn('⚠️ Cleanup hatası:', cleanupError);
+      }
+    }
+  }
+
+  /**
+   * Memory-optimized template data preparation
+   */
+  private async prepareTemplateDataMemoryOptimized(
+    products: ProductType[], 
+    companyName: string, 
+    companyLogoUrl?: string
+  ): Promise<CatalogTemplateData> {
+    console.log(`🚀 Memory-optimized template hazırlanıyor (${products.length} ürün)...`);
+
+    // Load shared resources once
+    const [backgroundImage, blackLogo, fonts] = await Promise.all([
+      this.loadCatalogBackgroundImageCached(),
+      this.loadBlackLogoCached(),
+      Promise.all([
+        this.loadFontAsBase64Cached(this.robotoRegularFontPath),
+        this.loadFontAsBase64Cached(this.robotoBoldFontPath)
+      ])
+    ]);
+
+    const [robotoRegularFont, robotoBoldFont] = fonts;
+
+    // Group products by collection (memory efficient)
+    const collections = this.groupProductsByCollectionOptimized(products);
+    
+    const now = new Date();
+    const day = now.getDate().toString().padStart(2, '0');
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const year = now.getFullYear();
+    const currentDate = `${day}/${month}/${year}`;
+    
+    return {
+      companyName: companyName || 'PAŞA HOME',
+      companyLogoUrl,
+      formatDate: currentDate,
+      currentYear: now.getFullYear(),
+      currentDate: currentDate,
+      collections,
+      backgroundImage,
+      blackLogo,
+      robotoRegularFont,
+      robotoBoldFont
+    };
+  }
+
+  /**
+   * Optimized collection grouping with memory management
+   */
+  private groupProductsByCollectionOptimized(products: ProductType[]): CollectionProducts[] {
+    const productsByCollection: { [key: string]: { name: string; products: ProductType[] } } = {};
+    
+    // Group products by collection
+    for (const product of products) {
+      const collectionId = product.collectionId || 'uncategorized';
+      const collectionName = product.collection?.name || 'Kategorisiz Ürünler';
+      
+      if (!productsByCollection[collectionId]) {
+        productsByCollection[collectionId] = {
+          name: collectionName,
+          products: []
+        };
+      }
+      
+      productsByCollection[collectionId].products.push(product);
+    }
+    
+    // Convert to array and paginate
+    const collections: CollectionProducts[] = [];
+    let pageCounter = 1;
+    
+    const sortedCollectionIds = Object.keys(productsByCollection).sort();
+    
+    for (const collectionId of sortedCollectionIds) {
+      const collection = productsByCollection[collectionId];
+      const productsPerPage = 6; // Reduced for better layout and memory
+      const totalProducts = collection.products.length;
+      const totalPages = Math.ceil(totalProducts / productsPerPage);
+      
+      for (let page = 0; page < totalPages; page++) {
+        const startIndex = page * productsPerPage;
+        const endIndex = Math.min(startIndex + productsPerPage, totalProducts);
+        const pageProducts = collection.products.slice(startIndex, endIndex);
+        
+        collections.push({
+          collectionName: collection.name,
+          products: pageProducts,
+          pageNumber: pageCounter++
+        });
+      }
+    }
+    
+    return collections;
+  }
+
+  /**
+   * Memory-optimized product fetching
+   */
+  private async getAllProductsOptimized(): Promise<ProductType[]> {
+    try {
+      console.log('🔍 Tüm ürünler optimize edilmiş şekilde getiriliyor...');
+      
+      const products = await prisma.product.findMany({
+        select: {
+          productId: true,
+          name: true,
+          description: true,
+          productImage: true,
+          collectionId: true,
+          createdAt: true,
+          collection: {
+            select: {
+              name: true,
+              code: true
+            }
+          }
+        },
+        orderBy: [
+          { collectionId: 'asc' },
+          { name: 'asc' }
+        ]
+      });
+      
+      return products as ProductType[];
+    } catch (error) {
+      console.error('Ürünleri getirme hatası:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Optimized product fetching by IDs
+   */
+  private async getProductsByIdsOptimized(productIds: string[]): Promise<ProductType[]> {
+    try {
+      console.log(`🔍 ${productIds.length} ürün ID'sine göre getiriliyor...`);
+      
+      const products = await prisma.product.findMany({
+        where: { 
+          productId: { 
+            in: productIds 
+          } 
+        },
+        select: {
+          productId: true,
+          name: true,
+          description: true,
+          productImage: true,
+          collectionId: true,
+          createdAt: true,
+          collection: {
+            select: {
+              name: true,
+              code: true
+            }
+          }
+        },
+        orderBy: [
+          { collectionId: 'asc' },
+          { name: 'asc' }
+        ]
+      });
+      
+      return products as ProductType[];
+    } catch (error) {
+      console.error('Ürünleri getirme hatası:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Split products into manageable batches
+   */
+  private splitIntoBatches<T>(items: T[], batchSize: number): T[][] {
+    const batches: T[][] = [];
+    for (let i = 0; i < items.length; i += batchSize) {
+      batches.push(items.slice(i, i + batchSize));
+    }
+    return batches;
+  }
+
+  /**
+   * Process a batch of products optimally
+   */
+  private async processBatchOptimized(batch: ProductType[]): Promise<ProductType[]> {
+    try {
+      // Load images for this batch only
+      const batchWithImages = await this.loadProductImagesInBatchesOptimized(batch);
+      
+      // Clear any temporary data
+      if (global.gc) {
+        global.gc();
+      }
+      
+      return batchWithImages;
+    } catch (error) {
+      console.error('Batch processing hatası:', error);
+      // Return batch without images rather than failing
+      return batch.map(product => ({
+        ...product,
+        presignedImageUrl: null
+      }));
+    }
+  }
+
+  /**
+   * Optimized product image loading with smaller concurrent limits
+   */
+  private async loadProductImagesInBatchesOptimized(products: ProductType[]): Promise<ProductType[]> {
+    const results: ProductType[] = [];
+    
+    // Process images in smaller chunks to prevent memory overload
+    const chunks = this.splitIntoBatches(products, 5); // Very small chunks for image loading
+    
+    for (const chunk of chunks) {
+      const chunkPromises = chunk.map(async (product) => {
+        let presignedImageUrl = null;
+        
+        if (product.productImage) {
+          try {
+            const cacheKey = `image_${product.productId}`;
+            
+            // Check cache first
+            if (this.imageCache.has(cacheKey)) {
+              presignedImageUrl = this.imageCache.get(cacheKey);
+            } else {
+              presignedImageUrl = await Promise.race([
+                this.getPresignedUrl(product.productImage),
+                new Promise<null>((_, reject) => 
+                  setTimeout(() => reject(new Error('Image timeout')), this.IMAGE_TIMEOUT)
+                )
+              ]);
+              
+              // Cache the result (limit cache size)
+              if (this.imageCache.size < 100) {
+                this.imageCache.set(cacheKey, presignedImageUrl);
+              }
+            }
+          } catch (error) {
+            console.warn(`⚠️ Resim yüklenemedi: ${product.name}`);
+            presignedImageUrl = null;
+          }
+        }
+        
+        return {
+          ...product,
+          presignedImageUrl
+        };
+      });
+      
+      const chunkResults = await Promise.allSettled(chunkPromises);
+      
+      // Extract successful results
+      chunkResults.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          results.push(result.value);
+        } else {
+          // Add product without image if failed
+          results.push({
+            ...chunk[index],
+            presignedImageUrl: null
+          });
+        }
+      });
+      
+      // Small delay between chunks to prevent overwhelming the system
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    return results;
+  }
+
+  /**
+   * Memory usage logging
+   */
+  private logMemoryUsage(stage: string): void {
+    const used = process.memoryUsage();
+    console.log(`🧠 Memory [${stage}]: RSS: ${Math.round(used.rss / 1024 / 1024)}MB, Heap: ${Math.round(used.heapUsed / 1024 / 1024)}MB`);
+  }
+
+  /**
+   * Perform memory cleanup
+   */
+  private async performMemoryCleanup(): Promise<void> {
+    try {
+      // Clear image cache if too large
+      if (this.imageCache.size > 50) {
+        this.imageCache.clear();
+      }
+      
+      // Force garbage collection if available
+      if (global.gc) {
+        global.gc();
+      }
+      
+      // Small delay to allow cleanup
+      await new Promise(resolve => setTimeout(resolve, 100));
+    } catch (error) {
+      console.warn('⚠️ Memory cleanup warning:', error);
+    }
   }
 }

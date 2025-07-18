@@ -119,11 +119,25 @@ app.use((err: any, req: any, res: any, next: any) => {
   })
 })
 
+// Memory optimization for large catalogs
+if (global.gc) {
+  setInterval(() => {
+    global.gc();
+  }, 300000); // Force GC every 5 minutes
+}
+
 // Sunucuyu başlat - PORT'a dikkat et
 try {
   const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Sunucu ${process.env.PUBLIC_URL || `http://0.0.0.0:${PORT}`} adresinde çalışıyor (port: ${PORT})`)
+    console.log(`📊 Memory limit: ${process.env.NODE_OPTIONS || 'default'}`)
+    console.log(`🔧 Large catalog support enabled`)
   })
+  
+  // Set server timeout for large catalogs (15 minutes)
+  server.timeout = 900000;
+  server.keepAliveTimeout = 900000;
+  server.headersTimeout = 900000;
   
   // İşlem sonlandırma sinyallerini yakala
   process.on('SIGTERM', async () => {
@@ -143,6 +157,12 @@ try {
       process.exit(0)
     })
   })
+  
+  // Memory monitoring
+  process.on('warning', (warning) => {
+    console.warn('⚠️ Node.js Warning:', warning.name, warning.message);
+  });
+  
 } catch (error) {
   console.error('Sunucu başlatılamadı:', error)
 }
