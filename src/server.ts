@@ -1,7 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
-import { PrismaClient } from '../generated/prisma'
+
 import productRoutes from './routes/productRoutes'
 import collectionRoutes from './routes/collectionRoutes'
 import priceListRoutes from './routes/priceListRoutes'
@@ -18,8 +18,7 @@ import paymentRoutes from './routes/paymentRoutes'
 import { CatalogService } from './catalog-service'
 import path from 'path'
 import multer from 'multer'
-import { fileURLToPath } from 'url'
-import { dirname } from 'path'
+
 
 // .env dosyasını ana dizinden yükle
 dotenv.config({ path: path.join(__dirname, '../.env') })

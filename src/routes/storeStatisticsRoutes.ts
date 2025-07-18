@@ -1,11 +1,11 @@
 import express from 'express'
 import { storeStatisticsController } from '../controllers/storeStatisticsController'
-import { verifyToken } from '../middleware/authMiddleware'
+import { authMiddleware } from '../auth/auth-middleware'
 
 const router = express.Router()
 
 // Tüm rotalar için authentication gerekli
-router.use(verifyToken)
+router.use(authMiddleware)
 
 // Mağaza bakiye bilgileri
 router.get('/balance', storeStatisticsController.getMyStoreBalance)

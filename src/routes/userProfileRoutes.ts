@@ -1,11 +1,11 @@
 import express from 'express'
 import { userProfileController } from '../controllers/userProfileController'
-import { verifyToken } from '../middleware/authMiddleware'
+import { authMiddleware } from '../auth/auth-middleware'
 
 const router = express.Router()
 
 // Tüm rotalar için authentication gerekli
-router.use(verifyToken)
+router.use(authMiddleware)
 
 /**
  * Kullanıcının kendi profil bilgilerini getir

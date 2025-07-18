@@ -8,12 +8,12 @@ import {
   deleteCart,
   cleanOldCarts
 } from '../controllers/cartController';
-import { verifyToken } from '../middleware/authMiddleware';
+import { authMiddleware } from '../auth/auth-middleware';
 
 const router = Router();
 
 // Kullanıcı authentication'ı gereken route'lar
-router.use(verifyToken);
+router.use(authMiddleware);
 
 // GET /cart - Kullanıcının sepetini getir
 router.get('/', getCart);

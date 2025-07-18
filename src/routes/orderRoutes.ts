@@ -5,12 +5,12 @@ import {
   checkCartLimits,
   getUserOrders
 } from '../controllers/orderController';
-import { verifyToken } from '../middleware/authMiddleware';
+import { authMiddleware } from '../auth/auth-middleware';
 
 const router = Router();
 
 // Kullanıcı authentication'ı gereken route'lar
-router.use(verifyToken);
+router.use(authMiddleware);
 
 // Sepet limiti kontrolü (sipariş vermeden önce)
 router.get('/check-limits', checkCartLimits);
