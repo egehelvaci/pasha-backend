@@ -37,16 +37,29 @@ export const uploadProductImage = upload.single('productImage');
 const productService = new ProductService();
 const uploadService = new UploadService();
 
-// Tüm ürünleri getir
+// Tüm ürünleri getir - OPTİMİZE EDİLMİŞ
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
     // Kullanıcı ID'sini al (eğer varsa)
     const userId = (req as any).user?.userId;
     
-    const products = await productService.getAllProducts(userId);
+    // Query parametrelerini al
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const collectionId = req.query.collectionId as string;
+    const search = req.query.search as string;
+    
+    const result = await productService.getAllProducts(userId, {
+      page,
+      limit,
+      collectionId,
+      search
+    });
+    
     return res.status(200).json({
       success: true,
-      data: products
+      data: result.products,
+      pagination: result.pagination
     });
   } catch (error: any) {
     return res.status(500).json({
@@ -86,7 +99,7 @@ export const getProductById = async (req: Request, res: Response) => {
   }
 };
 
-// Koleksiyona göre ürünleri getir
+// Koleksiyona göre ürünleri getir - OPTİMİZE EDİLMİŞ
 export const getProductsByCollection = async (req: Request, res: Response) => {
   try {
     const collectionId = req.params.collectionId;
@@ -94,11 +107,22 @@ export const getProductsByCollection = async (req: Request, res: Response) => {
     // Kullanıcı ID'sini al (eğer varsa)
     const userId = (req as any).user?.userId;
     
-    const products = await productService.getProductsByCollection(collectionId, userId);
+    // Query parametrelerini al
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const search = req.query.search as string;
+    
+    const result = await productService.getAllProducts(userId, {
+      page,
+      limit,
+      collectionId,
+      search
+    });
     
     return res.status(200).json({
       success: true,
-      data: products
+      data: result.products,
+      pagination: result.pagination
     });
   } catch (error: any) {
     return res.status(500).json({

@@ -1,6 +1,7 @@
 import { Prisma } from '../generated/prisma';
 import { TebiService } from './utils/tebi-service';
 import prisma from './utils/prisma';
+import { cacheService, CacheService } from './utils/cache-service';
 
 // Kesim türleri için tip tanımı
 export interface CutType {
@@ -141,174 +142,179 @@ export class ProductService {
   }
   
   /**
-   * Tüm ürünleri getir
+   * Tüm ürünleri getir - OPTİMİZE EDİLMİŞ VERSİYON
    */
-  async getAllProducts(userId?: string) {
+  async getAllProducts(userId?: string, options?: {
+    page?: number;
+    limit?: number;
+    collectionId?: string;
+    search?: string;
+  }) {
     try {
-      const products = await prisma.product.findMany({
-        include: {
-          collection: true
-        }
-      });
+      const page = options?.page || 1;
+      const limit = Math.min(options?.limit || 50, 100); // Max 100 ürün
+      const skip = (page - 1) * limit;
+
+      // Temel sorgu koşulları
+      const whereCondition: any = {};
       
-      // Ürünlere fiyat bilgisi ve kural bilgilerini ekle
-      for (const product of products as ExtendedProduct[]) {
-        // Eğer kullanıcı ID'si belirtilmişse fiyat bilgisini ekle
-        if (userId) {
-          try {
-            // Kullanıcı bilgilerini getir
-            const user = await prisma.user.findUnique({
-              where: { userId },
-              include: {
-                userType: true
-              }
-            });
+      if (options?.collectionId) {
+        whereCondition.collectionId = options.collectionId;
+      }
+      
+      if (options?.search) {
+        whereCondition.OR = [
+          { name: { contains: options.search, mode: 'insensitive' } },
+          { description: { contains: options.search, mode: 'insensitive' } }
+        ];
+      }
 
-            if (user) {
-              // Kullanıcının müşteri tipi ID'sini al
-              const userTypeId = user.userTypeId;
-              // Kullanıcının bağlı olduğu mağaza ID'si
-              const storeId = user.store_id;
+      // Toplam sayıyı al
+      const totalCount = await prisma.product.count({ where: whereCondition });
 
-              try {
-                let priceInfo;
-                
-                if (storeId) {
-                  // Eğer kullanıcı bir mağazaya bağlıysa, mağazanın fiyat listesini bul
-                  const storePriceList = await prisma.storePriceList.findFirst({
-                    where: { store_id: storeId },
-                    include: { PriceList: true }
-                  });
-                  
-                  if (storePriceList && storePriceList.PriceList) {
-                    // Fiyat listesinin geçerlilik kontrolü
-                    priceInfo = await this.getPriceInfoFromPriceList(
-                      storePriceList.PriceList, 
-                      product.collectionId, 
-                      userTypeId
-                    );
-                  }
-                }
-                
-                // Eğer mağaza bazlı fiyat bulunamazsa, varsayılan fiyat listesine bak
-                if (!priceInfo) {
-                  const defaultPriceList = await prisma.priceList.findFirst({
-                    where: { is_default: true }
-                  });
-                  
-                  if (defaultPriceList) {
-                    // Varsayılan fiyat listesinin geçerlilik kontrolü
-                    priceInfo = await this.getPriceInfoFromPriceList(
-                      defaultPriceList, 
-                      product.collectionId, 
-                      userTypeId
-                    );
-                  }
-                }
-
-                // Eğer fiyat bilgisi varsa ürüne ekle, yoksa varsayılan değerleri ekle
-                if (priceInfo) {
-                  product.pricing = priceInfo;
-                } else {
-                  product.pricing = {
-                    price: null,
-                    currency: "TRY",
-                    userTypeId: userTypeId
-                  };
-                }
-              } catch (priceError) {
-                console.error("Fiyat bilgisi alınırken hata:", priceError);
-                // Hata durumunda minimum fiyat bilgisi ekle
-                product.pricing = {
-                  price: null,
-                  currency: "TRY",
-                  userTypeId: userTypeId
-                };
-              }
-            }
-          } catch (userError) {
-            console.error("Kullanıcı bilgileri alınırken hata:", userError);
-          }
-        }
-
-        // Ürünün rule_id'si varsa kuralları al (tüm ürünler için)
-        if (product.rule_id) {
-          try {
-            // Kural bilgisini getir
-            const rule = await prisma.productrules.findUnique({
-              where: { id: product.rule_id }
-            });
-            
-            if (rule) {
-              // Saçak bilgisini ekle
-              product.canHaveFringe = rule.can_have_fringe;
-              product.hasFringe = false;
-              
-              // Kesim tiplerini getir
-              const cutTypes = await prisma.productrulecuttypes.findMany({
-                where: { rule_id: product.rule_id },
+      // Optimize edilmiş tek sorgu ile tüm gerekli verileri getir
+      const products = await prisma.product.findMany({
+        where: whereCondition,
+        include: {
+          collection: true,
+          productrules: {
+            include: {
+              productsizeoptions: true,
+              productrulecuttypes: {
                 include: {
                   cuttypes: true
                 }
-              });
-              
-              if (cutTypes && cutTypes.length > 0) {
-                product.cutTypes = cutTypes.map(ct => ({
-                  id: ct.cuttypes.id,
-                  name: ct.cuttypes.name
-                }));
-              } else {
-                product.cutTypes = [];
-              }
-              
-              // Boyut seçeneklerini getir
-              const sizeOptions = await prisma.productsizeoptions.findMany({
-                where: { rule_id: product.rule_id }
-              });
-              
-              // Mevcut stok varyasyonlarını getir
-              const variations = await prisma.productvariations.findMany({
-                where: { product_id: product.productId }
-              });
-              
-              if (sizeOptions && sizeOptions.length > 0) {
-                // Her bir boyut seçeneği için stok bilgisini ekle
-                product.sizeOptions = sizeOptions.map(so => {
-                  // Her zaman spesifik boyut için stok ara (tam eşleşme)
-                  const stockForSize = variations.find(v => 
-                    v.width === so.width && v.height === so.height
-                  );
-                  
-                  return {
-                    id: so.id,
-                    width: so.width,
-                    height: so.height,
-                    is_optional_height: so.is_optional_height || false,
-                    stockQuantity: stockForSize ? stockForSize.stock_quantity : 0
-                  };
-                });
-              } else {
-                product.sizeOptions = [];
               }
             }
-          } catch (ruleError) {
-            console.error("Ürün kuralları alınırken hata:", ruleError);
-            // Hata durumunda boş değerler ata
-            product.cutTypes = [];
-            product.sizeOptions = [];
-            product.canHaveFringe = false;
-            product.hasFringe = false;
-          }
-        } else {
-          // Kural yoksa boş değerler ata
-          product.cutTypes = [];
-          product.sizeOptions = [];
-          product.canHaveFringe = false;
-          product.hasFringe = false;
-        }
-      }
+          },
+          productvariations: true
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' }
+      });
 
-      return products as ExtendedProduct[];
+             let userPriceInfo: any = null;
+       
+       // Kullanıcı bilgilerini cache'den al veya veritabanından getir
+       if (userId) {
+         const cacheKey = cacheService.getUserPriceListKey(userId);
+         userPriceInfo = cacheService.get(cacheKey);
+         
+         if (!userPriceInfo) {
+           const user = await prisma.user.findUnique({
+             where: { userId },
+             include: {
+               userType: true,
+               Store: {
+                 include: {
+                   StorePriceList: {
+                     include: {
+                       PriceList: {
+                         include: {
+                           PriceListDetail: true
+                         }
+                       }
+                     }
+                   }
+                 }
+               }
+             }
+           });
+
+           if (user) {
+             // Mağaza fiyat listesini kontrol et
+             let activePriceList = null;
+             
+             if (user.Store?.StorePriceList?.[0]?.PriceList) {
+               activePriceList = user.Store.StorePriceList[0].PriceList;
+             } else {
+               // Varsayılan fiyat listesini al
+               activePriceList = await prisma.priceList.findFirst({
+                 where: { is_default: true },
+                 include: { PriceListDetail: true }
+               });
+             }
+
+             userPriceInfo = {
+               userTypeId: user.userTypeId,
+               priceList: activePriceList
+             };
+             
+             // Cache'e kaydet (5 dakika)
+             cacheService.set(cacheKey, userPriceInfo, CacheService.TTL.MEDIUM);
+           }
+         }
+       }
+
+      // Ürünleri optimize edilmiş şekilde işle
+      const processedProducts = products.map(product => {
+        const extendedProduct = product as any;
+        
+        // Fiyat bilgisini ekle
+        if (userPriceInfo?.priceList) {
+          const collectionPrice = userPriceInfo.priceList.PriceListDetail?.find(
+            (detail: any) => detail.collection_id === product.collectionId
+          );
+          
+          extendedProduct.pricing = {
+            price: collectionPrice?.price_per_square_meter || null,
+            currency: userPriceInfo.priceList.currency || "TRY",
+            userTypeId: userPriceInfo.userTypeId
+          };
+        } else if (userId) {
+          extendedProduct.pricing = {
+            price: null,
+            currency: "TRY",
+            userTypeId: userPriceInfo?.userTypeId || 1
+          };
+        }
+
+        // Kural bilgilerini işle
+        if (product.productrules) {
+          extendedProduct.canHaveFringe = product.productrules.can_have_fringe;
+          extendedProduct.hasFringe = false;
+          
+          // Kesim tiplerini ekle
+          extendedProduct.cutTypes = product.productrules.productrulecuttypes?.map(ct => ({
+            id: ct.cuttypes.id,
+            name: ct.cuttypes.name
+          })) || [];
+          
+          // Boyut seçeneklerini işle
+          extendedProduct.sizeOptions = product.productrules.productsizeoptions?.map(so => {
+            const stockForSize = product.productvariations?.find(v => 
+              v.width === so.width && v.height === so.height
+            );
+            
+            return {
+              id: so.id,
+              width: so.width,
+              height: so.height,
+              is_optional_height: so.is_optional_height || false,
+              stockQuantity: stockForSize ? stockForSize.stock_quantity : 0
+            };
+          }) || [];
+        } else {
+          extendedProduct.cutTypes = [];
+          extendedProduct.sizeOptions = [];
+          extendedProduct.canHaveFringe = false;
+          extendedProduct.hasFringe = false;
+        }
+
+        return extendedProduct;
+      });
+
+      return {
+        products: processedProducts,
+        pagination: {
+          page,
+          limit,
+          total: totalCount,
+          totalPages: Math.ceil(totalCount / limit),
+          hasMore: skip + limit < totalCount
+        }
+      };
     } catch (error) {
       console.error('Ürünleri getirme hatası:', error);
       throw new Error('Ürünler getirilemedi');
