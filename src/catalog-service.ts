@@ -19,7 +19,7 @@ interface ProductType {
   collection: {
     name: string;
   };
-  presignedImageUrl?: string;
+  presignedImageUrl?: string | null;
 }
 
 interface CollectionProducts {
@@ -1064,9 +1064,9 @@ export class CatalogService {
       });
       
       console.log(`✅ PDF oluşturuldu (${pdfBuffer.length} bytes)`);
-      return pdfBuffer;
+      return Buffer.from(pdfBuffer);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ PDF oluşturma hatası:', error);
       throw new Error(`PDF oluşturulamadı: ${error.message}`);
     } finally {
@@ -1276,11 +1276,11 @@ export class CatalogService {
       return batchWithImages;
     } catch (error) {
       console.error('Batch processing hatası:', error);
-      // Return batch without images rather than failing
-      return batch.map(product => ({
-        ...product,
-        presignedImageUrl: null
-      }));
+             // Return batch without images rather than failing
+       return batch.map(product => ({
+         ...product,
+         presignedImageUrl: null as string | null
+       }));
     }
   }
 
@@ -1312,10 +1312,10 @@ export class CatalogService {
                 )
               ]);
               
-              // Cache the result (limit cache size)
-              if (this.imageCache.size < 100) {
-                this.imageCache.set(cacheKey, presignedImageUrl);
-              }
+                             // Cache the result (limit cache size)
+               if (this.imageCache.size < 100 && presignedImageUrl) {
+                 this.imageCache.set(cacheKey, presignedImageUrl);
+               }
             }
           } catch (error) {
             console.warn(`⚠️ Resim yüklenemedi: ${product.name}`);
@@ -1335,13 +1335,13 @@ export class CatalogService {
       chunkResults.forEach((result, index) => {
         if (result.status === 'fulfilled') {
           results.push(result.value);
-        } else {
-          // Add product without image if failed
-          results.push({
-            ...chunk[index],
-            presignedImageUrl: null
-          });
-        }
+                 } else {
+           // Add product without image if failed
+           results.push({
+             ...chunk[index],
+             presignedImageUrl: null as string | null
+           });
+         }
       });
       
       // Small delay between chunks to prevent overwhelming the system
