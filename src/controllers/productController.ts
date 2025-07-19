@@ -335,13 +335,17 @@ export const updateProduct = async (req: Request, res: Response) => {
 export const deleteProduct = async (req: Request, res: Response) => {
   try {
     const productId = req.params.id;
+    console.log(`Ürün silme işlemi başlatılıyor - Product ID: ${productId}`);
+    
     await productService.deleteProduct(productId);
     
+    console.log(`Ürün başarıyla silindi - Product ID: ${productId}`);
     return res.status(200).json({
       success: true,
-      message: 'Ürün başarıyla silindi'
+      message: 'Ürün ve tüm ilişkili veriler (sepetler, siparişler, QR kodlar) başarıyla silindi'
     });
   } catch (error: any) {
+    console.error(`Ürün silme hatası - Product ID: ${req.params.id}`, error);
     return res.status(500).json({
       success: false,
       message: error.message || 'Ürün silinemedi'

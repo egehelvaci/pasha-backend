@@ -5,7 +5,6 @@ import dotenv from 'dotenv'
 import productRoutes from './routes/productRoutes'
 import collectionRoutes from './routes/collectionRoutes'
 import priceListRoutes from './routes/priceListRoutes'
-import catalogRoutes from './routes/catalogRoutes'
 import cartRoutes from './routes/cartRoutes'
 import orderRoutes from './routes/orderRoutes'
 import adminRoutes from './admin/admin-routes'
@@ -14,8 +13,6 @@ import storeRoutes from './admin/store-routes'
 import storeStatisticsRoutes from './routes/storeStatisticsRoutes'
 import userProfileRoutes from './routes/userProfileRoutes'
 import paymentRoutes from './routes/paymentRoutes'
-
-import { CatalogService } from './catalog-service'
 import path from 'path'
 import multer from 'multer'
 
@@ -63,7 +60,6 @@ const upload = multer({ storage: storage })
 app.use('/api/products', productRoutes)
 app.use('/api/collections', collectionRoutes)
 app.use('/api/price-lists', priceListRoutes)
-app.use('/api/catalog', catalogRoutes)
 app.use('/api/cart', cartRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/admin', adminRoutes)
@@ -142,7 +138,6 @@ try {
   // İşlem sonlandırma sinyallerini yakala
   process.on('SIGTERM', async () => {
     console.log('SIGTERM sinyali alındı, sunucu kapatılıyor...')
-    await CatalogService.cleanup()
     server.close(() => {
       console.log('Sunucu kapatıldı')
       process.exit(0)
@@ -151,7 +146,6 @@ try {
   
   process.on('SIGINT', async () => {
     console.log('SIGINT sinyali alındı, sunucu kapatılıyor...')
-    await CatalogService.cleanup()
     server.close(() => {
       console.log('Sunucu kapatıldı')
       process.exit(0)

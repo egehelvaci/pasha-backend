@@ -853,16 +853,119 @@ export class ProductService {
   }
   
   /**
-   * Ürün sil
+   * Ürün sil - Tüm ilişkili verilerle birlikte
    */
   async deleteProduct(productId: string) {
     try {
-      return await prisma.product.delete({
-        where: { productId }
+      // Önce ürünün var olup olmadığını kontrol et
+      const existingProduct = await prisma.product.findUnique({
+        where: { productId },
+        include: {
+          cart_items: {
+            include: {
+              carts: {
+                select: { is_active: true }
+              }
+            }
+          },
+          orderItems: {
+            include: {
+              order: {
+                select: { status: true }
+              }
+            }
+          },
+          qr_codes: true,
+          productvariations: true
+        }
       });
-    } catch (error) {
+
+      if (!existingProduct) {
+        throw new Error('Silinecek ürün bulunamadı');
+      }
+
+      // Transaction ile tüm ilişkili verileri güvenli şekilde sil
+      return await prisma.$transaction(async (tx) => {
+        let deletedItemsCount = 0;
+
+        // 1. Tüm sepetlerden (aktif/pasif) bu ürünü kaldır
+        if (existingProduct.cart_items.length > 0) {
+          const activeCartItems = existingProduct.cart_items.filter(item => item.carts.is_active);
+          const inactiveCartItems = existingProduct.cart_items.filter(item => !item.carts.is_active);
+          
+          console.log(`Ürün ${productId} için sepet temizliği:`);
+          console.log(`  - Aktif sepetlerde: ${activeCartItems.length} öğe`);
+          console.log(`  - Pasif sepetlerde: ${inactiveCartItems.length} öğe`);
+          
+          const { count: cartDeleteCount } = await tx.cart_items.deleteMany({
+            where: { product_id: productId }
+          });
+          deletedItemsCount += cartDeleteCount;
+          console.log(`  - Toplam ${cartDeleteCount} sepet öğesi silindi`);
+        }
+
+        // 2. Tüm siparişlerden bu ürünü kaldır
+        if (existingProduct.orderItems.length > 0) {
+          const pendingOrders = existingProduct.orderItems.filter(item => item.order.status === 'PENDING');
+          const confirmedOrders = existingProduct.orderItems.filter(item => item.order.status !== 'PENDING');
+          
+          console.log(`Ürün ${productId} için sipariş temizliği:`);
+          console.log(`  - Bekleyen siparişlerde: ${pendingOrders.length} öğe`);
+          console.log(`  - Onaylanmış siparişlerde: ${confirmedOrders.length} öğe`);
+          
+          const { count: orderDeleteCount } = await tx.orderItem.deleteMany({
+            where: { product_id: productId }
+          });
+          deletedItemsCount += orderDeleteCount;
+          console.log(`  - Toplam ${orderDeleteCount} sipariş öğesi silindi`);
+        }
+
+        // 3. Tüm QR kodlarını sil
+        if (existingProduct.qr_codes.length > 0) {
+          console.log(`Ürün ${productId} için ${existingProduct.qr_codes.length} QR kod siliniyor...`);
+          const { count: qrDeleteCount } = await tx.qRCode.deleteMany({
+            where: { product_id: productId }
+          });
+          deletedItemsCount += qrDeleteCount;
+          console.log(`  - ${qrDeleteCount} QR kod silindi`);
+        }
+
+        // 4. Ürün varyasyonlarını sil (cascade ile de silinir ama explicitly yapalım)
+        if (existingProduct.productvariations.length > 0) {
+          console.log(`Ürün ${productId} için ${existingProduct.productvariations.length} varyasyon siliniyor...`);
+          const { count: variationDeleteCount } = await tx.productvariations.deleteMany({
+            where: { product_id: productId }
+          });
+          deletedItemsCount += variationDeleteCount;
+          console.log(`  - ${variationDeleteCount} varyasyon silindi`);
+        }
+
+        // 5. Son olarak ürünü sil
+        const deletedProduct = await tx.product.delete({
+          where: { productId }
+        });
+
+        console.log(`✅ Ürün ${productId} ve ${deletedItemsCount} ilişkili kayıt başarıyla silindi`);
+        return deletedProduct;
+      });
+    } catch (error: any) {
       console.error('Ürün silme hatası:', error);
-      throw new Error('Ürün silinemedi');
+      
+      // Prisma hatalarını kontrol et
+      if (error.code === 'P2003') {
+        throw new Error('Bu ürün başka kayıtlar tarafından kullanıldığı için silinemez');
+      }
+      
+      if (error.code === 'P2025') {
+        throw new Error('Silinecek ürün bulunamadı');
+      }
+      
+      // Zaten fırlatılmış hata mesajını koru
+      if (error.message && error.message !== 'Ürün silinemedi') {
+        throw error;
+      }
+      
+      throw new Error('Ürün silinirken beklenmeyen bir hata oluştu');
     }
   }
   
