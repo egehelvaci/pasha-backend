@@ -187,14 +187,26 @@ export class QRCodeService {
   }
 
   /**
-   * Sipariş için stokları düşür
+   * Sipariş için stokları düşür - Opsiyonel yükseklik kuralları destekli
    */
   async reduceStockForOrder(orderId: string) {
     try {
       const order = await prisma.order.findUnique({
         where: { id: orderId },
         include: {
-          items: true
+          items: {
+            include: {
+              product: {
+                include: {
+                  productrules: {
+                    include: {
+                      productsizeoptions: true
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       })
 
@@ -206,28 +218,51 @@ export class QRCodeService {
       for (const item of order.items) {
         console.log(`🔍 Stok düşürme: ${item.product_id} - ${item.width}x${item.height} - Saçak: ${item.has_fringe} - Adet: ${item.quantity}`)
         
+        const itemWidth = item.width ? Math.round(Number(item.width)) : 0
+        const itemHeight = item.height ? Math.round(Number(item.height)) : 0
+        const itemHasFringe = item.has_fringe || false
+
+        // Kullanılacak varyasyon boyutunu belirle (opsiyonel yükseklik kuralları dahil)
+        let targetWidth = itemWidth
+        let targetHeight = itemHeight
+
+        // Ürün kuralını kontrol et
+        if (item.product.rule_id && item.product.productrules) {
+          const sizeOptions = item.product.productrules.productsizeoptions
+          
+          // Bu genişlik için opsiyonel yükseklik seçeneği var mı?
+          const widthOption = sizeOptions.find(opt => opt.width === itemWidth)
+          
+          if (widthOption && widthOption.is_optional_height) {
+            // Opsiyonel yükseklik kuralı var - maksimum yükseklik değerini kullan
+            targetHeight = widthOption.height
+            console.log(`📏 Opsiyonel yükseklik kuralı: ${itemWidth}x${itemHeight} → ${targetWidth}x${targetHeight} varyasyonu kullanılacak`)
+          }
+        }
+
         // En spesifik eşleşme: tam boyut + saçak durumu
         let variations = await prisma.productvariations.findMany({
           where: {
             product_id: item.product_id,
-            width: item.width ? Math.round(Number(item.width)) : undefined,
-            height: item.height ? Math.round(Number(item.height)) : undefined,
-            has_fringe: item.has_fringe || false
+            width: targetWidth,
+            height: targetHeight,
+            has_fringe: itemHasFringe
           }
         })
 
-        console.log(`📊 Spesifik eşleşme (${item.width}x${item.height}, saçak:${item.has_fringe}): ${variations.length} varyasyon`)
+        console.log(`📊 Spesifik eşleşme (${targetWidth}x${targetHeight}, saçak:${itemHasFringe}): ${variations.length} varyasyon`)
 
         // Saçak durumu esnek eşleşme
         if (variations.length === 0) {
           variations = await prisma.productvariations.findMany({
             where: {
               product_id: item.product_id,
-              width: item.width ? Math.round(Number(item.width)) : undefined,
-              height: item.height ? Math.round(Number(item.height)) : undefined,
-              has_fringe: !(item.has_fringe || false)
+              width: targetWidth,
+              height: targetHeight,
+              has_fringe: !itemHasFringe
             }
           })
+          console.log(`📊 Esnek saçak eşleşme (${targetWidth}x${targetHeight}, saçak:${!itemHasFringe}): ${variations.length} varyasyon`)
         }
 
         // Stok güncelle
@@ -240,9 +275,9 @@ export class QRCodeService {
             data: { stock_quantity: newStock }
           })
           
-          console.log(`📦 Stok güncellendi: ${variation.stock_quantity} → ${newStock}`)
+          console.log(`📦 Stok güncellendi: ${variation.stock_quantity} → ${newStock} (Varyasyon: ${variation.width}x${variation.height}, Saçak: ${variation.has_fringe})`)
         } else {
-          console.log(`⚠️ Uygun varyasyon bulunamadı: ${item.product_id}`)
+          console.log(`⚠️ Uygun varyasyon bulunamadı: ${item.product_id} - ${targetWidth}x${targetHeight}`)
         }
       }
 

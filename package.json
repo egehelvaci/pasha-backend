@@ -9,7 +9,10 @@
     "api:build": "tsc -p tsconfig.json && npm run copy-assets",
     "copy-assets": "node scripts/copy-assets.js",
     "api:start": "node dist/server.js",
-    "create-admin": "ts-node src/tools/create-admin-user.ts"
+    "create-admin": "ts-node src/tools/create-admin-user.ts",
+    "debug-stock": "ts-node scripts/debug-stock-issue.ts",
+    "debug-stock-exec": "ts-node scripts/debug-stock-issue.ts --execute",
+    "fix-stock": "ts-node scripts/fix-stock-issue.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.496.0",
