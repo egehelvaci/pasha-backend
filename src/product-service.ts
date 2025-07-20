@@ -1255,8 +1255,8 @@ export class ProductService {
     updateMode: 'quantity' | 'area' | 'both';
   }) {
     try {
-      // En az bir değer gönderilmeli
-      if (!stockData.quantity && !stockData.areaM2) {
+      // En az bir değer gönderilmeli (0 dahil geçerli)
+      if (stockData.quantity === undefined && stockData.areaM2 === undefined) {
         throw new Error('Adet veya m² değerlerinden en az biri belirtilmelidir');
       }
 

@@ -360,7 +360,7 @@ export const updateProductStock = async (req: Request, res: Response) => {
     const { width, height, quantity } = req.body;
     
     // Zorunlu alanları kontrol et
-    if (!width || height === undefined || height === null || height === '' || quantity === undefined || isNaN(parseInt(quantity))) {
+    if (!width || height === undefined || height === null || height === '' || quantity === undefined || quantity === null || isNaN(parseInt(quantity))) {
       return res.status(400).json({
         success: false,
         message: 'Geçerli bir genişlik, yükseklik ve miktar değeri gereklidir'
@@ -411,7 +411,7 @@ export const updateProductStockAreaM2 = async (req: Request, res: Response) => {
     const { width, height, areaM2 } = req.body;
     
     // Zorunlu alanları kontrol et
-    if (!width || height === undefined || height === null || height === '' || areaM2 === undefined || isNaN(parseFloat(areaM2))) {
+    if (!width || height === undefined || height === null || height === '' || areaM2 === undefined || areaM2 === null || isNaN(parseFloat(areaM2))) {
       return res.status(400).json({
         success: false,
         message: 'Geçerli bir genişlik, yükseklik ve m² değeri gereklidir'
@@ -510,7 +510,7 @@ export const updateProductStockHybrid = async (req: Request, res: Response) => {
     let areaValue = undefined;
 
     if (updateMode === 'quantity' || updateMode === 'both') {
-      if (quantity === undefined || isNaN(parseInt(quantity))) {
+      if (quantity === undefined || quantity === null || isNaN(parseInt(quantity))) {
         return res.status(400).json({
           success: false,
           message: 'Adet değeri gereklidir'
@@ -526,7 +526,7 @@ export const updateProductStockHybrid = async (req: Request, res: Response) => {
     }
 
     if (updateMode === 'area' || updateMode === 'both') {
-      if (areaM2 === undefined || isNaN(parseFloat(areaM2))) {
+      if (areaM2 === undefined || areaM2 === null || isNaN(parseFloat(areaM2))) {
         return res.status(400).json({
           success: false,
           message: 'M² değeri gereklidir'
