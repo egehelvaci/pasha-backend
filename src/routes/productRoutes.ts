@@ -9,6 +9,8 @@ import {
   deleteProduct,
   uploadProductImage,
   updateProductStock,
+  updateProductStockAreaM2,
+  updateProductStockHybrid,
   getAllProductRules,
   getProductVariationOptions,
   regenerateProductVariations,
@@ -57,5 +59,11 @@ router.delete('/:id', authMiddleware, authorizeRoles('admin'), deleteProduct);
 
 // Sadece admin erişebilir - Stok güncelle
 router.patch('/:id/stock', authMiddleware, authorizeRoles('admin'), updateProductStock);
+
+// Sadece admin erişebilir - M² bazlı stok güncelle
+router.patch('/:id/stock-area', authMiddleware, authorizeRoles('admin'), updateProductStockAreaM2);
+
+// Sadece admin erişebilir - Hibrit stok güncelle
+router.patch('/:id/stock-hybrid', authMiddleware, authorizeRoles('admin'), updateProductStockHybrid);
 
 export default router; 

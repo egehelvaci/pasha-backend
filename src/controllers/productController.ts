@@ -404,6 +404,174 @@ export const updateProductStock = async (req: Request, res: Response) => {
   }
 };
 
+// M² bazlı stok güncelle
+export const updateProductStockAreaM2 = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { width, height, areaM2 } = req.body;
+    
+    // Zorunlu alanları kontrol et
+    if (!width || height === undefined || height === null || height === '' || areaM2 === undefined || isNaN(parseFloat(areaM2))) {
+      return res.status(400).json({
+        success: false,
+        message: 'Geçerli bir genişlik, yükseklik ve m² değeri gereklidir'
+      });
+    }
+    
+    // Genişlik değeri kontrolü
+    const widthValue = parseInt(width);
+    if (isNaN(widthValue) || widthValue <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Genişlik değeri pozitif bir sayı olmalıdır'
+      });
+    }
+    
+    // Yükseklik değeri kontrolü
+    const heightValue = parseInt(height);
+    if (isNaN(heightValue) || heightValue <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Yükseklik değeri pozitif bir sayı olmalıdır'
+      });
+    }
+
+    // M² değeri kontrolü
+    const areaValue = parseFloat(areaM2);
+    if (isNaN(areaValue) || areaValue < 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'M² değeri 0 veya pozitif bir sayı olmalıdır'
+      });
+    }
+    
+    // M² bazlı stok güncelleme işlemini gerçekleştir
+    const product = await productService.updateStockAreaM2(id, {
+      width: widthValue,
+      height: heightValue,
+      areaM2: areaValue
+    });
+    
+    return res.status(200).json({
+      success: true,
+      data: product,
+      message: `${areaValue}m² stok eklendi (${Math.floor(areaValue / ((widthValue * heightValue) / 10000))} adet halıya eşdeğer)`
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'M² stok güncellenemedi'
+    });
+  }
+};
+
+// Hibrit stok güncelle (hem adet hem m²)
+export const updateProductStockHybrid = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { width, height, quantity, areaM2, updateMode } = req.body;
+    
+    // Zorunlu alanları kontrol et
+    if (!width || height === undefined || height === null || height === '' || !updateMode) {
+      return res.status(400).json({
+        success: false,
+        message: 'Genişlik, yükseklik ve güncelleme modu gereklidir'
+      });
+    }
+
+    // updateMode kontrolü
+    if (!['quantity', 'area', 'both'].includes(updateMode)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Güncelleme modu quantity, area veya both olmalıdır'
+      });
+    }
+    
+    // Genişlik değeri kontrolü
+    const widthValue = parseInt(width);
+    if (isNaN(widthValue) || widthValue <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Genişlik değeri pozitif bir sayı olmalıdır'
+      });
+    }
+    
+    // Yükseklik değeri kontrolü
+    const heightValue = parseInt(height);
+    if (isNaN(heightValue) || heightValue <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Yükseklik değeri pozitif bir sayı olmalıdır'
+      });
+    }
+
+    // Mod bazlı değer kontrolü
+    let quantityValue = undefined;
+    let areaValue = undefined;
+
+    if (updateMode === 'quantity' || updateMode === 'both') {
+      if (quantity === undefined || isNaN(parseInt(quantity))) {
+        return res.status(400).json({
+          success: false,
+          message: 'Adet değeri gereklidir'
+        });
+      }
+      quantityValue = parseInt(quantity);
+      if (quantityValue < 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Adet değeri 0 veya pozitif olmalıdır'
+        });
+      }
+    }
+
+    if (updateMode === 'area' || updateMode === 'both') {
+      if (areaM2 === undefined || isNaN(parseFloat(areaM2))) {
+        return res.status(400).json({
+          success: false,
+          message: 'M² değeri gereklidir'
+        });
+      }
+      areaValue = parseFloat(areaM2);
+      if (areaValue < 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'M² değeri 0 veya pozitif olmalıdır'
+        });
+      }
+    }
+    
+    // Hibrit stok güncelleme işlemini gerçekleştir
+    const result = await productService.updateStockHybrid(id, {
+      width: widthValue,
+      height: heightValue,
+      quantity: quantityValue,
+      areaM2: areaValue,
+      updateMode: updateMode as 'quantity' | 'area' | 'both'
+    });
+
+    // Hata durumunu kontrol et
+    if ('error' in result && result.error) {
+      return res.status(400).json({
+        success: false,
+        message: result.message,
+        suggestions: result.suggestions
+      });
+    }
+    
+    return res.status(200).json({
+      success: true,
+      data: result,
+      message: 'Hibrit stok güncellendi'
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Hibrit stok güncellenemedi'
+    });
+  }
+};
+
 // Ürünün varyasyon seçeneklerini getir
 export const getProductVariationOptions = async (req: Request, res: Response) => {
   try {

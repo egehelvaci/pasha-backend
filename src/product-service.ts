@@ -16,6 +16,8 @@ export interface SizeOption {
   height: number;
   is_optional_height: boolean;
   stockQuantity?: number;
+  stockAreaM2?: number;
+  pieceAreaM2?: number;
 }
 
 // Ürün veri modelini tipini genişlet
@@ -469,12 +471,15 @@ export class ProductService {
                   v.width === so.width && v.height === so.height
                 );
                 
+                const pieceAreaM2 = (so.width * so.height) / 10000;
                 return {
                   id: so.id,
                   width: so.width,
                   height: so.height,
                   is_optional_height: so.is_optional_height || false,
-                  stockQuantity: stockForSize ? stockForSize.stock_quantity : 0
+                  stockQuantity: stockForSize ? stockForSize.stock_quantity : 0,
+                  stockAreaM2: stockForSize ? Number(stockForSize.stock_area_m2 || 0) : 0,
+                  pieceAreaM2: pieceAreaM2
                 };
               });
             } else {
@@ -633,12 +638,15 @@ export class ProductService {
                     v.width === so.width && v.height === so.height
                   );
                   
+                  const pieceAreaM2 = (so.width * so.height) / 10000;
                   return {
                     id: so.id,
                     width: so.width,
                     height: so.height,
                     is_optional_height: so.is_optional_height || false,
-                    stockQuantity: stockForSize ? stockForSize.stock_quantity : 0
+                    stockQuantity: stockForSize ? stockForSize.stock_quantity : 0,
+                    stockAreaM2: stockForSize ? Number(stockForSize.stock_area_m2 || 0) : 0,
+                    pieceAreaM2: pieceAreaM2
                   };
                 });
               } else {
@@ -1083,6 +1091,228 @@ export class ProductService {
       };
     } catch (error) {
       console.error('Stok güncelleme hatası:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * M² bazlı stok güncelle - Hem adet hem m² stok yönetimi
+   */
+  async updateStockAreaM2(productId: string, stockData: {
+    width: number;
+    height: number;
+    areaM2: number;
+  }) {
+    try {
+      // Ürünün var olup olmadığını kontrol et
+      const product = await prisma.product.findUnique({
+        where: { productId },
+        include: {
+          productrules: true
+        }
+      });
+      
+      if (!product) {
+        throw new Error('Ürün bulunamadı');
+      }
+      
+      // Ürün kuralına göre ölçülerin geçerli olup olmadığını kontrol et
+      if (product.rule_id) {
+        // Önce tam eşleşme ara (is_optional_height: false durumlar için)
+        let sizeOption = await prisma.productsizeoptions.findFirst({
+          where: {
+            rule_id: product.rule_id,
+            width: stockData.width,
+            height: stockData.height
+          }
+        });
+        
+        // Tam eşleşme bulunamazsa, opsiyonel yükseklik kontrolü yap
+        if (!sizeOption) {
+          sizeOption = await prisma.productsizeoptions.findFirst({
+            where: {
+              rule_id: product.rule_id,
+              width: stockData.width,
+              is_optional_height: true
+            }
+          });
+          
+          if (sizeOption) {
+            // Opsiyonel yükseklik bulundu, maksimum değer kontrolü yap
+            if (stockData.height > sizeOption.height) {
+              throw new Error(`Bu genişlik (${stockData.width}) için maksimum yükseklik değeri: ${sizeOption.height}cm'dir`);
+            }
+          }
+        }
+        
+        if (!sizeOption) {
+          throw new Error(`Belirtilen ölçüler (${stockData.width}x${stockData.height}) bu ürün için geçerli değil`);
+        }
+      }
+      
+      // Bu halının tek parça alanını hesapla (cm² -> m²)
+      const singlePieceAreaM2 = (stockData.width * stockData.height) / 10000;
+      
+      // M²'den adet hesapla
+      const calculatedQuantity = Math.floor(stockData.areaM2 / singlePieceAreaM2);
+      
+      // Kullanılacak yükseklik değerini belirle
+      let heightToUse = stockData.height;
+      
+      // Bu ebatta varyasyon daha önce eklenmiş mi kontrol et
+      const existingVariation = await prisma.productvariations.findFirst({
+        where: {
+          product_id: productId,
+          width: stockData.width,
+          height: heightToUse
+        }
+      });
+      
+      if (existingVariation) {
+        // Varolan varyasyonu güncelle - hem adet hem m² bilgisini
+        await prisma.productvariations.update({
+          where: { id: existingVariation.id },
+          data: { 
+            stock_quantity: calculatedQuantity,
+            stock_area_m2: stockData.areaM2,
+            // Kesim tipi ve saçak değerlerini null yap
+            cut_type_id: null,
+            has_fringe: false
+          }
+        });
+      } else {
+        // Yeni varyasyon oluştur
+        await prisma.productvariations.create({
+          data: {
+            product_id: productId,
+            width: stockData.width,
+            height: heightToUse,
+            stock_quantity: calculatedQuantity,
+            stock_area_m2: stockData.areaM2,
+            // Kesim tipi ve saçak değerlerini varsayılan değerlere ayarla
+            cut_type_id: null,
+            has_fringe: false
+          }
+        });
+      }
+      
+      // Ürün varyasyonlarını getir
+      const variations = await prisma.productvariations.findMany({
+        where: { product_id: productId }
+      });
+      
+      // Ürünü getir ve döndür
+      const updatedProduct = await this.getProductById(productId);
+      
+      // Varyasyonları da ekle
+      return {
+        ...updatedProduct,
+        variations: variations.map(v => {
+          const pieceAreaM2 = (v.width * v.height) / 10000;
+          return {
+            width: v.width,
+            height: v.height,
+            stockQuantity: v.stock_quantity,
+            stockAreaM2: Number(v.stock_area_m2 || 0),
+            pieceAreaM2: pieceAreaM2,
+            calculatedFromArea: v.stock_area_m2 ? Math.floor(Number(v.stock_area_m2) / pieceAreaM2) : 0
+          };
+        })
+      };
+    } catch (error) {
+      console.error('M² stok güncelleme hatası:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Hibrit stok güncelle - Hem adet hem m² desteği
+   */
+  async updateStockHybrid(productId: string, stockData: {
+    width: number;
+    height: number;
+    quantity?: number;
+    areaM2?: number;
+    updateMode: 'quantity' | 'area' | 'both';
+  }) {
+    try {
+      // En az bir değer gönderilmeli
+      if (!stockData.quantity && !stockData.areaM2) {
+        throw new Error('Adet veya m² değerlerinden en az biri belirtilmelidir');
+      }
+
+      // Bu halının tek parça alanını hesapla
+      const singlePieceAreaM2 = (stockData.width * stockData.height) / 10000;
+
+      let finalQuantity = 0;
+      let finalAreaM2 = 0;
+
+      // Güncelleme moduna göre hesapla
+      switch (stockData.updateMode) {
+        case 'quantity':
+          // Adet bazlı güncelleme - HAZIR KESİM İÇİN m² = 0
+          finalQuantity = stockData.quantity || 0;
+          finalAreaM2 = 0; // Hazır kesim ürünlerde m² stok tutulmaz
+          break;
+          
+        case 'area':
+          // M² bazlı güncelleme
+          finalAreaM2 = stockData.areaM2 || 0;
+          finalQuantity = Math.floor(finalAreaM2 / singlePieceAreaM2);
+          break;
+          
+        case 'both':
+          // Her ikisi de belirtildi - tutarlılık kontrolü
+          const calculatedQuantityFromArea = Math.floor((stockData.areaM2 || 0) / singlePieceAreaM2);
+          const calculatedAreaFromQuantity = (stockData.quantity || 0) * singlePieceAreaM2;
+          
+          // Küçük tolerans (0.1 m²) ile kontrol et
+          if (Math.abs(calculatedAreaFromQuantity - (stockData.areaM2 || 0)) > 0.1) {
+            return {
+              error: true,
+              message: `Adet ve m² değerleri tutarsız. ${stockData.quantity} adet = ${calculatedAreaFromQuantity.toFixed(2)}m², ancak ${stockData.areaM2}m² belirtildi.`,
+              suggestions: {
+                fromQuantity: { quantity: stockData.quantity, areaM2: calculatedAreaFromQuantity },
+                fromArea: { quantity: calculatedQuantityFromArea, areaM2: stockData.areaM2 }
+              }
+            };
+          }
+          
+          finalQuantity = stockData.quantity || 0;
+          finalAreaM2 = stockData.areaM2 || 0;
+          break;
+      }
+
+      // Normal updateStock mantığını kullan ama ek alan bilgisini de güncelle
+      const result = await this.updateStock(productId, {
+        width: stockData.width,
+        height: stockData.height,
+        quantity: finalQuantity
+      });
+
+      // M² bilgisini ayrıca güncelle
+      await prisma.productvariations.updateMany({
+        where: {
+          product_id: productId,
+          width: stockData.width,
+          height: stockData.height
+        },
+        data: {
+          stock_area_m2: finalAreaM2
+        }
+      });
+
+      return {
+        ...result,
+        stockInfo: {
+          quantity: finalQuantity,
+          areaM2: finalAreaM2,
+          pieceAreaM2: singlePieceAreaM2,
+          updateMode: stockData.updateMode
+        }
+      };
+    } catch (error) {
+      console.error('Hibrit stok güncelleme hatası:', error);
       throw error;
     }
   }

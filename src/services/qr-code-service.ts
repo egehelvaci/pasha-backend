@@ -265,17 +265,40 @@ export class QRCodeService {
           console.log(`📊 Esnek saçak eşleşme (${targetWidth}x${targetHeight}, saçak:${!itemHasFringe}): ${variations.length} varyasyon`)
         }
 
-        // Stok güncelle
+        // Stok düşürme - opsiyonel yükseklik vs hazır kesim
         if (variations.length > 0) {
           const variation = variations[0]
-          const newStock = Math.max(0, variation.stock_quantity - item.quantity)
+          
+          // Ürünün opsiyonel yükseklik olup olmadığını kontrol et
+          const sizeOptions = item.product.productrules?.productsizeoptions || []
+          
+          const isOptionalHeight = sizeOptions.some((so: any) => 
+            so.width === variation.width && so.is_optional_height
+          )
+          
+          let updateData: any = {}
+          
+          if (isOptionalHeight) {
+            // Opsiyonel yükseklik: Sadece m² düşür
+            const actualPieceAreaM2 = (itemWidth * itemHeight) / 10000;
+            const usedAreaM2 = item.quantity * actualPieceAreaM2;
+            const currentAreaM2 = Number(variation.stock_area_m2 || 0);
+            const newAreaM2 = Math.max(0, currentAreaM2 - usedAreaM2);
+            
+            updateData.stock_area_m2 = newAreaM2;
+            console.log(`📦 Opsiyonel yükseklik stok güncellendi: ${currentAreaM2} → ${newAreaM2}m² (Kullanılan: ${usedAreaM2}m²)`)
+          } else {
+            // Hazır kesim: Sadece adet düşür
+            const newStock = Math.max(0, variation.stock_quantity - item.quantity)
+            updateData.stock_quantity = newStock;
+            console.log(`📦 Hazır kesim stok güncellendi: ${variation.stock_quantity} → ${newStock} adet`)
+          }
           
           await prisma.productvariations.update({
             where: { id: variation.id },
-            data: { stock_quantity: newStock }
+            data: updateData
           })
           
-          console.log(`📦 Stok güncellendi: ${variation.stock_quantity} → ${newStock} (Varyasyon: ${variation.width}x${variation.height}, Saçak: ${variation.has_fringe})`)
         } else {
           console.log(`⚠️ Uygun varyasyon bulunamadı: ${item.product_id} - ${targetWidth}x${targetHeight}`)
         }
