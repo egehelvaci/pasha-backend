@@ -56,6 +56,7 @@ export class UserProfileController {
             username: user.username,
             email: user.email,
             phoneNumber: user.phoneNumber,
+            adres: user.adres,
             isActive: user.isActive,
             createdAt: user.createdAt,
             userType: user.userType.name
@@ -70,7 +71,7 @@ export class UserProfileController {
             yetkili_soyadi: user.Store.yetkili_soyadi,
             telefon: user.Store.telefon,
             eposta: user.Store.eposta,
-            adres: user.Store.adres,
+            adres: user.adres,
             faks_numarasi: user.Store.faks_numarasi,
             is_active: user.Store.is_active,
             created_at: user.Store.created_at
@@ -102,7 +103,6 @@ export class UserProfileController {
    * @body {string} storeData.yetkili_soyadi - Yetkili kişi soyadı (opsiyonel)
    * @body {string} storeData.telefon - Telefon numarası (opsiyonel)
    * @body {string} storeData.eposta - E-posta adresi (opsiyonel)
-   * @body {string} storeData.adres - Adres (opsiyonel)
    * @body {string} storeData.faks_numarasi - Faks numarası (opsiyonel)
    */
   async updateStoreProfile(req: Request, res: Response) {
@@ -231,9 +231,6 @@ export class UserProfileController {
       if (eposta !== undefined) {
         updateData.eposta = eposta?.trim().toLowerCase() || null
       }
-      if (adres !== undefined) {
-        updateData.adres = adres?.trim() || null
-      }
       if (faks_numarasi !== undefined) {
         updateData.faks_numarasi = faks_numarasi?.trim() || null
       }
@@ -257,7 +254,7 @@ export class UserProfileController {
           yetkili_soyadi: updatedStore.yetkili_soyadi,
           telefon: updatedStore.telefon,
           eposta: updatedStore.eposta,
-          adres: updatedStore.adres,
+          adres: user.adres,
           faks_numarasi: updatedStore.faks_numarasi,
           updated_at: updatedStore.updated_at
         }
@@ -382,6 +379,120 @@ export class UserProfileController {
       return res.status(500).json({
         success: false,
         message: error.message || 'Şifre değiştirilirken bir hata oluştu'
+      })
+    }
+  }
+
+  /**
+   * Kullanıcının kendi profil bilgilerini güncelle
+   * 
+   * @route PUT /api/profile/me
+   * @access Authenticated (Giriş yapmış kullanıcılar)
+   * @description Kullanıcının kendi temel bilgilerini günceller
+   * 
+   * @body {Object} profileData - Güncellenecek profil bilgileri
+   * @body {string} profileData.name - Ad (opsiyonel)
+   * @body {string} profileData.surname - Soyad (opsiyonel)
+   * @body {string} profileData.phoneNumber - Telefon numarası (opsiyonel)
+   * @body {string} profileData.adres - Adres (opsiyonel)
+   */
+  async updateMyProfile(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user?.userId
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Kullanıcı kimlik doğrulaması gerekli'
+        })
+      }
+
+      const {
+        name,
+        surname,
+        phoneNumber,
+        adres
+      } = req.body
+
+      // Kullanıcının mevcut bilgilerini al
+      const user = await prisma.user.findUnique({
+        where: { userId }
+      })
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'Kullanıcı bulunamadı'
+        })
+      }
+
+      // Güncelleme verilerini hazırla
+      const updateData: any = {}
+
+      if (name !== undefined) {
+        if (!name || name.trim().length === 0) {
+          return res.status(400).json({
+            success: false,
+            message: 'Ad boş olamaz'
+          })
+        }
+        updateData.name = name.trim()
+      }
+
+      if (surname !== undefined) {
+        if (!surname || surname.trim().length === 0) {
+          return res.status(400).json({
+            success: false,
+            message: 'Soyad boş olamaz'
+          })
+        }
+        updateData.surname = surname.trim()
+      }
+
+      if (phoneNumber !== undefined) {
+        updateData.phoneNumber = phoneNumber?.trim() || null
+      }
+
+      if (adres !== undefined) {
+        updateData.adres = adres?.trim() || null
+      }
+
+      // Kullanıcı bilgilerini güncelle
+      const updatedUser = await prisma.user.update({
+        where: { userId },
+        data: updateData,
+        select: {
+          userId: true,
+          name: true,
+          surname: true,
+          username: true,
+          email: true,
+          phoneNumber: true,
+          adres: true,
+          isActive: true,
+          createdAt: true,
+          userType: {
+            select: {
+              name: true
+            }
+          }
+        }
+      })
+
+      return res.status(200).json({
+        success: true,
+        message: 'Profil bilgileri başarıyla güncellendi',
+        data: {
+          ...updatedUser,
+          userType: updatedUser.userType.name
+        }
+      })
+
+    } catch (error: any) {
+      console.error('Profil güncelleme hatası:', error)
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Profil bilgileri güncellenirken bir hata oluştu'
       })
     }
   }

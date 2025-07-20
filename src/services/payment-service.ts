@@ -5,8 +5,9 @@ import { OctetLoginService } from './octet-login-service';
 
 export interface CreatePaymentRequestInput {
   storeId: string;
+  userId: string;
   amount: number;
-  aciklama: string;
+  aciklama?: string;
 }
 
 export interface PaymentRequestData {
@@ -83,6 +84,50 @@ export class PaymentService {
   }
 
   /**
+   * Kullanıcı ve mağaza bilgilerini veritabanından alır
+   */
+  private async getUserAndStoreInfo(userId: string, storeId: string) {
+    const user = await prisma.user.findUnique({
+      where: { userId },
+      include: {
+        Store: {
+          select: {
+            store_id: true,
+            kurum_adi: true,
+            vergi_numarasi: true,
+            vergi_dairesi: true,
+            tckn: true,
+            yetkili_adi: true,
+            yetkili_soyadi: true,
+            telefon: true,
+            eposta: true,
+            maksimum_taksit: true,
+            is_active: true
+          }
+        }
+      }
+    });
+
+    if (!user) {
+      throw new Error(`Kullanıcı bulunamadı: ${userId}`);
+    }
+
+    if (!user.Store) {
+      throw new Error('Kullanıcı bir mağazaya bağlı değil');
+    }
+
+    if (!user.Store.is_active) {
+      throw new Error('Kullanıcının mağazası aktif değil');
+    }
+
+    if (user.Store.store_id !== storeId) {
+      throw new Error('Kullanıcının mağazası ile ödeme mağazası uyuşmuyor');
+    }
+
+    return { user, store: user.Store };
+  }
+
+  /**
    * Benzersiz referans numaraları üretir
    */
   private generateUniqueReferences() {
@@ -121,8 +166,8 @@ export class PaymentService {
    * Payment request oluşturur
    */
   async createPaymentRequest(input: CreatePaymentRequestInput): Promise<PaymentRequestData> {
-    // Store bilgilerini al
-    const store = await this.getStoreInfo(input.storeId);
+    // Kullanıcı ve mağaza bilgilerini al
+    const { user, store } = await this.getUserAndStoreInfo(input.userId, input.storeId);
 
     // Benzersiz referansları üret
     const { sellerReference, apiReferenceNumber } = this.generateUniqueReferences();
@@ -131,8 +176,9 @@ export class PaymentService {
     const expireDate = new Date();
     expireDate.setHours(expireDate.getHours() + 27); // UTC+3 için +24 saat + 3 saat
 
-    // Telefon numarasını temizle
-    const cleanPhone = this.cleanPhoneNumber(store.telefon);
+    // Kullanıcının telefon numarasını temizle, yoksa mağaza telefonu
+    const userPhone = user.phoneNumber || store.telefon;
+    const cleanPhone = this.cleanPhoneNumber(userPhone);
 
     // Payment request data'sını oluştur
     const paymentRequest: PaymentRequestData = {
@@ -145,7 +191,7 @@ export class PaymentService {
       paymentRequestCommonDetail: {
         isDocumentsShown: true,
         apiReferenceNumber,
-        referenceInformation: input.aciklama,
+        referenceInformation: input.aciklama || "Ödeme",
         buyerReference: "PASHA-HOME",
         installmentCount: store.maksimum_taksit || 1,
         okUrl: "https://pasha-frontend.vercel.app/dashboard/odemeler",
@@ -153,11 +199,11 @@ export class PaymentService {
       },
       paymentRequestBuyerInformation: {
         identityNumber: store.tckn || store.vergi_numarasi || "11111111111",
-        firstName: store.yetkili_adi || "Yetkili",
-        lastName: store.yetkili_soyadi || "Kişi",
+        firstName: user.name || store.yetkili_adi || "Yetkili",
+        lastName: user.surname || store.yetkili_soyadi || "Kişi",
         phoneCode: "+90",
         phoneNumber: cleanPhone,
-        email: store.eposta || "bilgi@example.com",
+        email: user.email || store.eposta || "bilgi@example.com",
         companyName: store.kurum_adi,
         taxNumber: store.vergi_numarasi || "1111111111",
         taxOffice: store.vergi_dairesi || "Merkez"

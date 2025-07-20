@@ -24,11 +24,22 @@ router.get('/me', userProfileController.getMyProfile)
  *   yetkili_soyadi?: string,
  *   telefon?: string,
  *   eposta?: string,
- *   adres?: string,
  *   faks_numarasi?: string
  * }
  */
 router.put('/store', userProfileController.updateStoreProfile)
+
+/**
+ * Kullanıcının kendi profil bilgilerini güncelle
+ * PUT /api/profile/me
+ * Body: {
+ *   name?: string,
+ *   surname?: string,
+ *   phoneNumber?: string,
+ *   adres?: string
+ * }
+ */
+router.put('/me', userProfileController.updateMyProfile)
 
 /**
  * Kullanıcının şifresini değiştir

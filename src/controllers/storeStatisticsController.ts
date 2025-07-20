@@ -68,7 +68,7 @@ export class StoreStatisticsController {
           tckn: store.tckn,
           telefon: store.telefon,
           eposta: store.eposta,
-          adres: store.adres
+          adres: user.adres
         },
           balance_info: {
             bakiye: bakiye,

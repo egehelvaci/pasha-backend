@@ -10,13 +10,21 @@ export class PaymentController {
 
   async createPaymentRequest(req: Request, res: Response) {
     try {
+      const userId = (req as any).user?.userId;
       const { storeId, amount, aciklama } = req.body;
 
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Kullanıcı kimlik doğrulaması gerekli'
+        });
+      }
+
       // Validasyon
-      if (!storeId || !amount || !aciklama) {
+      if (!storeId || !amount) {
         return res.status(400).json({
           success: false,
-          message: 'storeId, amount ve aciklama alanları gereklidir'
+          message: 'storeId ve amount alanları gereklidir'
         });
       }
 
@@ -31,6 +39,7 @@ export class PaymentController {
 
       // Sadece request objesi oluştur, Octet'e gönderme
       const paymentRequest = await this.paymentService.createPaymentRequest({
+        userId,
         storeId,
         amount,
         aciklama
@@ -53,13 +62,21 @@ export class PaymentController {
 
   async processPayment(req: Request, res: Response) {
     try {
+      const userId = (req as any).user?.userId;
       const { storeId, amount, aciklama } = req.body;
 
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Kullanıcı kimlik doğrulaması gerekli'
+        });
+      }
+
       // Validasyon
-      if (!storeId || !amount || !aciklama) {
+      if (!storeId || !amount) {
         return res.status(400).json({
           success: false,
-          message: 'storeId, amount ve aciklama alanları gereklidir'
+          message: 'storeId ve amount alanları gereklidir'
         });
       }
 
@@ -74,6 +91,7 @@ export class PaymentController {
 
       // Request oluştur ve Octet'e gönder
       const result = await this.paymentService.processPayment({
+        userId,
         storeId,
         amount,
         aciklama

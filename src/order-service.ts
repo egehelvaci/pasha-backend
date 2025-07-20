@@ -195,8 +195,8 @@ export class OrderService {
           total_price: cartTotal,
           status: OrderStatus.PENDING,
           
-          // Mağaza adres bilgilerini otomatik ekle
-          delivery_address: user.Store.adres,
+          // Kullanıcı adres bilgilerini ekle
+          delivery_address: user.adres,
           store_name: user.Store.kurum_adi,
           store_tax_number: user.Store.vergi_numarasi,
           store_tax_office: user.Store.vergi_dairesi,
