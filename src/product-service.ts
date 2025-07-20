@@ -1150,11 +1150,25 @@ export class ProductService {
         }
       }
       
+      // Ürünün opsiyonel yükseklik olup olmadığını kontrol et
+      let isOptionalHeight = false;
+      if (product.rule_id) {
+        const sizeOption = await prisma.productsizeoptions.findFirst({
+          where: {
+            rule_id: product.rule_id,
+            width: stockData.width,
+            is_optional_height: true
+          }
+        });
+        isOptionalHeight = !!sizeOption;
+      }
+
       // Bu halının tek parça alanını hesapla (cm² -> m²)
       const singlePieceAreaM2 = (stockData.width * stockData.height) / 10000;
       
-      // M²'den adet hesapla
-      const calculatedQuantity = Math.floor(stockData.areaM2 / singlePieceAreaM2);
+      // OPSIYONEL YÜKSEKLİK: Adet hesaplanmaz, sadece bilgi amaçlı
+      // HAZIR KESİM: M²'den adet hesapla
+      const calculatedQuantity = isOptionalHeight ? 0 : Math.floor(stockData.areaM2 / singlePieceAreaM2);
       
       // Kullanılacak yükseklik değerini belirle
       let heightToUse = stockData.height;
@@ -1169,16 +1183,22 @@ export class ProductService {
       });
       
       if (existingVariation) {
-        // Varolan varyasyonu güncelle - hem adet hem m² bilgisini
+        // Varolan varyasyonu güncelle
+        const updateData: any = {
+          stock_area_m2: stockData.areaM2,
+          cut_type_id: null,
+          has_fringe: false
+        };
+        
+        // OPSIYONEL YÜKSEKLİK: stock_quantity değişmez
+        // HAZIR KESİM: stock_quantity güncellenir
+        if (!isOptionalHeight) {
+          updateData.stock_quantity = calculatedQuantity;
+        }
+        
         await prisma.productvariations.update({
           where: { id: existingVariation.id },
-          data: { 
-            stock_quantity: calculatedQuantity,
-            stock_area_m2: stockData.areaM2,
-            // Kesim tipi ve saçak değerlerini null yap
-            cut_type_id: null,
-            has_fringe: false
-          }
+          data: updateData
         });
       } else {
         // Yeni varyasyon oluştur
@@ -1189,7 +1209,6 @@ export class ProductService {
             height: heightToUse,
             stock_quantity: calculatedQuantity,
             stock_area_m2: stockData.areaM2,
-            // Kesim tipi ve saçak değerlerini varsayılan değerlere ayarla
             cut_type_id: null,
             has_fringe: false
           }

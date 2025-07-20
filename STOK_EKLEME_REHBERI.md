@@ -18,7 +18,7 @@ PATCH /api/products/{productId}/stock-area
 {
   "width": 80,
   "height": 10000,
-  "areaM2": 50
+  "areaM2": gi
 }
 ```
 
