@@ -8,7 +8,7 @@ export class StoreController {
    * 
    * @route GET /api/admin/stores
    * @access Authenticated (Admin kullanıcılar)
-   * @description Mağazaları, kullanıcılarını ve fiyat listelerini içerir
+   * @description Mağazaları, kullanıcılarını ve fiyat listelerini içerir. Adres bilgisi sadece kullanıcı alanından döner.
    * 
    * @query {string} isActive - Aktif/pasif durumu filtresi (true/false)
    * 
@@ -79,7 +79,6 @@ export class StoreController {
         yetkili_soyadi: store.yetkili_soyadi,
         telefon: store.telefon,
         eposta: store.eposta,
-        adres: store.adres,
         faks_numarasi: store.faks_numarasi,
         aciklama: store.aciklama,
         limitsiz_acik_hesap: store.limitsiz_acik_hesap,
@@ -165,9 +164,12 @@ export class StoreController {
         })
       }
       
+      // Response formatını düzenle - adres alanını çıkar
+      const { adres, ...storeWithoutAddress } = store
+      
       return res.status(200).json({
         success: true,
-        data: store
+        data: storeWithoutAddress
       })
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Mağaza bilgileri alınırken bir hata oluştu'
@@ -193,7 +195,6 @@ export class StoreController {
         yetkili_soyadi, 
         telefon, 
         eposta, 
-        adres, 
         faks_numarasi, 
         aciklama, 
         limitsiz_acik_hesap, 
@@ -221,7 +222,6 @@ export class StoreController {
           yetkili_soyadi,
           telefon,
           eposta,
-          adres,
           faks_numarasi,
           aciklama,
           limitsiz_acik_hesap: limitsiz_acik_hesap || false,
@@ -261,7 +261,6 @@ export class StoreController {
         yetkili_soyadi, 
         telefon, 
         eposta, 
-        adres, 
         faks_numarasi, 
         aciklama, 
         limitsiz_acik_hesap, 
@@ -294,7 +293,6 @@ export class StoreController {
       if (yetkili_soyadi !== undefined) updateData.yetkili_soyadi = yetkili_soyadi
       if (telefon !== undefined) updateData.telefon = telefon
       if (eposta !== undefined) updateData.eposta = eposta
-      if (adres !== undefined) updateData.adres = adres
       if (faks_numarasi !== undefined) updateData.faks_numarasi = faks_numarasi
       if (aciklama !== undefined) updateData.aciklama = aciklama
       if (limitsiz_acik_hesap !== undefined) updateData.limitsiz_acik_hesap = limitsiz_acik_hesap
