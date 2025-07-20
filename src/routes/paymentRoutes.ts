@@ -9,9 +9,9 @@ const paymentController = new PaymentController();
 const webhookController = new WebhookController();
 const adminPaymentController = new AdminPaymentController();
 
-// Ana ödeme endpoint'leri
-router.post('/process', paymentController.processPayment.bind(paymentController));
-router.post('/create-request', paymentController.createPaymentRequest.bind(paymentController));
+// Ana ödeme endpoint'leri (kimlik doğrulaması gerekli)
+router.post('/process', authMiddleware, paymentController.processPayment.bind(paymentController));
+router.post('/create-request', authMiddleware, paymentController.createPaymentRequest.bind(paymentController));
 
 // DBYE Ana Webhook Endpoint'i
 router.post('/webhook/dbye', webhookController.handleDbyeWebhook.bind(webhookController));

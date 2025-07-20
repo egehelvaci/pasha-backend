@@ -5,6 +5,20 @@ import { Prisma } from '../../generated/prisma'
 export class StoreController {
   /**
    * Tüm mağazaları listele
+   * 
+   * @route GET /api/admin/stores
+   * @access Authenticated (Admin kullanıcılar)
+   * @description Mağazaları, kullanıcılarını ve fiyat listelerini içerir
+   * 
+   * @query {string} isActive - Aktif/pasif durumu filtresi (true/false)
+   * 
+   * @returns {Object} response - API yanıtı
+   * @returns {boolean} response.success - İşlem durumu
+   * @returns {number} response.count - Mağaza sayısı
+   * @returns {Array} response.data - Mağaza listesi
+   * @returns {Array} response.data[].users - Mağazaya atanmış kullanıcılar
+   * @returns {Array} response.data[].priceLists - Mağazaya atanmış fiyat listeleri
+   * @returns {Object} response.data[].summary - Özet bilgiler (kullanıcı ve fiyat listesi sayıları)
    */
   async getAllStores(req: Request, res: Response) {
     try {
@@ -22,16 +36,98 @@ export class StoreController {
         include: {
           StorePriceList: {
             include: {
-              PriceList: true
+              PriceList: {
+                select: {
+                  price_list_id: true,
+                  name: true,
+                  description: true,
+                  is_active: true,
+                  created_at: true
+                }
+              }
+            }
+          },
+          User: {
+            select: {
+              userId: true,
+              name: true,
+              surname: true,
+              username: true,
+              email: true,
+              phoneNumber: true,
+              adres: true,
+              isActive: true,
+              createdAt: true,
+              userType: {
+                select: {
+                  name: true
+                }
+              }
             }
           }
         }
       })
       
+      // Response formatını düzenle
+      const formattedStores = stores.map(store => ({
+        store_id: store.store_id,
+        kurum_adi: store.kurum_adi,
+        vergi_numarasi: store.vergi_numarasi,
+        vergi_dairesi: store.vergi_dairesi,
+        tckn: store.tckn,
+        yetkili_adi: store.yetkili_adi,
+        yetkili_soyadi: store.yetkili_soyadi,
+        telefon: store.telefon,
+        eposta: store.eposta,
+        adres: store.adres,
+        faks_numarasi: store.faks_numarasi,
+        aciklama: store.aciklama,
+        limitsiz_acik_hesap: store.limitsiz_acik_hesap,
+        acik_hesap_tutari: store.acik_hesap_tutari,
+        bakiye: store.bakiye,
+        maksimum_taksit: store.maksimum_taksit,
+        is_active: store.is_active,
+        created_at: store.created_at,
+        updated_at: store.updated_at,
+        
+        // Mağazaya atanmış kullanıcılar
+        users: (store as any).User.map((user: any) => ({
+          userId: user.userId,
+          name: user.name,
+          surname: user.surname,
+          username: user.username,
+          email: user.email,
+          phoneNumber: user.phoneNumber,
+          adres: user.adres,
+          isActive: user.isActive,
+          createdAt: user.createdAt,
+          userType: user.userType?.name
+        })),
+        
+        // Mağazaya atanmış fiyat listeleri
+        priceLists: (store as any).StorePriceList.map((spl: any) => ({
+          assignment_id: spl.id,
+          price_list_id: spl.PriceList.price_list_id,
+          name: spl.PriceList.name,
+          description: spl.PriceList.description,
+          is_active: spl.PriceList.is_active,
+          created_at: spl.PriceList.created_at,
+          assigned_at: spl.created_at
+        })),
+        
+        // Özet bilgiler
+        summary: {
+          total_users: (store as any).User.length,
+          active_users: (store as any).User.filter((user: any) => user.isActive).length,
+          total_price_lists: (store as any).StorePriceList.length,
+          active_price_lists: (store as any).StorePriceList.filter((spl: any) => spl.PriceList.is_active).length
+        }
+      }))
+
       return res.status(200).json({
         success: true,
-        count: stores.length,
-        data: stores
+        count: formattedStores.length,
+        data: formattedStores
       })
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Mağazalar listelenirken bir hata oluştu'
