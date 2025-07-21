@@ -212,8 +212,8 @@ export class AdminOrderController {
       // QR kodlar oluştur ve siparişi onayla
       const qrResult = await qrCodeService.generateQRCodesForOrder(orderId)
       
-      // Stokları düşür
-      await qrCodeService.reduceStockForOrder(orderId)
+      // ESKI MANTIK: Stokları düşür - ARTIK YAPILMAYACAK
+      // await qrCodeService.reduceStockForOrder(orderId)
 
       // Güncellenmiş sipariş bilgilerini al
       const updatedOrder = await prisma.order.findUnique({
@@ -676,7 +676,8 @@ export class AdminOrderController {
       if (status === 'CONFIRMED' && existingOrder.status !== 'CONFIRMED') {
         try {
           qrResult = await qrCodeService.generateQRCodesForOrder(orderId)
-          await qrCodeService.reduceStockForOrder(orderId)
+          // ESKI MANTIK: Stok düşür - ARTIK YAPILMAYACAK
+          // await qrCodeService.reduceStockForOrder(orderId)
           console.log(`✅ Sipariş ${orderId} CONFIRMED olarak güncellendi - QR kod oluşturuldu`)
         } catch (qrError) {
           console.error('QR kod oluşturma hatası:', qrError)
@@ -684,7 +685,7 @@ export class AdminOrderController {
         }
       }
 
-      // İptal durumunda açık hesap bakiyesini ve fiyat listesi limitini geri ekle
+      // İptal durumunda açık hesap bakiyesini, fiyat listesi limitini geri ekle ve stokları geri ekle
       // NOT: Sadece PENDING durumdaki siparişler iptal edilebilir
       if (status === 'CANCELED' && existingOrder.status !== 'CANCELED') {
         // PENDING durumu dışındaki siparişlerin iptal edilmesini engelle
@@ -694,6 +695,7 @@ export class AdminOrderController {
             message: `${existingOrder.status} durumundaki siparişler iptal edilemez. Sadece PENDING durumdaki siparişler iptal edilebilir.`
           })
         }
+
         const store = existingOrder.user.Store
         const orderTotal = Number(existingOrder.total_price)
         
@@ -738,6 +740,15 @@ export class AdminOrderController {
             console.log(`💰 Fiyat listesi limiti iade edildi: ${currentLimit} → ${newLimit} TL`)
           }
         }
+
+        // 3. YENİ EKLENDİ: Stokları geri ekle
+        try {
+          await qrCodeService.restoreStockForOrder(orderId)
+          console.log(`📦 Sipariş ${orderId} iptal edildi - Stok geri eklendi`)
+        } catch (stockError) {
+          console.error('❌ Stok geri ekleme hatası:', stockError)
+          // Stok hatası logs olarak tutulacak ama işlem devam edecek
+        }
       }
 
       // Sipariş durumunu güncelle
@@ -771,9 +782,9 @@ export class AdminOrderController {
         const orderTotal = Number(existingOrder.total_price)
         
         if (store && !store.limitsiz_acik_hesap) {
-          message = `Sipariş iptal edildi. ${orderTotal} TL açık hesap bakiyesi ve fiyat listesi limiti geri eklendi.`
+          message = `Sipariş iptal edildi. ${orderTotal} TL açık hesap bakiyesi ve fiyat listesi limiti geri eklendi. Stoklar geri eklendi.`
         } else {
-          message = `Sipariş iptal edildi. ${orderTotal} TL fiyat listesi limiti geri eklendi.`
+          message = `Sipariş iptal edildi. ${orderTotal} TL fiyat listesi limiti geri eklendi. Stoklar geri eklendi.`
         }
       }
 

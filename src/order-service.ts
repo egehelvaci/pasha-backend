@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Decimal } from '@prisma/client/runtime/library';
 import { roundCurrency, addCurrency } from './utils/number-utils';
 import { $Enums } from '../generated/prisma';
+import { qrCodeService } from './services/qr-code-service';
 
 const prisma = new PrismaClient();
 
@@ -248,7 +249,21 @@ export class OrderService {
         }
       });
 
-      // Sipariş sonrası işlemleri gerçekleştir
+      // YENİ MANTIK: Sipariş oluşturulduğunda stok düşür
+      try {
+        await qrCodeService.reduceStockForOrder(order.id);
+        console.log(`✅ Sipariş ${order.id} oluşturuldu ve stok düşürüldü`);
+      } catch (stockError) {
+        console.error('❌ Stok düşürme hatası:', stockError);
+        // Stok hatası durumunda siparişi iptal et
+        await prisma.order.update({
+          where: { id: order.id },
+          data: { status: OrderStatus.CANCELED }
+        });
+        return { success: false, message: 'Stok yetersizliği nedeniyle sipariş oluşturulamadı' };
+      }
+
+      // Sipariş sonrası işlemleri gerçekleştir (bakiye düşürme vs.)
       await this.processPostOrderOperations(user, cartTotal);
 
       // Sepeti pasif hale getir
@@ -411,6 +426,20 @@ export class OrderService {
           cart: true
         }
       });
+
+      // YENİ MANTIK: Admin siparişi oluşturulduğunda stok düşür
+      try {
+        await qrCodeService.reduceStockForOrder(order.id);
+        console.log(`✅ Admin siparişi ${order.id} oluşturuldu ve stok düşürüldü`);
+      } catch (stockError) {
+        console.error('❌ Admin siparişi stok düşürme hatası:', stockError);
+        // Stok hatası durumunda siparişi iptal et
+        await prisma.order.update({
+          where: { id: order.id },
+          data: { status: OrderStatus.CANCELED }
+        });
+        return { success: false, message: 'Stok yetersizliği nedeniyle admin siparişi oluşturulamadı' };
+      }
 
       // Admin siparişi için özel işlemler - AÇIK HESAP LİMİTİ KONTROLÜ YOK
       await this.processAdminOrderOperations(user, orderTotal);

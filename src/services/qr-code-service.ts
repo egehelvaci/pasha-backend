@@ -595,6 +595,127 @@ export class QRCodeService {
       throw new Error(`İstatistik hatası: ${error.message}`)
     }
   }
+
+  /**
+   * Sipariş iptal edildiğinde stokları geri ekle - Opsiyonel yükseklik kuralları destekli
+   */
+  async restoreStockForOrder(orderId: string) {
+    try {
+      const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: {
+          items: {
+            include: {
+              product: {
+                include: {
+                  productrules: {
+                    include: {
+                      productsizeoptions: true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      })
+
+      if (!order) {
+        throw new Error('Sipariş bulunamadı')
+      }
+
+      // Her sipariş öğesi için stok geri ekle
+      for (const item of order.items) {
+        console.log(`🔄 Stok geri ekleme: ${item.product_id} - ${item.width}x${item.height} - Saçak: ${item.has_fringe} - Adet: ${item.quantity}`)
+        
+        const itemWidth = item.width ? Math.round(Number(item.width)) : 0
+        const itemHeight = item.height ? Math.round(Number(item.height)) : 0
+        const itemHasFringe = item.has_fringe || false
+
+        // Kullanılacak varyasyon boyutunu belirle (opsiyonel yükseklik kuralları dahil)
+        let targetWidth = itemWidth
+        let targetHeight = itemHeight
+
+        // Ürün kuralını kontrol et
+        if (item.product.rule_id && item.product.productrules) {
+          const sizeOptions = item.product.productrules.productsizeoptions
+          
+          // Bu genişlik için opsiyonel yükseklik seçeneği var mı?
+          const widthOption = sizeOptions.find(opt => opt.width === itemWidth)
+          
+          if (widthOption && widthOption.is_optional_height) {
+            // Opsiyonel yükseklik kuralı var - maksimum yükseklik değerini kullan
+            targetHeight = widthOption.height
+            console.log(`📏 Opsiyonel yükseklik kuralı: ${itemWidth}x${itemHeight} → ${targetWidth}x${targetHeight} varyasyonu kullanılacak`)
+          }
+        }
+
+        // Varyasyonu bul - önce tam eşleşme arayın
+        let variations = await prisma.productvariations.findMany({
+          where: {
+            product_id: item.product_id,
+            width: targetWidth,
+            height: targetHeight,
+            has_fringe: itemHasFringe
+          }
+        })
+
+        // Tam eşleşme bulamazsak alternatif saçak değeri ile ara
+        if (variations.length === 0) {
+          variations = await prisma.productvariations.findMany({
+            where: {
+              product_id: item.product_id,
+              width: targetWidth,
+              height: targetHeight,
+              has_fringe: !itemHasFringe
+            }
+          })
+        }
+
+        // Stok geri ekleme - opsiyonel yükseklik vs hazır kesim
+        if (variations.length > 0) {
+          const variation = variations[0]
+          
+          // Ürünün opsiyonel yükseklik olup olmadığını kontrol et
+          const sizeOptions = item.product.productrules?.productsizeoptions || []
+          
+          const isOptionalHeight = sizeOptions.some((so: any) => 
+            so.width === variation.width && so.is_optional_height
+          )
+          
+          let updateData: any = {}
+          
+          if (isOptionalHeight) {
+            // Opsiyonel yükseklik: Sadece m² geri ekle
+            const actualPieceAreaM2 = (itemWidth * itemHeight) / 10000;
+            const restoredAreaM2 = item.quantity * actualPieceAreaM2;
+            const currentAreaM2 = Number(variation.stock_area_m2 || 0);
+            const newAreaM2 = currentAreaM2 + restoredAreaM2;
+            
+            updateData.stock_area_m2 = newAreaM2;
+            console.log(`📦 Opsiyonel yükseklik stok geri eklendi: ${currentAreaM2} → ${newAreaM2}m² (Geri eklenen: ${restoredAreaM2}m²)`)
+          } else {
+            // Hazır kesim: Sadece adet geri ekle
+            const newStock = variation.stock_quantity + item.quantity
+            updateData.stock_quantity = newStock;
+            console.log(`📦 Hazır kesim stok geri eklendi: ${variation.stock_quantity} → ${newStock} adet`)
+          }
+          
+          await prisma.productvariations.update({
+            where: { id: variation.id },
+            data: updateData
+          })
+          
+        } else {
+          console.log(`⚠️ Uygun varyasyon bulunamadı: ${item.product_id} - ${targetWidth}x${targetHeight}`)
+        }
+      }
+
+      return { success: true }
+    } catch (error: any) {
+      throw new Error(`Stok geri ekleme hatası: ${error.message}`)
+    }
+  }
 }
 
 export const qrCodeService = new QRCodeService() 
