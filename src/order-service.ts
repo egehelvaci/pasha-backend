@@ -2,6 +2,7 @@ import { PrismaClient, OrderStatus, Order, OrderItem } from '../generated/prisma
 import { v4 as uuidv4 } from 'uuid';
 import { Decimal } from '@prisma/client/runtime/library';
 import { roundCurrency, addCurrency } from './utils/number-utils';
+import { $Enums } from '../generated/prisma';
 
 const prisma = new PrismaClient();
 
@@ -17,6 +18,21 @@ export interface CreateOrderFromCartRequest {
 export interface CreateOrderRequest {
   user_id: string;
   delivery_address_id?: string;
+  notes?: string;
+  items: {
+    product_id: string;
+    quantity: number;
+    width: number;
+    height: number;
+    has_fringe?: boolean;
+    cut_type?: string;
+    notes?: string;
+  }[];
+}
+
+export interface CreateAdminOrderRequest {
+  user_id: string;
+  store_id: string;
   notes?: string;
   items: {
     product_id: string;
@@ -246,6 +262,168 @@ export class OrderService {
     } catch (error) {
       console.error('Sepetten sipariş oluşturma hatası:', error);
       return { success: false, message: 'Sipariş oluşturulurken bir hata oluştu' };
+    }
+  }
+
+  /**
+   * Admin için özel sipariş oluşturma fonksiyonu
+   * Açık hesap limiti kontrolü yapmaz, doğrudan mağaza bakiyesinden düşer
+   */
+  async createAdminOrder(orderData: CreateAdminOrderRequest): Promise<{ 
+    success: boolean; 
+    message: string; 
+    order?: Order;
+  }> {
+    try {
+      // Kullanıcı ve mağaza bilgilerini al
+      const user = await prisma.user.findUnique({
+        where: { userId: orderData.user_id },
+        include: {
+          Store: {
+            include: {
+              StorePriceList: {
+                include: {
+                  PriceList: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      if (!user || !user.Store) {
+        return { success: false, message: 'Kullanıcı veya mağaza bulunamadı' };
+      }
+
+      // Kullanıcının belirtilen mağazaya ait olup olmadığını kontrol et
+      if (user.store_id !== orderData.store_id) {
+        return { success: false, message: 'Kullanıcı belirtilen mağazaya ait değil' };
+      }
+
+      // Mağaza aktiflik kontrolü
+      if (!user.Store.is_active) {
+        return { success: false, message: 'Mağaza aktif değil' };
+      }
+
+      // Kullanıcı adres bilgisi kontrolü
+      if (!user.adres) {
+        return { success: false, message: 'Kullanıcının adres bilgisi bulunamadı' };
+      }
+
+      // Sipariş items'larını kontrol et
+      if (!orderData.items || orderData.items.length === 0) {
+        return { success: false, message: 'Sipariş öğeleri belirtilmedi' };
+      }
+
+      // Cut type mapping - string'i enum'a çevir
+      const cutTypeMapping: { [key: string]: $Enums.cut_type_enum } = {
+        'standart': $Enums.cut_type_enum.rectangle,
+        'dikdörtgen': $Enums.cut_type_enum.rectangle,
+        'rectangle': $Enums.cut_type_enum.rectangle,
+        'daire': $Enums.cut_type_enum.round,
+        'round': $Enums.cut_type_enum.round,
+        'circle': $Enums.cut_type_enum.round,
+        'oval': $Enums.cut_type_enum.oval,
+        'custom': $Enums.cut_type_enum.custom,
+        'özel': $Enums.cut_type_enum.custom
+      };
+
+      // Sipariş öğelerini hazırla ve toplam tutarı hesapla
+      const orderItems = await this.prepareOrderItems(orderData.items, user.Store.store_id);
+      
+      if (orderItems.length === 0) {
+        return { success: false, message: 'Geçerli sipariş öğesi bulunamadı' };
+      }
+
+      // Sipariş tutarını hesapla
+      const orderTotal = orderItems.reduce((total, item) => total + item.total_price, 0);
+
+      // Geçici bir sepet oluştur (admin siparişi için)
+      const tempCart = await prisma.carts.create({
+        data: {
+          user_id: orderData.user_id,
+          is_active: false // Admin siparişi için hemen pasif
+        }
+      });
+
+      // Sepet öğelerini oluştur - cut_type mapping ile
+      await prisma.cart_items.createMany({
+        data: orderItems.map(item => {
+          const mappedCutType = cutTypeMapping[item.cut_type?.toLowerCase() || 'standart'] || $Enums.cut_type_enum.rectangle;
+          
+          return {
+            cart_id: tempCart.id,
+            product_id: item.product_id,
+            quantity: item.quantity,
+            width: item.width,
+            height: item.height,
+            area_m2: item.area_m2,
+            unit_price: item.unit_price,
+            total_price: item.total_price,
+            has_fringe: item.has_fringe,
+            cut_type: mappedCutType,
+            notes: item.notes
+          };
+        })
+      });
+
+      // Sipariş oluştur
+      const order = await prisma.order.create({
+        data: {
+          user_id: orderData.user_id,
+          cart_id: tempCart.id,
+          total_price: orderTotal,
+          status: OrderStatus.PENDING,
+          
+          // Kullanıcı adres bilgilerini ekle
+          delivery_address: user.adres,
+          store_name: user.Store.kurum_adi,
+          store_tax_number: user.Store.vergi_numarasi,
+          store_tax_office: user.Store.vergi_dairesi,
+          store_phone: user.Store.telefon,
+          store_email: user.Store.eposta,
+          store_fax: user.Store.faks_numarasi,
+          
+          items: {
+            create: orderItems.map(item => ({
+              product_id: item.product_id,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              total_price: item.total_price,
+              has_fringe: item.has_fringe,
+              width: item.width,
+              height: item.height,
+              cut_type: item.cut_type?.toString()
+            }))
+          }
+        },
+        include: {
+          items: {
+            include: {
+              product: {
+                include: {
+                  collection: true
+                }
+              }
+            }
+          },
+          user: true,
+          cart: true
+        }
+      });
+
+      // Admin siparişi için özel işlemler - AÇIK HESAP LİMİTİ KONTROLÜ YOK
+      await this.processAdminOrderOperations(user, orderTotal);
+
+      return { 
+        success: true, 
+        message: 'Admin siparişi başarıyla oluşturuldu', 
+        order 
+      };
+
+    } catch (error) {
+      console.error('Admin sipariş oluşturma hatası:', error);
+      return { success: false, message: 'Admin siparişi oluşturulurken bir hata oluştu' };
     }
   }
 
@@ -790,6 +968,89 @@ export class OrderService {
 
     } catch (error) {
       console.error('Sipariş sonrası işlemler hatası:', error);
+      // Bu hata sipariş oluşumunu engellemeyecek, sadece log tutulacak
+    }
+  }
+
+  // Admin siparişi sonrası işlemler - Açık hesap limiti kontrolsüz
+  private async processAdminOrderOperations(user: any, orderTotal: number): Promise<void> {
+    const store = user.Store;
+    
+    try {
+      console.log(`🔧 ADMİN SİPARİŞİ: Bakiye işlemleri başlatılıyor`)
+      console.log(`  - Mağaza: ${store.kurum_adi}`)
+      console.log(`  - Sipariş tutarı: ${orderTotal} TL`)
+      console.log(`  - Mevcut bakiye: ${store.bakiye} TL`)
+      console.log(`  - Açık hesap kontrolü: YAPILMAYACAK (Admin siparişi)`)
+      
+      // Admin siparişi - Açık hesap limiti kontrolü yapılmaz
+      // Doğrudan bakiyeden düşülür
+      const currentBalance = Number(store.bakiye || 0);
+      const newBalance = currentBalance - orderTotal;
+      
+      await prisma.store.update({
+        where: { store_id: store.store_id },
+        data: {
+          bakiye: newBalance
+          // açık hesap limiti değişmez
+        }
+      });
+
+      console.log(`💰 ADMİN SİPARİŞİ: Bakiye güncellendi`)
+      console.log(`  - Önceki bakiye: ${currentBalance} TL`)
+      console.log(`  - Sipariş tutarı: ${orderTotal} TL`)
+      console.log(`  - Yeni bakiye: ${newBalance} TL`)
+      console.log(`  - Açık hesap limiti: DEĞİŞMEDİ (Admin siparişi)`)
+
+      // Fiyat listesi limitini güncelle (eğer varsa)
+      const storePriceList = store.StorePriceList.find((spl: any) => spl.PriceList);
+      if (storePriceList && storePriceList.PriceList.limit_amount) {
+        const currentLimit = Number(storePriceList.PriceList.limit_amount);
+        const newLimit = currentLimit - orderTotal;
+
+        // Fiyat listesi limitini güncelle
+        await prisma.priceList.update({
+          where: { price_list_id: storePriceList.PriceList.price_list_id },
+          data: {
+            limit_amount: Math.max(0, newLimit) // Negatif olmayacak şekilde
+          }
+        });
+
+        console.log(`📋 ADMİN SİPARİŞİ: Fiyat listesi limiti güncellendi: ${currentLimit} TL -> ${newLimit} TL`);
+
+        // Limit bittiğinde varsayılan fiyat listesine geç
+        if (newLimit <= 0) {
+          console.log(`📋 ADMİN SİPARİŞİ: Fiyat listesi limiti bitti - Varsayılan fiyat listesine geçiliyor`);
+          
+          // Mevcut fiyat listesi atamasını kaldır
+          await prisma.storePriceList.delete({
+            where: {
+              store_price_list_id: storePriceList.store_price_list_id
+            }
+          });
+
+          // Varsayılan fiyat listesini bul ve ata
+          const defaultPriceList = await prisma.priceList.findFirst({
+            where: { 
+              is_default: true,
+              is_active: true 
+            }
+          });
+
+          if (defaultPriceList) {
+            await prisma.storePriceList.create({
+              data: {
+                store_id: store.store_id,
+                price_list_id: defaultPriceList.price_list_id
+              }
+            });
+            console.log(`✅ ADMİN SİPARİŞİ: Varsayılan fiyat listesi atandı: ${defaultPriceList.name}`);
+          }
+        }
+      }
+
+    } catch (error) {
+      console.error('Admin sipariş sonrası işlemler hatası:', error);
       // Bu hata sipariş oluşumunu engellemeyecek, sadece log tutulacak
     }
   }

@@ -1,4 +1,5 @@
 import { Request, Response } from 'express'
+import { OrderService } from '../order-service'
 import { qrCodeService } from '../services/qr-code-service'
 import prisma from '../utils/prisma'
 
@@ -13,6 +14,8 @@ export class AdminOrderController {
     this.updateOrderStatus = this.updateOrderStatus.bind(this)
     this.generateQRCodes = this.generateQRCodes.bind(this)
     this.generateQRCodeImages = this.generateQRCodeImages.bind(this)
+    this.createOrderForStore = this.createOrderForStore.bind(this)
+    this.processAdminOrder = this.processAdminOrder.bind(this)
   }
 
   /**
@@ -824,6 +827,297 @@ export class AdminOrderController {
       res.status(200).json(result);
     } catch (error: any) {
       res.status(500).json({ message: 'QR kod görselleri oluşturulurken bir hata oluştu.', error: error.message });
+    }
+  }
+
+  /**
+   * Admin için yeni sipariş oluşturma
+   * Mağaza ID ve kullanıcı ID alır, o kullanıcı için sipariş oluşturur
+   */
+  async createOrderForStore(req: Request, res: Response) {
+    try {
+      const { store_id, user_id } = req.body
+
+      // Zorunlu alanları kontrol et
+      if (!store_id || !user_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'store_id ve user_id alanları zorunludur'
+        })
+      }
+
+      // Kullanıcı ve mağaza bilgilerini kontrol et
+      const user = await prisma.user.findUnique({
+        where: { userId: user_id },
+        include: {
+          Store: true,
+          userType: true
+        }
+      })
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'Kullanıcı bulunamadı'
+        })
+      }
+
+      // Kullanıcının belirtilen mağazaya ait olup olmadığını kontrol et
+      if (user.store_id !== store_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Kullanıcı belirtilen mağazaya ait değil'
+        })
+      }
+
+      if (!user.Store) {
+        return res.status(400).json({
+          success: false,
+          message: 'Kullanıcının mağaza bilgisi bulunamadı'
+        })
+      }
+
+      // Mağaza aktiflik kontrolü
+      if (!user.Store.is_active) {
+        return res.status(400).json({
+          success: false,
+          message: 'Mağaza aktif değil'
+        })
+      }
+
+      // Kullanıcı adres bilgisi kontrolü
+      if (!user.adres) {
+        return res.status(400).json({
+          success: false,
+          message: 'Kullanıcının adres bilgisi bulunamadı'
+        })
+      }
+
+      // Mağazaya atanmış fiyat listesini al
+      const storePriceList = await prisma.storePriceList.findFirst({
+        where: { store_id: store_id },
+        include: {
+          PriceList: {
+            include: {
+              PriceListDetail: {
+                include: {
+                  Collection: {
+                    include: {
+                      products: {
+                        include: {
+                          productrules: {
+                            include: {
+                              productsizeoptions: true,
+                              productrulecuttypes: {
+                                include: {
+                                  cuttypes: true
+                                }
+                              }
+                            }
+                          },
+                          productvariations: true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      })
+
+      if (!storePriceList) {
+        return res.status(400).json({
+          success: false,
+          message: 'Mağazaya atanmış fiyat listesi bulunamadı'
+        })
+      }
+
+      // Fiyat listesi aktiflik kontrolü
+      if (!storePriceList.PriceList.is_active) {
+        return res.status(400).json({
+          success: false,
+          message: 'Mağazaya atanmış fiyat listesi aktif değil'
+        })
+      }
+
+      // Tüm ürünleri fiyat listesi ile birlikte hazırla
+      const productsWithPricing = []
+
+      for (const priceDetail of storePriceList.PriceList.PriceListDetail) {
+        const collection = priceDetail.Collection
+        const price = Number(priceDetail.price_per_square_meter)
+
+        for (const product of collection.products) {
+                     // Ürün kural bilgilerini işle
+           let sizeOptions: any[] = []
+           let cutTypes: any[] = []
+           let canHaveFringe = false
+
+          if (product.productrules) {
+            canHaveFringe = product.productrules.can_have_fringe
+            
+            // Boyut seçeneklerini ekle
+            sizeOptions = product.productrules.productsizeoptions?.map(so => {
+              const stockForSize = product.productvariations?.find(v => 
+                v.width === so.width && v.height === so.height
+              )
+              
+              return {
+                id: so.id,
+                width: so.width,
+                height: so.height,
+                is_optional_height: so.is_optional_height || false,
+                stockQuantity: stockForSize ? stockForSize.stock_quantity : 0,
+                stockAreaM2: stockForSize ? Number(stockForSize.stock_area_m2 || 0) : 0
+              }
+            }) || []
+
+            // Kesim tiplerini ekle
+            cutTypes = product.productrules.productrulecuttypes?.map(ct => ({
+              id: ct.cuttypes.id,
+              name: ct.cuttypes.name
+            })) || []
+          }
+
+          productsWithPricing.push({
+            productId: product.productId,
+            name: product.name,
+            description: product.description,
+            productImage: product.productImage,
+            collectionId: product.collectionId,
+            collectionName: collection.name,
+            pricing: {
+              price: price,
+              currency: storePriceList.PriceList.currency || "TRY",
+              priceListName: storePriceList.PriceList.name
+            },
+            canHaveFringe: canHaveFringe,
+            sizeOptions: sizeOptions,
+            cutTypes: cutTypes,
+            createdAt: product.createdAt,
+            updatedAt: product.updatedAt
+          })
+        }
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Admin sipariş oluşturma bilgileri hazırlandı',
+        data: {
+          user: {
+            userId: user.userId,
+            name: user.name,
+            surname: user.surname,
+            email: user.email,
+            phoneNumber: user.phoneNumber,
+            adres: user.adres,
+            userType: user.userType.name
+          },
+          store: {
+            store_id: user.Store.store_id,
+            kurum_adi: user.Store.kurum_adi,
+            vergi_numarasi: user.Store.vergi_numarasi,
+            vergi_dairesi: user.Store.vergi_dairesi,
+            telefon: user.Store.telefon,
+            eposta: user.Store.eposta,
+            bakiye: user.Store.bakiye || 0,
+            acik_hesap_tutari: user.Store.acik_hesap_tutari || 0,
+            limitsiz_acik_hesap: user.Store.limitsiz_acik_hesap || false
+          },
+          priceList: {
+            price_list_id: storePriceList.PriceList.price_list_id,
+            name: storePriceList.PriceList.name,
+            description: storePriceList.PriceList.description,
+            currency: storePriceList.PriceList.currency,
+            limit_amount: storePriceList.PriceList.limit_amount
+          },
+          products: productsWithPricing,
+          totalProducts: productsWithPricing.length,
+          availableCollections: [...new Set(productsWithPricing.map(p => p.collectionName))]
+        }
+      })
+
+    } catch (error: any) {
+      console.error('Admin sipariş oluşturma hatası:', error)
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Admin sipariş oluşturulurken bir hata oluştu'
+      })
+    }
+  }
+
+  /**
+   * Admin için sipariş oluştur (asıl sipariş oluşturma)
+   */
+  async processAdminOrder(req: Request, res: Response) {
+    try {
+      const { store_id, user_id, items, notes } = req.body
+
+      // Zorunlu alanları kontrol et
+      if (!store_id || !user_id || !items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'store_id, user_id ve items alanları zorunludur'
+        })
+      }
+
+      // Items validasyonu
+      for (const item of items) {
+        if (!item.product_id || !item.quantity || !item.width || !item.height) {
+          return res.status(400).json({
+            success: false,
+            message: 'Her sipariş öğesi için product_id, quantity, width ve height zorunludur'
+          })
+        }
+
+        if (item.quantity <= 0 || item.width <= 0 || item.height <= 0) {
+          return res.status(400).json({
+            success: false,
+            message: 'Quantity, width ve height değerleri pozitif olmalıdır'
+          })
+        }
+      }
+
+      // OrderService'i kullanarak admin siparişi oluştur
+      const orderService = new OrderService()
+      const result = await orderService.createAdminOrder({
+        user_id,
+        store_id,
+        notes,
+        items: items.map((item: any) => ({
+          product_id: item.product_id,
+          quantity: item.quantity,
+          width: item.width,
+          height: item.height,
+          has_fringe: item.has_fringe || false,
+          cut_type: item.cut_type || 'standart',
+          notes: item.notes
+        }))
+      })
+
+      if (!result.success) {
+        return res.status(400).json({
+          success: false,
+          message: result.message
+        })
+      }
+
+      return res.status(201).json({
+        success: true,
+        message: result.message,
+        data: {
+          order: result.order
+        }
+      })
+
+    } catch (error: any) {
+      console.error('Admin sipariş işleme hatası:', error)
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Admin siparişi işlenirken bir hata oluştu'
+      })
     }
   }
 }

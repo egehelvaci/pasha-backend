@@ -41,6 +41,10 @@ router.get('/orders/stats', adminOrderController.getOrderStats)
 router.get('/orders/:orderId', adminOrderController.getOrderById)
 router.post('/orders/:orderId/confirm', adminOrderController.confirmOrder)
 
+// Admin sipariş oluşturma rotaları
+router.post('/orders/create-for-store', adminOrderController.createOrderForStore)
+router.post('/orders/process-admin-order', adminOrderController.processAdminOrder)
+
 // QR Kod yönetimi rotaları
 router.post('/orders/:orderId/generate-qr', adminOrderController.generateQRCodes);
 router.post('/orders/:orderId/generate-qr-images', adminOrderController.generateQRCodeImages);
