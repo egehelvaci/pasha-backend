@@ -232,7 +232,7 @@ export class PaymentService {
 
       // Octet API'ye istek gönder
       const response = await axios.post(
-        'https://qaportalapi.octet.com.tr/payments/common',
+        'https://portalapi.octet.com.tr/payments/common',
         paymentRequest,
         {
           headers: {
