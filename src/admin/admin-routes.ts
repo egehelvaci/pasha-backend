@@ -8,6 +8,7 @@ import storeRoutes from './store-routes'
 import productRulesRoutes from './product-rules-routes'
 import cutTypesRoutes from './cut-types-routes'
 import muhasebeRoutes from './muhasebe-routes'
+import adminCartRoutes from './admin-cart-routes'
 
 import { excelExportController } from './excel-export-controller'
 
@@ -34,6 +35,9 @@ router.use('/cut-types', cutTypesRoutes)
 
 // Muhasebe hareketleri rotalarını ekle
 router.use('/', muhasebeRoutes)
+
+// Admin sepet yönetimi rotalarını ekle
+router.use('/cart', adminCartRoutes)
 
 // Sipariş yönetimi rotaları
 router.get('/orders', adminOrderController.getAllOrders)

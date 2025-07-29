@@ -50,6 +50,216 @@ export class CartService {
     return cart;
   }
 
+  // Admin için kullanıcı sepeti oluştur/getir
+  async getOrCreateAdminCart(targetUserId: string, adminUserId: string, storeId: string) {
+    console.log(`Admin (${adminUserId}) kullanıcı (${targetUserId}) için admin sepet oluşturuyor/getiriyor`);
+    
+    let adminCart = await prisma.admin_carts.findFirst({
+      where: {
+        target_user_id: targetUserId,
+        admin_user_id: adminUserId,
+        store_id: storeId,
+        is_active: true
+      }
+    });
+
+    if (!adminCart) {
+      adminCart = await prisma.admin_carts.create({
+        data: {
+          target_user_id: targetUserId,
+          admin_user_id: adminUserId,
+          store_id: storeId,
+          is_active: true
+        }
+      });
+      console.log(`Yeni admin sepet oluşturuldu: ${adminCart.id}`);
+    }
+
+    return adminCart;
+  }
+
+  // Admin için kullanıcı sepetine ürün ekleme (yeni admin_cart_items tablosu kullanarak)
+  async addToAdminCart(data: AddToCartRequest & { targetUserId: string; adminUserId: string; storeId: string }) {
+    try {
+      console.log(`Admin (${data.adminUserId}) kullanıcı (${data.targetUserId}) için admin sepete ürün ekliyor`);
+      
+      // Ürün detay API'sini hedef kullanıcı ID'si ile çağır
+      const productDetails = await productService.getProductById(data.productId, data.targetUserId);
+
+      if (!productDetails) {
+        throw new Error('Ürün bulunamadı');
+      }
+
+      // Aynı validasyon kontrollerini yap
+      if (!productDetails.canHaveFringe && data.hasFringe) {
+        throw new Error('Bu ürün saçaklı olamaz');
+      }
+
+      if (!productDetails.sizeOptions || productDetails.sizeOptions.length === 0) {
+        throw new Error('Bu ürün için boyut seçenekleri tanımlanmamış');
+      }
+
+      const sizeOption = productDetails.sizeOptions.find(option => 
+        option.width === data.width && 
+        (option.is_optional_height || option.height === data.height)
+      );
+
+      if (!sizeOption) {
+        const availableSizes = productDetails.sizeOptions.map(s => 
+          `${s.width}cm${s.is_optional_height ? ` (max height: ${s.height}cm)` : `x${s.height}cm`}`
+        ).join(', ');
+        throw new Error(`Seçilen boyut (${data.width}x${data.height}cm) bu ürün için geçerli değil. Mevcut boyutlar: ${availableSizes}`);
+      }
+
+      if (!sizeOption.is_optional_height && sizeOption.height !== data.height) {
+        throw new Error(`Bu boyut için yükseklik ${sizeOption.height}cm olarak sabitdir`);
+      }
+
+      if (sizeOption.is_optional_height && data.height > sizeOption.height) {
+        throw new Error(`Maksimum yükseklik ${sizeOption.height}cm'dir`);
+      }
+
+      // Cut type kontrolü ve mapping
+      const validCutTypes = productDetails.cutTypes?.map(ct => ct.name.toLowerCase()) || [];
+      const requestedCutType = data.cutType.toLowerCase();
+      
+      const cutTypeMapping: { [key: string]: $Enums.cut_type_enum } = {
+        'standart': $Enums.cut_type_enum.rectangle,
+        'dikdörtgen': $Enums.cut_type_enum.rectangle, 
+        'rectangle': $Enums.cut_type_enum.rectangle,
+        'daire': $Enums.cut_type_enum.round,
+        'round': $Enums.cut_type_enum.round,
+        'circle': $Enums.cut_type_enum.round,
+        'oval': $Enums.cut_type_enum.oval,
+        'custom': $Enums.cut_type_enum.custom,
+        'özel': $Enums.cut_type_enum.custom,
+        'post': $Enums.cut_type_enum.custom,
+        'post kesim': $Enums.cut_type_enum.custom
+      };
+
+      const mappedCutType = cutTypeMapping[requestedCutType];
+      if (!mappedCutType) {
+        throw new Error(`Geçersiz kesim türü: ${data.cutType}. Geçerli değerler: standart, round, oval, custom, daire`);
+      }
+
+      const isValidCutType = validCutTypes.some(apiCutType => {
+        const apiMapped = cutTypeMapping[apiCutType];
+        return apiMapped === mappedCutType;
+      });
+
+      if (!isValidCutType) {
+        const availableCutTypes = productDetails.cutTypes?.map(ct => ct.name).join(', ') || 'Tanımsız';
+        throw new Error(`Seçilen kesim türü (${data.cutType}) bu ürün için geçerli değil. Mevcut kesim türleri: ${availableCutTypes}`);
+      }
+
+      // Stok kontrolü
+      const availableStock = sizeOption.stockQuantity || 0;
+      const availableAreaM2 = sizeOption.stockAreaM2 || 0;
+      
+      if (sizeOption.is_optional_height) {
+        const actualPieceAreaM2 = (data.width * data.height) / 10000;
+        const requestedAreaM2 = data.quantity * actualPieceAreaM2;
+
+        if (availableAreaM2 <= 0) {
+          throw new Error(`Seçilen boyut (${data.width}x${data.height}cm) için stok bulunmuyor`);
+        }
+
+        const maxQuantityFromArea = Math.floor(availableAreaM2 / actualPieceAreaM2);
+        if (data.quantity > maxQuantityFromArea) {
+          throw new Error(`Yeterli stok yok. Seçilen boyut (${data.width}x${data.height}cm) için maksimum sipariş: ${maxQuantityFromArea} adet (Mevcut: ${availableAreaM2}m²)`);
+        }
+      } else {
+        if (availableStock <= 0) {
+          throw new Error(`Seçilen boyut (${data.width}x${data.height}cm) için stok bulunmuyor`);
+        }
+
+        if (data.quantity > availableStock) {
+          throw new Error(`Yeterli stok yok. Seçilen boyut (${data.width}x${data.height}cm) için maksimum sipariş: ${availableStock} adet`);
+        }
+      }
+
+      // Fiyat hesaplama
+      const areaM2 = (data.width * data.height) / 10000;
+      const unitPrice = new Decimal(productDetails.pricing?.price || 0);
+      const totalPrice = new Decimal(data.quantity).mul(new Decimal(areaM2)).mul(unitPrice);
+
+      // Admin sepetini getir veya oluştur
+      const adminCart = await this.getOrCreateAdminCart(data.targetUserId, data.adminUserId, data.storeId);
+
+      // Aynı ürün, boyut ve özelliklerle admin sepette var mı kontrol et
+      const existingItem = await prisma.admin_cart_items.findFirst({
+        where: {
+          admin_cart_id: adminCart.id,
+          product_id: data.productId,
+          width: new Decimal(data.width),
+          height: new Decimal(data.height),
+          has_fringe: data.hasFringe,
+          cut_type: mappedCutType
+        }
+      });
+
+      if (existingItem) {
+        // Mevcut öğeyi güncelle
+        const newQuantity = existingItem.quantity + data.quantity;
+        
+        if (newQuantity > availableStock) {
+          throw new Error(`Toplam miktar stok miktarını aşıyor. Admin sepette zaten ${existingItem.quantity} adet var. Maksimum eklenebilir: ${availableStock - existingItem.quantity}`);
+        }
+
+        const newTotalPrice = new Decimal(newQuantity).mul(new Decimal(areaM2)).mul(unitPrice);
+
+        return await prisma.admin_cart_items.update({
+          where: { id: existingItem.id },
+          data: {
+            quantity: newQuantity,
+            total_price: newTotalPrice,
+            notes: data.notes || existingItem.notes
+          },
+          include: {
+            Product: true,
+            admin_carts: {
+              include: {
+                AdminUser: true,
+                TargetUser: true,
+                Store: true
+              }
+            }
+          }
+        });
+      } else {
+        // Yeni öğe ekle
+        return await prisma.admin_cart_items.create({
+          data: {
+            admin_cart_id: adminCart.id,
+            product_id: data.productId,
+            quantity: data.quantity,
+            width: new Decimal(data.width),
+            height: new Decimal(data.height),
+            area_m2: new Decimal(areaM2),
+            unit_price: unitPrice,
+            total_price: totalPrice,
+            has_fringe: data.hasFringe,
+            cut_type: mappedCutType,
+            notes: data.notes
+          },
+          include: {
+            Product: true,
+            admin_carts: {
+              include: {
+                AdminUser: true,
+                TargetUser: true,
+                Store: true
+              }
+            }
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Admin sepete ekleme hatası:', error);
+      throw error;
+    }
+  }
+
   // Sepete ürün ekleme
   async addToCart(data: AddToCartRequest) {
     try {
@@ -511,6 +721,137 @@ export class CartService {
     }
   }
 
+
+
+  // Admin için kullanıcı admin sepetini getirme
+  async getAdminCart(targetUserId: string, adminUserId: string, storeId: string) {
+    try {
+      console.log(`Admin (${adminUserId}) kullanıcı (${targetUserId}) admin sepetini getiriyor`);
+      
+      const adminCart = await prisma.admin_carts.findFirst({
+        where: {
+          target_user_id: targetUserId,
+          admin_user_id: adminUserId,
+          store_id: storeId,
+          is_active: true
+        },
+        include: {
+          admin_cart_items: {
+            orderBy: {
+              created_at: 'desc'
+            }
+          },
+          AdminUser: true,
+          TargetUser: true,
+          Store: true
+        }
+      });
+
+      if (!adminCart) {
+        return {
+          id: null,
+          targetUserId: targetUserId,
+          adminUserId: adminUserId,
+          storeId: storeId,
+          items: [],
+          totalItems: 0,
+          totalPrice: new Decimal(0)
+        };
+      }
+
+      // Her sepet öğesi için ürün bilgilerini al
+      const enhancedItems = await Promise.all(
+        adminCart.admin_cart_items.map(async (item) => {
+          try {
+            const productDetails = await productService.getProductById(item.product_id, targetUserId);
+            
+            return {
+              id: item.id,
+              productId: item.product_id,
+              quantity: item.quantity,
+              width: item.width,
+              height: item.height,
+              area_m2: item.area_m2,
+              unit_price: item.unit_price,
+              total_price: item.total_price,
+              has_fringe: item.has_fringe,
+              cut_type: item.cut_type === 'rectangle' ? 'standart' : item.cut_type,
+              notes: item.notes,
+              created_at: item.created_at,
+              updated_at: item.updated_at,
+              product: productDetails ? {
+                productId: productDetails.productId,
+                name: productDetails.name,
+                description: productDetails.description,
+                productImage: productDetails.productImage,
+                collection: {
+                  collectionId: productDetails.collection?.collectionId,
+                  name: productDetails.collection?.name,
+                  code: productDetails.collection?.code
+                },
+                pricing: {
+                  price: productDetails.pricing?.price,
+                  currency: productDetails.pricing?.currency
+                }
+              } : null
+            };
+          } catch (error) {
+            console.error(`Ürün detayları alınırken hata (${item.product_id}):`, error);
+            return {
+              id: item.id,
+              productId: item.product_id,
+              quantity: item.quantity,
+              width: item.width,
+              height: item.height,
+              area_m2: item.area_m2,
+              unit_price: item.unit_price,
+              total_price: item.total_price,
+              has_fringe: item.has_fringe,
+              cut_type: item.cut_type === 'rectangle' ? 'standart' : item.cut_type,
+              notes: item.notes,
+              created_at: item.created_at,
+              updated_at: item.updated_at,
+              product: null
+            };
+          }
+        })
+      );
+
+      const totalItems = enhancedItems.reduce((sum, item) => sum + item.quantity, 0);
+      const totalPrice = enhancedItems.reduce((sum, item) => sum.add(item.total_price), new Decimal(0));
+
+      return {
+        id: adminCart.id,
+        targetUserId: targetUserId,
+        adminUserId: adminUserId,
+        storeId: storeId,
+        items: enhancedItems,
+        totalItems,
+        totalPrice,
+        adminUser: {
+          userId: adminCart.AdminUser.userId,
+          name: adminCart.AdminUser.name,
+          surname: adminCart.AdminUser.surname
+        },
+        targetUser: {
+          userId: adminCart.TargetUser.userId,
+          name: adminCart.TargetUser.name,
+          surname: adminCart.TargetUser.surname
+        },
+        store: {
+          store_id: adminCart.Store.store_id,
+          kurum_adi: adminCart.Store.kurum_adi
+        },
+        notes: adminCart.notes,
+        createdAt: adminCart.created_at,
+        updatedAt: adminCart.updated_at
+      };
+    } catch (error) {
+      console.error('Admin sepet getirme hatası:', error);
+      throw error;
+    }
+  }
+
   // Sepetten ürün çıkar
   async removeFromCart(cartItemId: number, userId: string) {
     try {
@@ -536,6 +877,63 @@ export class CartService {
       return { success: true, message: 'Ürün sepetten çıkarıldı' };
     } catch (error) {
       console.error('Sepetten çıkarma hatası:', error);
+      throw error;
+    }
+  }
+
+  // Admin sepeti temizle
+  async clearAdminCart(targetUserId: string, adminUserId: string, storeId: string) {
+    try {
+      const adminCart = await prisma.admin_carts.findFirst({
+        where: {
+          target_user_id: targetUserId,
+          admin_user_id: adminUserId,
+          store_id: storeId,
+          is_active: true
+        }
+      });
+
+      if (!adminCart) {
+        throw new Error('Aktif admin sepet bulunamadı');
+      }
+
+      await prisma.admin_cart_items.deleteMany({
+        where: { admin_cart_id: adminCart.id }
+      });
+
+      return { success: true, message: 'Admin sepet temizlendi' };
+    } catch (error) {
+      console.error('Admin sepet temizleme hatası:', error);
+      throw error;
+    }
+  }
+
+  // Admin sepetinden ürün çıkar
+  async removeFromAdminCart(adminCartItemId: number, targetUserId: string, adminUserId: string) {
+    try {
+      // Önce öğenin doğru admin sepete ait olduğunu kontrol et
+      const adminCartItem = await prisma.admin_cart_items.findFirst({
+        where: {
+          id: adminCartItemId,
+          admin_carts: {
+            target_user_id: targetUserId,
+            admin_user_id: adminUserId,
+            is_active: true
+          }
+        }
+      });
+
+      if (!adminCartItem) {
+        throw new Error('Admin sepet öğesi bulunamadı veya yetkisiz erişim');
+      }
+
+      await prisma.admin_cart_items.delete({
+        where: { id: adminCartItemId }
+      });
+
+      return { success: true, message: 'Ürün admin sepetten çıkarıldı' };
+    } catch (error) {
+      console.error('Admin sepetten çıkarma hatası:', error);
       throw error;
     }
   }
@@ -671,6 +1069,69 @@ export class CartService {
     } catch (error) {
       console.error('Sepet onaylama hatası:', error);
       return { success: false, message: 'Sepet onaylanırken hata oluştu' };
+    }
+  }
+
+  // Admin sepetini onaylayarak normal sepete dönüştür
+  async confirmAdminCart(targetUserId: string, adminUserId: string, storeId: string): Promise<{ success: boolean; message: string; cartId?: number }> {
+    try {
+      const adminCart = await prisma.admin_carts.findFirst({
+        where: {
+          target_user_id: targetUserId,
+          admin_user_id: adminUserId,
+          store_id: storeId,
+          is_active: true
+        },
+        include: {
+          admin_cart_items: true
+        }
+      });
+
+      if (!adminCart || adminCart.admin_cart_items.length === 0) {
+        return { success: false, message: 'Aktif admin sepet bulunamadı veya sepet boş' };
+      }
+
+      // Normal sepet oluştur
+      const normalCart = await prisma.carts.create({
+        data: {
+          user_id: targetUserId,
+          is_active: false // Hemen sipariş için pasif
+        }
+      });
+
+      // Admin sepet öğelerini normal sepet öğelerine kopyala
+      const cartItemsData = adminCart.admin_cart_items.map(item => ({
+        cart_id: normalCart.id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        width: item.width,
+        height: item.height,
+        area_m2: item.area_m2,
+        unit_price: item.unit_price,
+        total_price: item.total_price,
+        has_fringe: item.has_fringe,
+        cut_type: item.cut_type,
+        notes: item.notes
+      }));
+
+      await prisma.cart_items.createMany({
+        data: cartItemsData
+      });
+
+      // Admin sepeti pasif duruma getir
+      await prisma.admin_carts.update({
+        where: { id: adminCart.id },
+        data: { is_active: false }
+      });
+
+      return { 
+        success: true, 
+        message: 'Admin sepet onaylandı ve normal sepete dönüştürüldü',
+        cartId: normalCart.id
+      };
+    } catch (error) {
+      console.error('Admin sepet onaylama hatası:', error);
+      return { success: false, message: 'Admin sepet onaylanırken hata oluştu' };
     }
   }
 } 

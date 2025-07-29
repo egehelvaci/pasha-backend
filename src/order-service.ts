@@ -13,6 +13,10 @@ const PRICE_LIST_MINIMUM_THRESHOLD = 1500;
 export interface CreateOrderFromCartRequest {
   user_id: string;
   cart_id: number;
+  delivery_address?: string;
+  store_name?: string;
+  store_tax_number?: string;
+  store_tax_office?: string;
   notes?: string;
 }
 
