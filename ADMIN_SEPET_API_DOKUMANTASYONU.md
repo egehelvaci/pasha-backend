@@ -42,6 +42,14 @@ CREATE TABLE admin_cart_items (
 
 ## API Endpoint'leri
 
+### Özet
+1. **POST** `/admin/cart/add-to-admin-cart` - Admin sepete ürün ekleme
+2. **GET** `/admin/cart/:targetUserId/:storeId` - Admin sepeti getirme  
+3. **DELETE** `/admin/cart/:targetUserId/:storeId/clear` - Admin sepeti temizleme
+4. **DELETE** `/admin/cart/:targetUserId/:storeId/item/:adminCartItemId` - Admin sepetinden ürün çıkarma
+5. **PUT** `/admin/cart/:targetUserId/:storeId/item/:adminCartItemId` - Admin sepet öğesi güncelleme
+6. **POST** `/admin/cart/create-order-from-admin-cart` - Admin sepetinden sipariş oluşturma
+
 ### 1. Admin Sepete Ürün Ekleme
 
 **Endpoint:** `POST /admin/cart/add-to-admin-cart`
@@ -241,7 +249,62 @@ CREATE TABLE admin_cart_items (
 }
 ```
 
-### 5. Admin Sepetinden Sipariş Oluşturma
+### 5. Admin Sepet Öğesi Güncelleme
+
+**Endpoint:** `PUT /admin/cart/:targetUserId/:storeId/item/:adminCartItemId`
+
+**Yetkilendirme:** Admin rolü gerekli
+
+**Parametreler:**
+- `targetUserId`: Sepet sahibi kullanıcı ID'si
+- `storeId`: Mağaza ID'si
+- `adminCartItemId`: Admin sepet öğesi ID'si
+
+**Request Body:**
+```json
+{
+  "quantity": 10,                         // Zorunlu: Yeni miktar (pozitif sayı)
+  "width": 120,                           // Opsiyonel: Yeni genişlik (cm, pozitif sayı)
+  "height": 180,                          // Opsiyonel: Yeni yükseklik (cm, pozitif sayı)
+  "hasFringe": true,                      // Opsiyonel: Saçak durumu
+  "cutType": "round",                     // Opsiyonel: Yeni kesim türü
+  "notes": "Güncellenen özel kesim"       // Opsiyonel: Yeni notlar
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Admin {adminUserId} tarafından {targetUser.name} {targetUser.surname} adlı kullanıcının admin sepet öğesi güncellendi",
+  "data": {
+    "adminCartItem": {
+      "id": 123,
+      "admin_cart_id": 45,
+      "product_id": "uuid",
+      "quantity": 10,
+      "width": "120.00",
+      "height": "180.00",
+      "area_m2": "2.16",
+      "unit_price": "25.00",
+      "total_price": "540.00",
+      "has_fringe": true,
+      "cut_type": "round",
+      "notes": "Güncellenen özel kesim",
+      "updated_at": "2024-01-15T11:00:00Z",
+      "Product": { /* ürün detayları */ }
+    },
+    "targetUser": {
+      "userId": "uuid",
+      "name": "Ahmet",
+      "surname": "Yılmaz",
+      "email": "ahmet@example.com"
+    }
+  }
+}
+```
+
+### 6. Admin Sepetinden Sipariş Oluşturma
 
 **Endpoint:** `POST /admin/cart/create-order-from-admin-cart`
 
@@ -301,6 +364,8 @@ CREATE TABLE admin_cart_items (
 - **Stok Yetersiz:** `Yeterli stok yok. Seçilen boyut için maksimum sipariş: 10 adet`
 - **Geçersiz Kesim:** `Seçilen kesim türü (custom) bu ürün için geçerli değil`
 - **Boş Sepet:** `Kullanıcının aktif admin sepeti bulunamadı veya sepet boş`
+- **Güncelleme Hatası:** `Geçerli bir miktar gerekli` (güncelleme için)
+- **Geçersiz ID:** `Geçerli bir admin sepet öğesi ID'si gerekli`
 
 ### 401 Unauthorized
 - **Kimlik Doğrulama:** `Admin kimlik doğrulaması gerekli`
@@ -367,6 +432,16 @@ CREATE TABLE admin_cart_items (
 3. Özel notlar ekler
 4. Sepeti müşteri onayı için bekletir
 5. Onay gelince sipariş oluşturur
+```
+
+### 4. Sepet Düzeltme
+```
+1. Admin müşteri için sepet oluşturur
+2. Yanlış boyut veya miktar ekler
+3. Müşteri düzeltme talep eder
+4. Admin sepet öğesini günceller
+5. Fiyat otomatik olarak yeniden hesaplanır
+6. Müşteri onayı ile sipariş oluşturur
 ```
 
 ## Dikkat Edilmesi Gerekenler

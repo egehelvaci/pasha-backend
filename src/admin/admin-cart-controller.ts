@@ -12,6 +12,7 @@ export class AdminCartController {
     this.getAdminCart = this.getAdminCart.bind(this);
     this.clearAdminCart = this.clearAdminCart.bind(this);
     this.removeFromAdminCart = this.removeFromAdminCart.bind(this);
+    this.updateAdminCartItem = this.updateAdminCartItem.bind(this);
     this.createOrderFromAdminCart = this.createOrderFromAdminCart.bind(this);
   }
 
@@ -306,6 +307,102 @@ export class AdminCartController {
       return res.status(400).json({
         success: false,
         message: error.message || 'Admin tarafından ürün admin sepetten çıkarılırken hata oluştu'
+      });
+    }
+  }
+
+  /**
+   * Admin için admin sepet öğesi güncelleme
+   */
+  async updateAdminCartItem(req: Request, res: Response) {
+    try {
+      const adminUserId = (req as any).user?.userId;
+      
+      if (!adminUserId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Admin kimlik doğrulaması gerekli'
+        });
+      }
+
+      const { targetUserId, storeId, adminCartItemId } = req.params;
+      const { quantity, width, height, hasFringe, cutType, notes } = req.body;
+
+      if (!targetUserId || !storeId || !adminCartItemId) {
+        return res.status(400).json({
+          success: false,
+          message: 'targetUserId, storeId ve adminCartItemId parametreleri gerekli'
+        });
+      }
+
+      const adminCartItemIdNum = Number(adminCartItemId);
+      if (isNaN(adminCartItemIdNum)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Geçerli bir admin sepet öğesi ID\'si gerekli'
+        });
+      }
+
+      // Quantity zorunlu alan
+      if (!quantity || quantity <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Geçerli bir miktar gerekli'
+        });
+      }
+
+      // Sayısal değerleri kontrol et (eğer gönderilmişse)
+      if ((width !== undefined && width <= 0) || (height !== undefined && height <= 0)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Genişlik ve yükseklik pozitif değerler olmalıdır'
+        });
+      }
+
+      // Hedef kullanıcının varlığını kontrol et
+      const targetUser = await prisma.user.findUnique({
+        where: { userId: targetUserId }
+      });
+
+      if (!targetUser) {
+        return res.status(404).json({
+          success: false,
+          message: 'Hedef kullanıcı bulunamadı'
+        });
+      }
+
+      const updateData = {
+        adminCartItemId: adminCartItemIdNum,
+        targetUserId,
+        adminUserId,
+        quantity: Number(quantity),
+        width: width ? Number(width) : undefined,
+        height: height ? Number(height) : undefined,
+        hasFringe: hasFringe !== undefined ? Boolean(hasFringe) : undefined,
+        cutType,
+        notes
+      };
+
+      const updatedItem = await cartService.updateAdminCartItem(updateData);
+
+      return res.status(200).json({
+        success: true,
+        message: `Admin ${adminUserId} tarafından ${targetUser.name} ${targetUser.surname} adlı kullanıcının admin sepet öğesi güncellendi`,
+        data: {
+          adminCartItem: updatedItem,
+          targetUser: {
+            userId: targetUser.userId,
+            name: targetUser.name,
+            surname: targetUser.surname,
+            email: targetUser.email
+          }
+        }
+      });
+    } catch (error: any) {
+      console.error('Admin sepet öğesi güncelleme hatası:', error);
+      return res.status(400).json({
+        success: false,
+        message: error.message || 'Admin tarafından sepet öğesi güncellenirken hata oluştu'
       });
     }
   }

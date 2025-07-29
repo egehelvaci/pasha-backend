@@ -1134,4 +1134,198 @@ export class CartService {
       return { success: false, message: 'Admin sepet onaylanırken hata oluştu' };
     }
   }
+
+  // Admin sepet öğesi güncelleme
+  async updateAdminCartItem(data: {
+    adminCartItemId: number;
+    targetUserId: string;
+    adminUserId: string;
+    quantity: number;
+    width?: number;
+    height?: number;
+    hasFringe?: boolean;
+    cutType?: string;
+    notes?: string;
+  }) {
+    try {
+      // Admin sepet öğesini bul ve kontrol et
+      const adminCartItem = await prisma.admin_cart_items.findFirst({
+        where: {
+          id: data.adminCartItemId,
+          admin_carts: {
+            target_user_id: data.targetUserId,
+            admin_user_id: data.adminUserId,
+            is_active: true
+          }
+        },
+        include: {
+          Product: true,
+          admin_carts: {
+            include: {
+              AdminUser: true,
+              TargetUser: true,
+              Store: true
+            }
+          }
+        }
+      });
+
+      if (!adminCartItem) {
+        throw new Error('Admin sepet öğesi bulunamadı veya yetkisiz erişim');
+      }
+
+      // Güncellenecek boyutlar
+      const width = data.width || adminCartItem.width.toNumber();
+      const height = data.height || adminCartItem.height.toNumber();
+      const hasFringe = data.hasFringe ?? adminCartItem.has_fringe ?? false;
+
+      // Ürün detaylarını al
+      const productDetails = await productService.getProductById(
+        adminCartItem.product_id, 
+        data.targetUserId
+      );
+
+      if (!productDetails) {
+        throw new Error('Ürün detayları alınamadı');
+      }
+
+      // Boyut kontrolü - eğer boyut değiştiriliyorsa
+      let sizeOption;
+      if (data.width || data.height) {
+        sizeOption = productDetails.sizeOptions?.find(option => 
+          option.width === width && 
+          (option.is_optional_height || option.height === height)
+        );
+
+        if (!sizeOption) {
+          const availableSizes = productDetails.sizeOptions?.map(s => 
+            `${s.width}cm${s.is_optional_height ? ` (max height: ${s.height}cm)` : `x${s.height}cm`}`
+          ).join(', ') || 'Tanımsız';
+          throw new Error(`Seçilen boyut (${width}x${height}cm) bu ürün için geçerli değil. Mevcut boyutlar: ${availableSizes}`);
+        }
+
+        // Height kontrolü
+        if (!sizeOption.is_optional_height && sizeOption.height !== height) {
+          throw new Error(`Bu boyut için yükseklik ${sizeOption.height}cm olarak sabitdir`);
+        }
+
+        if (sizeOption.is_optional_height && height > sizeOption.height) {
+          throw new Error(`Maksimum yükseklik ${sizeOption.height}cm'dir`);
+        }
+      } else {
+        // Boyut değişikliği yoksa mevcut boyut için size option'ı bul
+        sizeOption = productDetails.sizeOptions?.find(option => 
+          option.width === width && 
+          (option.is_optional_height || option.height === height)
+        );
+      }
+
+      // Stok kontrolü
+      if (sizeOption) {
+        const availableStock = sizeOption.stockQuantity || 0;
+        const availableAreaM2 = sizeOption.stockAreaM2 || 0;
+        
+        if (sizeOption.is_optional_height) {
+          // Opsiyonel yükseklik: Sadece m² bazlı kontrol
+          const actualPieceAreaM2 = (width * height) / 10000;
+          const requestedAreaM2 = data.quantity * actualPieceAreaM2;
+
+          if (availableAreaM2 <= 0) {
+            throw new Error(`Seçilen boyut (${width}x${height}cm) için stok bulunmuyor`);
+          }
+
+          const maxQuantityFromArea = Math.floor(availableAreaM2 / actualPieceAreaM2);
+          if (data.quantity > maxQuantityFromArea) {
+            throw new Error(`Yeterli stok yok. Seçilen boyut (${width}x${height}cm) için maksimum sipariş: ${maxQuantityFromArea} adet (Mevcut: ${availableAreaM2}m²)`);
+          }
+        } else {
+          // Hazır kesim: Sadece adet bazlı kontrol
+          if (availableStock <= 0) {
+            throw new Error(`Seçilen boyut (${width}x${height}cm) için stok bulunmuyor`);
+          }
+
+          if (data.quantity > availableStock) {
+            throw new Error(`Yeterli stok yok. Seçilen boyut (${width}x${height}cm) için maksimum sipariş: ${availableStock} adet`);
+          }
+        }
+      } else {
+        throw new Error(`Bu boyut (${width}x${height}cm) için stok bilgisi bulunamadı`);
+      }
+
+      // Saçak kontrolü
+      if (data.hasFringe !== undefined && !productDetails.canHaveFringe && hasFringe) {
+        throw new Error('Bu ürün saçaklı olamaz');
+      }
+
+      // Cut type kontrolü
+      let finalCutType: $Enums.cut_type_enum | undefined = undefined;
+      if (data.cutType) {
+        const validCutTypes = productDetails.cutTypes?.map(ct => ct.name.toLowerCase()) || [];
+        const requestedCutType = data.cutType.toLowerCase();
+        
+        const cutTypeMapping: { [key: string]: $Enums.cut_type_enum } = {
+          'standart': $Enums.cut_type_enum.rectangle,
+          'dikdörtgen': $Enums.cut_type_enum.rectangle, 
+          'rectangle': $Enums.cut_type_enum.rectangle,
+          'daire': $Enums.cut_type_enum.round,
+          'round': $Enums.cut_type_enum.round,
+          'circle': $Enums.cut_type_enum.round,
+          'oval': $Enums.cut_type_enum.oval,
+          'custom': $Enums.cut_type_enum.custom,
+          'özel': $Enums.cut_type_enum.custom,
+          'post': $Enums.cut_type_enum.custom,
+          'post kesim': $Enums.cut_type_enum.custom
+        };
+
+        finalCutType = cutTypeMapping[requestedCutType];
+        if (!finalCutType) {
+          throw new Error(`Geçersiz kesim türü: ${data.cutType}. Geçerli değerler: standart, round, oval, custom, daire`);
+        }
+
+        // API'deki cutTypes'tan validasyon yap
+        const isValidCutType = validCutTypes.some(apiCutType => {
+          const apiMapped = cutTypeMapping[apiCutType];
+          return apiMapped === finalCutType;
+        });
+
+        if (!isValidCutType) {
+          const availableCutTypes = productDetails.cutTypes?.map(ct => ct.name).join(', ') || 'Tanımsız';
+          throw new Error(`Seçilen kesim türü (${data.cutType}) bu ürün için geçerli değil. Mevcut kesim türleri: ${availableCutTypes}`);
+        }
+      }
+
+      // Fiyat yeniden hesaplama
+      const areaM2 = (width * height) / 10000;
+      const unitPrice = new Decimal(productDetails.pricing?.price || 0);
+      const totalPrice = new Decimal(data.quantity).mul(new Decimal(areaM2)).mul(unitPrice);
+
+      return await prisma.admin_cart_items.update({
+        where: { id: data.adminCartItemId },
+        data: {
+          quantity: data.quantity,
+          width: data.width ? new Decimal(data.width) : undefined,
+          height: data.height ? new Decimal(data.height) : undefined,
+          area_m2: new Decimal(areaM2),
+          unit_price: unitPrice,
+          total_price: totalPrice,
+          has_fringe: data.hasFringe ?? undefined,
+          cut_type: finalCutType,
+          notes: data.notes !== undefined ? data.notes : undefined
+        },
+        include: {
+          Product: true,
+          admin_carts: {
+            include: {
+              AdminUser: true,
+              TargetUser: true,
+              Store: true
+            }
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Admin sepet öğesi güncelleme hatası:', error);
+      throw error;
+    }
+  }
 } 

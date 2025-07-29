@@ -20,6 +20,10 @@ router.delete('/:targetUserId/:storeId/clear', adminCartController.clearAdminCar
 // DELETE /admin/cart/:targetUserId/:storeId/item/:adminCartItemId
 router.delete('/:targetUserId/:storeId/item/:adminCartItemId', adminCartController.removeFromAdminCart);
 
+// Admin için admin sepet öğesi güncelleme
+// PUT /admin/cart/:targetUserId/:storeId/item/:adminCartItemId
+router.put('/:targetUserId/:storeId/item/:adminCartItemId', adminCartController.updateAdminCartItem);
+
 // Admin için kullanıcı admin sepetinden sipariş oluşturma
 // POST /admin/cart/create-order-from-admin-cart
 router.post('/create-order-from-admin-cart', adminCartController.createOrderFromAdminCart);
