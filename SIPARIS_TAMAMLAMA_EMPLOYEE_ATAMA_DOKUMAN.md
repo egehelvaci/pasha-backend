@@ -14,17 +14,29 @@
 
 ### 1. Son QR Kod Okutulunca
 
-**Endpoint:** `/api/orders/scan-qr` (veya ilgili QR kod okuma endpointiniz)
+**Endpoint:** `/api/admin/scan-qr` (QR kod okuma endpointi)
+
+**HTML Form Sayfası:** `/api/employee-assignment/form?orderId=...&employees=...&orderData=...`
 
 **Başarılı response örneği:**
 ```json
 {
   "success": true,
   "message": "Tüm QR kodlar tamamlandı! Employee seçimi için form açılmalı.",
-  "needs_employee_assignment": true,
+  "qrCode": { ... },
+  "order": { ... },
+  "deliveryInfo": {
+    "completed_qr_codes": 3,
+    "total_qr_codes": 3,
+    "is_order_completed": true,
+    "completion_percentage": 100,
+    "order_status": "DELIVERED",
+    "needs_employee_assignment": true,
+    "qr_details": [ ... ]
+  },
   "employees": [
-    { "userId": "...", "name": "Ali", "surname": "Yılmaz", ... },
-    { "userId": "...", "name": "Ayşe", "surname": "Demir", ... }
+    { "userId": "...", "name": "Ali", "surname": "Yılmaz", "email": "...", "phoneNumber": "..." },
+    { "userId": "...", "name": "Ayşe", "surname": "Demir", "email": "...", "phoneNumber": "..." }
   ],
   "orderId": "..."
 }
@@ -107,6 +119,25 @@
 ```
 
 **Not:** `userTypeName: "employee"` ile employee kullanıcısı oluşturulabilir.
+
+---
+
+## Kullanım Örneği
+
+### 1. QR Kod Okutma
+Son QR kod okutulduğunda API response'unda `employees` listesi döner.
+
+### 2. HTML Form Açma
+Frontend, response'daki verilerle HTML formunu açar:
+```
+/api/employee-assignment/form?orderId=123&employees=[...]&orderData={...}
+```
+
+### 3. Employee Seçimi
+Kullanıcı dropdown'dan employee seçer ve "Employee'yi Ata" butonuna basar.
+
+### 4. Atama İşlemi
+Form, seçilen employee'yi backend'e gönderir ve atama tamamlanır.
 
 ---
 

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Atama - Sipariş Tamamlama</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .success-icon {
+            width: 60px;
+            height: 60px;
+            background: #4CAF50;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            color: white;
+            font-size: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .order-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border-left: 4px solid #667eea;
+        }
+
+        .order-info h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .order-info p {
+            color: #666;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="success-icon">✓</div>
+            <h1>Sipariş Tamamlandı!</h1>
+            <p>Bu siparişi tamamlayan çalışanı seçin</p>
+        </div>
+
+        <div class="alert alert-success" id="successAlert">
+            Employee başarıyla atandı!
+        </div>
+
+        <div class="alert alert-error" id="errorAlert">
+            Bir hata oluştu. Lütfen tekrar deneyin.
+        </div>
+
+        <div class="order-info" id="orderInfo">
+            <h3>Sipariş Bilgileri</h3>
+            <p><strong>Sipariş ID:</strong> <span id="orderId">-</span></p>
+            <p><strong>Durum:</strong> <span id="orderStatus">-</span></p>
+            <p><strong>Toplam Tutar:</strong> <span id="orderTotal">-</span></p>
+        </div>
+
+        <form id="employeeForm">
+            <div class="form-group">
+                <label for="employeeSelect">Çalışan Seçin:</label>
+                <select id="employeeSelect" required>
+                    <option value="">Çalışan seçin...</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="submitBtn">
+                Employee'yi Ata
+            </button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>İşlem yapılıyor...</p>
+        </div>
+    </div>
+
+    <script>
+        // URL'den parametreleri al
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('orderId');
+        const employees = JSON.parse(urlParams.get('employees') || '[]');
+        const orderData = JSON.parse(urlParams.get('orderData') || '{}');
+
+        // Sayfa yüklendiğinde çalışacak fonksiyon
+        document.addEventListener('DOMContentLoaded', function() {
+            // Sipariş bilgilerini göster
+            if (orderData.id) {
+                document.getElementById('orderId').textContent = orderData.id;
+                document.getElementById('orderStatus').textContent = orderData.status || 'DELIVERED';
+                document.getElementById('orderTotal').textContent = 
+                    orderData.total_price ? `${orderData.total_price} TL` : '-';
+            }
+
+            // Employee listesini doldur
+            const employeeSelect = document.getElementById('employeeSelect');
+            employees.forEach(employee => {
+                const option = document.createElement('option');
+                option.value = employee.userId;
+                option.textContent = `${employee.name} ${employee.surname} (${employee.email})`;
+                employeeSelect.appendChild(option);
+            });
+
+            // Form submit işlemi
+            document.getElementById('employeeForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const selectedEmployeeId = document.getElementById('employeeSelect').value;
+                if (!selectedEmployeeId) {
+                    showError('Lütfen bir çalışan seçin.');
+                    return;
+                }
+
+                await assignEmployee(selectedEmployeeId);
+            });
+        });
+
+        // Employee atama fonksiyonu
+        async function assignEmployee(employeeId) {
+            const submitBtn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+            
+            // UI'yi güncelle
+            submitBtn.disabled = true;
+            loading.classList.add('show');
+            hideAlerts();
+
+            try {
+                const response = await fetch('/api/employee-assignment/assign', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getAuthToken()}`
+                    },
+                    body: JSON.stringify({
+                        orderId: orderId,
+                        employeeId: employeeId
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccess('Employee başarıyla atandı!');
+                    // 3 saniye sonra sayfayı kapat
+                    setTimeout(() => {
+                        window.close();
+                    }, 3000);
+                } else {
+                    showError(result.message || 'Employee atama başarısız.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Bağlantı hatası. Lütfen tekrar deneyin.');
+            } finally {
+                submitBtn.disabled = false;
+                loading.classList.remove('show');
+            }
+        }
+
+        // Auth token'ı al (localStorage'dan veya başka bir yerden)
+        function getAuthToken() {
+            // Bu fonksiyonu kendi auth sisteminize göre güncelleyin
+            return localStorage.getItem('authToken') || '';
+        }
+
+        // Alert fonksiyonları
+        function showSuccess(message) {
+            const alert = document.getElementById('successAlert');
+            alert.textContent = message;
+            alert.style.display = 'block';
+        }
+
+        function showError(message) {
+            const alert = document.getElementById('errorAlert');
+            alert.textContent = message;
+            alert.style.display = 'block';
+        }
+
+        function hideAlerts() {
+            document.getElementById('successAlert').style.display = 'none';
+            document.getElementById('errorAlert').style.display = 'none';
+        }
+
+        // Eğer gerekli parametreler yoksa hata göster
+        if (!orderId || !employees.length) {
+            document.querySelector('.container').innerHTML = `
+                <div class="header">
+                    <h1>Hata!</h1>
+                    <p>Gerekli parametreler eksik. Bu sayfa doğrudan açılamaz.</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html> 

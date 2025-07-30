@@ -1,9 +1,15 @@
 import express from 'express'
 import { EmployeeAssignmentController } from '../controllers/employeeAssignmentController'
 import { authMiddleware, authorizeRoles } from '../auth/auth-middleware'
+import path from 'path'
 
 const router = express.Router()
 const employeeAssignmentController = new EmployeeAssignmentController()
+
+// Employee atama HTML sayfasını göster
+router.get('/form', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../public/employee-assignment.html'))
+})
 
 // Tüm employee'leri getir
 router.get('/employees', 
