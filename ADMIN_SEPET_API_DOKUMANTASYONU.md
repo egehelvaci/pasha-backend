@@ -43,16 +43,16 @@ CREATE TABLE admin_cart_items (
 ## API Endpoint'leri
 
 ### Özet
-1. **POST** `/admin/cart/add-to-admin-cart` - Admin sepete ürün ekleme
-2. **GET** `/admin/cart/:targetUserId/:storeId` - Admin sepeti getirme  
-3. **DELETE** `/admin/cart/:targetUserId/:storeId/clear` - Admin sepeti temizleme
-4. **DELETE** `/admin/cart/:targetUserId/:storeId/item/:adminCartItemId` - Admin sepetinden ürün çıkarma
-5. **PUT** `/admin/cart/:targetUserId/:storeId/item/:adminCartItemId` - Admin sepet öğesi güncelleme
-6. **POST** `/admin/cart/create-order-from-admin-cart` - Admin sepetinden sipariş oluşturma
+1. **POST** `/api/admin/cart/add-to-admin-cart` - Admin sepete ürün ekleme
+2. **GET** `/api/admin/cart/:targetUserId/:storeId` - Admin sepeti getirme  
+3. **DELETE** `/api/admin/cart/:targetUserId/:storeId/clear` - Admin sepeti temizleme
+4. **DELETE** `/api/admin/cart/:targetUserId/:storeId/item/:adminCartItemId` - Admin sepetinden ürün çıkarma
+5. **PUT** `/api/admin/cart/:targetUserId/:storeId/item/:adminCartItemId` - Admin sepet öğesi güncelleme
+6. **POST** `/api/admin/cart/create-order-from-admin-cart` - Admin sepetinden sipariş oluşturma
 
 ### 1. Admin Sepete Ürün Ekleme
 
-**Endpoint:** `POST /admin/cart/add-to-admin-cart`
+**Endpoint:** `POST /api/admin/cart/add-to-admin-cart`
 
 **Yetkilendirme:** Admin rolü gerekli
 
@@ -119,7 +119,7 @@ CREATE TABLE admin_cart_items (
 
 ### 2. Admin Sepeti Getirme
 
-**Endpoint:** `GET /admin/cart/:targetUserId/:storeId`
+**Endpoint:** `GET /api/admin/cart/:targetUserId/:storeId`
 
 **Yetkilendirme:** Admin rolü gerekli
 
@@ -194,7 +194,7 @@ CREATE TABLE admin_cart_items (
 
 ### 3. Admin Sepeti Temizleme
 
-**Endpoint:** `DELETE /admin/cart/:targetUserId/:storeId/clear`
+**Endpoint:** `DELETE /api/admin/cart/:targetUserId/:storeId/clear`
 
 **Yetkilendirme:** Admin rolü gerekli
 
@@ -222,7 +222,7 @@ CREATE TABLE admin_cart_items (
 
 ### 4. Admin Sepetinden Ürün Çıkarma
 
-**Endpoint:** `DELETE /admin/cart/:targetUserId/:storeId/item/:adminCartItemId`
+**Endpoint:** `DELETE /api/admin/cart/:targetUserId/:storeId/item/:adminCartItemId`
 
 **Yetkilendirme:** Admin rolü gerekli
 
@@ -251,7 +251,7 @@ CREATE TABLE admin_cart_items (
 
 ### 5. Admin Sepet Öğesi Güncelleme
 
-**Endpoint:** `PUT /admin/cart/:targetUserId/:storeId/item/:adminCartItemId`
+**Endpoint:** `PUT /api/admin/cart/:targetUserId/:storeId/item/:adminCartItemId`
 
 **Yetkilendirme:** Admin rolü gerekli
 
@@ -306,7 +306,7 @@ CREATE TABLE admin_cart_items (
 
 ### 6. Admin Sepetinden Sipariş Oluşturma
 
-**Endpoint:** `POST /admin/cart/create-order-from-admin-cart`
+**Endpoint:** `POST /api/admin/cart/create-order-from-admin-cart`
 
 **Yetkilendirme:** Admin rolü gerekli
 
