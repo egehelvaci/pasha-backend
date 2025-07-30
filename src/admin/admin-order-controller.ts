@@ -25,7 +25,7 @@ export class AdminOrderController {
     try {
       const { 
         page = 1, 
-        limit = 10, 
+        limit = 100, // Varsayılan olarak 100 sipariş
         status, 
         userId,
         sortBy = 'created_at',
@@ -43,7 +43,15 @@ export class AdminOrderController {
       const orderBy: any = {}
       orderBy[sortBy as string] = sortOrder
 
-      const [orders, totalCount] = await Promise.all([
+      // İstatistik sayılarını hesapla
+      const [
+        orders, 
+        totalCount,
+        totalOrders,
+        cancelledOrders,
+        completedOrders,
+        inDeliveryOrders
+      ] = await Promise.all([
         prisma.order.findMany({
           where,
           include: {
@@ -73,7 +81,21 @@ export class AdminOrderController {
           skip,
           take: Number(limit)
         }),
-        prisma.order.count({ where })
+        prisma.order.count({ where }),
+        // Toplam sipariş sayısı
+        prisma.order.count(),
+        // İptal edilen sipariş sayısı
+        prisma.order.count({
+          where: { status: 'CANCELED' }
+        }),
+        // Tamamlanan sipariş sayısı
+        prisma.order.count({
+          where: { status: 'DELIVERED' }
+        }),
+        // Teslimatta olan sipariş sayısı
+        prisma.order.count({
+          where: { status: 'SHIPPED' }
+        })
       ])
 
       const totalPages = Math.ceil(totalCount / Number(limit))
@@ -98,6 +120,12 @@ export class AdminOrderController {
             totalPages,
             hasNext: Number(page) < totalPages,
             hasPrev: Number(page) > 1
+          },
+          statistics: {
+            totalOrders,
+            cancelledOrders,
+            completedOrders,
+            inDeliveryOrders
           }
         }
       })
