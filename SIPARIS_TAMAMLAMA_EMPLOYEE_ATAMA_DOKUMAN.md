@@ -120,6 +120,17 @@
 
 **Not:** `userTypeName: "employee"` ile employee kullanıcısı oluşturulabilir.
 
+### Test Çalışanları
+
+Sistemde test amaçlı 4 çalışan bulunmaktadır:
+
+1. **Ahmet Yılmaz** - calisan1@pasha.com - +905551234567
+2. **Ayşe Demir** - calisan2@pasha.com - +905551234568  
+3. **Mehmet Kaya** - calisan3@pasha.com - +905551234569
+4. **Fatma Özkan** - calisan4@pasha.com - +905551234570
+
+**Şifre:** Tüm test çalışanlarının şifresi `123456`'dır.
+
 ---
 
 ## Kullanım Örneği
