@@ -419,8 +419,8 @@ export class OrderService {
         return { success: false, message: 'Stok yetersizliği nedeniyle sipariş oluşturulamadı' };
       }
 
-      // Sipariş sonrası işlemleri gerçekleştir (bakiye düşürme vs.)
-      await this.processPostOrderOperations(user, cartTotal);
+      // Admin sipariş sonrası işlemleri gerçekleştir (bakiye düşürme vs.)
+      await this.processAdminOrderOperations(user, cartTotal);
 
       // Admin sepeti pasif hale getir
       await prisma.admin_carts.update({
