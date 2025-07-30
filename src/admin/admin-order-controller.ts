@@ -494,11 +494,11 @@ export class AdminOrderController {
             <div class="container">
               <div class="success-icon">✅</div>
               <div class="message">
-                <strong>Sipariş Tamamlandı!</strong><br>
-                Tüm QR kodlar okutuldu. Employee ataması için form açılacak.
+                <strong>Ürünler Tamamlandı!</strong><br>
+                Siparişi tamamlamak için lütfen çalışan seçin.
               </div>
               <a href="${result.formUrl}" class="btn" target="_blank">
-                Employee Seçim Formunu Aç
+                Çalışan Seç
               </a>
             </div>
             <script>

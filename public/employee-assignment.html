@@ -182,13 +182,13 @@
     <div class="container">
         <div class="header">
             <div class="success-icon">✓</div>
-            <h1>Sipariş Tamamlandı!</h1>
-            <p>Bu siparişi tamamlayan çalışanı seçin</p>
+                         <h1>Ürünler Tamamlandı!</h1>
+             <p>Siparişi tamamlamak için lütfen çalışan seçin</p>
         </div>
 
-        <div class="alert alert-success" id="successAlert">
-            Employee başarıyla atandı!
-        </div>
+                 <div class="alert alert-success" id="successAlert">
+             Çalışan başarıyla atandı!
+         </div>
 
         <div class="alert alert-error" id="errorAlert">
             Bir hata oluştu. Lütfen tekrar deneyin.
@@ -209,9 +209,9 @@
                 </select>
             </div>
 
-            <button type="submit" class="btn btn-primary" id="submitBtn">
-                Employee'yi Ata
-            </button>
+                         <button type="submit" class="btn btn-primary" id="submitBtn">
+                 Çalışanı Kaydet
+             </button>
         </form>
 
         <div class="loading" id="loading">
@@ -291,9 +291,9 @@
                     setTimeout(() => {
                         window.close();
                     }, 3000);
-                } else {
-                    showError(result.message || 'Employee atama başarısız.');
-                }
+                                 } else {
+                     showError(result.message || 'Çalışan atama başarısız.');
+                 }
             } catch (error) {
                 console.error('Error:', error);
                 showError('Bağlantı hatası. Lütfen tekrar deneyin.');
