@@ -63,6 +63,9 @@ router.get('/statistics/top-products', adminStatisticsController.getTopProducts)
 router.get('/statistics/orders-over-time', adminStatisticsController.getOrdersOverTime)
 router.get('/statistics/totals', adminStatisticsController.getTotalStatistics)
 
+// Kullanıcı tiplerini listeleme
+router.get('/user-types', adminController.getUserTypes)
+
 // Kullanıcıları listeleme
 router.get('/users', adminController.getAllUsers)
 
