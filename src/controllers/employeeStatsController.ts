@@ -77,7 +77,8 @@ export class EmployeeStatsController {
       // İstatistikleri hesapla
       const totalCompletedOrders = employeeStats.length
       const totalAmount = employeeStats.reduce((sum, stat) => sum + Number(stat.totalAmount), 0)
-      const totalAreaM2 = employeeStats.reduce((sum, stat) => sum + Number(stat.totalAreaM2), 0)
+      const totalAreaCm2 = employeeStats.reduce((sum, stat) => sum + Number(stat.totalAreaM2), 0)
+      const totalAreaM2 = totalAreaCm2 / 10000 // cm²'den m²'ye dönüştür
       const totalItems = employeeStats.reduce((sum, stat) => sum + stat.totalItems, 0)
 
       // Ortalama değerleri hesapla
@@ -90,7 +91,7 @@ export class EmployeeStatsController {
         orderId: stat.orderId,
         completedAt: stat.completedAt,
         totalAmount: Number(stat.totalAmount),
-        totalAreaM2: Number(stat.totalAreaM2),
+        totalAreaM2: Number(stat.totalAreaM2) / 10000, // cm²'den m²'ye dönüştür
         totalItems: stat.totalItems,
         orderStatus: stat.order.status,
         orderCreatedAt: stat.order.created_at,
@@ -107,7 +108,8 @@ export class EmployeeStatsController {
 
       const recentCompletedOrders = recentStats.length
       const recentTotalAmount = recentStats.reduce((sum, stat) => sum + Number(stat.totalAmount), 0)
-      const recentTotalAreaM2 = recentStats.reduce((sum, stat) => sum + Number(stat.totalAreaM2), 0)
+      const recentTotalAreaCm2 = recentStats.reduce((sum, stat) => sum + Number(stat.totalAreaM2), 0)
+      const recentTotalAreaM2 = recentTotalAreaCm2 / 10000 // cm²'den m²'ye dönüştür
       const recentTotalItems = recentStats.reduce((sum, stat) => sum + stat.totalItems, 0)
 
       return res.status(200).json({
