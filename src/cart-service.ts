@@ -750,6 +750,7 @@ export class CartService {
       if (!adminCart) {
         return {
           id: null,
+          cart_id: null,
           targetUserId: targetUserId,
           adminUserId: adminUserId,
           storeId: storeId,
@@ -822,6 +823,7 @@ export class CartService {
 
       return {
         id: adminCart.id,
+        cart_id: adminCart.id, // cart_id alanını da ekle
         targetUserId: targetUserId,
         adminUserId: adminUserId,
         storeId: storeId,
@@ -1073,7 +1075,7 @@ export class CartService {
   }
 
   // Admin sepetini onaylayarak normal sepete dönüştür
-  async confirmAdminCart(targetUserId: string, adminUserId: string, storeId: string): Promise<{ success: boolean; message: string; cartId?: number }> {
+  async confirmAdminCart(targetUserId: string, adminUserId: string, storeId: string): Promise<{ success: boolean; message: string; cartId?: number; adminCartId?: number }> {
     try {
       const adminCart = await prisma.admin_carts.findFirst({
         where: {
@@ -1127,7 +1129,8 @@ export class CartService {
       return { 
         success: true, 
         message: 'Admin sepet onaylandı ve normal sepete dönüştürüldü',
-        cartId: normalCart.id
+        cartId: normalCart.id,
+        adminCartId: adminCart.id
       };
     } catch (error) {
       console.error('Admin sepet onaylama hatası:', error);

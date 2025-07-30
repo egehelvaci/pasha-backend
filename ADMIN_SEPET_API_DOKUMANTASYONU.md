@@ -135,6 +135,7 @@ CREATE TABLE admin_cart_items (
   "data": {
     "adminCart": {
       "id": 45,
+      "cart_id": 45,
       "targetUserId": "uuid",
       "adminUserId": "admin-uuid", 
       "storeId": "store-uuid",
@@ -187,6 +188,32 @@ CREATE TABLE admin_cart_items (
       "notes": null,
       "createdAt": "2024-01-15T10:00:00Z",
       "updatedAt": "2024-01-15T10:30:00Z"
+    }
+  }
+}
+```
+
+**Boş Sepet Response:**
+```json
+{
+  "success": true,
+  "message": "{targetUser.name} {targetUser.surname} adlı kullanıcının admin sepeti getirildi",
+  "data": {
+    "adminCart": {
+      "id": null,
+      "cart_id": null,
+      "targetUserId": "uuid",
+      "adminUserId": "admin-uuid",
+      "storeId": "store-uuid",
+      "items": [],
+      "totalItems": 0,
+      "totalPrice": "0.00",
+      "adminUser": null,
+      "targetUser": null,
+      "store": null,
+      "notes": null,
+      "createdAt": null,
+      "updatedAt": null
     }
   }
 }
@@ -310,6 +337,8 @@ CREATE TABLE admin_cart_items (
 
 **Yetkilendirme:** Admin rolü gerekli
 
+**Not:** Bu endpoint, admin sepet getirme API'sinden (`GET /api/admin/cart/:targetUserId/:storeId`) dönen `cart_id` değerini kullanarak sipariş oluşturur.
+
 **Request Body:**
 ```json
 {
@@ -338,6 +367,7 @@ CREATE TABLE admin_cart_items (
       "notes": "Sipariş notları",
       "items": [/* sipariş öğeleri */]
     },
+    "adminCartId": 45,
     "targetUser": {
       "userId": "uuid",
       "name": "Ahmet",
@@ -451,6 +481,7 @@ CREATE TABLE admin_cart_items (
 3. **Otomatik Dönüştürme:** Sipariş oluştururken admin sepet normal sepete dönüştürülür
 4. **Yetki Kontrolü:** Sadece admin kullanıcılar bu API'leri kullanabilir
 5. **Stok Güncellemesi:** Sipariş oluşturulduğunda stok otomatik düşer
+6. **Cart ID Kullanımı:** Admin sepet getirme API'sinden dönen `cart_id` değeri, sipariş oluşturma işleminde kullanılır
 
 ## Geliştirici Notları
 

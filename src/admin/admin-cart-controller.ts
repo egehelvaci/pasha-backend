@@ -450,7 +450,7 @@ export class AdminCartController {
         });
       }
 
-      // Kullanıcının admin sepetini kontrol et
+      // Kullanıcının admin sepetini kontrol et ve cart_id'yi al
       const adminCart = await prisma.admin_carts.findFirst({
         where: {
           target_user_id: targetUserId,
@@ -484,10 +484,10 @@ export class AdminCartController {
         });
       }
 
-      // OrderService ile sepetten sipariş oluştur
+      // OrderService ile sepetten sipariş oluştur - normal sepet ID'sini kullan
       const orderResult = await orderService.createOrderFromCart({
         user_id: targetUserId,
-        cart_id: confirmResult.cartId,
+        cart_id: confirmResult.cartId, // Normal sepet ID'sini kullan
         delivery_address: targetUser.adres || '',
         store_name: targetUser.Store.kurum_adi,
         store_tax_number: targetUser.Store.vergi_numarasi || undefined,
@@ -507,6 +507,7 @@ export class AdminCartController {
         message: `Admin ${adminUserId} tarafından ${targetUser.name} ${targetUser.surname} adlı kullanıcının admin sepetinden sipariş oluşturuldu`,
         data: {
           order: orderResult.order,
+          adminCartId: adminCart.id, // Admin sepet ID'sini response'da döndür
           targetUser: {
             userId: targetUser.userId,
             name: targetUser.name,
