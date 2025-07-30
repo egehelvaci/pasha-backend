@@ -20,6 +20,16 @@ export interface CreateOrderFromCartRequest {
   notes?: string;
 }
 
+export interface CreateOrderFromAdminCartRequest {
+  user_id: string;
+  admin_cart_id: number;
+  delivery_address?: string;
+  store_name?: string;
+  store_tax_number?: string;
+  store_tax_office?: string;
+  notes?: string;
+}
+
 export interface CreateOrderRequest {
   user_id: string;
   delivery_address_id?: string;
@@ -280,6 +290,155 @@ export class OrderService {
 
     } catch (error) {
       console.error('Sepetten sipariş oluşturma hatası:', error);
+      return { success: false, message: 'Sipariş oluşturulurken bir hata oluştu' };
+    }
+  }
+
+  /**
+   * Admin sepetinden sipariş oluşturma fonksiyonu
+   */
+  async createOrderFromAdminCart(orderData: CreateOrderFromAdminCartRequest): Promise<{ 
+    success: boolean; 
+    message: string; 
+    order?: Order;
+    requiresPayment?: boolean;
+    limitAmount?: number;
+    minimumPayment?: number;
+  }> {
+    try {
+      // Kullanıcı ve mağaza bilgilerini al
+      const user = await prisma.user.findUnique({
+        where: { userId: orderData.user_id },
+        include: {
+          Store: {
+            include: {
+              StorePriceList: {
+                include: {
+                  PriceList: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      if (!user || !user.Store) {
+        return { success: false, message: 'Kullanıcı veya mağaza bulunamadı' };
+      }
+
+      // Admin sepeti kontrol et
+      const adminCart = await prisma.admin_carts.findUnique({
+        where: { 
+          id: orderData.admin_cart_id,
+          is_active: true
+        },
+        include: {
+          admin_cart_items: {
+            include: {
+              Product: true
+            }
+          }
+        }
+      });
+
+      if (!adminCart || adminCart.admin_cart_items.length === 0) {
+        return { success: false, message: 'Admin sepet bulunamadı veya boş' };
+      }
+
+      // Admin sepet tutarını hesapla
+      const cartTotal = await this.calculateCartTotal(adminCart.admin_cart_items, user.Store.store_id);
+      
+      // Sipariş limitlerini kontrol et
+      const validation = await this.validateOrderLimits(user, cartTotal);
+      if (!validation.isValid) {
+        return { 
+          success: false, 
+          message: validation.message!,
+          requiresPayment: !validation.canProceed,
+          limitAmount: validation.limitAmount,
+          minimumPayment: validation.minimumPayment
+        };
+      }
+
+      // Sipariş oluştur
+      const order = await prisma.order.create({
+        data: {
+          user_id: orderData.user_id,
+          cart_id: orderData.admin_cart_id, // Admin sepet ID'sini kullan
+          total_price: cartTotal,
+          status: OrderStatus.PENDING,
+          
+          // Kullanıcı adres bilgilerini ekle
+          delivery_address: orderData.delivery_address || user.adres,
+          store_name: orderData.store_name || user.Store.kurum_adi,
+          store_tax_number: orderData.store_tax_number || user.Store.vergi_numarasi,
+          store_tax_office: orderData.store_tax_office || user.Store.vergi_dairesi,
+          store_phone: user.Store.telefon,
+          store_email: user.Store.eposta,
+          store_fax: user.Store.faks_numarasi,
+          
+          items: {
+            create: adminCart.admin_cart_items.map(item => ({
+              product_id: item.product_id,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              total_price: item.total_price,
+              has_fringe: item.has_fringe,
+              width: item.width,
+              height: item.height,
+              cut_type: item.cut_type === 'rectangle' ? 'standart' : item.cut_type?.toString()
+            }))
+          }
+        },
+        include: {
+          items: {
+            include: {
+              product: {
+                include: {
+                  collection: true
+                }
+              }
+            }
+          },
+          user: true,
+          cart: true
+        }
+      });
+
+      // YENİ MANTIK: Sipariş oluşturulduğunda stok düşür
+      try {
+        await qrCodeService.reduceStockForOrder(order.id);
+        console.log(`✅ Admin sepetinden sipariş ${order.id} oluşturuldu ve stok düşürüldü`);
+      } catch (stockError) {
+        console.error('❌ Stok düşürme hatası:', stockError);
+        // Stok hatası durumunda siparişi iptal et
+        await prisma.order.update({
+          where: { id: order.id },
+          data: { status: OrderStatus.CANCELED }
+        });
+        return { success: false, message: 'Stok yetersizliği nedeniyle sipariş oluşturulamadı' };
+      }
+
+      // Sipariş sonrası işlemleri gerçekleştir (bakiye düşürme vs.)
+      await this.processPostOrderOperations(user, cartTotal);
+
+      // Admin sepeti pasif hale getir
+      await prisma.admin_carts.update({
+        where: { id: orderData.admin_cart_id },
+        data: { is_active: false }
+      });
+
+      return { 
+        success: true, 
+        message: 'Admin sepetinden sipariş başarıyla oluşturuldu', 
+        order,
+        requiresPayment: !validation.canProceed,
+        limitAmount: validation.limitAmount,
+        minimumPayment: validation.minimumPayment
+      };
+
+    } catch (error) {
+      console.error('Admin sepetinden sipariş oluşturma hatası:', error);
       return { success: false, message: 'Sipariş oluşturulurken bir hata oluştu' };
     }
   }

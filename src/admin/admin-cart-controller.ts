@@ -474,20 +474,10 @@ export class AdminCartController {
         });
       }
 
-      // Admin sepeti onaylayarak normal sepete dönüştür
-      const confirmResult = await cartService.confirmAdminCart(targetUserId, adminUserId, storeId);
-      
-      if (!confirmResult.success || !confirmResult.cartId) {
-        return res.status(400).json({
-          success: false,
-          message: confirmResult.message
-        });
-      }
-
-      // OrderService ile sepetten sipariş oluştur - normal sepet ID'sini kullan
-      const orderResult = await orderService.createOrderFromCart({
+      // OrderService ile admin sepetinden sipariş oluştur
+      const orderResult = await orderService.createOrderFromAdminCart({
         user_id: targetUserId,
-        cart_id: confirmResult.cartId, // Normal sepet ID'sini kullan
+        admin_cart_id: adminCart.id, // Admin sepet ID'sini kullan
         delivery_address: targetUser.adres || '',
         store_name: targetUser.Store.kurum_adi,
         store_tax_number: targetUser.Store.vergi_numarasi || undefined,
