@@ -487,7 +487,8 @@ export class QRCodeService {
         // Employee seçimi için gerekli bilgiler
         ...(allScanned && {
           employees: (await employeeAssignmentService.getAllEmployees()).employees,
-          orderId: qrRecord.order_id
+          orderId: qrRecord.order_id,
+          formUrl: `/api/employee-assignment/form?orderId=${qrRecord.order_id}&employees=${encodeURIComponent(JSON.stringify((await employeeAssignmentService.getAllEmployees()).employees))}&orderData=${encodeURIComponent(JSON.stringify(qrRecord.order))}`
         })
       }
     } catch (error: any) {

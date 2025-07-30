@@ -435,7 +435,85 @@ export class AdminOrderController {
 
       const result = await qrCodeService.scanQRCode(qrCode, adminUserId)
 
-      // QR kod tarama başarılı - basit HTML response döndür
+      // Eğer tüm QR kodlar tamamlandıysa ve employee ataması gerekiyorsa
+      if (result.deliveryInfo?.needs_employee_assignment && result.formUrl) {
+        // Employee form sayfasını aç
+        const redirectHtml = `
+          <!DOCTYPE html>
+          <html lang="tr">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Employee Atama</title>
+            <style>
+              body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                margin: 0;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+              }
+              .container {
+                text-align: center;
+                background: rgba(255, 255, 255, 0.1);
+                padding: 2rem;
+                border-radius: 15px;
+                backdrop-filter: blur(10px);
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                max-width: 400px;
+              }
+              .success-icon {
+                font-size: 4rem;
+                margin-bottom: 1rem;
+              }
+              .message {
+                font-size: 1.2rem;
+                margin-bottom: 1rem;
+                line-height: 1.4;
+              }
+              .btn {
+                display: inline-block;
+                background: rgba(255, 255, 255, 0.2);
+                color: white;
+                padding: 12px 24px;
+                text-decoration: none;
+                border-radius: 8px;
+                margin-top: 1rem;
+                transition: all 0.3s ease;
+              }
+              .btn:hover {
+                background: rgba(255, 255, 255, 0.3);
+                transform: translateY(-2px);
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="success-icon">✅</div>
+              <div class="message">
+                <strong>Sipariş Tamamlandı!</strong><br>
+                Tüm QR kodlar okutuldu. Employee ataması için form açılacak.
+              </div>
+              <a href="${result.formUrl}" class="btn" target="_blank">
+                Employee Seçim Formunu Aç
+              </a>
+            </div>
+            <script>
+              // 3 saniye sonra otomatik olarak form sayfasını aç
+              setTimeout(() => {
+                window.open('${result.formUrl}', '_blank');
+              }, 2000);
+            </script>
+          </body>
+          </html>
+        `
+        return res.status(200).send(redirectHtml)
+      }
+
+      // Normal QR kod tarama başarılı - basit HTML response döndür
       const htmlResponse = `
         <!DOCTYPE html>
         <html lang="tr">
