@@ -80,6 +80,7 @@
 - Bir siparişe sadece bir employee atanabilir.
 - Sipariş tamamlanmadan atama yapılamaz.
 - Tüm iş mantığı backendde, frontend sadece formu gösterir ve seçimi API'ye gönderir.
+- Employee assignment form sayfası token gerektirmez, QR kod tarama sonrası doğrudan erişilebilir.
 
 ---
 
