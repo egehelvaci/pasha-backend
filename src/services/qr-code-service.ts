@@ -427,6 +427,9 @@ export class QRCodeService {
             updated_at: new Date()
           }
         })
+        
+        // Employee seçimi için sipariş hazır durumda
+        message = 'Tüm QR kodlar tamamlandı! Employee seçimi için sipariş hazır.'
       }
 
       return {
@@ -470,6 +473,7 @@ export class QRCodeService {
           is_order_completed: allScanned,
           completion_percentage: Math.round((scannedQRCodes.length / allQRCodes.length) * 100),
           order_status: newOrderStatus,
+          needs_employee_assignment: allScanned, // Employee ataması gerekiyor mu
           qr_details: allQRCodes.map(qr => ({
             qr_id: qr.id,
             scan_count: qr.scan_count || 0,

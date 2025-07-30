@@ -34,7 +34,15 @@ async function main() {
       }
     });
 
-    console.log('Kullanıcı tipleri oluşturuldu:', { adminType, editorType, viewerType });
+    const employeeType = await prismaClient.userType.upsert({
+      where: { name: 'employee' },
+      update: {},
+      create: {
+        name: 'employee'
+      }
+    });
+
+    console.log('Kullanıcı tipleri oluşturuldu:', { adminType, editorType, viewerType, employeeType });
 
     // Admin kullanıcısını oluştur
     console.log('Admin kullanıcısı oluşturuluyor...');
