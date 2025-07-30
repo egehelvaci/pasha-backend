@@ -19,11 +19,7 @@ router.get('/employees',
 )
 
 // Sipariş için employee ata
-router.post('/assign', 
-  authMiddleware, 
-  authorizeRoles('admin', 'editor'), 
-  employeeAssignmentController.assignEmployeeToOrder
-)
+router.post('/assign', employeeAssignmentController.assignEmployeeToOrder)
 
 // Employee istatistiklerini getir
 router.get('/stats/:employeeId?', 

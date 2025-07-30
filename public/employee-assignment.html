@@ -270,18 +270,17 @@
             loading.classList.add('show');
             hideAlerts();
 
-            try {
-                const response = await fetch('/api/employee-assignment/assign', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${getAuthToken()}`
-                    },
-                    body: JSON.stringify({
-                        orderId: orderId,
-                        employeeId: employeeId
-                    })
-                });
+                         try {
+                 const response = await fetch('/api/employee-assignment/assign', {
+                     method: 'POST',
+                     headers: {
+                         'Content-Type': 'application/json'
+                     },
+                     body: JSON.stringify({
+                         orderId: orderId,
+                         employeeId: employeeId
+                     })
+                 });
 
                 const result = await response.json();
 
@@ -303,11 +302,7 @@
             }
         }
 
-        // Auth token'ı al (localStorage'dan veya başka bir yerden)
-        function getAuthToken() {
-            // Bu fonksiyonu kendi auth sisteminize göre güncelleyin
-            return localStorage.getItem('authToken') || '';
-        }
+        
 
         // Alert fonksiyonları
         function showSuccess(message) {
