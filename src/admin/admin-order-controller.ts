@@ -699,25 +699,29 @@ export class AdminOrderController {
         const store = existingOrder.user.Store
         const orderTotal = Number(existingOrder.total_price)
         
-        // 1. Bakiyeye iade et (sınırsız olmayan mağazalar için)
-        if (store && !store.limitsiz_acik_hesap) {
+        // 1. Bakiyeye iade et - Admin siparişleri için özel işlem
+        if (store) {
           const currentBalance = Number(store.bakiye || 0)
           
-          // İptal edilen sipariş tutarını tamamen bakiyeye iade et
-          // Açık hesap limiti değişmez
-          await prisma.store.update({
-            where: { store_id: store.store_id },
-            data: { 
-              bakiye: currentBalance + orderTotal,
-              // Açık hesap limiti değişmez
-            }
-          })
+          // Admin siparişleri için: Doğrudan bakiyeye iade et (açık hesap kontrolü yok)
+          // Normal siparişler için: Sadece sınırsız olmayan mağazalar için iade et
+          const isAdminOrder = existingOrder.cart_id && existingOrder.cart_id > 0 // Admin sepet ID'si varsa admin siparişi
+          
+          if (isAdminOrder || !store.limitsiz_acik_hesap) {
+            await prisma.store.update({
+              where: { store_id: store.store_id },
+              data: { 
+                bakiye: currentBalance + orderTotal,
+                // Açık hesap limiti değişmez
+              }
+            })
 
-          console.log(`💰 İptal iadesi yapıldı:`)
-          console.log(`  - Önceki bakiye: ${currentBalance} TL`)
-          console.log(`  - İade tutarı: ${orderTotal} TL`)
-          console.log(`  - Yeni bakiye: ${currentBalance + orderTotal} TL`)
-          console.log(`  - Açık hesap limiti değişmez`)
+            console.log(`💰 ${isAdminOrder ? 'ADMİN SİPARİŞİ' : 'Normal Sipariş'} İptal iadesi yapıldı:`)
+            console.log(`  - Önceki bakiye: ${currentBalance} TL`)
+            console.log(`  - İade tutarı: ${orderTotal} TL`)
+            console.log(`  - Yeni bakiye: ${currentBalance + orderTotal} TL`)
+            console.log(`  - Açık hesap limiti değişmez`)
+          }
         }
 
         // 2. Fiyat listesi limitini iade et
@@ -780,8 +784,11 @@ export class AdminOrderController {
       } else if (status === 'CANCELED' && existingOrder.status !== 'CANCELED') {
         const store = existingOrder.user.Store
         const orderTotal = Number(existingOrder.total_price)
+        const isAdminOrder = existingOrder.cart_id && existingOrder.cart_id > 0 // Admin sepet ID'si varsa admin siparişi
         
-        if (store && !store.limitsiz_acik_hesap) {
+        if (isAdminOrder) {
+          message = `Admin siparişi iptal edildi. ${orderTotal} TL mağaza bakiyesi iade edildi. Fiyat listesi limiti ve stoklar geri eklendi.`
+        } else if (store && !store.limitsiz_acik_hesap) {
           message = `Sipariş iptal edildi. ${orderTotal} TL açık hesap bakiyesi ve fiyat listesi limiti geri eklendi. Stoklar geri eklendi.`
         } else {
           message = `Sipariş iptal edildi. ${orderTotal} TL fiyat listesi limiti geri eklendi. Stoklar geri eklendi.`
