@@ -22,7 +22,7 @@
 ```json
 {
   "success": true,
-  "message": "Tüm QR kodlar tamamlandı! Employee seçimi için form açılmalı.",
+     "message": "Ürünler tamamlandı! Siparişi tamamlamak için lütfen çalışan seçin.",
   "qrCode": { ... },
   "order": { ... },
   "deliveryInfo": {
@@ -128,16 +128,18 @@
 Son QR kod okutulduğunda API response'unda `employees` listesi döner.
 
 ### 2. HTML Form Açma
-Frontend, response'daki verilerle HTML formunu açar:
+Son QR kod okutulduğunda otomatik olarak employee seçim formu açılır:
 ```
 /api/employee-assignment/form?orderId=123&employees=[...]&orderData={...}
 ```
 
+**Gösterilen Mesaj:** "Ürünler Tamamlandı! Siparişi tamamlamak için lütfen çalışan seçin."
+
 ### 3. Employee Seçimi
-Kullanıcı dropdown'dan employee seçer ve "Employee'yi Ata" butonuna basar.
+Kullanıcı dropdown'dan çalışan seçer ve "Çalışanı Kaydet" butonuna basar.
 
 ### 4. Atama İşlemi
-Form, seçilen employee'yi backend'e gönderir ve atama tamamlanır.
+Form, seçilen çalışanı backend'e gönderir ve atama tamamlanır. Başarılı atama sonrası "Çalışan başarıyla atandı!" mesajı gösterilir.
 
 ---
 
