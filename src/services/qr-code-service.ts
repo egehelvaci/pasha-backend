@@ -1,6 +1,9 @@
 import crypto from 'crypto'
 import prisma from '../utils/prisma'
 import { UploadService } from '../utils/upload-service'
+import { EmployeeAssignmentService } from './employee-assignment-service'
+
+const employeeAssignmentService = new EmployeeAssignmentService()
 
 const QRCode = require('qrcode');
 
@@ -429,7 +432,7 @@ export class QRCodeService {
         })
         
         // Employee seçimi için sipariş hazır durumda
-        message = 'Tüm QR kodlar tamamlandı! Employee seçimi için sipariş hazır.'
+        message = 'Tüm QR kodlar tamamlandı! Employee seçimi için form açılmalı.'
       }
 
       return {
@@ -480,7 +483,12 @@ export class QRCodeService {
             required_scans: qr.required_scans || 1,
             is_completed: (qr.scan_count || 0) >= (qr.required_scans || 1)
           }))
-        }
+        },
+        // Employee seçimi için gerekli bilgiler
+        ...(allScanned && {
+          employees: (await employeeAssignmentService.getAllEmployees()).employees,
+          orderId: qrRecord.order_id
+        })
       }
     } catch (error: any) {
       throw new Error(`QR kod okuma hatası: ${error.message}`)

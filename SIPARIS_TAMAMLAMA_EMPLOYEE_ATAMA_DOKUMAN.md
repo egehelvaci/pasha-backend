@@ -71,4 +71,43 @@
 
 ---
 
+## Admin API - Kullanıcı Oluşturma
+
+### Kullanıcı Tiplerini Listeleme
+
+**Endpoint:** `GET /api/admin/user-types`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    { "id": 1, "name": "admin" },
+    { "id": 3, "name": "editor" },
+    { "id": 4, "name": "employee" }
+  ]
+}
+```
+
+### Employee Kullanıcısı Oluşturma
+
+**Endpoint:** `POST /api/admin/users`
+
+**Body:**
+```json
+{
+  "username": "calisan1",
+  "email": "calisan1@example.com",
+  "password": "sifre123",
+  "name": "Ali",
+  "surname": "Yılmaz",
+  "phoneNumber": "+905551234567",
+  "userTypeName": "employee"
+}
+```
+
+**Not:** `userTypeName: "employee"` ile employee kullanıcısı oluşturulabilir.
+
+---
+
 Herhangi bir sorunda veya ek geliştirme ihtiyacında bu dökümanı referans alabilirsiniz.
