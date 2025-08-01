@@ -149,7 +149,7 @@ export class QRCodeService {
             order_id: orderId,
             order_item_id: item.id,
             product_id: item.product_id,
-            qr_code: `https://pasha-backend-production.up.railway.app/api/admin/scan-qr?qrCode=${qrCodeString}`,
+            qr_code: `${process.env.PUBLIC_URL || 'http://localhost:3001'}/api/admin/scan-qr?qrCode=${qrCodeString}`,
             is_scanned: false,
             scan_count: 0,
             required_scans: item.quantity // Item'ın quantity'si kadar okutulması gerekiyor

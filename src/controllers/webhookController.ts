@@ -242,7 +242,7 @@ export class WebhookController {
             </div>
             <script>
               setTimeout(() => {
-                window.location.href = 'https://pasha-frontend.vercel.app/dashboard/odemeler';
+                window.location.href = '${process.env.PRODUCTION_FRONTEND_URL || 'http://localhost:3000'}/dashboard/odemeler';
               }, 3000);
             </script>
           </body>
@@ -526,7 +526,7 @@ export class WebhookController {
           </div>
           <script>
             setTimeout(() => {
-              window.location.href = 'https://pasha-frontend.vercel.app/dashboard/odemeler';
+              window.location.href = '${process.env.PRODUCTION_FRONTEND_URL || 'http://localhost:3000'}/dashboard/odemeler';
             }, 3000);
           </script>
         </body>

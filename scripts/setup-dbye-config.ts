@@ -14,14 +14,14 @@ async function setupDbyeConfig() {
       where: { id: 1 },
       update: {
         webhookSecret: productionWebhookSecret,
-        backendUrl: 'https://pasha-backend-production.up.railway.app',
+        backendUrl: process.env.PUBLIC_URL || 'https://pasha-backend-production.up.railway.app',
         isActive: true,
         description: 'DBYE webhook konfigürasyonu - Production ayarları'
       },
       create: {
         id: 1,
         webhookSecret: productionWebhookSecret,
-        backendUrl: 'https://pasha-backend-production.up.railway.app',
+        backendUrl: process.env.PUBLIC_URL || 'https://pasha-backend-production.up.railway.app',
         isActive: true,
         description: 'DBYE webhook konfigürasyonu - Production ayarları'
       }

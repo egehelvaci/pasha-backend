@@ -194,8 +194,8 @@ export class PaymentService {
         referenceInformation: input.aciklama || "Ödeme",
         buyerReference: "PASHA-HOME",
         installmentCount: store.maksimum_taksit || 1,
-        okUrl: "https://pasha-frontend.vercel.app/dashboard/odemeler",
-        failUrl: "https://pasha-frontend.vercel.app/dashboard/odemeler"
+        okUrl: `${process.env.PRODUCTION_FRONTEND_URL || 'http://localhost:3000'}/dashboard/odemeler`,
+        failUrl: `${process.env.PRODUCTION_FRONTEND_URL || 'http://localhost:3000'}/dashboard/odemeler`
       },
       paymentRequestBuyerInformation: {
         identityNumber: store.tckn || store.vergi_numarasi || "11111111111",

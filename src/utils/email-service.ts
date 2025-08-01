@@ -51,7 +51,7 @@ export class EmailService {
       }
       
       // Fallback production URL
-      const fallbackUrl = 'https://pasha-frontend.vercel.app'
+      const fallbackUrl = process.env.PRODUCTION_FRONTEND_URL || 'https://pasha-frontend.vercel.app'
       console.log('⚠️ Using fallback production URL:', fallbackUrl)
       return fallbackUrl
     }
