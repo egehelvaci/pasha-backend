@@ -1,14 +1,15 @@
 FROM node:18-alpine
 
-# Puppeteer için gerekli sistem paketlerini yükle
-RUN apk add --no-cache \
+# Sistem paketlerini güncelle ve gerekli paketleri yükle
+RUN apk update && apk add --no-cache \
     chromium \
     nss \
     freetype \
     freetype-dev \
     harfbuzz \
     ca-certificates \
-    ttf-freefont
+    ttf-freefont \
+    && rm -rf /var/cache/apk/*
 
 # Puppeteer'ın sistem Chromium'unu kullanmasını sağla
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
@@ -27,13 +28,12 @@ RUN npm ci
 COPY tsconfig.json ./
 COPY prisma ./prisma
 COPY src ./src
-COPY scripts ./scripts
 COPY public ./public
 
 # Prisma client oluştur 
 RUN npx prisma generate
 
-# TypeScript'i derle ve asset'leri kopyala
+# TypeScript'i derle
 RUN npm run api:build
 
 # Production için sadece runtime bağımlılıklarını yeniden yükle
@@ -41,10 +41,6 @@ RUN npm ci --omit=dev && npm cache clean --force
 
 # Çalışma ortamını ayarla
 ENV NODE_ENV=production
-# PORT değişkenini kullanma - Railway'in sağladığını kullan
-
-# Portu aç - Railway'in sağladığı portu kullan
-# EXPOSE 3001
 
 # Uygulamayı başlat
 CMD ["node", "dist/server.js"] 
