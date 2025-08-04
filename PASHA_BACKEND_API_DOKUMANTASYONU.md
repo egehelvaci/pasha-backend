@@ -58,6 +58,7 @@ Authorization: Bearer <JWT_TOKEN>
 ### 10. 📋 Koleksiyon API'leri
 ### 11. 💵 Fiyat Listesi API'leri
 ### 12. 📧 E-posta API'leri
+### 13. 🖼️ Login Assets API'leri
 
 ---
 
@@ -627,6 +628,115 @@ Authorization: Bearer <JWT_TOKEN>
 
 ### E-posta Bağlantı Testi
 **Endpoint:** `GET {PUBLIC_URL}/api/email/test-connection`
+
+---
+
+## 13. 🖼️ Login Assets API'leri
+
+**Base URL:** `{PUBLIC_URL}` (Environment variable'dan okunur)
+
+### Rastgele Halı Mağazası Görseli
+**Endpoint:** `GET {PUBLIC_URL}/api/login-assets/random`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "imageUrl": "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&h=600&fit=crop",
+    "type": "image",
+    "isAnimated": false,
+    "source": "unsplash",
+    "timestamp": "2025-01-20T15:30:00Z"
+  }
+}
+```
+
+### Birden Fazla Rastgele Görsel
+**Endpoint:** `GET {PUBLIC_URL}/api/login-assets/multiple`
+
+**Query Parameters:**
+- `count` (opsiyonel): Döndürülecek görsel sayısı (varsayılan: 5, maksimum: 10)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "images": [
+      {
+        "imageUrl": "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&h=600&fit=crop",
+        "type": "image",
+        "isAnimated": false,
+        "source": "unsplash"
+      },
+      {
+        "imageUrl": "https://media.giphy.com/media/l0MYw3vwxIAFKz1Xa/giphy.gif",
+        "type": "gif",
+        "isAnimated": true,
+        "source": "giphy"
+      }
+    ],
+    "count": 2,
+    "timestamp": "2025-01-20T15:30:00Z"
+  }
+}
+```
+
+### Tüm Mevcut Görselleri Listele
+**Endpoint:** `GET {PUBLIC_URL}/api/login-assets/all`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "images": [
+      {
+        "id": 1,
+        "imageUrl": "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&h=600&fit=crop",
+        "type": "image",
+        "isAnimated": false,
+        "source": "unsplash"
+      }
+    ],
+    "totalCount": 25,
+    "sources": {
+      "unsplash": 16,
+      "pexels": 4,
+      "pixabay": 4,
+      "giphy": 4
+    }
+  }
+}
+```
+
+### Servis Sağlık Kontrolü
+**Endpoint:** `GET {PUBLIC_URL}/api/login-assets/health`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "service": "login-assets",
+    "status": "healthy",
+    "totalImages": 25,
+    "timestamp": "2025-01-20T15:30:00Z"
+  }
+}
+```
+
+**Görsel Kaynakları:**
+- **Unsplash**: Yüksek kaliteli halı ve iç mekan görselleri
+- **Pexels**: Ücretsiz halı ve dekorasyon görselleri  
+- **Pixabay**: Çeşitli halı mağazası görselleri
+- **Giphy**: Animasyonlu GIF görselleri
+
+**Görsel Tipleri:**
+- `image`: Statik resim (JPG, PNG)
+- `gif`: Animasyonlu GIF
+- `video`: Video dosyası (MP4, WebM)
 
 ---
 
