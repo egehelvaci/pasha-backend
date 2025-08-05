@@ -121,7 +121,7 @@ app.use((err: any, req: any, res: any, next: any) => {
   })
 })
 
-// Memory optimization for large catalogs
+// Memory optimization for large catalogss
 if (global.gc) {
   setInterval(() => {
     global.gc!();
