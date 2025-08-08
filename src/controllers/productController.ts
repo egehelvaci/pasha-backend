@@ -48,12 +48,14 @@ export const getAllProducts = async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 50;
     const collectionId = req.query.collectionId as string;
     const search = req.query.search as string;
+    const hasStock = req.query.hasStock ? req.query.hasStock === 'true' : undefined;
     
     const result = await productService.getAllProducts(userId, {
       page,
       limit,
       collectionId,
-      search
+      search,
+      hasStock
     });
     
     return res.status(200).json({
@@ -111,12 +113,14 @@ export const getProductsByCollection = async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 50;
     const search = req.query.search as string;
+    const hasStock = req.query.hasStock ? req.query.hasStock === 'true' : undefined;
     
     const result = await productService.getAllProducts(userId, {
       page,
       limit,
       collectionId,
-      search
+      search,
+      hasStock
     });
     
     return res.status(200).json({

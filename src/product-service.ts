@@ -151,6 +151,7 @@ export class ProductService {
     limit?: number;
     collectionId?: string;
     search?: string;
+    hasStock?: boolean;
   }) {
     try {
       const page = options?.page || 1;
@@ -171,30 +172,55 @@ export class ProductService {
         ];
       }
 
-      // Toplam sayıyı al
-      const totalCount = await prisma.product.count({ where: whereCondition });
-
-      // Optimize edilmiş tek sorgu ile tüm gerekli verileri getir
-      const products = await prisma.product.findMany({
-        where: whereCondition,
-        include: {
-          collection: true,
-          productrules: {
-            include: {
-              productsizeoptions: true,
-              productrulecuttypes: {
-                include: {
-                  cuttypes: true
+      // Stok filtresi varsa, önce tüm ürünleri al
+      let products;
+      let totalCount;
+      
+      if (options?.hasStock !== undefined) {
+        // Stok filtresi var - tüm ürünleri al
+        products = await prisma.product.findMany({
+          where: whereCondition,
+          include: {
+            collection: true,
+            productrules: {
+              include: {
+                productsizeoptions: true,
+                productrulecuttypes: {
+                  include: {
+                    cuttypes: true
+                  }
                 }
               }
-            }
+            },
+            productvariations: true
           },
-          productvariations: true
-        },
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' }
-      });
+          orderBy: { createdAt: 'desc' }
+        });
+        totalCount = products.length;
+      } else {
+        // Normal pagination
+        totalCount = await prisma.product.count({ where: whereCondition });
+        products = await prisma.product.findMany({
+          where: whereCondition,
+          include: {
+            collection: true,
+            productrules: {
+              include: {
+                productsizeoptions: true,
+                productrulecuttypes: {
+                  include: {
+                    cuttypes: true
+                  }
+                }
+              }
+            },
+            productvariations: true
+          },
+          skip,
+          take: limit,
+          orderBy: { createdAt: 'desc' }
+        });
+      }
 
              let userPriceInfo: any = null;
        
@@ -294,7 +320,8 @@ export class ProductService {
               width: so.width,
               height: so.height,
               is_optional_height: so.is_optional_height || false,
-              stockQuantity: stockForSize ? stockForSize.stock_quantity : 0
+              stockQuantity: stockForSize ? stockForSize.stock_quantity : 0,
+              stockAreaM2: stockForSize ? Number(stockForSize.stock_area_m2 || 0) : 0
             };
           }) || [];
         } else {
@@ -307,8 +334,33 @@ export class ProductService {
         return extendedProduct;
       });
 
+      // Stok filtresi uygula
+      let filteredProducts = processedProducts;
+      if (options?.hasStock !== undefined) {
+        filteredProducts = processedProducts.filter(product => {
+          const hasStock = this.checkProductHasStock(product);
+          return options.hasStock ? hasStock : !hasStock;
+        });
+        
+        // Stok filtresi sonrası pagination uygula
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+        
+        return {
+          products: paginatedProducts,
+          pagination: {
+            page,
+            limit,
+            total: filteredProducts.length,
+            totalPages: Math.ceil(filteredProducts.length / limit),
+            hasMore: endIndex < filteredProducts.length
+          }
+        };
+      }
+
       return {
-        products: processedProducts,
+        products: filteredProducts,
         pagination: {
           page,
           limit,
@@ -1505,5 +1557,57 @@ export class ProductService {
       console.error('Ürün varyasyon seçenekleri getirme hatası:', error);
       throw error;
     }
+  }
+
+  /**
+   * Ürünün stok durumunu kontrol eder
+   * 1. sizeOptions varsa → is_optional_height'a göre:
+   *    - false: stockQuantity > 0 (hazır kesim)
+   *    - true: stockAreaM2 > 0 (opsiyonel yükseklik, m² bazlı)
+   * 2. Yoksa productvariations kontrol et → stock_area_m2 > 0 VEYA stock_quantity > 0
+   * 3. Hiçbiri yoksa false döndür (legacy stock field Product modelinde yok)
+   */
+  private checkProductHasStock(product: any): boolean {
+    // 1. sizeOptions varsa, is_optional_height'a göre kontrol et
+    if (product.sizeOptions && product.sizeOptions.length > 0) {
+      const hasStock = product.sizeOptions.some((sizeOption: any) => {
+        if (sizeOption.is_optional_height === true) {
+          // Opsiyonel yükseklik: m² bazlı stok kontrolü
+          return sizeOption.stockAreaM2 && sizeOption.stockAreaM2 > 0;
+        } else {
+          // Hazır kesim: adet bazlı stok kontrolü
+          return sizeOption.stockQuantity && sizeOption.stockQuantity > 0;
+        }
+      });
+      
+      return hasStock;
+    }
+
+    // 2. sizeOptions yoksa productvariations kontrol et
+    if (product.productvariations && product.productvariations.length > 0) {
+      return product.productvariations.some((variation: any) => {
+        // Ürünün kurallarından bu variation'ın is_optional_height bilgisini bul
+        let isOptionalHeight = false;
+        if (product.productrules?.productsizeoptions) {
+          const sizeOption = product.productrules.productsizeoptions.find((so: any) => 
+            so.width === variation.width && so.height === variation.height
+          );
+          if (sizeOption) {
+            isOptionalHeight = sizeOption.is_optional_height;
+          }
+        }
+        
+        if (isOptionalHeight === true) {
+          // Opsiyonel yükseklik: m² bazlı stok kontrolü
+          return variation.stock_area_m2 && Number(variation.stock_area_m2) > 0;
+        } else {
+          // Hazır kesim: adet bazlı stok kontrolü
+          return variation.stock_quantity && variation.stock_quantity > 0;
+        }
+      });
+    }
+
+    // 3. Hiçbiri yoksa stok yok kabul et
+    return false;
   }
 } 
