@@ -10,6 +10,16 @@ export interface CreatePaymentRequestInput {
   aciklama?: string;
 }
 
+export interface CreateCheckoutInput {
+  storeId: string;
+  userId: string;
+  amount: number;
+  aciklama?: string;
+  channel?: 'web' | 'mobile';
+  idempotencyKey?: string;
+  orderId?: string;
+}
+
 export interface PaymentRequestData {
   expireDate: string;
   amount: number;
@@ -332,6 +342,120 @@ export class PaymentService {
     });
 
     return webhookToken;
+  }
+
+  /**
+   * Yeni checkout endpoint'i - Kanal desteği ile
+   */
+  async checkout(input: CreateCheckoutInput): Promise<{
+    success: boolean;
+    checkoutUrl?: string;
+    paymentSessionId?: string;
+    message?: string;
+  }> {
+    try {
+      const channel = input.channel || 'web';
+      
+      // İdempotency kontrolü
+      if (input.idempotencyKey) {
+        const existingSession = await prisma.paymentSession.findUnique({
+          where: { idempotencyKey: input.idempotencyKey }
+        });
+        
+        if (existingSession) {
+          return {
+            success: true,
+            checkoutUrl: existingSession.paymentUrl || undefined,
+            paymentSessionId: existingSession.id
+          };
+        }
+      }
+
+      // Payment session oluştur
+      const sessionId = uuidv4();
+      const webhookToken = uuidv4();
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 1); // 1 saat sonra expire
+
+      const session = await prisma.paymentSession.create({
+        data: {
+          id: sessionId,
+          orderId: input.orderId,
+          channel: channel.toUpperCase() as any,
+          storeId: input.storeId,
+          amount: input.amount,
+          description: input.aciklama,
+          idempotencyKey: input.idempotencyKey,
+          webhookToken,
+          expiresAt
+        }
+      });
+
+      // Payment request oluştur
+      const paymentRequest = await this.createPaymentRequest({
+        storeId: input.storeId,
+        userId: input.userId,
+        amount: input.amount,
+        aciklama: input.aciklama
+      });
+
+      // Redirect URL'lerini kanala göre oluştur
+      const backendUrl = process.env.PUBLIC_URL || 'https://pasha-backend-production.up.railway.app';
+      const { successUrl, failUrl } = this.buildUrls(channel, sessionId, backendUrl);
+      
+      paymentRequest.paymentRequestCommonDetail.okUrl = successUrl;
+      paymentRequest.paymentRequestCommonDetail.failUrl = failUrl;
+
+      // Octet API'ye gönder
+      const result = await this.sendPaymentRequestToOctet(paymentRequest);
+
+      if (result.success && result.data?.commonPaymentPageUrl) {
+        // Session'ı payment URL ile güncelle
+        await prisma.paymentSession.update({
+          where: { id: sessionId },
+          data: { 
+            paymentUrl: result.data.commonPaymentPageUrl,
+            status: 'PROCESSING'
+          }
+        });
+
+        return {
+          success: true,
+          checkoutUrl: result.data.commonPaymentPageUrl,
+          paymentSessionId: sessionId
+        };
+      } else {
+        throw new Error('Octet\'ten geçerli payment URL alınamadı');
+      }
+
+    } catch (error) {
+      console.error('❌ Checkout hatası:', error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Ödeme başlatılırken hata oluştu'
+      };
+    }
+  }
+
+  /**
+   * Kanala göre redirect URL'lerini oluştur
+   */
+  private buildUrls(channel: string, sessionId: string, backendUrl: string): {
+    successUrl: string;
+    failUrl: string;
+  } {
+    if (channel === 'mobile') {
+      return {
+        successUrl: `${backendUrl}/api/payments/mobile/3ds/callback?session=${sessionId}&status=success`,
+        failUrl: `${backendUrl}/api/payments/mobile/3ds/callback?session=${sessionId}&status=fail`
+      };
+    } else {
+      // Web default
+      return {
+        successUrl: `${backendUrl}/api/payments/web/callback?session=${sessionId}&status=success`,
+        failUrl: `${backendUrl}/api/payments/web/callback?session=${sessionId}&status=fail`
+      };
+    }
   }
 
   /**

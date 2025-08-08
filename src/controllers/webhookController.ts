@@ -552,6 +552,255 @@ export class WebhookController {
   }
 
   /**
+   * Mobile 3DS callback endpoint'i
+   */
+  async handleMobile3dsCallback(req: Request, res: Response) {
+    try {
+      const { session, status } = req.query;
+      
+      if (!session || typeof session !== 'string') {
+        return res.status(400).send(this.generateMobileCallbackHtml('fail', '', 'Geçersiz session ID'));
+      }
+
+      // Session'ı bul
+      const { PrismaClient } = require('../../generated/prisma');
+      const prisma = new PrismaClient();
+      
+      const paymentSession = await prisma.paymentSession.findUnique({
+        where: { id: session }
+      });
+      
+      if (!paymentSession) {
+        await prisma.$disconnect();
+        return res.status(404).send(this.generateMobileCallbackHtml('fail', '', 'Session bulunamadı'));
+      }
+
+      // Session süresi kontrol
+      if (new Date() > paymentSession.expiresAt) {
+        await prisma.paymentSession.update({
+          where: { id: session },
+          data: { status: 'EXPIRED' }
+        });
+        await prisma.$disconnect();
+        return res.status(410).send(this.generateMobileCallbackHtml('fail', paymentSession.orderId || '', 'Session süresi dolmuş'));
+      }
+
+      // Gateway imza doğrulaması burada yapılmalı
+      // Bu örnek için basit status kontrolü yapıyoruz
+      const paymentStatus = status === 'success' ? 'success' : 'fail';
+      const finalStatus = paymentStatus === 'success' ? 'COMPLETED' : 'FAILED';
+
+      // Session durumunu güncelle
+      await prisma.paymentSession.update({
+        where: { id: session },
+        data: { 
+          status: finalStatus,
+          updatedAt: new Date()
+        }
+      });
+
+      await prisma.$disconnect();
+
+      // Cache-control header'ları ekle
+      res.set({
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      });
+
+      // Mobile uyumlu HTML döndür
+      return res.send(this.generateMobileCallbackHtml(paymentStatus, paymentSession.orderId || '', ''));
+
+    } catch (error) {
+      console.error('❌ Mobile 3DS callback hatası:', error);
+      return res.status(500).send(this.generateMobileCallbackHtml('fail', '', 'Sunucu hatası'));
+    }
+  }
+
+  /**
+   * Web callback endpoint'i
+   */
+  async handleWebCallback(req: Request, res: Response) {
+    try {
+      const { session, status } = req.query;
+      
+      if (!session || typeof session !== 'string') {
+        return res.status(400).json({
+          success: false,
+          message: 'Geçersiz session ID'
+        });
+      }
+
+      // Session'ı bul
+      const { PrismaClient } = require('../../generated/prisma');
+      const prisma = new PrismaClient();
+      
+      const paymentSession = await prisma.paymentSession.findUnique({
+        where: { id: session }
+      });
+      
+      if (!paymentSession) {
+        await prisma.$disconnect();
+        return res.status(404).json({
+          success: false,
+          message: 'Session bulunamadı'
+        });
+      }
+
+      // Session süresi kontrol
+      if (new Date() > paymentSession.expiresAt) {
+        await prisma.paymentSession.update({
+          where: { id: session },
+          data: { status: 'EXPIRED' }
+        });
+        await prisma.$disconnect();
+        return res.status(410).json({
+          success: false,
+          message: 'Session süresi dolmuş'
+        });
+      }
+
+      // Gateway imza doğrulaması burada yapılmalı
+      const paymentStatus = status === 'success' ? 'success' : 'fail';
+      const finalStatus = paymentStatus === 'success' ? 'COMPLETED' : 'FAILED';
+
+      // Session durumunu güncelle
+      await prisma.paymentSession.update({
+        where: { id: session },
+        data: { 
+          status: finalStatus,
+          updatedAt: new Date()
+        }
+      });
+
+      await prisma.$disconnect();
+
+      // Web için JSON response döndür veya redirect yap
+      const frontendUrl = process.env.PRODUCTION_FRONTEND_URL || 'http://localhost:3000';
+      return res.redirect(`${frontendUrl}/dashboard/odemeler?status=${paymentStatus}&orderId=${paymentSession.orderId || ''}`);
+
+    } catch (error) {
+      console.error('❌ Web callback hatası:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Sunucu hatası'
+      });
+    }
+  }
+
+  /**
+   * Polling endpoint'i - Payment durumu sorgulaması
+   */
+  async getPaymentResult(req: Request, res: Response) {
+    try {
+      const { session } = req.query;
+      
+      if (!session || typeof session !== 'string') {
+        return res.status(400).json({
+          success: false,
+          message: 'Geçersiz session ID'
+        });
+      }
+
+      // Session'ı bul
+      const { PrismaClient } = require('../../generated/prisma');
+      const prisma = new PrismaClient();
+      
+      const paymentSession = await prisma.paymentSession.findUnique({
+        where: { id: session }
+      });
+      
+      await prisma.$disconnect();
+
+      if (!paymentSession) {
+        return res.status(404).json({
+          success: false,
+          message: 'Session bulunamadı'
+        });
+      }
+
+      // Session süresi kontrol
+      if (new Date() > paymentSession.expiresAt) {
+        return res.status(410).json({
+          success: false,
+          message: 'Session süresi dolmuş',
+          status: 'EXPIRED'
+        });
+      }
+
+      return res.json({
+        success: true,
+        data: {
+          sessionId: paymentSession.id,
+          orderId: paymentSession.orderId,
+          status: paymentSession.status,
+          amount: Number(paymentSession.amount),
+          channel: paymentSession.channel,
+          createdAt: paymentSession.createdAt,
+          expiresAt: paymentSession.expiresAt
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Payment result sorgulama hatası:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Sunucu hatası'
+      });
+    }
+  }
+
+  /**
+   * Mobile callback için HTML generator
+   */
+  private generateMobileCallbackHtml(status: string, orderId: string, errorMessage?: string): string {
+    const isSuccess = status === 'success';
+    
+    return `<!doctype html>
+<meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Processing…</title>
+<script>
+(function () {
+  var payload = { 
+    type: 'PAYMENT_RESULT', 
+    status: '${isSuccess ? 'success' : 'fail'}', 
+    orderId: '${orderId}',
+    ${errorMessage ? `errorMessage: '${errorMessage}',` : ''}
+    timestamp: new Date().toISOString()
+  };
+  
+  try { 
+    window.ReactNativeWebView.postMessage(JSON.stringify(payload)); 
+  } catch(e) {
+    console.log('ReactNativeWebView postMessage failed:', e);
+  }
+  
+  try { 
+    location.replace('myapp://payment-result?status=' + payload.status + '&orderId=' + payload.orderId); 
+  } catch(e) {
+    console.log('Deep link failed:', e);
+  }
+  
+  setTimeout(function(){ 
+    try {
+      location.replace('about:blank'); 
+    } catch(e) {
+      console.log('About:blank redirect failed:', e);
+    }
+  }, 600);
+})();
+</script>
+<body style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; text-align: center; padding: 20px;">
+  <h2>Ödeme sonucu işleniyor…</h2>
+  <p style="color: #666;">Lütfen bekleyiniz, uygulamaya yönlendiriliyorsunuz.</p>
+  ${errorMessage ? `<p style="color: #d32f2f; font-size: 14px;">${errorMessage}</p>` : ''}
+</body>`;
+  }
+
+  /**
    * Transaction durumunu sorgular
    */
   async getTransactionStatus(req: Request, res: Response) {

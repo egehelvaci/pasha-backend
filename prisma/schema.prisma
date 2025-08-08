@@ -127,6 +127,7 @@ model Store {
   installmentLimits   StoreInstallmentLimit[]
   muhasebeHareketleri MuhasebeHareketleri[]
   paymentTransactions PaymentTransaction[]
+  paymentSessions     PaymentSession[]
   adminStoreConfig    AdminStoreConfig?
   adminCarts          admin_carts[]
 }
@@ -526,4 +527,40 @@ model EmployeeOrderStats {
 
   @@unique([orderId]) // Her sipariş için sadece bir employee kaydı
   @@map("employee_order_stats")
+}
+
+// Payment Sessions (Mobil/Web kanal desteği için)
+model PaymentSession {
+  id               String           @id @default(uuid())
+  orderId          String?          @map("order_id")
+  channel          PaymentChannel   @default(WEB)
+  status           SessionStatus    @default(PENDING)
+  idempotencyKey   String?          @unique @map("idempotency_key")
+  webhookToken     String?          @unique @map("webhook_token")
+  paymentUrl       String?          @map("payment_url")
+  storeId          String           @map("store_id") @db.Uuid
+  amount           Decimal          @db.Decimal(10, 2)
+  description      String?
+  createdAt        DateTime         @default(now()) @map("created_at")
+  expiresAt        DateTime         @map("expires_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  // İlişkiler
+  store            Store            @relation(fields: [storeId], references: [store_id])
+
+  @@map("payment_sessions")
+}
+
+enum PaymentChannel {
+  WEB
+  MOBILE
+}
+
+enum SessionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  EXPIRED
+  CANCELLED
 }

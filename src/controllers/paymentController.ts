@@ -8,6 +8,130 @@ export class PaymentController {
     this.paymentService = new PaymentService();
   }
 
+  /**
+   * Yeni checkout endpoint'i - Kanal desteği ile
+   */
+  async checkout(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user?.userId;
+      const userType = (req as any).user?.userType;
+      const { storeId, amount, aciklama, channel, orderId } = req.body;
+      const idempotencyKey = req.headers['idempotency-key'] as string;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Kullanıcı kimlik doğrulaması gerekli'
+        });
+      }
+
+      // Validasyon
+      if (!storeId || !amount) {
+        return res.status(400).json({
+          success: false,
+          message: 'storeId ve amount gerekli'
+        });
+      }
+
+      if (amount <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Geçersiz tutar'
+        });
+      }
+
+      // Channel validasyonu
+      if (channel && !['web', 'mobile'].includes(channel)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Channel sadece "web" veya "mobile" olabilir'
+        });
+      }
+
+      // Admin için storeId kullanımı kontrolü
+      let targetStoreId = storeId;
+      let targetUserId = userId;
+
+      if (userType === 'admin') {
+        // Admin kullanıcı, belirtilen mağaza için ödeme başlatabilir
+        targetStoreId = storeId;
+        targetUserId = userId;
+      } else {
+        // Normal kullanıcı sadece kendi mağazası için ödeme başlatabilir
+        const { PrismaClient } = require('../../generated/prisma');
+        const prisma = new PrismaClient();
+        
+        const user = await prisma.user.findUnique({
+          where: { userId },
+          include: { Store: true }
+        });
+
+        await prisma.$disconnect();
+
+        if (!user || !user.Store) {
+          return res.status(404).json({
+            success: false,
+            message: 'Kullanıcı veya mağaza bulunamadı'
+          });
+        }
+
+        if (user.Store.store_id !== storeId) {
+          return res.status(403).json({
+            success: false,
+            message: 'Bu mağaza için ödeme başlatma yetkiniz yok'
+          });
+        }
+        targetStoreId = user.Store.store_id;
+        targetUserId = userId;
+      }
+
+      console.log('💳 Checkout başlatılıyor:', { 
+        userId: targetUserId, 
+        storeId: targetStoreId, 
+        amount, 
+        aciklama,
+        channel: channel || 'web',
+        orderId,
+        idempotencyKey,
+        isAdmin: userType === 'admin'
+      });
+
+      // Checkout işlemi
+      const result = await this.paymentService.checkout({
+        userId: targetUserId,
+        storeId: targetStoreId,
+        amount,
+        aciklama,
+        channel,
+        orderId,
+        idempotencyKey
+      });
+
+      if (result.success) {
+        return res.status(200).json({
+          success: true,
+          message: 'Checkout başarıyla başlatıldı',
+          data: {
+            checkoutUrl: result.checkoutUrl,
+            paymentSessionId: result.paymentSessionId
+          }
+        });
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: result.message || 'Checkout başlatılamadı'
+        });
+      }
+
+    } catch (error) {
+      console.error('❌ Checkout controller hatası:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Checkout başlatılırken hata oluştu'
+      });
+    }
+  }
+
   async createPaymentRequest(req: Request, res: Response) {
     try {
       const userId = (req as any).user?.userId;

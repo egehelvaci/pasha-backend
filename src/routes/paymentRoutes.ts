@@ -10,11 +10,21 @@ const webhookController = new WebhookController();
 const adminPaymentController = new AdminPaymentController();
 
 // Ana ödeme endpoint'leri (kimlik doğrulaması gerekli)
+router.post('/checkout', authMiddleware, paymentController.checkout.bind(paymentController));
 router.post('/process', authMiddleware, paymentController.processPayment.bind(paymentController));
 router.post('/create-request', authMiddleware, paymentController.createPaymentRequest.bind(paymentController));
 
 // DBYE Ana Webhook Endpoint'i
 router.post('/webhook/dbye', webhookController.handleDbyeWebhook.bind(webhookController));
+
+// Yeni callback endpoint'leri (kanal desteği ile)
+router.get('/mobile/3ds/callback', webhookController.handleMobile3dsCallback.bind(webhookController));
+router.post('/mobile/3ds/callback', webhookController.handleMobile3dsCallback.bind(webhookController));
+router.get('/web/callback', webhookController.handleWebCallback.bind(webhookController));
+router.post('/web/callback', webhookController.handleWebCallback.bind(webhookController));
+
+// Polling endpoint'i
+router.get('/result', webhookController.getPaymentResult.bind(webhookController));
 
 // Test/Eski webhook endpoint'leri (geriye uyumluluk için)
 router.get('/webhook/success', webhookController.handleSuccessWebhookLegacy.bind(webhookController));
