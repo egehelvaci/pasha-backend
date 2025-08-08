@@ -221,14 +221,14 @@ export class PaymentService {
   }
 
   /**
-   * Octet API'ye payment request gönderir
+   * Octet API'ye payment request gönderir (retry mantığı ile)
    */
-  async sendPaymentRequestToOctet(paymentRequest: PaymentRequestData): Promise<OctetPaymentResponse> {
+  async sendPaymentRequestToOctet(paymentRequest: PaymentRequestData, retryCount: number = 0): Promise<OctetPaymentResponse> {
     try {
-      // Octet login token'ını al
-      const token = await this.octetLoginService.getAuthToken();
+      // Octet login token'ını al (retry durumunda force refresh)
+      const token = await this.octetLoginService.getAuthToken(retryCount > 0);
 
-      console.log('Octet API\'ye payment request gönderiliyor...');
+      console.log(`Octet API'ye payment request gönderiliyor... (Attempt: ${retryCount + 1})`);
 
       // Octet API'ye istek gönder
       const response = await axios.post(
@@ -260,7 +260,15 @@ export class PaymentService {
 
       if (axios.isAxiosError(error)) {
         if (error.response) {
+          // 401 hatası ve retry yapılmamışsa, token'ı yenile ve tekrar dene
+          if (error.response.status === 401 && retryCount === 0) {
+            console.log('401 hatası alındı, token yenileniyor ve tekrar deneniyor...');
+            this.octetLoginService.clearToken(); // Mevcut token'ı temizle
+            return this.sendPaymentRequestToOctet(paymentRequest, retryCount + 1);
+          }
+
           const errorMessage = error.response.data?.message || 
+                             error.response.data?.Errors?.[0] ||
                              error.response.data?.error ||
                              `API Hatası: ${error.response.status}`;
           

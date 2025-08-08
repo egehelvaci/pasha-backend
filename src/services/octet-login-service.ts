@@ -33,12 +33,14 @@ export class OctetLoginService {
   /**
    * Octet API'ye login olur ve token alır
    */
-  async getAuthToken(): Promise<string> {
+  async getAuthToken(forceRefresh: boolean = false): Promise<string> {
     try {
-      // Eğer geçerli token varsa, onu döndür
-      if (this.token && this.tokenExpiry && new Date() < this.tokenExpiry) {
+      // Eğer geçerli token varsa ve zorla yenileme istenmiyorsa, onu döndür
+      if (!forceRefresh && this.token && this.tokenExpiry && new Date() < this.tokenExpiry) {
         return this.token;
       }
+
+      console.log(forceRefresh ? 'Token zorla yenileniyor...' : 'Token expire olmuş, yenileniyor...');
 
       // Veritabanından login bilgilerini al
       const credentials = await this.getLoginCredentials();
