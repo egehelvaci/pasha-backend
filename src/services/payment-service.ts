@@ -104,6 +104,11 @@ export class PaymentService {
             maksimum_taksit: true,
             is_active: true
           }
+        },
+        userType: {
+          select: {
+            name: true
+          }
         }
       }
     });
@@ -112,6 +117,15 @@ export class PaymentService {
       throw new Error(`Kullanıcı bulunamadı: ${userId}`);
     }
 
+    // Admin kullanıcılar için farklı davranış
+    if (user.userType?.name === 'admin') {
+      // Admin kullanıcılar için belirtilen mağazayı al
+      const targetStore = await this.getStoreInfo(storeId);
+      console.log(`👑 Admin kullanıcı (${userId}) farklı mağaza (${storeId}) için ödeme işlemi yapıyor`);
+      return { user, store: targetStore };
+    }
+
+    // Normal kullanıcılar için mevcut kontrolü yap
     if (!user.Store) {
       throw new Error('Kullanıcı bir mağazaya bağlı değil');
     }

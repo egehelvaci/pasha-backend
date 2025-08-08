@@ -11,6 +11,7 @@ export class PaymentController {
   async createPaymentRequest(req: Request, res: Response) {
     try {
       const userId = (req as any).user?.userId;
+      const userType = (req as any).user?.userType;
       const { storeId, amount, aciklama } = req.body;
 
       if (!userId) {
@@ -35,12 +36,45 @@ export class PaymentController {
         });
       }
 
-      console.log('💳 Payment request oluşturuluyor:', { storeId, amount, aciklama });
+      // Admin kontrolü - admin ise herhangi bir mağaza için ödeme alabilir
+      let targetStoreId = storeId;
+      let targetUserId = userId;
+
+      if (userType === 'admin') {
+        console.log('👑 Admin kullanıcı ödeme request oluşturuyor:', { 
+          adminUserId: userId, 
+          targetStoreId: storeId, 
+          amount, 
+          aciklama 
+        });
+        // Admin için storeId direkt kullanılabilir
+        targetStoreId = storeId;
+        targetUserId = userId; // Admin kendi adına ödeme alıyor
+      } else {
+        // Normal kullanıcı - sadece kendi mağazası için ödeme alabilir
+        const userStoreId = (req as any).user?.store_id;
+        if (userStoreId !== storeId) {
+          return res.status(403).json({
+            success: false,
+            message: 'Sadece kendi mağazanız için ödeme alabilirsiniz'
+          });
+        }
+        targetStoreId = userStoreId;
+        targetUserId = userId;
+      }
+
+      console.log('💳 Payment request oluşturuluyor:', { 
+        userId: targetUserId, 
+        storeId: targetStoreId, 
+        amount, 
+        aciklama,
+        isAdmin: userType === 'admin'
+      });
 
       // Sadece request objesi oluştur, Octet'e gönderme
       const paymentRequest = await this.paymentService.createPaymentRequest({
-        userId,
-        storeId,
+        userId: targetUserId,
+        storeId: targetStoreId,
         amount,
         aciklama
       });
@@ -63,6 +97,7 @@ export class PaymentController {
   async processPayment(req: Request, res: Response) {
     try {
       const userId = (req as any).user?.userId;
+      const userType = (req as any).user?.userType;
       const { storeId, amount, aciklama } = req.body;
 
       if (!userId) {
@@ -87,12 +122,45 @@ export class PaymentController {
         });
       }
 
-      console.log('🚀 Payment işlemi başlatılıyor:', { storeId, amount, aciklama });
+      // Admin kontrolü - admin ise herhangi bir mağaza için ödeme alabilir
+      let targetStoreId = storeId;
+      let targetUserId = userId;
+
+      if (userType === 'admin') {
+        console.log('👑 Admin kullanıcı ödeme işlemi başlatıyor:', { 
+          adminUserId: userId, 
+          targetStoreId: storeId, 
+          amount, 
+          aciklama 
+        });
+        // Admin için storeId direkt kullanılabilir
+        targetStoreId = storeId;
+        targetUserId = userId; // Admin kendi adına ödeme alıyor
+      } else {
+        // Normal kullanıcı - sadece kendi mağazası için ödeme alabilir
+        const userStoreId = (req as any).user?.store_id;
+        if (userStoreId !== storeId) {
+          return res.status(403).json({
+            success: false,
+            message: 'Sadece kendi mağazanız için ödeme alabilirsiniz'
+          });
+        }
+        targetStoreId = userStoreId;
+        targetUserId = userId;
+      }
+
+      console.log('🚀 Payment işlemi başlatılıyor:', { 
+        userId: targetUserId, 
+        storeId: targetStoreId, 
+        amount, 
+        aciklama,
+        isAdmin: userType === 'admin'
+      });
 
       // Request oluştur ve Octet'e gönder
       const result = await this.paymentService.processPayment({
-        userId,
-        storeId,
+        userId: targetUserId,
+        storeId: targetStoreId,
         amount,
         aciklama
       });
