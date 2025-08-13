@@ -81,22 +81,35 @@ export class EmployeeStatsController {
 
       // Toplamları hesapla
       const totalStats = {
+        // Genel istatistikler
         totalOrders: stats.length,
         totalAmount: stats.reduce((sum, stat) => sum + Number(stat.totalAmount), 0),
         totalAreaM2: stats.reduce((sum, stat) => sum + Number(stat.totalAreaM2), 0),
         totalItems: stats.reduce((sum, stat) => sum + stat.totalItems, 0),
         
-        // Hazırlanan ve teslim edilen ayrımı
-        preparedOrders: stats.filter(s => s.orderStatus === 'READY').length,
-        deliveredOrders: stats.filter(s => s.orderStatus === 'DELIVERED').length,
+        // Sipariş durumu bazlı istatistikler
+        completedOrders: stats.filter(s => s.orderStatus === 'DELIVERED').length, // Tamamlanan siparişler
+        preparedOrders: stats.filter(s => s.orderStatus === 'READY').length,      // Sadece hazırlanan siparişler
+        deliveredOrders: stats.filter(s => s.orderStatus === 'DELIVERED').length, // Teslim edilen siparişler
         
-        preparedAreaM2: stats
+        // Alan bazlı istatistikler (m²)
+        totalPreparedAreaM2: stats
           .filter(s => s.preparedAreaM2)
           .reduce((sum, stat) => sum + Number(stat.preparedAreaM2 || 0), 0),
         
-        deliveredAreaM2: stats
+        totalDeliveredAreaM2: stats
           .filter(s => s.deliveredAreaM2)
           .reduce((sum, stat) => sum + Number(stat.deliveredAreaM2 || 0), 0),
+        
+        // Ortalama değerler
+        averageOrderValue: stats.length > 0 ? stats.reduce((sum, stat) => sum + Number(stat.totalAmount), 0) / stats.length : 0,
+        averageAreaPerOrder: stats.length > 0 ? stats.reduce((sum, stat) => sum + Number(stat.totalAreaM2), 0) / stats.length : 0,
+        averageItemsPerOrder: stats.length > 0 ? stats.reduce((sum, stat) => sum + stat.totalItems, 0) / stats.length : 0,
+        
+        // Performans oranları
+        preparationRate: stats.length > 0 ? (stats.filter(s => s.preparedAreaM2).length / stats.length * 100) : 0,
+        deliveryRate: stats.length > 0 ? (stats.filter(s => s.deliveredAreaM2).length / stats.length * 100) : 0,
+        completionRate: stats.length > 0 ? (stats.filter(s => s.orderStatus === 'DELIVERED').length / stats.length * 100) : 0
       }
 
       // Günlük performans analizi
@@ -177,6 +190,34 @@ export class EmployeeStatsController {
         }
       })
 
+      // Her çalışan için detaylı sipariş durumu istatistikleri
+      const employeeOrderCounts = await Promise.all(
+        employeeStats.map(async (stat) => {
+          const [readyCount, deliveredCount] = await Promise.all([
+            prisma.employeeOrderStats.count({
+              where: { 
+                employeeId: stat.employeeId,
+                orderStatus: 'READY',
+                ...dateFilter
+              }
+            }),
+            prisma.employeeOrderStats.count({
+              where: { 
+                employeeId: stat.employeeId,
+                orderStatus: 'DELIVERED',
+                ...dateFilter
+              }
+            })
+          ])
+          
+          return {
+            employeeId: stat.employeeId,
+            readyOrders: readyCount,
+            deliveredOrders: deliveredCount
+          }
+        })
+      )
+
       // Çalışan bilgilerini ekle
       const employeeStatsWithDetails = await Promise.all(
         employeeStats.map(async (stat) => {
@@ -200,6 +241,12 @@ export class EmployeeStatsController {
             select: { completedAt: true }
           })
 
+          // Bu çalışanın sipariş durumu istatistikleri
+          const orderCounts = employeeOrderCounts.find(oc => oc.employeeId === stat.employeeId) || {
+            readyOrders: 0,
+            deliveredOrders: 0
+          }
+
           return {
             employee: employee ? {
               userId: employee.userId,
@@ -209,18 +256,39 @@ export class EmployeeStatsController {
               email: employee.email
             } : null,
             stats: {
+              // Genel istatistikler
               totalOrders: stat._count.orderId,
               totalAmount: Number(stat._sum.totalAmount || 0),
               totalAreaM2: Number(stat._sum.totalAreaM2 || 0),
               totalItems: stat._sum.totalItems || 0,
-              preparedAreaM2: Number(stat._sum.preparedAreaM2 || 0),
-              deliveredAreaM2: Number(stat._sum.deliveredAreaM2 || 0),
+              
+              // Sipariş durumu bazlı
+              preparedOrders: orderCounts.readyOrders,        // Hazırladığı siparişler
+              deliveredOrders: orderCounts.deliveredOrders,   // Teslim ettiği siparişler
+              completedOrders: orderCounts.deliveredOrders,   // Tamamladığı siparişler (delivered ile aynı)
+              
+              // Alan bazlı (m²)
+              totalPreparedAreaM2: Number(stat._sum.preparedAreaM2 || 0),  // Hazırladığı m²
+              totalDeliveredAreaM2: Number(stat._sum.deliveredAreaM2 || 0), // Teslim ettiği m²
+              
+              // Tarih ve ortalamalar
               lastOrderDate: lastOrder?.completedAt || null,
               averageOrderValue: stat._count.orderId > 0 
                 ? Number(stat._sum.totalAmount || 0) / stat._count.orderId 
                 : 0,
               averageAreaPerOrder: stat._count.orderId > 0 
                 ? Number(stat._sum.totalAreaM2 || 0) / stat._count.orderId 
+                : 0,
+              
+              // Performans oranları
+              preparationRate: stat._count.orderId > 0 
+                ? (orderCounts.readyOrders / stat._count.orderId * 100) 
+                : 0,
+              deliveryRate: stat._count.orderId > 0 
+                ? (orderCounts.deliveredOrders / stat._count.orderId * 100) 
+                : 0,
+              completionRate: stat._count.orderId > 0 
+                ? (orderCounts.deliveredOrders / stat._count.orderId * 100) 
                 : 0
             }
           }
@@ -253,8 +321,26 @@ export class EmployeeStatsController {
         totalAmount: validStats.reduce((sum, stat) => sum + stat.stats.totalAmount, 0),
         totalAreaM2: validStats.reduce((sum, stat) => sum + stat.stats.totalAreaM2, 0),
         totalItems: validStats.reduce((sum, stat) => sum + stat.stats.totalItems, 0),
-        preparedAreaM2: validStats.reduce((sum, stat) => sum + stat.stats.preparedAreaM2, 0),
-        deliveredAreaM2: validStats.reduce((sum, stat) => sum + stat.stats.deliveredAreaM2, 0)
+        
+        // Sipariş durumu bazlı toplamlar
+        totalPreparedOrders: validStats.reduce((sum, stat) => sum + stat.stats.preparedOrders, 0),
+        totalDeliveredOrders: validStats.reduce((sum, stat) => sum + stat.stats.deliveredOrders, 0),
+        totalCompletedOrders: validStats.reduce((sum, stat) => sum + stat.stats.completedOrders, 0),
+        
+        // Alan bazlı toplamlar (m²)
+        totalPreparedAreaM2: validStats.reduce((sum, stat) => sum + stat.stats.totalPreparedAreaM2, 0),
+        totalDeliveredAreaM2: validStats.reduce((sum, stat) => sum + stat.stats.totalDeliveredAreaM2, 0),
+        
+        // Ortalama performans
+        averagePreparationRate: validStats.length > 0 
+          ? validStats.reduce((sum, stat) => sum + stat.stats.preparationRate, 0) / validStats.length 
+          : 0,
+        averageDeliveryRate: validStats.length > 0 
+          ? validStats.reduce((sum, stat) => sum + stat.stats.deliveryRate, 0) / validStats.length 
+          : 0,
+        averageCompletionRate: validStats.length > 0 
+          ? validStats.reduce((sum, stat) => sum + stat.stats.completionRate, 0) / validStats.length 
+          : 0
       }
 
       return res.status(200).json({
