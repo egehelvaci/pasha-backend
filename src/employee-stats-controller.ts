@@ -105,12 +105,18 @@ export class EmployeeStatsController {
         distinct: ['order_id'] // Her sipariş sadece bir kez sayılsın
       })
 
-      // Hazırladığı siparişlerin toplam m² ve sipariş sayısı
+      // Hazırladığı siparişlerin toplam m² ve sipariş sayısı ve tutar
       const preparedOrderCount = preparedOrdersFromQR.length
       const preparedAreaM2Total = preparedOrdersFromQR.reduce((sum, qr) => {
         return sum + qr.order.items.reduce((orderSum, item) => {
           return orderSum + (Number(item.width) * Number(item.height) * item.quantity / 10000)
         }, 0)
+      }, 0)
+      const preparedAmountTotal = preparedOrdersFromQR.reduce((sum, qr) => {
+        return sum + Number(qr.order.total_price)
+      }, 0)
+      const preparedItemsTotal = preparedOrdersFromQR.reduce((sum, qr) => {
+        return sum + qr.order.items.reduce((orderSum, item) => orderSum + item.quantity, 0)
       }, 0)
 
       // Toplamları hesapla
@@ -128,6 +134,8 @@ export class EmployeeStatsController {
         // Hazırlama işlemi istatistikleri (QRCode tablosundan)
         actualPreparedOrders: preparedOrderCount,              // Gerçekten hazırladığı sipariş sayısı
         actualPreparedAreaM2: Math.round(preparedAreaM2Total * 100) / 100,  // Gerçekten hazırladığı m² alanı
+        actualPreparedAmount: preparedAmountTotal,             // Gerçekten hazırladığı toplam tutar
+        actualPreparedItems: preparedItemsTotal,               // Gerçekten hazırladığı toplam ürün sayısı
         
         // Alan bazlı istatistikler (m²) - EmployeeOrderStats'tan
         totalPreparedAreaM2: stats
@@ -145,6 +153,8 @@ export class EmployeeStatsController {
         
         // Hazırlama performansı ortalamalar
         averagePreparedAreaPerOrder: preparedOrderCount > 0 ? preparedAreaM2Total / preparedOrderCount : 0,
+        averagePreparedAmountPerOrder: preparedOrderCount > 0 ? preparedAmountTotal / preparedOrderCount : 0,
+        averagePreparedItemsPerOrder: preparedOrderCount > 0 ? preparedItemsTotal / preparedOrderCount : 0,
         
         // Performans oranları
         preparationRate: stats.length > 0 ? (stats.filter(s => s.preparedAreaM2).length / stats.length * 100) : 0,
@@ -309,6 +319,12 @@ export class EmployeeStatsController {
               return orderSum + (Number(item.width) * Number(item.height) * item.quantity / 10000)
             }, 0)
           }, 0)
+          const actualPreparedAmount = preparedOrdersFromQR.reduce((sum, qr) => {
+            return sum + Number(qr.order.total_price)
+          }, 0)
+          const actualPreparedItems = preparedOrdersFromQR.reduce((sum, qr) => {
+            return sum + qr.order.items.reduce((orderSum, item) => orderSum + item.quantity, 0)
+          }, 0)
 
           return {
             employee: employee ? {
@@ -332,6 +348,8 @@ export class EmployeeStatsController {
               // Gerçek hazırlama istatistikleri (QRCode tablosundan)
               actualPreparedOrders: actualPreparedCount,      // Gerçekten hazırladığı sipariş sayısı
               actualPreparedAreaM2: Math.round(actualPreparedAreaM2 * 100) / 100,  // Gerçekten hazırladığı m² alanı
+              actualPreparedAmount: actualPreparedAmount,     // Gerçekten hazırladığı toplam tutar
+              actualPreparedItems: actualPreparedItems,       // Gerçekten hazırladığı toplam ürün sayısı
               
               // Alan bazlı (m²) - EmployeeOrderStats'tan
               totalPreparedAreaM2: Number(stat._sum.preparedAreaM2 || 0),  // Hazırladığı m²
@@ -349,6 +367,12 @@ export class EmployeeStatsController {
               // Hazırlama performansı ortalamalar
               averagePreparedAreaPerOrder: actualPreparedCount > 0 
                 ? actualPreparedAreaM2 / actualPreparedCount 
+                : 0,
+              averagePreparedAmountPerOrder: actualPreparedCount > 0 
+                ? actualPreparedAmount / actualPreparedCount 
+                : 0,
+              averagePreparedItemsPerOrder: actualPreparedCount > 0 
+                ? actualPreparedItems / actualPreparedCount 
                 : 0,
               
               // Performans oranları
@@ -397,6 +421,8 @@ export class EmployeeStatsController {
         // Gerçek hazırlama toplamları (QRCode'dan)
         totalActualPreparedOrders: validStats.reduce((sum, stat) => sum + stat.stats.actualPreparedOrders, 0),
         totalActualPreparedAreaM2: validStats.reduce((sum, stat) => sum + stat.stats.actualPreparedAreaM2, 0),
+        totalActualPreparedAmount: validStats.reduce((sum, stat) => sum + stat.stats.actualPreparedAmount, 0),
+        totalActualPreparedItems: validStats.reduce((sum, stat) => sum + stat.stats.actualPreparedItems, 0),
         
         // Alan bazlı toplamlar (m²) - EmployeeOrderStats'tan
         totalPreparedAreaM2: validStats.reduce((sum, stat) => sum + stat.stats.totalPreparedAreaM2, 0),
