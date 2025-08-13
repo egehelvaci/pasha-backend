@@ -631,7 +631,7 @@ export class AdminOrderController {
                   document.getElementById('confirmButton').innerHTML = 'Kaydediliyor...';
                   document.getElementById('confirmButton').disabled = true;
                   
-                  // API çağrısı
+                  // API çağrısı (token gerektirmez)
                   fetch('/api/admin/orders/' + orderId + '/assign-employee', {
                     method: 'POST',
                     headers: {

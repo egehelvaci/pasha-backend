@@ -17,9 +17,10 @@ const router = express.Router()
 const adminController = new AdminController()
 const adminPaymentController = new AdminPaymentController()
 
-// QR Kod okutma - Authentication gerektirmez (mobil uygulama için)
+// QR Kod okutma ve çalışan atama - Authentication gerektirmez (mobil uygulama için)
 router.post('/scan-qr', adminOrderController.scanQRCode)
 router.get('/scan-qr', adminOrderController.scanQRCode)
+router.post('/orders/:orderId/assign-employee', adminOrderController.assignEmployeeToOrder)
 
 // Tüm diğer admin rotaları için önce kimlik doğrulama ve yetkilendirme gerekiyor
 router.use(authMiddleware)
@@ -57,9 +58,6 @@ router.get('/orders/:orderId/qrcodes', adminOrderController.getOrderQRCodes)
 
 // Sipariş durumu güncelleme
 router.put('/orders/:orderId/status', adminOrderController.updateOrderStatus)
-
-// Çalışan atama
-router.post('/orders/:orderId/assign-employee', adminOrderController.assignEmployeeToOrder)
 
 // İstatistik API'leri
 router.get('/statistics/top-stores', adminStatisticsController.getTopStores)
