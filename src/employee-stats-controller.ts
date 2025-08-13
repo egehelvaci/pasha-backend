@@ -122,9 +122,8 @@ export class EmployeeStatsController {
         totalItems: stats.reduce((sum, stat) => sum + stat.totalItems, 0),
         
         // Sipariş durumu bazlı istatistikler
-        completedOrders: stats.filter(s => s.orderStatus === 'DELIVERED').length, // Tamamlanan siparişler
         preparedOrders: stats.filter(s => s.orderStatus === 'READY').length,      // Sadece hazırlanan siparişler
-        deliveredOrders: stats.filter(s => s.orderStatus === 'DELIVERED').length, // Teslim edilen siparişler
+        deliveredOrders: stats.filter(s => s.orderStatus === 'DELIVERED').length, // Teslim edilen siparişler (tamamlanan)
         
         // Hazırlama işlemi istatistikleri (QRCode tablosundan)
         actualPreparedOrders: preparedOrderCount,              // Gerçekten hazırladığı sipariş sayısı
@@ -149,8 +148,7 @@ export class EmployeeStatsController {
         
         // Performans oranları
         preparationRate: stats.length > 0 ? (stats.filter(s => s.preparedAreaM2).length / stats.length * 100) : 0,
-        deliveryRate: stats.length > 0 ? (stats.filter(s => s.deliveredAreaM2).length / stats.length * 100) : 0,
-        completionRate: stats.length > 0 ? (stats.filter(s => s.orderStatus === 'DELIVERED').length / stats.length * 100) : 0
+        deliveryRate: stats.length > 0 ? (stats.filter(s => s.deliveredAreaM2).length / stats.length * 100) : 0
       }
 
       // Günlük performans analizi
@@ -329,8 +327,7 @@ export class EmployeeStatsController {
               
               // Sipariş durumu bazlı
               preparedOrders: orderCounts.readyOrders,        // Hazırladığı siparişler
-              deliveredOrders: orderCounts.deliveredOrders,   // Teslim ettiği siparişler
-              completedOrders: orderCounts.deliveredOrders,   // Tamamladığı siparişler (delivered ile aynı)
+              deliveredOrders: orderCounts.deliveredOrders,   // Teslim ettiği siparişler (tamamlanan)
               
               // Gerçek hazırlama istatistikleri (QRCode tablosundan)
               actualPreparedOrders: actualPreparedCount,      // Gerçekten hazırladığı sipariş sayısı
@@ -359,9 +356,6 @@ export class EmployeeStatsController {
                 ? (orderCounts.readyOrders / stat._count.orderId * 100) 
                 : 0,
               deliveryRate: stat._count.orderId > 0 
-                ? (orderCounts.deliveredOrders / stat._count.orderId * 100) 
-                : 0,
-              completionRate: stat._count.orderId > 0 
                 ? (orderCounts.deliveredOrders / stat._count.orderId * 100) 
                 : 0
             }
@@ -398,8 +392,7 @@ export class EmployeeStatsController {
         
         // Sipariş durumu bazlı toplamlar
         totalPreparedOrders: validStats.reduce((sum, stat) => sum + stat.stats.preparedOrders, 0),
-        totalDeliveredOrders: validStats.reduce((sum, stat) => sum + stat.stats.deliveredOrders, 0),
-        totalCompletedOrders: validStats.reduce((sum, stat) => sum + stat.stats.completedOrders, 0),
+        totalDeliveredOrders: validStats.reduce((sum, stat) => sum + stat.stats.deliveredOrders, 0), // Teslim edilen = Tamamlanan
         
         // Gerçek hazırlama toplamları (QRCode'dan)
         totalActualPreparedOrders: validStats.reduce((sum, stat) => sum + stat.stats.actualPreparedOrders, 0),
@@ -415,9 +408,6 @@ export class EmployeeStatsController {
           : 0,
         averageDeliveryRate: validStats.length > 0 
           ? validStats.reduce((sum, stat) => sum + stat.stats.deliveryRate, 0) / validStats.length 
-          : 0,
-        averageCompletionRate: validStats.length > 0 
-          ? validStats.reduce((sum, stat) => sum + stat.stats.completionRate, 0) / validStats.length 
           : 0,
         
         // Hazırlama ortalamları
