@@ -16,6 +16,7 @@ export class AdminOrderController {
     this.generateQRCodeImages = this.generateQRCodeImages.bind(this)
     this.createOrderForStore = this.createOrderForStore.bind(this)
     this.processAdminOrder = this.processAdminOrder.bind(this)
+    this.assignEmployeeToOrder = this.assignEmployeeToOrder.bind(this)
   }
 
   /**
@@ -470,8 +471,11 @@ export class AdminOrderController {
 
       const result = await qrCodeService.scanQRCode(qrCode, adminUserId, selectedEmployeeId)
 
-      // Eğer çalışan seçimi gerekiyorsa
+      // Eğer çalışan seçimi gerekiyorsa (hazırlama veya teslim için)
       if (result.requiresEmployeeSelection) {
+        const selectionType = result.selectionType || 'prepare' // prepare veya delivery
+        const titleText = selectionType === 'delivery' ? 'Sipariş Teslim!' : 'Sipariş Hazır!'
+        const messageText = selectionType === 'delivery' ? 'Lütfen teslim edecek çalışanı seçin.' : 'Lütfen sorumlu çalışanı seçin.'
         const employeeSelectionHtml = `
           <!DOCTYPE html>
           <html lang="tr">
@@ -575,9 +579,9 @@ export class AdminOrderController {
             <div class="container">
               <div class="success-icon">✅</div>
               <div class="message">
-                <strong>Sipariş Hazır!</strong><br>
+                <strong>${titleText}</strong><br>
                 ${result.message}<br>
-                Lütfen sorumlu çalışanı seçin.
+                ${messageText}
               </div>
               <div class="employee-selection">
                 <div class="form-group">
@@ -618,19 +622,43 @@ export class AdminOrderController {
                 }
 
                 if (confirm('Seçilen Çalışan: ' + employeeName + '\\n\\nOnaylıyor musunuz?')) {
-                  // İkinci QR okutma aşamasına geç - çalışan bilgisini sakla
-                  localStorage.setItem('selectedEmployeeId', employeeId);
-                  localStorage.setItem('selectedEmployeeName', employeeName);
+                  // Çalışan seçimi API'sine gönder
+                  const assignmentType = '${selectionType}';
+                  const orderId = '${result.orderId}';
                   
-                  // Başarı mesajı
+                  // Loading state
                   document.getElementById('employeeSelect').disabled = true;
-                  document.getElementById('confirmButton').innerHTML = '✓ Çalışan Seçildi';
+                  document.getElementById('confirmButton').innerHTML = 'Kaydediliyor...';
                   document.getElementById('confirmButton').disabled = true;
                   
-                  setTimeout(() => {
-                    alert('Çalışan seçildi: ' + employeeName + '\\n\\nŞimdi ikinci QR okutmaya geçebilirsiniz.');
-                    window.close();
-                  }, 1500);
+                  // API çağrısı
+                  fetch('/api/admin/orders/' + orderId + '/assign-employee', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                      employeeId: employeeId,
+                      assignmentType: assignmentType
+                    })
+                  })
+                  .then(response => response.json())
+                  .then(data => {
+                    if (data.success) {
+                      document.getElementById('confirmButton').innerHTML = '✓ Başarıyla Kaydedildi';
+                      setTimeout(() => {
+                        alert('Çalışan kaydedildi: ' + employeeName);
+                        window.close();
+                      }, 1500);
+                    } else {
+                      alert('Hata: ' + (data.message || 'Çalışan kaydedilemedi'));
+                      location.reload();
+                    }
+                  })
+                  .catch(error => {
+                    alert('Hata: ' + error.message);
+                    location.reload();
+                  });
                 }
               }
             </script>
@@ -1398,6 +1426,66 @@ export class AdminOrderController {
       return res.status(500).json({
         success: false,
         message: error.message || 'Admin siparişi işlenirken bir hata oluştu'
+      })
+    }
+  }
+
+  /**
+   * Çalışan atama API'si
+   */
+  async assignEmployeeToOrder(req: Request, res: Response) {
+    try {
+      const { orderId } = req.params
+      const { employeeId, assignmentType } = req.body
+
+      // Validation
+      if (!employeeId || !assignmentType) {
+        return res.status(400).json({
+          success: false,
+          message: 'employeeId ve assignmentType alanları zorunludur'
+        })
+      }
+
+      if (!['prepare', 'deliver'].includes(assignmentType)) {
+        return res.status(400).json({
+          success: false,
+          message: 'assignmentType sadece prepare veya deliver olabilir'
+        })
+      }
+
+      // Çalışan kontrolü
+      const employee = await prisma.user.findUnique({
+        where: { userId: employeeId },
+        select: { userId: true, name: true, surname: true }
+      })
+
+      if (!employee) {
+        return res.status(404).json({
+          success: false,
+          message: 'Çalışan bulunamadı'
+        })
+      }
+
+      // Çalışan ataması yap
+      await qrCodeService.assignEmployeeToOrder(orderId, employeeId, assignmentType as 'prepare' | 'deliver')
+
+      return res.status(200).json({
+        success: true,
+        message: `Çalışan ${assignmentType === 'prepare' ? 'hazırlama' : 'teslim'} işlemi için başarıyla atandı`,
+        data: {
+          orderId,
+          employee: {
+            userId: employee.userId,
+            name: employee.name,
+            surname: employee.surname
+          },
+          assignmentType
+        }
+      })
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Çalışan ataması sırasında bir hata oluştu'
       })
     }
   }

@@ -58,6 +58,9 @@ router.get('/orders/:orderId/qrcodes', adminOrderController.getOrderQRCodes)
 // Sipariş durumu güncelleme
 router.put('/orders/:orderId/status', adminOrderController.updateOrderStatus)
 
+// Çalışan atama
+router.post('/orders/:orderId/assign-employee', adminOrderController.assignEmployeeToOrder)
+
 // İstatistik API'leri
 router.get('/statistics/top-stores', adminStatisticsController.getTopStores)
 router.get('/statistics/top-products', adminStatisticsController.getTopProducts)
