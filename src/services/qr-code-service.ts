@@ -314,10 +314,11 @@ export class QRCodeService {
   }
 
   /**
-   * QR kod okut ve sipariş durumunu güncelle - Item bazlı sistem
-   * Tüm item'lar okutulduğunda sipariş DELIVERED olur
+   * QR kod okut ve sipariş durumunu güncelle - Yeni mantık
+   * İlk okutma: Tüm QR kodlar okutulduğunda çalışan seçimi ve READY durumu
+   * İkinci okutma: Tekrar tüm QR kodlar okutulduğunda DELIVERED durumu
    */
-  async scanQRCode(qrCode: string, adminUserId: string) {
+  async scanQRCode(qrCode: string, adminUserId: string, selectedEmployeeId?: string) {
     try {
       // QR kod parametresi kontrolü
       if (!qrCode || typeof qrCode !== 'string') {
@@ -380,60 +381,158 @@ export class QRCodeService {
         throw new Error('Geçersiz QR kod')
       }
 
-      // QR kodun tamamlanıp tamamlanmadığını kontrol et
-      const currentScanCount = qrRecord.scan_count || 0
-      const requiredScans = qrRecord.required_scans || 1
-      
-      if (currentScanCount >= requiredScans) {
-        throw new Error(`Bu QR kod zaten tamamlandı (${currentScanCount}/${requiredScans} okutma)`)
-      }
-
-      // Scan count'u artır
-      const newScanCount = currentScanCount + 1
-      const isCompleted = newScanCount >= requiredScans
-      
-      await prisma.qRCode.update({
-        where: { id: qrRecord.id },
-        data: {
-          scan_count: newScanCount,
-          is_scanned: isCompleted, // Gerekli sayıda okutulduğunda true
-          last_scan_at: new Date(),
-          scanned_at: isCompleted ? new Date() : qrRecord.scanned_at
-        }
-      })
-
       // Siparişteki tüm QR kodları kontrol et
       const allQRCodes = await prisma.qRCode.findMany({
         where: { order_id: qrRecord.order_id }
       })
 
-      const scannedQRCodes = allQRCodes.filter(qr => qr.is_scanned)
-      const allScanned = scannedQRCodes.length === allQRCodes.length
+      // Mevcut durumu değerlendir
+      const currentOrder = qrRecord.order
+      let newOrderStatus = currentOrder.status
+      let message = 'QR kod okutuldu'
 
-      let newOrderStatus = qrRecord.order.status
-      let message = `QR kod okutuldu (${newScanCount}/${requiredScans})`
+      // İlk okutma durumu - CONFIRMED -> READY
+      if (currentOrder.status === 'CONFIRMED') {
+        // İlk scan için QR kodu güncelle
+        if (!qrRecord.first_scan_employee_id) {
+          await prisma.qRCode.update({
+            where: { id: qrRecord.id },
+            data: {
+              first_scan_employee_id: adminUserId,
+              first_scan_at: new Date(),
+              is_scanned: false // Henüz tamamlanmadı, sadece ilk okutma yapıldı
+            }
+          })
 
-      // Eğer bu QR kod tamamlandıysa
-      if (isCompleted) {
-        message = `QR kod tamamlandı! (${newScanCount}/${requiredScans})`
-      }
+          // Tüm QR kodların ilk okutması tamamlandı mı kontrol et
+          const firstScannedQRs = await prisma.qRCode.findMany({
+            where: { 
+              order_id: qrRecord.order_id,
+              first_scan_employee_id: { not: null }
+            }
+          })
 
-      // Tüm QR kodlar tamamlandıysa siparişi DELIVERED yap
-      if (allScanned) {
-        newOrderStatus = 'DELIVERED'
-        message = 'Tüm QR kodlar tamamlandı, sipariş teslim edildi!'
-        
-        await prisma.order.update({
-          where: { id: qrRecord.order_id },
-          data: {
-            status: 'DELIVERED',
-            updated_at: new Date()
+          if (firstScannedQRs.length === allQRCodes.length) {
+            // Tüm QR kodlar ilk kez okutuldu - çalışan seçimi gerekiyor
+            newOrderStatus = 'READY'
+            message = 'Tüm QR kodlar ilk kez okutuldu! Çalışan seçimi yapın.'
+            
+            await prisma.order.update({
+              where: { id: qrRecord.order_id },
+              data: {
+                status: 'READY',
+                updated_at: new Date()
+              }
+            })
+
+            // Çalışan seçimi gerekiyor
+            return {
+              success: true,
+              message,
+              requiresEmployeeSelection: true,
+              employees: (await employeeAssignmentService.getAllEmployees()).employees,
+              orderId: qrRecord.order_id,
+              orderDetails: {
+                total_price: currentOrder.total_price,
+                total_area_m2: currentOrder.items.reduce((sum, item) => sum + (Number(item.width) * Number(item.height) * item.quantity / 10000), 0),
+                total_items: currentOrder.items.reduce((sum, item) => sum + item.quantity, 0)
+              }
+            }
+          } else {
+            message = `İlk okutma yapıldı (${firstScannedQRs.length}/${allQRCodes.length} QR kod)`
           }
-        })
-        
-        // Employee seçimi için sipariş hazır durumda
-        message = 'Tüm QR kodlar tamamlandı! Employee seçimi için form açılmalı.'
+        } else {
+          message = 'Bu QR kod zaten ilk kez okutulmuş'
+        }
       }
+      
+      // İkinci okutma durumu - READY -> DELIVERED
+      else if (currentOrder.status === 'READY') {
+        // İkinci scan için QR kodu güncelle
+        if (qrRecord.first_scan_employee_id && !qrRecord.second_scan_employee_id) {
+          await prisma.qRCode.update({
+            where: { id: qrRecord.id },
+            data: {
+              second_scan_employee_id: adminUserId,
+              second_scan_at: new Date(),
+              is_scanned: true, // İkinci okutma ile tamamlandı
+              scanned_at: new Date()
+            }
+          })
+
+          // Tüm QR kodların ikinci okutması tamamlandı mı kontrol et
+          const secondScannedQRs = await prisma.qRCode.findMany({
+            where: { 
+              order_id: qrRecord.order_id,
+              second_scan_employee_id: { not: null }
+            }
+          })
+
+          if (secondScannedQRs.length === allQRCodes.length) {
+            // Tüm QR kodlar ikinci kez okutuldu - sipariş teslim edildi
+            newOrderStatus = 'DELIVERED'
+            message = 'Tüm QR kodlar ikinci kez okutuldu! Sipariş teslim edildi.'
+            
+            await prisma.order.update({
+              where: { id: qrRecord.order_id },
+              data: {
+                status: 'DELIVERED',
+                updated_at: new Date()
+              }
+            })
+
+            // Employee istatistiklerini güncelle
+            if (selectedEmployeeId) {
+              const totalAmount = Number(currentOrder.total_price)
+              const totalAreaM2 = currentOrder.items.reduce((sum, item) => sum + (Number(item.width) * Number(item.height) * item.quantity / 10000), 0)
+              const totalItems = currentOrder.items.reduce((sum, item) => sum + item.quantity, 0)
+
+              await prisma.employeeOrderStats.create({
+                data: {
+                  employeeId: selectedEmployeeId,
+                  orderId: qrRecord.order_id,
+                  totalAmount,
+                  totalAreaM2,
+                  totalItems,
+                  orderStatus: 'DELIVERED',
+                  deliveredAreaM2: totalAreaM2,
+                  completedAt: new Date()
+                }
+              })
+            }
+          } else {
+            message = `İkinci okutma yapıldı (${secondScannedQRs.length}/${allQRCodes.length} QR kod)`
+          }
+        } else if (!qrRecord.first_scan_employee_id) {
+          throw new Error('Bu QR kod henüz ilk kez okutulmamış')
+        } else {
+          message = 'Bu QR kod zaten ikinci kez okutulmuş'
+        }
+      }
+      
+      else {
+        throw new Error(`Bu sipariş durumunda QR kod okutma yapılamaz: ${currentOrder.status}`)
+      }
+
+      // Güncel QR kod bilgilerini al
+      const updatedQRRecord = await prisma.qRCode.findUnique({
+        where: { id: qrRecord.id }
+      })
+
+      // Güncel sipariş durumunu kontrol et
+      const firstScannedCount = await prisma.qRCode.count({
+        where: { 
+          order_id: qrRecord.order_id,
+          first_scan_employee_id: { not: null }
+        }
+      })
+
+      const secondScannedCount = await prisma.qRCode.count({
+        where: { 
+          order_id: qrRecord.order_id,
+          second_scan_employee_id: { not: null }
+        }
+      })
 
       return {
         success: true,
@@ -441,10 +540,11 @@ export class QRCodeService {
         qrCode: {
           id: qrRecord.id,
           qr_code: qrRecord.qr_code,
-          scan_count: newScanCount,
-          required_scans: requiredScans,
-          is_completed: isCompleted,
-          last_scan_at: new Date(),
+          first_scan_employee_id: updatedQRRecord?.first_scan_employee_id || null,
+          first_scan_at: updatedQRRecord?.first_scan_at || null,
+          second_scan_employee_id: updatedQRRecord?.second_scan_employee_id || null,
+          second_scan_at: updatedQRRecord?.second_scan_at || null,
+          is_completed: updatedQRRecord?.is_scanned || false,
           created_at: qrRecord.created_at
         },
         order: {
@@ -460,36 +560,14 @@ export class QRCodeService {
           created_at: qrRecord.order.created_at,
           updated_at: new Date()
         },
-        item: qrRecord.order_item ? {
-          id: qrRecord.order_item.id,
-          product_name: qrRecord.order_item.product.name,
-          quantity: qrRecord.order_item.quantity,
-          unit_price: qrRecord.order_item.unit_price
-        } : null,
-        product: qrRecord.product ? {
-          id: qrRecord.product.productId,
-          name: qrRecord.product.name
-        } : null,
         deliveryInfo: {
-          completed_qr_codes: scannedQRCodes.length,
+          first_scan_completed: firstScannedCount,
+          second_scan_completed: secondScannedCount,
           total_qr_codes: allQRCodes.length,
-          is_order_completed: allScanned,
-          completion_percentage: Math.round((scannedQRCodes.length / allQRCodes.length) * 100),
           order_status: newOrderStatus,
-          needs_employee_assignment: allScanned, // Employee ataması gerekiyor mu
-          qr_details: allQRCodes.map(qr => ({
-            qr_id: qr.id,
-            scan_count: qr.scan_count || 0,
-            required_scans: qr.required_scans || 1,
-            is_completed: (qr.scan_count || 0) >= (qr.required_scans || 1)
-          }))
-        },
-        // Employee seçimi için gerekli bilgiler
-        ...(allScanned && {
-          employees: (await employeeAssignmentService.getAllEmployees()).employees,
-          orderId: qrRecord.order_id,
-          formUrl: `/api/employee-assignment/form?orderId=${qrRecord.order_id}&employees=${encodeURIComponent(JSON.stringify((await employeeAssignmentService.getAllEmployees()).employees))}&orderData=${encodeURIComponent(JSON.stringify(qrRecord.order))}`
-        })
+          first_scan_percentage: Math.round((firstScannedCount / allQRCodes.length) * 100),
+          second_scan_percentage: Math.round((secondScannedCount / allQRCodes.length) * 100)
+        }
       }
     } catch (error: any) {
       throw new Error(`QR kod okuma hatası: ${error.message}`)

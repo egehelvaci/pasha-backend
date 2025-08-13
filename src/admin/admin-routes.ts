@@ -3,6 +3,7 @@ import { AdminController } from './admin-controller'
 import { adminOrderController } from './admin-order-controller'
 import { adminStatisticsController } from './admin-statistics-controller'
 import { AdminPaymentController } from './admin-payment-controller'
+import { employeeStatsController } from '../employee-stats-controller'
 import { authMiddleware, authorizeRoles } from '../auth/auth-middleware'
 import storeRoutes from './store-routes'
 import productRulesRoutes from './product-rules-routes'
@@ -62,6 +63,10 @@ router.get('/statistics/top-stores', adminStatisticsController.getTopStores)
 router.get('/statistics/top-products', adminStatisticsController.getTopProducts)
 router.get('/statistics/orders-over-time', adminStatisticsController.getOrdersOverTime)
 router.get('/statistics/totals', adminStatisticsController.getTotalStatistics)
+
+// Çalışan istatistikleri API'leri
+router.get('/employees/stats', employeeStatsController.getAllEmployeeStats)
+router.get('/employees/:employeeId/stats', employeeStatsController.getEmployeeStats)
 
 // Kullanıcı tiplerini listeleme
 router.get('/user-types', adminController.getUserTypes)

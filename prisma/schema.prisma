@@ -337,6 +337,7 @@ enum OrderStatus {
   PENDING
   CONFIRMED
   SHIPPED
+  READY
   DELIVERED
   CANCELED
 }
@@ -356,6 +357,12 @@ model QRCode {
   scan_count      Int?       @default(0)
   required_scans  Int?       @default(2)
   last_scan_at    DateTime?
+  
+  // New fields for employee tracking
+  first_scan_employee_id    String?    @map("first_scan_employee_id") @db.VarChar(36) // İlk okutma yapan çalışan
+  first_scan_at            DateTime?  @map("first_scan_at") // İlk okutma zamanı
+  second_scan_employee_id  String?    @map("second_scan_employee_id") @db.VarChar(36) // İkinci okutma yapan çalışan
+  second_scan_at           DateTime?  @map("second_scan_at") // İkinci okutma zamanı
   
   order         Order      @relation(fields: [order_id], references: [id], onDelete: Cascade)
   order_item    OrderItem? @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
@@ -520,6 +527,9 @@ model EmployeeOrderStats {
   totalItems            Int      @map("total_items")
   completedAt           DateTime @map("completed_at")
   createdAt             DateTime @default(now()) @map("created_at")
+  orderStatus           String?  @map("order_status") // Sipariş durumu (READY veya DELIVERED)
+  preparedAreaM2        Decimal? @map("prepared_area_m2") @db.Decimal(10, 2) // Hazırlanan m2
+  deliveredAreaM2       Decimal? @map("delivered_area_m2") @db.Decimal(10, 2) // Teslim edilen m2
   
   // İlişkiler
   employee              User     @relation("EmployeeOrderStats", fields: [employeeId], references: [userId], onDelete: Cascade)

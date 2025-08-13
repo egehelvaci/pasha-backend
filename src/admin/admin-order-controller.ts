@@ -50,7 +50,8 @@ export class AdminOrderController {
         totalOrders,
         cancelledOrders,
         completedOrders,
-        inDeliveryOrders
+        inDeliveryOrders,
+        readyOrders
       ] = await Promise.all([
         prisma.order.findMany({
           where,
@@ -95,6 +96,10 @@ export class AdminOrderController {
         // Teslimatta olan sipariş sayısı
         prisma.order.count({
           where: { status: 'SHIPPED' }
+        }),
+        // Hazır durumundaki sipariş sayısı
+        prisma.order.count({
+          where: { status: 'READY' }
         })
       ])
 
@@ -125,7 +130,8 @@ export class AdminOrderController {
             totalOrders,
             cancelledOrders,
             completedOrders,
-            inDeliveryOrders
+            inDeliveryOrders,
+            readyOrders
           }
         }
       })
@@ -305,9 +311,10 @@ export class AdminOrderController {
   async scanQRCode(req: Request, res: Response) {
     try {
       // QR kod hem body'den hem de query parameter'dan alınabilir
-      let { qrCode } = req.body
+      let { qrCode, selectedEmployeeId } = req.body
       if (!qrCode) {
         qrCode = req.query.qrCode
+        selectedEmployeeId = req.query.selectedEmployeeId
       }
       
       const adminUserId = req.user?.userId || 'mobile-app' // Mobil uygulama için varsayılan değer
@@ -461,18 +468,17 @@ export class AdminOrderController {
         return res.status(400).send(invalidQrHtml)
       }
 
-      const result = await qrCodeService.scanQRCode(qrCode, adminUserId)
+      const result = await qrCodeService.scanQRCode(qrCode, adminUserId, selectedEmployeeId)
 
-      // Eğer tüm QR kodlar tamamlandıysa ve employee ataması gerekiyorsa
-      if (result.deliveryInfo?.needs_employee_assignment && result.formUrl) {
-        // Employee form sayfasını aç
-        const redirectHtml = `
+      // Eğer çalışan seçimi gerekiyorsa
+      if (result.requiresEmployeeSelection) {
+        const employeeSelectionHtml = `
           <!DOCTYPE html>
           <html lang="tr">
           <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Employee Atama</title>
+            <title>Çalışan Seçimi</title>
             <style>
               body {
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -482,6 +488,116 @@ export class AdminOrderController {
                 min-height: 100vh;
                 margin: 0;
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 20px;
+              }
+              .container {
+                text-align: center;
+                background: rgba(255, 255, 255, 0.1);
+                padding: 2rem;
+                border-radius: 15px;
+                backdrop-filter: blur(10px);
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                max-width: 500px;
+                width: 100%;
+              }
+              .success-icon {
+                font-size: 4rem;
+                margin-bottom: 1rem;
+              }
+              .message {
+                font-size: 1.2rem;
+                margin-bottom: 2rem;
+                line-height: 1.4;
+              }
+              .employee-selection {
+                margin-bottom: 2rem;
+              }
+              .employee-list {
+                display: grid;
+                gap: 10px;
+                margin-bottom: 20px;
+              }
+              .employee-button {
+                background: rgba(255, 255, 255, 0.2);
+                color: white;
+                border: none;
+                padding: 12px 20px;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                font-size: 16px;
+              }
+              .employee-button:hover {
+                background: rgba(255, 255, 255, 0.3);
+                transform: translateY(-2px);
+              }
+              .order-details {
+                font-size: 0.9rem;
+                opacity: 0.8;
+                margin-top: 1rem;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="success-icon">✅</div>
+              <div class="message">
+                <strong>Sipariş Hazır!</strong><br>
+                ${result.message}<br>
+                Lütfen sorumlu çalışanı seçin.
+              </div>
+              <div class="employee-selection">
+                <div class="employee-list">
+                  ${result.employees?.map(emp => `
+                    <button class="employee-button" onclick="selectEmployee('${emp.userId}', '${emp.name} ${emp.surname}')">
+                      ${emp.name} ${emp.surname}
+                    </button>
+                  `).join('')}
+                </div>
+              </div>
+              <div class="order-details">
+                Sipariş No: ${result.orderId}<br>
+                Toplam Tutar: ${result.orderDetails?.total_price} TL<br>
+                Toplam Alan: ${result.orderDetails?.total_area_m2?.toFixed(2)} m²<br>
+                Toplam Ürün: ${result.orderDetails?.total_items} adet
+              </div>
+            </div>
+            <script>
+              function selectEmployee(employeeId, employeeName) {
+                if (confirm('Çalışan: ' + employeeName + '\\n\\nOnaylıyor musunuz?')) {
+                  // İkinci QR okutma aşamasına geç - çalışan bilgisini sakla
+                  localStorage.setItem('selectedEmployeeId', employeeId);
+                  localStorage.setItem('selectedEmployeeName', employeeName);
+                  alert('Çalışan seçildi: ' + employeeName + '\\n\\nŞimdi ikinci QR okutmaya geçebilirsiniz.');
+                  window.close();
+                }
+              }
+            </script>
+          </body>
+          </html>
+        `
+        return res.status(200).send(employeeSelectionHtml)
+      }
+
+      // Eğer tüm QR kodlar tamamlandıysa ve sipariş teslim edildiyse
+      if (result.deliveryInfo?.order_status === 'DELIVERED') {
+        const successHtml = `
+          <!DOCTYPE html>
+          <html lang="tr">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Sipariş Teslim Edildi</title>
+            <style>
+              body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                margin: 0;
+                background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
                 color: white;
               }
               .container {
@@ -502,43 +618,20 @@ export class AdminOrderController {
                 margin-bottom: 1rem;
                 line-height: 1.4;
               }
-              .btn {
-                display: inline-block;
-                background: rgba(255, 255, 255, 0.2);
-                color: white;
-                padding: 12px 24px;
-                text-decoration: none;
-                border-radius: 8px;
-                margin-top: 1rem;
-                transition: all 0.3s ease;
-              }
-              .btn:hover {
-                background: rgba(255, 255, 255, 0.3);
-                transform: translateY(-2px);
-              }
             </style>
           </head>
           <body>
             <div class="container">
-              <div class="success-icon">✅</div>
+              <div class="success-icon">🎉</div>
               <div class="message">
-                <strong>Ürünler Tamamlandı!</strong><br>
-                Siparişi tamamlamak için lütfen çalışan seçin.
+                <strong>Sipariş Başarıyla Teslim Edildi!</strong><br>
+                ${result.message}
               </div>
-              <a href="${result.formUrl}" class="btn" target="_blank">
-                Çalışan Seç
-              </a>
             </div>
-            <script>
-              // 3 saniye sonra otomatik olarak form sayfasını aç
-              setTimeout(() => {
-                window.open('${result.formUrl}', '_blank');
-              }, 2000);
-            </script>
           </body>
           </html>
         `
-        return res.status(200).send(redirectHtml)
+        return res.status(200).send(successHtml)
       }
 
       // Normal QR kod tarama başarılı - basit HTML response döndür
@@ -593,7 +686,8 @@ export class AdminOrderController {
               ${result.message}
             </div>
             <div class="status">
-              Tarama Durumu: ${result.deliveryInfo.completed_qr_codes}/${result.deliveryInfo.total_qr_codes}
+              Tarama Durumu: ${result.deliveryInfo?.first_scan_completed || 0}/${result.deliveryInfo?.total_qr_codes || 0} (İlk)<br>
+              Teslim Durumu: ${result.deliveryInfo?.second_scan_completed || 0}/${result.deliveryInfo?.total_qr_codes || 0} (İkinci)
             </div>
           </div>
         </body>
@@ -698,6 +792,7 @@ export class AdminOrderController {
         pendingOrders,
         confirmedOrders,
         shippedOrders,
+        readyOrders,
         deliveredOrders,
         canceledOrders,
         qrStats
@@ -706,6 +801,7 @@ export class AdminOrderController {
         prisma.order.count({ where: { status: 'PENDING' } }),
         prisma.order.count({ where: { status: 'CONFIRMED' } }),
         prisma.order.count({ where: { status: 'SHIPPED' } }),
+        prisma.order.count({ where: { status: 'READY' } }),
         prisma.order.count({ where: { status: 'DELIVERED' } }),
         prisma.order.count({ where: { status: 'CANCELED' } }),
         qrCodeService.getQRCodeStats()
@@ -719,6 +815,7 @@ export class AdminOrderController {
             pending: pendingOrders,
             confirmed: confirmedOrders,
             shipped: shippedOrders,
+            ready: readyOrders,
             delivered: deliveredOrders,
             canceled: canceledOrders
           },
