@@ -513,24 +513,56 @@ export class AdminOrderController {
               .employee-selection {
                 margin-bottom: 2rem;
               }
-              .employee-list {
-                display: grid;
-                gap: 10px;
+              .form-group {
                 margin-bottom: 20px;
+                text-align: left;
               }
-              .employee-button {
-                background: rgba(255, 255, 255, 0.2);
+              .form-label {
+                display: block;
+                margin-bottom: 10px;
+                font-weight: bold;
+                font-size: 16px;
+              }
+              .employee-dropdown {
+                width: 100%;
+                padding: 12px 16px;
+                border: 2px solid rgba(255, 255, 255, 0.3);
+                border-radius: 8px;
+                background: rgba(255, 255, 255, 0.1);
+                color: white;
+                font-size: 16px;
+                outline: none;
+                transition: all 0.3s ease;
+              }
+              .employee-dropdown:focus {
+                border-color: rgba(255, 255, 255, 0.6);
+                background: rgba(255, 255, 255, 0.15);
+              }
+              .employee-dropdown option {
+                background: #333;
+                color: white;
+                padding: 10px;
+              }
+              .confirm-button {
+                background: rgba(76, 175, 80, 0.8);
                 color: white;
                 border: none;
-                padding: 12px 20px;
+                padding: 12px 30px;
                 border-radius: 8px;
                 cursor: pointer;
                 transition: all 0.3s ease;
                 font-size: 16px;
+                font-weight: bold;
+                margin-top: 10px;
               }
-              .employee-button:hover {
-                background: rgba(255, 255, 255, 0.3);
+              .confirm-button:hover {
+                background: rgba(76, 175, 80, 1);
                 transform: translateY(-2px);
+              }
+              .confirm-button:disabled {
+                background: rgba(255, 255, 255, 0.2);
+                cursor: not-allowed;
+                transform: none;
               }
               .order-details {
                 font-size: 0.9rem;
@@ -548,13 +580,18 @@ export class AdminOrderController {
                 Lütfen sorumlu çalışanı seçin.
               </div>
               <div class="employee-selection">
-                <div class="employee-list">
-                  ${result.employees?.map(emp => `
-                    <button class="employee-button" onclick="selectEmployee('${emp.userId}', '${emp.name} ${emp.surname}')">
-                      ${emp.name} ${emp.surname}
-                    </button>
-                  `).join('')}
+                <div class="form-group">
+                  <label class="form-label" for="employeeSelect">Sorumlu Çalışan:</label>
+                  <select id="employeeSelect" class="employee-dropdown" onchange="toggleConfirmButton()">
+                    <option value="">-- Çalışan Seçin --</option>
+                    ${result.employees?.map(emp => `
+                      <option value="${emp.userId}">${emp.name} ${emp.surname}</option>
+                    `).join('')}
+                  </select>
                 </div>
+                <button id="confirmButton" class="confirm-button" onclick="confirmEmployee()" disabled>
+                  Çalışanı Onayla
+                </button>
               </div>
               <div class="order-details">
                 Sipariş No: ${result.orderId}<br>
@@ -564,13 +601,36 @@ export class AdminOrderController {
               </div>
             </div>
             <script>
-              function selectEmployee(employeeId, employeeName) {
-                if (confirm('Çalışan: ' + employeeName + '\\n\\nOnaylıyor musunuz?')) {
+              function toggleConfirmButton() {
+                const select = document.getElementById('employeeSelect');
+                const button = document.getElementById('confirmButton');
+                button.disabled = !select.value;
+              }
+
+              function confirmEmployee() {
+                const select = document.getElementById('employeeSelect');
+                const employeeId = select.value;
+                const employeeName = select.options[select.selectedIndex].text;
+                
+                if (!employeeId) {
+                  alert('Lütfen bir çalışan seçin!');
+                  return;
+                }
+
+                if (confirm('Seçilen Çalışan: ' + employeeName + '\\n\\nOnaylıyor musunuz?')) {
                   // İkinci QR okutma aşamasına geç - çalışan bilgisini sakla
                   localStorage.setItem('selectedEmployeeId', employeeId);
                   localStorage.setItem('selectedEmployeeName', employeeName);
-                  alert('Çalışan seçildi: ' + employeeName + '\\n\\nŞimdi ikinci QR okutmaya geçebilirsiniz.');
-                  window.close();
+                  
+                  // Başarı mesajı
+                  document.getElementById('employeeSelect').disabled = true;
+                  document.getElementById('confirmButton').innerHTML = '✓ Çalışan Seçildi';
+                  document.getElementById('confirmButton').disabled = true;
+                  
+                  setTimeout(() => {
+                    alert('Çalışan seçildi: ' + employeeName + '\\n\\nŞimdi ikinci QR okutmaya geçebilirsiniz.');
+                    window.close();
+                  }, 1500);
                 }
               }
             </script>
