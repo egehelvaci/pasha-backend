@@ -79,6 +79,40 @@ export class EmployeeStatsController {
         }
       })
 
+      // QRCode tablosundan hazırladığı siparişleri bul
+      const preparedOrdersFromQR = await prisma.qRCode.findMany({
+        where: {
+          first_scan_employee_id: employeeId,
+          ...(startDate && {
+            first_scan_at: {
+              gte: new Date(startDate as string)
+            }
+          }),
+          ...(endDate && {
+            first_scan_at: {
+              ...((startDate && { gte: new Date(startDate as string) }) ? { gte: new Date(startDate as string) } : {}),
+              lte: new Date(endDate as string)
+            }
+          })
+        },
+        include: {
+          order: {
+            include: {
+              items: true
+            }
+          }
+        },
+        distinct: ['order_id'] // Her sipariş sadece bir kez sayılsın
+      })
+
+      // Hazırladığı siparişlerin toplam m² ve sipariş sayısı
+      const preparedOrderCount = preparedOrdersFromQR.length
+      const preparedAreaM2Total = preparedOrdersFromQR.reduce((sum, qr) => {
+        return sum + qr.order.items.reduce((orderSum, item) => {
+          return orderSum + (Number(item.width) * Number(item.height) * item.quantity / 10000)
+        }, 0)
+      }, 0)
+
       // Toplamları hesapla
       const totalStats = {
         // Genel istatistikler
@@ -92,7 +126,11 @@ export class EmployeeStatsController {
         preparedOrders: stats.filter(s => s.orderStatus === 'READY').length,      // Sadece hazırlanan siparişler
         deliveredOrders: stats.filter(s => s.orderStatus === 'DELIVERED').length, // Teslim edilen siparişler
         
-        // Alan bazlı istatistikler (m²)
+        // Hazırlama işlemi istatistikleri (QRCode tablosundan)
+        actualPreparedOrders: preparedOrderCount,              // Gerçekten hazırladığı sipariş sayısı
+        actualPreparedAreaM2: Math.round(preparedAreaM2Total * 100) / 100,  // Gerçekten hazırladığı m² alanı
+        
+        // Alan bazlı istatistikler (m²) - EmployeeOrderStats'tan
         totalPreparedAreaM2: stats
           .filter(s => s.preparedAreaM2)
           .reduce((sum, stat) => sum + Number(stat.preparedAreaM2 || 0), 0),
@@ -105,6 +143,9 @@ export class EmployeeStatsController {
         averageOrderValue: stats.length > 0 ? stats.reduce((sum, stat) => sum + Number(stat.totalAmount), 0) / stats.length : 0,
         averageAreaPerOrder: stats.length > 0 ? stats.reduce((sum, stat) => sum + Number(stat.totalAreaM2), 0) / stats.length : 0,
         averageItemsPerOrder: stats.length > 0 ? stats.reduce((sum, stat) => sum + stat.totalItems, 0) / stats.length : 0,
+        
+        // Hazırlama performansı ortalamalar
+        averagePreparedAreaPerOrder: preparedOrderCount > 0 ? preparedAreaM2Total / preparedOrderCount : 0,
         
         // Performans oranları
         preparationRate: stats.length > 0 ? (stats.filter(s => s.preparedAreaM2).length / stats.length * 100) : 0,
@@ -247,6 +288,30 @@ export class EmployeeStatsController {
             deliveredOrders: 0
           }
 
+          // QRCode tablosundan bu çalışanın hazırladığı siparişleri bul
+          const preparedOrdersFromQR = await prisma.qRCode.findMany({
+            where: {
+              first_scan_employee_id: stat.employeeId,
+              ...dateFilter
+            },
+            include: {
+              order: {
+                include: {
+                  items: true
+                }
+              }
+            },
+            distinct: ['order_id']
+          })
+
+          // Hazırladığı siparişlerin istatistikleri
+          const actualPreparedCount = preparedOrdersFromQR.length
+          const actualPreparedAreaM2 = preparedOrdersFromQR.reduce((sum, qr) => {
+            return sum + qr.order.items.reduce((orderSum, item) => {
+              return orderSum + (Number(item.width) * Number(item.height) * item.quantity / 10000)
+            }, 0)
+          }, 0)
+
           return {
             employee: employee ? {
               userId: employee.userId,
@@ -267,7 +332,11 @@ export class EmployeeStatsController {
               deliveredOrders: orderCounts.deliveredOrders,   // Teslim ettiği siparişler
               completedOrders: orderCounts.deliveredOrders,   // Tamamladığı siparişler (delivered ile aynı)
               
-              // Alan bazlı (m²)
+              // Gerçek hazırlama istatistikleri (QRCode tablosundan)
+              actualPreparedOrders: actualPreparedCount,      // Gerçekten hazırladığı sipariş sayısı
+              actualPreparedAreaM2: Math.round(actualPreparedAreaM2 * 100) / 100,  // Gerçekten hazırladığı m² alanı
+              
+              // Alan bazlı (m²) - EmployeeOrderStats'tan
               totalPreparedAreaM2: Number(stat._sum.preparedAreaM2 || 0),  // Hazırladığı m²
               totalDeliveredAreaM2: Number(stat._sum.deliveredAreaM2 || 0), // Teslim ettiği m²
               
@@ -278,6 +347,11 @@ export class EmployeeStatsController {
                 : 0,
               averageAreaPerOrder: stat._count.orderId > 0 
                 ? Number(stat._sum.totalAreaM2 || 0) / stat._count.orderId 
+                : 0,
+              
+              // Hazırlama performansı ortalamalar
+              averagePreparedAreaPerOrder: actualPreparedCount > 0 
+                ? actualPreparedAreaM2 / actualPreparedCount 
                 : 0,
               
               // Performans oranları
@@ -327,7 +401,11 @@ export class EmployeeStatsController {
         totalDeliveredOrders: validStats.reduce((sum, stat) => sum + stat.stats.deliveredOrders, 0),
         totalCompletedOrders: validStats.reduce((sum, stat) => sum + stat.stats.completedOrders, 0),
         
-        // Alan bazlı toplamlar (m²)
+        // Gerçek hazırlama toplamları (QRCode'dan)
+        totalActualPreparedOrders: validStats.reduce((sum, stat) => sum + stat.stats.actualPreparedOrders, 0),
+        totalActualPreparedAreaM2: validStats.reduce((sum, stat) => sum + stat.stats.actualPreparedAreaM2, 0),
+        
+        // Alan bazlı toplamlar (m²) - EmployeeOrderStats'tan
         totalPreparedAreaM2: validStats.reduce((sum, stat) => sum + stat.stats.totalPreparedAreaM2, 0),
         totalDeliveredAreaM2: validStats.reduce((sum, stat) => sum + stat.stats.totalDeliveredAreaM2, 0),
         
@@ -340,6 +418,11 @@ export class EmployeeStatsController {
           : 0,
         averageCompletionRate: validStats.length > 0 
           ? validStats.reduce((sum, stat) => sum + stat.stats.completionRate, 0) / validStats.length 
+          : 0,
+        
+        // Hazırlama ortalamları
+        averageActualPreparedAreaPerEmployee: validStats.length > 0 
+          ? validStats.reduce((sum, stat) => sum + stat.stats.actualPreparedAreaM2, 0) / validStats.length 
           : 0
       }
 
