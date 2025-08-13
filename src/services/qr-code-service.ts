@@ -486,7 +486,7 @@ export class QRCodeService {
               success: true,
               message,
               requiresEmployeeSelection: true,
-              selectionType: 'delivery', // Teslim için seçim
+              selectionType: 'deliver', // Teslim için seçim (API ile uyumlu)
               employees: (await employeeAssignmentService.getAllEmployees()).employees,
               orderId: qrRecord.order_id,
               orderDetails: {

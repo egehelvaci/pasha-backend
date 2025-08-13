@@ -473,9 +473,9 @@ export class AdminOrderController {
 
       // Eğer çalışan seçimi gerekiyorsa (hazırlama veya teslim için)
       if (result.requiresEmployeeSelection) {
-        const selectionType = result.selectionType || 'prepare' // prepare veya delivery
-        const titleText = selectionType === 'delivery' ? 'Sipariş Teslim!' : 'Sipariş Hazır!'
-        const messageText = selectionType === 'delivery' ? 'Lütfen teslim edecek çalışanı seçin.' : 'Lütfen sorumlu çalışanı seçin.'
+        const selectionType = result.selectionType || 'prepare' // prepare veya deliver
+        const titleText = selectionType === 'deliver' ? 'Sipariş Teslim!' : 'Sipariş Hazır!'
+        const messageText = selectionType === 'deliver' ? 'Lütfen teslim edecek çalışanı seçin.' : 'Lütfen sorumlu çalışanı seçin.'
         const employeeSelectionHtml = `
           <!DOCTYPE html>
           <html lang="tr">
