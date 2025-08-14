@@ -127,6 +127,20 @@ export class EmployeeStatsController {
         orderTotalPrice: Number(stat.order.total_price)
       }))
 
+      // Hazırlanan siparişlerin detaylarını hazırla
+      const preparedOrders = preparedOrdersFromQR.map(qr => ({
+        orderId: qr.order_id,
+        preparedAt: qr.first_scan_at,
+        totalAmount: Number(qr.order.total_price),
+        totalAreaM2: qr.order.items.reduce((sum, item) => {
+          return sum + (Number(item.width) * Number(item.height) * item.quantity / 10000)
+        }, 0),
+        totalItems: qr.order.items.reduce((sum, item) => sum + item.quantity, 0),
+        orderStatus: qr.order.status,
+        orderCreatedAt: qr.order.created_at,
+        qrCodeId: qr.id
+      }))
+
       // Son 30 günlük performans
       const thirtyDaysAgo = new Date()
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
@@ -199,7 +213,8 @@ export class EmployeeStatsController {
             preparedAreaM2: Number(recentPreparedAreaM2.toFixed(2)),
             preparedItems: recentPreparedItems
           },
-          completedOrders: completedOrders
+          completedOrders: completedOrders,
+          preparedOrders: preparedOrders
         }
       })
 
