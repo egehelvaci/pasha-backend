@@ -395,10 +395,13 @@ export class QRCodeService {
       if (currentOrder.status === 'CONFIRMED') {
         // İlk scan için QR kodu güncelle
         if (!qrRecord.first_scan_employee_id) {
+          // Eğer selectedEmployeeId varsa onu kullan, yoksa adminUserId kullan
+          const employeeId = selectedEmployeeId || adminUserId
+          
           await prisma.qRCode.update({
             where: { id: qrRecord.id },
             data: {
-              first_scan_employee_id: adminUserId,
+              first_scan_employee_id: employeeId,
               first_scan_at: new Date(),
               is_scanned: false // Henüz tamamlanmadı, sadece ilk okutma yapıldı
             }
