@@ -56,33 +56,85 @@ export class NotificationController {
   async getUserNotifications(req: Request, res: Response) {
     try {
       const { userId } = req.params;
-      const { page = 1, limit = 20, unreadOnly = false } = req.query;
+      const { 
+        page = 1, 
+        limit = 20, 
+        unreadOnly = false, 
+        type, 
+        startDate, 
+        endDate,
+        sortBy = 'createdAt',
+        sortOrder = 'desc'
+      } = req.query;
 
-      const skip = (Number(page) - 1) * Number(limit);
+      // Validasyon
+      const pageNum = Math.max(1, Number(page));
+      const limitNum = Math.min(100, Math.max(1, Number(limit))); // Max 100 limit
+      const skip = (pageNum - 1) * limitNum;
+
       const where: any = { userId };
 
+      // Filtreler
       if (unreadOnly === 'true') {
         where.isRead = false;
       }
 
-      const [notifications, total] = await Promise.all([
+      if (type && typeof type === 'string') {
+        where.type = type;
+      }
+
+      // Tarih filtreleri
+      if (startDate || endDate) {
+        where.createdAt = {};
+        if (startDate) {
+          where.createdAt.gte = new Date(startDate as string);
+        }
+        if (endDate) {
+          where.createdAt.lte = new Date(endDate as string);
+        }
+      }
+
+      // Sıralama
+      const orderBy: any = {};
+      orderBy[sortBy as string] = sortOrder as 'asc' | 'desc';
+
+      const [notifications, total, unreadCount] = await Promise.all([
         prisma.inAppNotification.findMany({
           where,
-          orderBy: { createdAt: 'desc' },
+          orderBy,
           skip,
-          take: Number(limit)
+          take: limitNum
         }),
-        prisma.inAppNotification.count({ where })
+        prisma.inAppNotification.count({ where }),
+        prisma.inAppNotification.count({ 
+          where: { userId, isRead: false } 
+        })
       ]);
 
       return res.json({
         success: true,
         data: notifications,
         pagination: {
-          page: Number(page),
-          limit: Number(limit),
+          page: pageNum,
+          limit: limitNum,
           total,
-          totalPages: Math.ceil(total / Number(limit))
+          totalPages: Math.ceil(total / limitNum),
+          hasMore: skip + limitNum < total,
+          hasNext: pageNum < Math.ceil(total / limitNum),
+          hasPrev: pageNum > 1
+        },
+        summary: {
+          unreadCount,
+          totalCount: total,
+          currentPageCount: notifications.length
+        },
+        filters: {
+          unreadOnly: unreadOnly === 'true',
+          type: type || null,
+          startDate: startDate || null,
+          endDate: endDate || null,
+          sortBy,
+          sortOrder
         }
       });
 
@@ -172,6 +224,120 @@ export class NotificationController {
 
     } catch (error) {
       console.error('❌ Okunmamış sayı hatası:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Sunucu hatası'
+      });
+    }
+  }
+
+  /**
+   * Tüm bildirimleri getir (Admin için)
+   */
+  async getAllNotifications(req: Request, res: Response) {
+    try {
+      const { 
+        page = 1, 
+        limit = 20, 
+        type, 
+        userId,
+        startDate, 
+        endDate,
+        sortBy = 'createdAt',
+        sortOrder = 'desc'
+      } = req.query;
+
+      // Validasyon
+      const pageNum = Math.max(1, Number(page));
+      const limitNum = Math.min(100, Math.max(1, Number(limit))); // Max 100 limit
+      const skip = (pageNum - 1) * limitNum;
+
+      const where: any = {};
+
+      // Filtreler
+      if (type && typeof type === 'string') {
+        where.type = type;
+      }
+
+      if (userId && typeof userId === 'string') {
+        where.userId = userId;
+      }
+
+      // Tarih filtreleri
+      if (startDate || endDate) {
+        where.createdAt = {};
+        if (startDate) {
+          where.createdAt.gte = new Date(startDate as string);
+        }
+        if (endDate) {
+          where.createdAt.lte = new Date(endDate as string);
+        }
+      }
+
+      // Sıralama
+      const orderBy: any = {};
+      orderBy[sortBy as string] = sortOrder as 'asc' | 'desc';
+
+      const [notifications, total] = await Promise.all([
+        prisma.inAppNotification.findMany({
+          where,
+          orderBy,
+          skip,
+          take: limitNum,
+          include: {
+            user: {
+              select: {
+                name: true,
+                surname: true,
+                username: true
+              }
+            }
+          }
+        }),
+        prisma.inAppNotification.count({ where })
+      ]);
+
+      // Tip bazında istatistikler
+      const typeStats = await prisma.inAppNotification.groupBy({
+        by: ['type'],
+        where,
+        _count: {
+          type: true
+        }
+      });
+
+      return res.json({
+        success: true,
+        data: notifications,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          totalPages: Math.ceil(total / limitNum),
+          hasMore: skip + limitNum < total,
+          hasNext: pageNum < Math.ceil(total / limitNum),
+          hasPrev: pageNum > 1
+        },
+        statistics: {
+          totalCount: total,
+          currentPageCount: notifications.length,
+          typeBreakdown: typeStats.reduce((acc: any, stat) => {
+            acc[stat.type] = stat._count.type;
+            return acc;
+          }, {})
+        },
+        filters: {
+          type: type || null,
+          userId: userId || null,
+          startDate: startDate || null,
+          endDate: endDate || null,
+          sortBy,
+          sortOrder
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Tüm bildirim listeleme hatası:', error);
       return res.status(500).json({
         success: false,
         message: 'Sunucu hatası'

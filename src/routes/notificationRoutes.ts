@@ -14,4 +14,7 @@ router.get('/user/:userId/unread-count', authMiddleware, notificationController.
 router.put('/read/:notificationId', authMiddleware, notificationController.markAsRead.bind(notificationController));
 router.put('/read-all/:userId', authMiddleware, notificationController.markAllAsRead.bind(notificationController));
 
+// Admin endpoints (auth gerektirir)
+router.get('/all', authMiddleware, notificationController.getAllNotifications.bind(notificationController));
+
 export default router;
