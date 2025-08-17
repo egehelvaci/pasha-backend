@@ -10,7 +10,8 @@
       "Bash(npx ts-node:*)",
       "Bash(rm:*)",
       "Bash(git restore:*)",
-      "Bash(npm install)"
+      "Bash(npm install)",
+      "Bash(PORT=3002 npm run api:dev)"
     ],
     "deny": [],
     "ask": [],

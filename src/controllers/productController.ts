@@ -414,6 +414,15 @@ export const updateProductStock = async (req: Request, res: Response) => {
       height: heightValue,
       quantity: parseInt(quantity)
     });
+
+    // Yeni stok eklendi bildirimi gönder (tüm kullanıcılara)
+    try {
+      await notificationService.notifyNewStock(product.name, parseInt(quantity));
+      console.log('✅ Adet bazlı stok ekleme bildirimi gönderildi');
+    } catch (notificationError) {
+      console.error('❌ Adet bazlı stok ekleme bildirim hatası:', notificationError);
+      // Bildirim hatası ana işlemi etkilemesin
+    }
     
     return res.status(200).json({
       success: true,
@@ -474,6 +483,16 @@ export const updateProductStockAreaM2 = async (req: Request, res: Response) => {
       height: heightValue,
       areaM2: areaValue
     });
+
+    // Yeni stok eklendi bildirimi gönder (tüm kullanıcılara)
+    try {
+      const equivalentPieces = Math.floor(areaValue / ((widthValue * heightValue) / 10000));
+      await notificationService.notifyNewStock(product.name, equivalentPieces);
+      console.log('✅ M² bazlı stok ekleme bildirimi gönderildi');
+    } catch (notificationError) {
+      console.error('❌ M² bazlı stok ekleme bildirim hatası:', notificationError);
+      // Bildirim hatası ana işlemi etkilemesin
+    }
     
     return res.status(200).json({
       success: true,
@@ -580,6 +599,26 @@ export const updateProductStockHybrid = async (req: Request, res: Response) => {
         message: result.message,
         suggestions: result.suggestions
       });
+    }
+
+    // Yeni stok eklendi bildirimi gönder (tüm kullanıcılara)
+    try {
+      let notificationQuantity = 0;
+      if (updateMode === 'quantity' || updateMode === 'both') {
+        notificationQuantity += quantityValue || 0;
+      }
+      if (updateMode === 'area' || updateMode === 'both') {
+        const equivalentPieces = Math.floor((areaValue || 0) / ((widthValue * heightValue) / 10000));
+        notificationQuantity += equivalentPieces;
+      }
+      
+      if (notificationQuantity > 0) {
+        await notificationService.notifyNewStock(result.name, notificationQuantity);
+        console.log('✅ Hibrit stok ekleme bildirimi gönderildi');
+      }
+    } catch (notificationError) {
+      console.error('❌ Hibrit stok ekleme bildirim hatası:', notificationError);
+      // Bildirim hatası ana işlemi etkilemesin
     }
     
     return res.status(200).json({
