@@ -43,6 +43,10 @@ model User {
   
   // Employee sipariş istatistikleri
   employeeOrderStats EmployeeOrderStats[] @relation("EmployeeOrderStats")
+  
+  // Bildirimler
+  inAppNotifications InAppNotification[]
+  notificationHistory NotificationHistory[]
 }
 
 model Collection {
@@ -130,6 +134,7 @@ model Store {
   paymentSessions     PaymentSession[]
   adminStoreConfig    AdminStoreConfig?
   adminCarts          admin_carts[]
+  notificationHistory NotificationHistory[]
 }
 
 model StorePriceList {
@@ -573,4 +578,40 @@ enum SessionStatus {
   FAILED
   EXPIRED
   CANCELLED
+}
+
+// Bildirim Modelleri
+model InAppNotification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  type      String
+  title     String
+  message   String
+  orderId   String?  @map("order_id")
+  metadata  String?  // JSON string
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // İlişkiler
+  user User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@map("in_app_notifications")
+}
+
+model NotificationHistory {
+  id       String    @id @default(uuid())
+  userId   String?   @map("user_id")
+  storeId  String?   @map("store_id") @db.Uuid
+  type     String
+  title    String
+  message  String
+  orderId  String?   @map("order_id")
+  metadata String?   // JSON string
+  sentAt   DateTime  @default(now()) @map("sent_at")
+
+  // İlişkiler
+  user  User?  @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  store Store? @relation(fields: [storeId], references: [store_id], onDelete: Cascade)
+
+  @@map("notification_history")
 }

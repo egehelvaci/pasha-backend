@@ -65,9 +65,15 @@ export class NotificationController {
         where.isRead = false;
       }
 
-      // Şimdilik boş array döndür - Prisma model eksik
-      const notifications: any[] = [];
-      const total = 0;
+      const [notifications, total] = await Promise.all([
+        prisma.inAppNotification.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take: Number(limit)
+        }),
+        prisma.inAppNotification.count({ where })
+      ]);
 
       return res.json({
         success: true,
@@ -96,8 +102,10 @@ export class NotificationController {
     try {
       const { notificationId } = req.params;
 
-      // Şimdilik mock response - Prisma model eksik
-      const notification = { id: notificationId, isRead: true };
+      const notification = await prisma.inAppNotification.update({
+        where: { id: notificationId },
+        data: { isRead: true }
+      });
 
       return res.json({
         success: true,
@@ -121,8 +129,13 @@ export class NotificationController {
     try {
       const { userId } = req.params;
 
-      // Şimdilik mock response - Prisma model eksik
-      const result = { count: 0 };
+      const result = await prisma.inAppNotification.updateMany({
+        where: {
+          userId,
+          isRead: false
+        },
+        data: { isRead: true }
+      });
 
       return res.json({
         success: true,
@@ -145,8 +158,12 @@ export class NotificationController {
     try {
       const { userId } = req.params;
 
-      // Şimdilik 0 döndür - Prisma model eksik
-      const count = 0;
+      const count = await prisma.inAppNotification.count({
+        where: {
+          userId,
+          isRead: false
+        }
+      });
 
       return res.json({
         success: true,

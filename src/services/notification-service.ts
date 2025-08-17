@@ -25,15 +25,35 @@ export class NotificationService {
    */
   async sendNotification(data: NotificationData): Promise<boolean> {
     try {
-      // Şimdilik sadece console log - Prisma model eksik
-      console.log('📨 Bildirim gönderildi:', {
-        type: data.type,
-        userId: data.userId,
-        storeId: data.storeId,
-        title: data.title,
-        message: data.message,
-        orderId: data.orderId
+      // Bildirim geçmişini kaydet
+      await prisma.notificationHistory.create({
+        data: {
+          userId: data.userId,
+          storeId: data.storeId,
+          type: data.type,
+          title: data.title,
+          message: data.message,
+          orderId: data.orderId,
+          metadata: data.metadata ? JSON.stringify(data.metadata) : null,
+          sentAt: new Date()
+        }
       });
+
+      // In-app notification oluştur (kullanıcı için)
+      if (data.userId) {
+        await prisma.inAppNotification.create({
+          data: {
+            userId: data.userId,
+            type: data.type,
+            title: data.title,
+            message: data.message,
+            orderId: data.orderId,
+            metadata: data.metadata ? JSON.stringify(data.metadata) : null,
+            isRead: false,
+            createdAt: new Date()
+          }
+        });
+      }
 
       console.log(`✅ Bildirim gönderildi: ${data.type}`, {
         userId: data.userId,
