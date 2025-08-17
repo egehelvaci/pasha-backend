@@ -1118,13 +1118,27 @@ export class AdminOrderController {
             orderId
           );
           console.log('✅ Sipariş onaylandı bildirimi gönderildi (updateOrderStatus)');
-        } else if (status === 'DELIVERED') {
+        } else if (status === 'SHIPPED' && existingOrder.status !== 'SHIPPED') {
+          await notificationService.notifyOrderShipped(
+            orderId,
+            existingOrder.user_id,
+            orderId
+          );
+          console.log('✅ Sipariş kargoya verildi bildirimi gönderildi');
+        } else if (status === 'DELIVERED' && existingOrder.status !== 'DELIVERED') {
           await notificationService.notifyOrderCompleted(
             orderId,
             existingOrder.user_id,
             orderId
           );
           console.log('✅ Sipariş teslim edildi bildirimi gönderildi');
+        } else if (status === 'CANCELED' && existingOrder.status !== 'CANCELED') {
+          await notificationService.notifyOrderCanceled(
+            orderId,
+            existingOrder.user_id,
+            orderId
+          );
+          console.log('✅ Sipariş iptal edildi bildirimi gönderildi');
         }
       } catch (notificationError) {
         console.error('❌ Sipariş durumu bildirimi hatası:', notificationError);

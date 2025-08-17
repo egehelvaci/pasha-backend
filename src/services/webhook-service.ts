@@ -1,5 +1,6 @@
 import { PrismaClient } from '../../generated/prisma';
 import crypto from 'crypto';
+import { notificationService } from './notification-service';
 
 const prisma = new PrismaClient();
 
@@ -246,6 +247,31 @@ export class WebhookService {
         balanceUpdate: isAdminStore ? 'Kasa bakiyesi artırıldı' : `Store bakiyesi: ${updatedStore.bakiye}`
       });
 
+      // Kullanıcıya ödeme başarılı bildirimi gönder
+      try {
+        const storeUsers = await prisma.user.findMany({
+          where: { store_id: transaction.storeId, isActive: true },
+          select: { userId: true, name: true, surname: true }
+        });
+
+        // Store'un tüm kullanıcılarına bildirim gönder
+        for (const user of storeUsers) {
+          await notificationService.notifyPaymentSuccess('', user.userId, webhookData.PaymentAmount);
+        }
+
+        // Admin'e de bildirim gönder
+        const customerName = storeUsers.length > 0 
+          ? `${storeUsers[0].name} ${storeUsers[0].surname}` 
+          : 'Kullanıcı';
+        
+        await notificationService.notifyPaymentToAdmin(true, customerName, webhookData.PaymentAmount, transaction.storeId);
+        
+        console.log('✅ Ödeme başarılı bildirimleri gönderildi');
+      } catch (notificationError) {
+        console.error('❌ Ödeme başarılı bildirim hatası:', notificationError);
+        // Bildirim hatası ana işlemi etkilemesin
+      }
+
       return { 
         success: true, 
         message: 'Ödeme başarıyla işlendi' 
@@ -332,6 +358,31 @@ export class WebhookService {
         amount: webhookData.PaymentAmount,
         finalStatus: status
       });
+
+      // Kullanıcıya ödeme başarısız bildirimi gönder
+      try {
+        const storeUsers = await prisma.user.findMany({
+          where: { store_id: transaction.storeId, isActive: true },
+          select: { userId: true, name: true, surname: true }
+        });
+
+        // Store'un tüm kullanıcılarına bildirim gönder
+        for (const user of storeUsers) {
+          await notificationService.notifyPaymentFailed('', user.userId, webhookData.PaymentAmount);
+        }
+
+        // Admin'e de bildirim gönder
+        const customerName = storeUsers.length > 0 
+          ? `${storeUsers[0].name} ${storeUsers[0].surname}` 
+          : 'Kullanıcı';
+        
+        await notificationService.notifyPaymentToAdmin(false, customerName, webhookData.PaymentAmount, transaction.storeId);
+        
+        console.log('✅ Ödeme başarısız bildirimleri gönderildi');
+      } catch (notificationError) {
+        console.error('❌ Ödeme başarısız bildirim hatası:', notificationError);
+        // Bildirim hatası ana işlemi etkilemesin
+      }
 
       return { 
         success: true, 

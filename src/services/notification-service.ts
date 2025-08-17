@@ -3,6 +3,8 @@ import prisma from '../utils/prisma';
 export type NotificationType = 
   | 'ORDER_CONFIRMED'
   | 'ORDER_READY' 
+  | 'ORDER_SHIPPED'
+  | 'ORDER_CANCELED'
   | 'ORDER_COMPLETED'
   | 'PAYMENT_SUCCESS'
   | 'PAYMENT_FAILED'
@@ -99,6 +101,38 @@ export class NotificationService {
   }
 
   /**
+   * Sipariş kargoya verildi bildirimi
+   */
+  async notifyOrderShipped(orderId: string, userId: string, orderNumber: string): Promise<boolean> {
+    return await this.sendNotification({
+      userId,
+      type: 'ORDER_SHIPPED',
+      title: 'Siparişiniz Kargoya Verildi',
+      message: `${orderNumber} numaralı siparişiniz kargoya verildi ve size doğru yola çıktı.`,
+      orderId,
+      metadata: { orderNumber }
+    });
+  }
+
+  /**
+   * Sipariş iptal edildi bildirimi
+   */
+  async notifyOrderCanceled(orderId: string, userId: string, orderNumber: string, cancelReason?: string): Promise<boolean> {
+    const message = cancelReason 
+      ? `${orderNumber} numaralı siparişiniz iptal edildi. Sebep: ${cancelReason}`
+      : `${orderNumber} numaralı siparişiniz iptal edildi.`;
+      
+    return await this.sendNotification({
+      userId,
+      type: 'ORDER_CANCELED',
+      title: 'Siparişiniz İptal Edildi',
+      message,
+      orderId,
+      metadata: { orderNumber, cancelReason }
+    });
+  }
+
+  /**
    * Sipariş tamamlandı bildirimi
    */
   async notifyOrderCompleted(orderId: string, userId: string, orderNumber: string): Promise<boolean> {
@@ -141,6 +175,47 @@ export class NotificationService {
   }
 
   /**
+   * Admin'e ödeme bildirimi (başarılı/başarısız)
+   */
+  async notifyPaymentToAdmin(isSuccess: boolean, customerName: string, amount: number, storeId: string): Promise<boolean> {
+    try {
+      // Admin kullanıcıları bul
+      const adminUsers = await prisma.user.findMany({
+        where: { 
+          isActive: true,
+          userType: { name: 'admin' }
+        },
+        select: { userId: true }
+      });
+
+      const title = isSuccess ? 'Ödeme Başarılı' : 'Ödeme Başarısız';
+      const message = isSuccess 
+        ? `${customerName} kullanıcısı ${amount.toFixed(2)} TL tutarında ödeme yaptı.`
+        : `${customerName} kullanıcısının ${amount.toFixed(2)} TL tutarındaki ödemesi başarısız oldu.`;
+
+      const notifications = await Promise.all(
+        adminUsers.map(admin => 
+          this.sendNotification({
+            userId: admin.userId,
+            type: isSuccess ? 'PAYMENT_SUCCESS' : 'PAYMENT_FAILED',
+            title,
+            message,
+            metadata: { customerName, amount, storeId, isSuccess }
+          })
+        )
+      );
+
+      const successCount = notifications.filter(n => n === true).length;
+      console.log(`📢 ${isSuccess ? 'Başarılı' : 'Başarısız'} ödeme bildirimi: ${successCount}/${adminUsers.length} admin'e gönderildi`);
+      
+      return successCount > 0;
+    } catch (error) {
+      console.error('❌ Admin ödeme bildirim hatası:', error);
+      return false;
+    }
+  }
+
+  /**
    * Yeni stok bildirimi (tüm kullanıcılara)
    */
   async notifyNewStock(productName: string, stockCount: number, stockType: 'adet' | 'm2' = 'adet'): Promise<boolean> {
@@ -173,6 +248,43 @@ export class NotificationService {
       return successCount > 0;
     } catch (error) {
       console.error('❌ Toplu bildirim hatası:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Yeni sipariş bildirimi (admin'e)
+   */
+  async notifyNewOrder(orderId: string, userId: string, orderTotal: number, customerName: string): Promise<boolean> {
+    try {
+      // Admin kullanıcıları bul
+      const adminUsers = await prisma.user.findMany({
+        where: { 
+          isActive: true,
+          userType: { name: 'admin' }
+        },
+        select: { userId: true }
+      });
+
+      const notifications = await Promise.all(
+        adminUsers.map(admin => 
+          this.sendNotification({
+            userId: admin.userId,
+            type: 'NEW_STOCK', // Şimdilik NEW_STOCK kullanıyoruz, ORDER_NEW eklenebilir
+            title: 'Yeni Sipariş',
+            message: `${customerName} kullanıcısı ${orderTotal.toFixed(2)} TL tutarında yeni sipariş verdi.`,
+            orderId,
+            metadata: { orderId, userId, orderTotal, customerName }
+          })
+        )
+      );
+
+      const successCount = notifications.filter(n => n === true).length;
+      console.log(`📢 Yeni sipariş bildirimi: ${successCount}/${adminUsers.length} admin'e gönderildi`);
+      
+      return successCount > 0;
+    } catch (error) {
+      console.error('❌ Yeni sipariş bildirim hatası:', error);
       return false;
     }
   }

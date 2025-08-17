@@ -4,6 +4,7 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { roundCurrency, addCurrency } from './utils/number-utils';
 import { $Enums } from '../generated/prisma';
 import { qrCodeService } from './services/qr-code-service';
+import { notificationService } from './services/notification-service';
 
 const prisma = new PrismaClient();
 
@@ -286,6 +287,16 @@ export class OrderService {
         data: { is_active: false }
       });
 
+      // Admin'e yeni sipariş bildirimi gönder
+      try {
+        const customerName = `${user.name} ${user.surname}`;
+        await notificationService.notifyNewOrder(order.id, orderData.user_id, cartTotal, customerName);
+        console.log('✅ Admin\'e yeni sipariş bildirimi gönderildi');
+      } catch (notificationError) {
+        console.error('❌ Admin sipariş bildirim hatası:', notificationError);
+        // Bildirim hatası ana işlemi etkilemesin
+      }
+
       return { success: true, message: 'Sipariş başarıyla oluşturuldu', order };
 
     } catch (error) {
@@ -427,6 +438,16 @@ export class OrderService {
         where: { id: orderData.admin_cart_id },
         data: { is_active: false }
       });
+
+      // Admin'e yeni sipariş bildirimi gönder
+      try {
+        const customerName = `${user.name} ${user.surname}`;
+        await notificationService.notifyNewOrder(order.id, orderData.user_id, cartTotal, customerName);
+        console.log('✅ Admin\'e yeni sipariş bildirimi gönderildi (Admin sepeti)');
+      } catch (notificationError) {
+        console.error('❌ Admin sipariş bildirim hatası (Admin sepeti):', notificationError);
+        // Bildirim hatası ana işlemi etkilemesin
+      }
 
       return { 
         success: true, 
@@ -606,6 +627,16 @@ export class OrderService {
 
       // Admin siparişi için özel işlemler - AÇIK HESAP LİMİTİ KONTROLÜ YOK
       await this.processAdminOrderOperations(user, orderTotal);
+
+      // Admin'e yeni sipariş bildirimi gönder
+      try {
+        const customerName = `${user.name} ${user.surname}`;
+        await notificationService.notifyNewOrder(order.id, orderData.user_id, orderTotal, customerName);
+        console.log('✅ Admin\'e yeni sipariş bildirimi gönderildi (Direct admin sipariş)');
+      } catch (notificationError) {
+        console.error('❌ Admin sipariş bildirim hatası (Direct admin sipariş):', notificationError);
+        // Bildirim hatası ana işlemi etkilemesin
+      }
 
       return { 
         success: true, 
