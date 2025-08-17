@@ -417,8 +417,10 @@ export const updateProductStock = async (req: Request, res: Response) => {
 
     // Yeni stok eklendi bildirimi gönder (tüm kullanıcılara)
     try {
-      await notificationService.notifyNewStock(product.name, parseInt(quantity));
-      console.log('✅ Adet bazlı stok ekleme bildirimi gönderildi');
+      if (product?.name) {
+        await notificationService.notifyNewStock(product.name, parseInt(quantity));
+        console.log('✅ Adet bazlı stok ekleme bildirimi gönderildi');
+      }
     } catch (notificationError) {
       console.error('❌ Adet bazlı stok ekleme bildirim hatası:', notificationError);
       // Bildirim hatası ana işlemi etkilemesin
@@ -486,9 +488,11 @@ export const updateProductStockAreaM2 = async (req: Request, res: Response) => {
 
     // Yeni stok eklendi bildirimi gönder (tüm kullanıcılara)
     try {
-      const equivalentPieces = Math.floor(areaValue / ((widthValue * heightValue) / 10000));
-      await notificationService.notifyNewStock(product.name, equivalentPieces);
-      console.log('✅ M² bazlı stok ekleme bildirimi gönderildi');
+      if (product?.name) {
+        const equivalentPieces = Math.floor(areaValue / ((widthValue * heightValue) / 10000));
+        await notificationService.notifyNewStock(product.name, equivalentPieces);
+        console.log('✅ M² bazlı stok ekleme bildirimi gönderildi');
+      }
     } catch (notificationError) {
       console.error('❌ M² bazlı stok ekleme bildirim hatası:', notificationError);
       // Bildirim hatası ana işlemi etkilemesin
@@ -612,7 +616,7 @@ export const updateProductStockHybrid = async (req: Request, res: Response) => {
         notificationQuantity += equivalentPieces;
       }
       
-      if (notificationQuantity > 0) {
+      if (notificationQuantity > 0 && 'name' in result && result.name) {
         await notificationService.notifyNewStock(result.name, notificationQuantity);
         console.log('✅ Hibrit stok ekleme bildirimi gönderildi');
       }
