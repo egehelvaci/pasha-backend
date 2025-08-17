@@ -489,8 +489,7 @@ export const updateProductStockAreaM2 = async (req: Request, res: Response) => {
     // Yeni stok eklendi bildirimi gönder (tüm kullanıcılara)
     try {
       if (product?.name) {
-        const equivalentPieces = Math.floor(areaValue / ((widthValue * heightValue) / 10000));
-        await notificationService.notifyNewStock(product.name, equivalentPieces);
+        await notificationService.notifyNewStock(product.name, areaValue, 'm2');
         console.log('✅ M² bazlı stok ekleme bildirimi gönderildi');
       }
     } catch (notificationError) {
@@ -607,17 +606,21 @@ export const updateProductStockHybrid = async (req: Request, res: Response) => {
 
     // Yeni stok eklendi bildirimi gönder (tüm kullanıcılara)
     try {
-      let notificationQuantity = 0;
-      if (updateMode === 'quantity' || updateMode === 'both') {
-        notificationQuantity += quantityValue || 0;
-      }
-      if (updateMode === 'area' || updateMode === 'both') {
-        const equivalentPieces = Math.floor((areaValue || 0) / ((widthValue * heightValue) / 10000));
-        notificationQuantity += equivalentPieces;
-      }
-      
-      if (notificationQuantity > 0 && 'name' in result && result.name) {
-        await notificationService.notifyNewStock(result.name, notificationQuantity);
+      if ('name' in result && result.name) {
+        if (updateMode === 'area') {
+          // Sadece M² eklendi
+          await notificationService.notifyNewStock(result.name, areaValue || 0, 'm2');
+        } else if (updateMode === 'quantity') {
+          // Sadece adet eklendi
+          await notificationService.notifyNewStock(result.name, quantityValue || 0, 'adet');
+        } else if (updateMode === 'both') {
+          // Hem adet hem M² eklendi - ana değeri kullan
+          if (areaValue && areaValue > 0) {
+            await notificationService.notifyNewStock(result.name, areaValue, 'm2');
+          } else if (quantityValue && quantityValue > 0) {
+            await notificationService.notifyNewStock(result.name, quantityValue, 'adet');
+          }
+        }
         console.log('✅ Hibrit stok ekleme bildirimi gönderildi');
       }
     } catch (notificationError) {

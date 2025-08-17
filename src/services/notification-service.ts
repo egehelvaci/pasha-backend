@@ -143,7 +143,7 @@ export class NotificationService {
   /**
    * Yeni stok bildirimi (tüm kullanıcılara)
    */
-  async notifyNewStock(productName: string, stockCount: number): Promise<boolean> {
+  async notifyNewStock(productName: string, stockCount: number, stockType: 'adet' | 'm2' = 'adet'): Promise<boolean> {
     try {
       // Tüm aktif kullanıcılara bildirim gönder
       const users = await prisma.user.findMany({
@@ -151,14 +151,18 @@ export class NotificationService {
         select: { userId: true }
       });
 
+      const stockMessage = stockType === 'm2' 
+        ? `${stockCount}m² stok eklendi`
+        : `Stok adedi: ${stockCount}`;
+
       const notifications = await Promise.all(
         users.map(user => 
           this.sendNotification({
             userId: user.userId,
             type: 'NEW_STOCK',
             title: 'Yeni Ürün Stoklarda',
-            message: `${productName} ürünü stoklara eklendi. Stok adedi: ${stockCount}`,
-            metadata: { productName, stockCount }
+            message: `${productName} ürünü stoklara eklendi. ${stockMessage}`,
+            metadata: { productName, stockCount, stockType }
           })
         )
       );
