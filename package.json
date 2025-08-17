@@ -7,11 +7,7 @@
     "api:dev": "nodemon --exec ts-node src/server.ts",
     "api:build": "tsc -p tsconfig.json",
     "api:start": "node dist/server.js",
-    "create-admin": "ts-node src/tools/create-admin-user.ts",
-    "worker:webhook": "ts-node src/workers/webhook-worker.ts",
-    "worker:email": "ts-node src/workers/email-worker.ts",
-    "worker:qr": "ts-node src/workers/qr-worker.ts",
-    "workers:all": "concurrently \"npm run worker:webhook\" \"npm run worker:email\" \"npm run worker:qr\""
+    "create-admin": "ts-node src/tools/create-admin-user.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.496.0",
@@ -23,8 +19,6 @@
     "@types/multer": "^1.4.11",
     "@types/nodemailer": "^6.4.17",
     "@types/qrcode": "^1.5.5",
-    "amqplib": "^0.10.4",
-    "concurrently": "^8.2.2",
     "axios": "^1.10.0",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^3.0.2",
@@ -45,7 +39,6 @@
     "uuid": "^11.1.0"
   },
   "devDependencies": {
-    "@types/amqplib": "^0.10.5",
     "@types/bcrypt": "^5.0.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.9",
