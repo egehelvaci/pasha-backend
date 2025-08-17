@@ -2,6 +2,7 @@ import crypto from 'crypto'
 import prisma from '../utils/prisma'
 import { UploadService } from '../utils/upload-service'
 import { EmployeeAssignmentService } from './employee-assignment-service'
+import { notificationService } from './notification-service'
 
 const employeeAssignmentService = new EmployeeAssignmentService()
 
@@ -9,7 +10,20 @@ const QRCode = require('qrcode');
 
 export class QRCodeService {
   /**
-   * Sipariş için QR kod görselleri oluşturur, Tebi'ye yükler ve DB'yi günceller
+   * QR kod görsel oluşturma işlemini çalıştır
+   */
+  async generateQRCodeImagesForOrderQueued(orderId: string): Promise<boolean> {
+    try {
+      await this.generateQRCodeImagesForOrder(orderId);
+      return true;
+    } catch (error) {
+      console.error('QR kod oluşturma hatası:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Sipariş için QR kod görselleri oluşturur, Tebi'ye yükler ve DB'yi günceller (asıl işlem)
    * Item bazlı sistem için güncellendi
    */
   async generateQRCodeImagesForOrder(orderId: string) {
@@ -427,6 +441,19 @@ export class QRCodeService {
                 updated_at: new Date()
               }
             })
+
+            // Sipariş hazır bildirimi gönder
+            try {
+              await notificationService.notifyOrderReady(
+                qrRecord.order_id,
+                currentOrder.user_id,
+                qrRecord.order_id
+              );
+              console.log('✅ Sipariş hazır bildirimi gönderildi');
+            } catch (notificationError) {
+              console.error('❌ Sipariş hazır bildirim hatası:', notificationError);
+              // Bildirim hatası ana işlemi etkilemesin
+            }
 
             // Çalışan seçimi gerekiyor
             return {

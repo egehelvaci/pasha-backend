@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { ProductService } from '../product-service';
 import { UploadService } from '../utils/upload-service';
+import { notificationService } from '../services/notification-service';
 import multer from 'multer';
 import { Readable } from 'stream';
 import path from 'path';
@@ -217,6 +218,15 @@ export const createProduct = async (req: Request, res: Response) => {
       collectionId,
       rule_id: ruleId
     });
+
+    // Yeni ürün eklendi bildirimi gönder (tüm kullanıcılara)
+    try {
+      await notificationService.notifyNewStock(name, 1); // Varsayılan 1 adet
+      console.log('✅ Yeni ürün bildirimi gönderildi');
+    } catch (notificationError) {
+      console.error('❌ Bildirim gönderme hatası:', notificationError);
+      // Bildirim hatası ana işlemi etkilemesin
+    }
     
     return res.status(201).json({
       success: true,
@@ -266,6 +276,15 @@ export const createProductSimple = async (req: Request, res: Response) => {
       productImage: productImageUrl,
       collectionId
     });
+
+    // Yeni ürün eklendi bildirimi gönder (tüm kullanıcılara)
+    try {
+      await notificationService.notifyNewStock(name, 1); // Varsayılan 1 adet
+      console.log('✅ Yeni ürün bildirimi gönderildi');
+    } catch (notificationError) {
+      console.error('❌ Bildirim gönderme hatası:', notificationError);
+      // Bildirim hatası ana işlemi etkilemesin
+    }
     
     return res.status(201).json({ success: true, data: product });
   } catch (error: any) {

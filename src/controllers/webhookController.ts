@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { WebhookService } from '../services/webhook-service';
+import { notificationService } from '../services/notification-service';
 
 const webhookService = new WebhookService();
 
@@ -52,21 +53,39 @@ export class WebhookController {
         }
       }
 
-      // Webhook'u işle
+      // Webhook'u senkron işle
       const result = await webhookService.processWebhook(webhookData);
       
-      // DBYE'ye response dön
       if (result.success) {
         console.log('✅ Webhook başarıyla işlendi');
+
+        // Ödeme sonucu bildirimi gönder
+        try {
+          // Webhook result'tan order bilgilerini almaya çalış
+          const isPaymentSuccessful = webhookData.TransactionState === 3; // 3 = Başarılı
+          
+          // Şimdilik sadece log - webhook service'den data gelmeyebilir
+          console.log(`🔔 Ödeme ${isPaymentSuccessful ? 'başarılı' : 'başarısız'} webhook alındı`, {
+            orderNumber: webhookData.OrderNumber,
+            amount: webhookData.PaymentAmount
+          });
+          
+          // TODO: Order ID ve User ID'yi webhook'tan alıp bildirim gönder
+          // await notificationService.notifyPaymentSuccess/Failed(orderId, userId, amount);
+        } catch (notificationError) {
+          console.error('❌ Ödeme bildirimi hatası:', notificationError);
+          // Bildirim hatası webhook işlemini etkilemesin
+        }
+
         return res.status(200).json({
           success: true,
-          message: result.message
+          message: 'Webhook başarıyla işlendi'
         });
       } else {
-        console.error('❌ Webhook işleme başarısız:', result.message);
-        return res.status(400).json({
+        console.error('❌ Webhook işlenemedi:', result.message);
+        return res.status(500).json({
           success: false,
-          message: result.message
+          message: result.message || 'Webhook işlenemedi'
         });
       }
 

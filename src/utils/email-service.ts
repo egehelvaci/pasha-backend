@@ -92,6 +92,19 @@ export class EmailService {
   /**
    * Şifre sıfırlama email'i gönder
    */
+  async sendPasswordResetEmailQueued(email: string, resetToken: string, userName: string): Promise<boolean> {
+    try {
+      await this.sendPasswordResetEmail(email, resetToken, userName);
+      return true;
+    } catch (error) {
+      console.error('Email gönderme hatası:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Şifre sıfırlama email'i gönder (asıl işlem)
+   */
   async sendPasswordResetEmail(email: string, resetToken: string, userName: string) {
     try {
       const frontendUrl = this.getFrontendUrl()

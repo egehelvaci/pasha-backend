@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
 import { OrderService } from '../order-service'
 import { qrCodeService } from '../services/qr-code-service'
+import { notificationService } from '../services/notification-service'
 import prisma from '../utils/prisma'
 
 export class AdminOrderController {
@@ -284,6 +285,19 @@ export class AdminOrderController {
           ...item,
           cut_type: item.cut_type === 'rectangle' ? 'standart' : item.cut_type
         })) || []
+      }
+
+      // Sipariş onaylandı bildirimi gönder
+      try {
+        await notificationService.notifyOrderConfirmed(
+          orderId,
+          order.user_id,
+          updatedOrder?.id || orderId
+        );
+        console.log('✅ Sipariş onaylandı bildirimi gönderildi');
+      } catch (notificationError) {
+        console.error('❌ Sipariş onaylandı bildirim hatası:', notificationError);
+        // Bildirim hatası ana işlemi etkilemesin
       }
 
       return res.status(200).json({
@@ -1093,6 +1107,28 @@ export class AdminOrderController {
           ...item,
           cut_type: item.cut_type === 'rectangle' ? 'standart' : item.cut_type
         }))
+      }
+
+      // Sipariş durumu değişikliği bildirimi gönder
+      try {
+        if (status === 'CONFIRMED' && existingOrder.status !== 'CONFIRMED') {
+          await notificationService.notifyOrderConfirmed(
+            orderId,
+            existingOrder.user_id,
+            orderId
+          );
+          console.log('✅ Sipariş onaylandı bildirimi gönderildi (updateOrderStatus)');
+        } else if (status === 'DELIVERED') {
+          await notificationService.notifyOrderCompleted(
+            orderId,
+            existingOrder.user_id,
+            orderId
+          );
+          console.log('✅ Sipariş teslim edildi bildirimi gönderildi');
+        }
+      } catch (notificationError) {
+        console.error('❌ Sipariş durumu bildirimi hatası:', notificationError);
+        // Bildirim hatası ana işlemi etkilemesin
       }
 
       const response: any = {

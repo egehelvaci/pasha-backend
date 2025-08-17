@@ -52,12 +52,16 @@ export class PasswordResetService {
         }
       })
 
-      // Email gönder
-      await emailService.sendPasswordResetEmail(
+      // Email'i kuyruğa ekle (RabbitMQ varsa) veya senkron gönder
+      const emailSent = await emailService.sendPasswordResetEmailQueued(
         user.email,
         resetToken,
         `${user.name} ${user.surname}`
       )
+
+      if (!emailSent) {
+        console.warn('⚠️ Email kuyruğa eklenemedi, ancak token oluşturuldu')
+      }
 
       console.log(`Şifre sıfırlama talebi oluşturuldu: ${user.email}`)
 

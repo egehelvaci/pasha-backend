@@ -16,6 +16,7 @@ import paymentRoutes from './routes/paymentRoutes'
 import employeeAssignmentRoutes from './routes/employeeAssignmentRoutes'
 import employeeStatsRoutes from './routes/employeeStatsRoutes'
 import loginAssetsRoutes from './routes/loginAssetsRoutes'
+import notificationRoutes from './routes/notificationRoutes'
 import path from 'path'
 import multer from 'multer'
 
@@ -74,6 +75,7 @@ app.use('/api/payments', paymentRoutes)
 app.use('/api/employee-assignment', employeeAssignmentRoutes)
 app.use('/api/employee-stats', employeeStatsRoutes)
 app.use('/api/login-assets', loginAssetsRoutes)
+app.use('/api/notifications', notificationRoutes)
 
 // Kök rota - Railway proxy için basit yanıt
 app.get('/', (req, res) => {
