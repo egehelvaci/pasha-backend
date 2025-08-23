@@ -99,10 +99,7 @@ export class ManuelSatisService {
         });
 
         if (storeUser?.userId) {
-          const activePriceList = await getActivePriceListForUser(storeUser.userId);
-          if (activePriceList) {
-            return activePriceList;
-          }
+          // Manuel satışta varsayılan fiyat listesi kullanıldığı için bu kısım kaldırıldı
         }
       }
 
@@ -248,7 +245,7 @@ export class ManuelSatisService {
       }
 
       // Her ürün için fiyat hesapla ve toplam tutar hesaplama
-      const itemsWithTotal = [];
+      const itemsWithTotal: Array<ManuelSatisItem & { totalPrice: number }> = [];
       let totalAmount = 0;
 
       for (const item of data.items) {
@@ -691,7 +688,7 @@ export class ManuelSatisService {
       });
 
       // Manuel satışta her zaman varsayılan fiyat listesi kullanılır
-      let priceList = null;
+      let priceList: any = null;
       try {
         priceList = await getDefaultPriceList();
       } catch (error) {
@@ -702,7 +699,7 @@ export class ManuelSatisService {
         success: true,
         data: products.map(product => {
           // Fiyat bilgisini hesapla
-          let priceInfo = null;
+          let priceInfo: any = null;
           if (priceList && priceList.PriceListDetail) {
             const priceDetail = priceList.PriceListDetail.find((detail: any) => 
               detail.collection_id === product.collectionId
