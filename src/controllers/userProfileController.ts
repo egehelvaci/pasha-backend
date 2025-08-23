@@ -496,6 +496,195 @@ export class UserProfileController {
       })
     }
   }
+
+  /**
+   * Müşterinin muhasebe hareketlerini, siparişlerini ve ödemelerini getir
+   * 
+   * @route GET /api/profile/accounting
+   * @access Authenticated (Giriş yapmış kullanıcılar)
+   * @description Müşterinin bakiye detaylarını, siparişlerini ve ödeme geçmişini döndürür
+   */
+  async getAccountingDetails(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user?.userId
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Kullanıcı kimlik doğrulaması gerekli'
+        })
+      }
+
+      // Kullanıcının mağaza bilgilerini al
+      const user = await prisma.user.findUnique({
+        where: { userId },
+        select: {
+          store_id: true,
+          Store: {
+            select: {
+              store_id: true,
+              kurum_adi: true,
+              bakiye: true
+            }
+          }
+        }
+      })
+
+      if (!user || !user.store_id || !user.Store) {
+        return res.status(404).json({
+          success: false,
+          message: 'Mağaza bilgisi bulunamadı'
+        })
+      }
+
+      // Muhasebe hareketlerini al
+      const muhasebeHareketleri = await prisma.muhasebeHareketleri.findMany({
+        where: {
+          storeId: user.store_id
+        },
+        orderBy: {
+          tarih: 'desc'
+        },
+        take: 100 // Son 100 hareket
+      })
+
+      // Siparişleri al
+      const orders = await prisma.order.findMany({
+        where: {
+          user_id: userId
+        },
+        select: {
+          id: true,
+          total_price: true,
+          status: true,
+          created_at: true,
+          updated_at: true,
+          items: {
+            select: {
+              product: {
+                select: {
+                  name: true,
+                  description: true,
+                  collection: {
+                    select: {
+                      name: true,
+                      code: true
+                    }
+                  }
+                }
+              },
+              quantity: true,
+              unit_price: true,
+              total_price: true,
+              width: true,
+              height: true,
+              has_fringe: true,
+              cut_type: true
+            }
+          }
+        },
+        orderBy: {
+          created_at: 'desc'
+        },
+        take: 50 // Son 50 sipariş
+      })
+
+      // Ödeme işlemlerini al
+      const paymentTransactions = await prisma.paymentTransaction.findMany({
+        where: {
+          storeId: user.store_id
+        },
+        select: {
+          id: true,
+          amount: true,
+          description: true,
+          status: true,
+          paymentDate: true,
+          createdAt: true,
+          sellerReference: true
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        take: 50 // Son 50 ödeme
+      })
+
+      // Toplam harcama ve ödeme hesapla
+      const toplamHarcama = muhasebeHareketleri
+        .filter(h => h.harcama === true)
+        .reduce((sum, h) => sum + Number(h.tutar), 0)
+
+      const toplamOdeme = muhasebeHareketleri
+        .filter(h => h.harcama === false)
+        .reduce((sum, h) => sum + Number(h.tutar), 0)
+
+      const toplamSiparisTutari = orders.reduce((sum, order) => 
+        sum + Number(order.total_price), 0)
+
+      const bekleyenSiparisler = orders.filter(o => o.status === 'PENDING').length
+      const teslimEdilenSiparisler = orders.filter(o => o.status === 'DELIVERED').length
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          ozet: {
+            guncelBakiye: Number(user.Store.bakiye),
+            toplamHarcama,
+            toplamOdeme,
+            toplamSiparisTutari,
+            toplamSiparisSayisi: orders.length,
+            bekleyenSiparisler,
+            teslimEdilenSiparisler
+          },
+          muhasebeHareketleri: muhasebeHareketleri.map(hareket => ({
+            id: hareket.id,
+            islemTuru: hareket.islemTuru,
+            tutar: Number(hareket.tutar),
+            harcamaMi: hareket.harcama,
+            tarih: hareket.tarih,
+            aciklama: hareket.aciklama,
+            createdAt: hareket.createdAt
+          })),
+          siparisler: orders.map(order => ({
+            id: order.id,
+            toplamTutar: Number(order.total_price),
+            durum: order.status,
+            olusturmaTarihi: order.created_at,
+            guncellemeTarihi: order.updated_at,
+            urunSayisi: order.items.length,
+            urunler: order.items.map(item => ({
+              urunAdi: item.product.name,
+              koleksiyonAdi: item.product.collection.name,
+              koleksiyonKodu: item.product.collection.code,
+              miktar: item.quantity,
+              birimFiyat: Number(item.unit_price),
+              toplamFiyat: Number(item.total_price),
+              en: item.width ? Number(item.width) : null,
+              boy: item.height ? Number(item.height) : null,
+              sasakVar: item.has_fringe,
+              kesimTipi: item.cut_type
+            }))
+          })),
+          odemeler: paymentTransactions.map(payment => ({
+            id: payment.id,
+            tutar: Number(payment.amount),
+            aciklama: payment.description,
+            durum: payment.status,
+            odemeTarihi: payment.paymentDate,
+            olusturmaTarihi: payment.createdAt,
+            referansNo: payment.sellerReference
+          }))
+        }
+      })
+
+    } catch (error: any) {
+      console.error('Muhasebe detayları alınırken hata:', error)
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Muhasebe detayları alınırken bir hata oluştu'
+      })
+    }
+  }
 }
 
 export const userProfileController = new UserProfileController() 

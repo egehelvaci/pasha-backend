@@ -52,4 +52,10 @@ router.put('/me', userProfileController.updateMyProfile)
  */
 router.put('/change-password', userProfileController.changePassword)
 
+/**
+ * Müşterinin muhasebe hareketlerini, siparişlerini ve ödemelerini getir
+ * GET /api/profile/accounting
+ */
+router.get('/accounting', userProfileController.getAccountingDetails)
+
 export default router 
