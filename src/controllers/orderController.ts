@@ -254,4 +254,47 @@ export const cancelOrder = async (req: Request, res: Response) => {
       message: error.message || 'Sipariş iptal edilemedi'
     });
   }
+};
+
+// Sipariş fişi al (onaylanan ve teslim edilenler için)
+export const getOrderReceipt = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.userId;
+    const orderId = req.params.orderId;
+    
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Kullanıcı kimlik doğrulaması gerekli'
+      });
+    }
+
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Sipariş ID gerekli'
+      });
+    }
+
+    const result = await orderService.getOrderReceipt(orderId, userId);
+
+    if (!result.success) {
+      return res.status(result.statusCode || 400).json({
+        success: false,
+        message: result.message
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: result.receipt
+    });
+
+  } catch (error: any) {
+    console.error('Sipariş fişi alma hatası:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Sipariş fişi alınırken bir hata oluştu'
+    });
+  }
 }; 

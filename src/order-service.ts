@@ -1457,6 +1457,183 @@ export class OrderService {
       };
     }
   }
+
+  // Sipariş fişi al (onaylanan ve teslim edilenler için)
+  async getOrderReceipt(orderId: string, userId: string): Promise<{
+    success: boolean;
+    message: string;
+    statusCode?: number;
+    receipt?: any;
+  }> {
+    try {
+      // Siparişi detaylı bilgilerle al
+      const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: {
+          user: {
+            include: {
+              Store: true
+            }
+          },
+          items: {
+            include: {
+              product: {
+                include: {
+                  collection: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      if (!order) {
+        return { 
+          success: false, 
+          message: 'Sipariş bulunamadı',
+          statusCode: 404
+        };
+      }
+
+      // Kullanıcı sadece kendi siparişinin fişini alabilir
+      if (order.user_id !== userId) {
+        return { 
+          success: false, 
+          message: 'Bu siparişin fişini alma yetkiniz yok',
+          statusCode: 403
+        };
+      }
+
+      // Sadece onaylanan veya teslim edilen siparişlerin fişi alınabilir
+      if (!['CONFIRMED', 'SHIPPED', 'DELIVERED', 'READY'].includes(order.status)) {
+        return { 
+          success: false, 
+          message: `${order.status} durumundaki siparişin fişi alınamaz. Sadece onaylanmış veya teslim edilmiş siparişlerin fişi alınabilir.`,
+          statusCode: 400
+        };
+      }
+
+      const store = order.user.Store;
+      const orderTotal = Number(order.total_price);
+
+      // Sipariş öncesi bakiyeyi hesapla (mevcut bakiye + sipariş tutarı)
+      const currentBalance = Number(store?.bakiye || 0);
+      const previousBalance = currentBalance + orderTotal;
+
+      // Muhasebe hareketlerinden sipariş tarihindeki bakiye bilgilerini al
+      const muhasebeHareketi = await prisma.muhasebeHareketleri.findFirst({
+        where: {
+          storeId: store?.store_id,
+          aciklama: {
+            contains: orderId
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+
+      // Fiş verilerini hazırla
+      const receipt = {
+        // Sipariş bilgileri
+        siparis: {
+          id: order.id,
+          siparisNumarasi: order.id.substring(0, 8).toUpperCase(),
+          durum: order.status,
+          olusturmaTarihi: order.created_at,
+          guncellemeTarihi: order.updated_at,
+          toplamTutar: orderTotal
+        },
+
+        // Müşteri bilgileri
+        musteri: {
+          ad: order.user.name,
+          soyad: order.user.surname,
+          email: order.user.email,
+          telefon: order.user.phoneNumber,
+          adres: order.user.adres
+        },
+
+        // Mağaza bilgileri
+        magaza: store ? {
+          kurumAdi: store.kurum_adi,
+          vergiNumarasi: store.vergi_numarasi,
+          vergiDairesi: store.vergi_dairesi,
+          yetkiliAdi: store.yetkili_adi,
+          yetkiliSoyadi: store.yetkili_soyadi,
+          telefon: store.telefon,
+          eposta: store.eposta,
+          adres: store.adres,
+          faksNumarasi: store.faks_numarasi
+        } : null,
+
+        // Sipariş detayları
+        urunler: order.items.map(item => ({
+          urunAdi: item.product.name,
+          aciklama: item.product.description,
+          koleksiyon: {
+            adi: item.product.collection.name,
+            kodu: item.product.collection.code
+          },
+          miktar: item.quantity,
+          birimFiyat: Number(item.unit_price),
+          toplamFiyat: Number(item.total_price),
+          olculer: {
+            en: item.width ? Number(item.width) : null,
+            boy: item.height ? Number(item.height) : null,
+            alanM2: item.width && item.height ? (Number(item.width) * Number(item.height)) / 10000 : null
+          },
+          ozellikler: {
+            sasakVar: item.has_fringe || false,
+            kesimTipi: item.cut_type || null
+          }
+        })),
+
+        // Bakiye bilgileri
+        bakiye: {
+          siparisOncesi: previousBalance,
+          siparisSonrasi: currentBalance,
+          siparisKesintisi: orderTotal,
+          tarih: new Date()
+        },
+
+        // Özet bilgiler
+        ozet: {
+          toplamUrunSayisi: order.items.length,
+          toplamMiktar: order.items.reduce((sum, item) => sum + item.quantity, 0),
+          toplamAlanM2: order.items.reduce((sum, item) => {
+            if (item.width && item.height) {
+              const alanM2 = (Number(item.width) * Number(item.height)) / 10000;
+              return sum + (alanM2 * item.quantity);
+            }
+            return sum;
+          }, 0),
+          toplamTutar: orderTotal
+        },
+
+        // Fiş bilgileri
+        fis: {
+          fisNumarasi: `FIS-${order.id.substring(0, 8).toUpperCase()}`,
+          olusturmaTarihi: new Date(),
+          gecerlilikTarihi: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // 1 yıl geçerli
+        }
+      };
+
+      return {
+        success: true,
+        message: 'Sipariş fişi başarıyla hazırlandı',
+        receipt
+      };
+
+    } catch (error: any) {
+      console.error('Sipariş fişi hazırlama hatası:', error);
+      return {
+        success: false,
+        message: error.message || 'Sipariş fişi hazırlanırken bir hata oluştu',
+        statusCode: 500
+      };
+    }
+  }
 }
 
 export const orderService = new OrderService(); 

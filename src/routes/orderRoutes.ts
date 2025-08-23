@@ -4,7 +4,8 @@ import {
   getOrderById,
   checkCartLimits,
   getUserOrders,
-  cancelOrder
+  cancelOrder,
+  getOrderReceipt
 } from '../controllers/orderController';
 import { authMiddleware } from '../auth/auth-middleware';
 
@@ -27,5 +28,8 @@ router.get('/:orderId', getOrderById);
 
 // Siparişi iptal et (sadece PENDING durumundaki siparişler)
 router.put('/:orderId/cancel', cancelOrder);
+
+// Sipariş fişi al (onaylanan ve teslim edilenler için)
+router.get('/:orderId/receipt', getOrderReceipt);
 
 export default router; 
