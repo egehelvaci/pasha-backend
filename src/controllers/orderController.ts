@@ -213,6 +213,7 @@ export const checkCartLimits = async (req: Request, res: Response) => {
 export const cancelOrder = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.userId;
+    const userType = (req as any).user?.userType;
     const orderId = req.params.orderId;
     
     if (!userId) {
@@ -232,7 +233,10 @@ export const cancelOrder = async (req: Request, res: Response) => {
     // İptal sebebi (opsiyonel)
     const { reason } = req.body;
 
-    const result = await orderService.cancelOrder(orderId, userId, reason);
+    // Admin kontrolü
+    const isAdmin = userType === 'admin';
+
+    const result = await orderService.cancelOrder(orderId, userId, reason, isAdmin);
 
     if (!result.success) {
       return res.status(result.statusCode || 400).json({

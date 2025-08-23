@@ -1280,8 +1280,8 @@ export class OrderService {
 
   // Mağaza limitini artır (ödeme sonrası) - deliveryAddress tablosu şemada yok, kaldırıldı
 
-  // Siparişi iptal et (sadece PENDING durumundaki siparişler)
-  async cancelOrder(orderId: string, userId: string, reason?: string): Promise<{
+  // Siparişi iptal et (kullanıcılar için PENDING, adminler için tüm durumlar)
+  async cancelOrder(orderId: string, userId: string, reason?: string, isAdmin?: boolean): Promise<{
     success: boolean;
     message: string;
     statusCode?: number;
@@ -1325,8 +1325,8 @@ export class OrderService {
         };
       }
 
-      // Kullanıcı sadece kendi siparişini iptal edebilir
-      if (order.user_id !== userId) {
+      // Admin değilse, kullanıcı sadece kendi siparişini iptal edebilir
+      if (!isAdmin && order.user_id !== userId) {
         return { 
           success: false, 
           message: 'Bu siparişi iptal etme yetkiniz yok',
@@ -1334,11 +1334,28 @@ export class OrderService {
         };
       }
 
-      // Sadece PENDING durumundaki siparişler iptal edilebilir
-      if (order.status !== 'PENDING') {
+      // Admin değilse, sadece PENDING durumundaki siparişler iptal edilebilir
+      if (!isAdmin && order.status !== 'PENDING') {
         return { 
           success: false, 
           message: `${order.status} durumundaki sipariş iptal edilemez. Sadece onay bekleyen (PENDING) siparişler iptal edilebilir.`,
+          statusCode: 400
+        };
+      }
+
+      // Admin ise tüm durumları iptal edebilir, ancak DELIVERED ve CANCELED olanları kontrol et
+      if (isAdmin && order.status === 'CANCELED') {
+        return { 
+          success: false, 
+          message: 'Bu sipariş zaten iptal edilmiş.',
+          statusCode: 400
+        };
+      }
+
+      if (isAdmin && order.status === 'DELIVERED') {
+        return { 
+          success: false, 
+          message: 'Teslim edilmiş siparişler iptal edilemez.',
           statusCode: 400
         };
       }
@@ -1422,11 +1439,11 @@ export class OrderService {
           await tx.muhasebeHareketleri.create({
             data: {
               storeId: store.store_id,
-              islemTuru: 'Sipariş İptali - İade',
+              islemTuru: `Sipariş İptali - ${isAdmin ? 'Admin' : 'Müşteri'} İade`,
               tutar: orderTotal,
               harcama: false, // İade olduğu için gelir olarak kaydet
               tarih: new Date(),
-              aciklama: `Sipariş #${orderId} iptal edildi. ${reason ? `Sebep: ${reason}` : ''}`
+              aciklama: `Sipariş #${orderId} ${isAdmin ? 'admin tarafından' : 'müşteri tarafından'} iptal edildi. ${reason ? `Sebep: ${reason}` : ''}`
             }
           });
         }
