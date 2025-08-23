@@ -284,6 +284,7 @@ export class PaymentService {
     const cleanPhone = this.cleanPhoneNumber(userPhone);
 
     // Mağazanın ilk adresini al
+    console.log(`💳 Payment request için adres alınıyor - StoreId: ${input.storeId}, UserId: ${input.userId}`);
     const storeAddress = await this.getFirstStoreAddress(input.storeId);
 
     // Payment request data'sını oluştur

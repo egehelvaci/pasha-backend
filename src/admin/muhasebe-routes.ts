@@ -17,4 +17,7 @@ router.get('/muhasebe/income-types', muhasebeController.getIncomeTypes)
 router.get('/muhasebe/expense-types', muhasebeController.getExpenseTypes)
 router.get('/muhasebe/admin-toplam', muhasebeController.getAdminToplam)
 
+// Manuel satış endpoint'leri
+router.get('/muhasebe/manuel-satislar', muhasebeController.getManuelSatislar)
+
 export default router 

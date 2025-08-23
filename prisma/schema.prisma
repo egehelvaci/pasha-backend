@@ -68,6 +68,7 @@ model Product {
   admin_cart_items  admin_cart_items[]
   cart_items        cart_items[]
   productvariations productvariations[]
+  manuelSatisDetay  ManuelSatisDetay[]
 }
 
 model PriceList {
@@ -378,17 +379,41 @@ model StoreInstallmentLimit {
 }
 
 model MuhasebeHareketleri {
-  id        Int      @id @default(autoincrement())
-  storeId   String   @map("store_id") @db.Uuid
-  islemTuru String   @map("islem_turu") @db.VarChar(255)
-  tutar     Decimal  @db.Decimal(10, 2)
-  harcama   Boolean
-  tarih     DateTime
-  aciklama  String?
-  createdAt DateTime @default(now()) @map("created_at")
-  store     Store    @relation(fields: [storeId], references: [store_id])
+  id                Int                  @id @default(autoincrement())
+  storeId           String               @map("store_id") @db.Uuid
+  islemTuru         String               @map("islem_turu") @db.VarChar(255)
+  tutar             Decimal              @db.Decimal(10, 2)
+  harcama           Boolean
+  tarih             DateTime
+  aciklama          String?
+  createdAt         DateTime             @default(now()) @map("created_at")
+  isManuelSatis     Boolean?             @default(false) @map("is_manuel_satis")
+  fisNumarasi       String?              @unique @map("fis_numarasi") @db.VarChar(50)
+  
+  store             Store                @relation(fields: [storeId], references: [store_id])
+  manuelSatisDetay  ManuelSatisDetay[]
 
   @@map("muhasebe_hareketleri")
+}
+
+model ManuelSatisDetay {
+  id                Int                    @id @default(autoincrement())
+  muhasebeHareketId Int                    @map("muhasebe_hareket_id")
+  productId         String                 @map("product_id") @db.VarChar(36)
+  quantity          Int
+  width             Decimal?               @db.Decimal(8, 2)
+  height            Decimal?               @db.Decimal(8, 2)
+  unitPrice         Decimal                @map("unit_price") @db.Decimal(10, 2)
+  totalPrice        Decimal                @map("total_price") @db.Decimal(12, 2)
+  hasFringe         Boolean?               @map("has_fringe")
+  cutType           String?                @map("cut_type") @db.VarChar(100)
+  notes             String?
+  createdAt         DateTime               @default(now()) @map("created_at")
+  
+  muhasebeHareketi  MuhasebeHareketleri    @relation(fields: [muhasebeHareketId], references: [id], onDelete: Cascade)
+  product           Product                @relation(fields: [productId], references: [productId], onDelete: Restrict)
+
+  @@map("manuel_satis_detay")
 }
 
 model AdminVarliklari {

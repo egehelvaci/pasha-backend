@@ -10,6 +10,7 @@ import orderRoutes from './routes/orderRoutes'
 import adminRoutes from './admin/admin-routes'
 import authRoutes from './auth/auth-routes'
 import storeRoutes from './admin/store-routes'
+import manuelSatisRoutes from './admin/manuel-satis-routes'
 import storeStatisticsRoutes from './routes/storeStatisticsRoutes'
 import userProfileRoutes from './routes/userProfileRoutes'
 import storeAddressRoutes from './routes/storeAddressRoutes'
@@ -70,6 +71,7 @@ app.use('/api/orders', orderRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/stores', storeRoutes)
+app.use('/api/admin/manuel-satis', manuelSatisRoutes)
 app.use('/api/profile', userProfileRoutes)
 app.use('/api/store-addresses', storeAddressRoutes)
 app.use('/api/my-statistics', storeStatisticsRoutes)

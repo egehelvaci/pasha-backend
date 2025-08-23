@@ -39,6 +39,7 @@ export class MuhasebeController {
     this.getIncomeTypes = this.getIncomeTypes.bind(this)
     this.getExpenseTypes = this.getExpenseTypes.bind(this)
     this.getAdminToplam = this.getAdminToplam.bind(this)
+    this.getManuelSatislar = this.getManuelSatislar.bind(this)
   }
 
   /**
@@ -379,6 +380,92 @@ export class MuhasebeController {
       return res.status(500).json({
         success: false,
         message: error.message || 'Admin toplam bilgileri getirilemedi'
+      })
+    }
+  }
+
+  /**
+   * Manuel satışları listele
+   */
+  async getManuelSatislar(req: Request, res: Response) {
+    try {
+      const { storeId, startDate, endDate, page = 1, limit = 20 } = req.query
+      const skip = (Number(page) - 1) * Number(limit)
+
+      const whereCondition: any = {
+        isManuelSatis: true
+      }
+
+      if (storeId) {
+        whereCondition.storeId = storeId
+      }
+
+      if (startDate || endDate) {
+        whereCondition.tarih = {}
+        if (startDate) whereCondition.tarih.gte = new Date(startDate as string)
+        if (endDate) whereCondition.tarih.lte = new Date(endDate as string)
+      }
+
+      const [manuelSatislar, total] = await Promise.all([
+        prisma.muhasebeHareketleri.findMany({
+          where: whereCondition,
+          include: {
+            store: {
+              select: {
+                kurum_adi: true,
+                store_id: true
+              }
+            },
+            manuelSatisDetay: {
+              include: {
+                product: {
+                  select: {
+                    name: true,
+                    productId: true
+                  }
+                }
+              }
+            }
+          },
+          orderBy: { tarih: 'desc' },
+          skip,
+          take: Number(limit)
+        }),
+        prisma.muhasebeHareketleri.count({ where: whereCondition })
+      ])
+
+      const formattedData = manuelSatislar.map(satis => ({
+        id: satis.id,
+        fisNumarasi: satis.fisNumarasi,
+        tarih: satis.tarih,
+        tutar: Number(satis.tutar),
+        aciklama: satis.aciklama,
+        store: satis.store,
+        urunSayisi: satis.manuelSatisDetay.length,
+        toplamMiktar: satis.manuelSatisDetay.reduce((sum, item) => sum + item.quantity, 0),
+        urunler: satis.manuelSatisDetay.map(item => ({
+          urunAdi: item.product.name,
+          miktar: item.quantity,
+          birimFiyat: Number(item.unitPrice),
+          toplamFiyat: Number(item.totalPrice)
+        }))
+      }))
+
+      return res.json({
+        success: true,
+        data: formattedData,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total,
+          totalPages: Math.ceil(total / Number(limit))
+        }
+      })
+    } catch (error: any) {
+      console.error('Manuel satış listesi hatası:', error)
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Manuel satış listesi getirilemedi'
       })
     }
   }
