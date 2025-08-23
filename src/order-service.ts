@@ -1817,11 +1817,11 @@ export class OrderService {
         };
       }
 
-      // Kullanıcı kontrolü (admin değilse sadece kendi siparişlerini işaretleyebilir)
-      if (!isAdmin && order.user_id !== userId) {
+      // Sadece admin kullanıcıları fiş yazdırma durumunu güncelleyebilir
+      if (!isAdmin) {
         return { 
           success: false, 
-          message: 'Bu siparişi işaretleme yetkiniz yok',
+          message: 'Fiş yazdırma işlemi sadece admin kullanıcıları tarafından yapılabilir',
           statusCode: 403
         };
       }
