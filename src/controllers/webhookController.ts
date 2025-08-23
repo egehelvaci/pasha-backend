@@ -148,7 +148,7 @@ export class WebhookController {
       }
 
       // Test webhook data'sı oluştur - gerçek hash ile (BAŞARILI)
-      const notificationId = `TEST_SUCCESS_${Date.now()}`;
+      const notificationId = `SUCCESS_${Date.now()}`;
       const paymentDate = new Date().toISOString();
       const hashParameters = 'OrderNumber|PaymentAmount|TransactionState';
       
@@ -433,7 +433,7 @@ export class WebhookController {
       }
 
       // Test webhook data'sı oluştur - gerçek hash ile (BAŞARISIZ)
-      const notificationId = `TEST_FAIL_${Date.now()}`;
+      const notificationId = `FAIL_${Date.now()}`;
       const paymentDate = new Date().toISOString();
       const hashParameters = 'OrderNumber|PaymentAmount|TransactionState';
       
