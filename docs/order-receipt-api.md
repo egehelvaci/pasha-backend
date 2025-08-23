@@ -18,16 +18,27 @@ Authorization: Bearer {token}
 - `orderId` (string, zorunlu): Fişi alınacak siparişin ID'si
 
 ## Kurallar
+
+### Kullanıcılar için:
 1. **Sadece onaylanmış siparişlerin fişi alınabilir**
    - CONFIRMED (Onaylandı)
-   - SHIPPED (Kargoya verildi)
+   - SHIPPED (Kargoya verildi) 
    - DELIVERED (Teslim edildi)
    - READY (Hazır)
 
-2. **Kullanıcı sadece kendi siparişinin fişini alabilir**
+2. **Sadece kendi siparişlerinin fişi alınabilir**
    - Başka kullanıcının sipariş fişi alınamaz
 
 3. **PENDING ve CANCELED siparişlerin fişi alınamaz**
+
+### Adminler için:
+1. **Tüm siparişlerin fişini alabilir**
+   - Herhangi bir kullanıcının siparişi
+   - Herhangi bir durumda (PENDING, CANCELED dahil)
+
+2. **Admin fiş numarası farklıdır**
+   - Admin fişleri: `ADM-FIS-ORDER123`
+   - Kullanıcı fişleri: `FIS-ORDER123`
 
 ## Fiş İçeriği
 

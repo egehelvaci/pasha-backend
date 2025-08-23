@@ -4,6 +4,7 @@ import { adminOrderController } from './admin-order-controller'
 import { adminStatisticsController } from './admin-statistics-controller'
 import { AdminPaymentController } from './admin-payment-controller'
 import { employeeStatsController } from '../employee-stats-controller'
+import { getOrderReceipt } from '../controllers/orderController'
 import { authMiddleware, authorizeRoles } from '../auth/auth-middleware'
 import storeRoutes from './store-routes'
 import productRulesRoutes from './product-rules-routes'
@@ -45,6 +46,7 @@ router.use('/cart', adminCartRoutes)
 router.get('/orders', adminOrderController.getAllOrders)
 router.get('/orders/stats', adminOrderController.getOrderStats)
 router.get('/orders/:orderId', adminOrderController.getOrderById)
+router.get('/orders/:orderId/receipt', getOrderReceipt)
 router.post('/orders/:orderId/confirm', adminOrderController.confirmOrder)
 
 // Admin sipariş oluşturma rotaları
