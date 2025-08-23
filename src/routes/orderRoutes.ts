@@ -5,7 +5,8 @@ import {
   checkCartLimits,
   getUserOrders,
   cancelOrder,
-  getOrderReceipt
+  getOrderReceipt,
+  markReceiptPrinted
 } from '../controllers/orderController';
 import { authMiddleware } from '../auth/auth-middleware';
 
@@ -31,5 +32,8 @@ router.put('/:orderId/cancel', cancelOrder);
 
 // Sipariş fişi al (onaylanan ve teslim edilenler için)
 router.get('/:orderId/receipt', getOrderReceipt);
+
+// Fiş yazdırma durumunu işaretle (sadece CONFIRMED ve DELIVERED siparişler için)
+router.put('/:orderId/mark-printed', markReceiptPrinted);
 
 export default router; 

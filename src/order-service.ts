@@ -1006,7 +1006,10 @@ export class OrderService {
   }
 
   // Kullanıcının siparişlerini listele
-  async getUserOrders(userId: string, page: number = 1, limit: number = 10) {
+  async getUserOrders(userId: string, page: number = 1, limit: number = 10, filters?: {
+    status?: string;
+    receiptPrinted?: boolean;
+  }) {
     try {
       const skip = (page - 1) * limit;
       
@@ -1020,7 +1023,7 @@ export class OrderService {
         throw new Error('Kullanıcı bulunamadı');
       }
 
-      let whereCondition: any;
+      let whereCondition: any = {};
 
       // Eğer kullanıcı bir mağazaya bağlıysa, o mağazadaki tüm siparişleri getir
       if (user.store_id) {
@@ -1032,16 +1035,25 @@ export class OrderService {
 
         const storeUserIds = storeUsers.map(u => u.userId);
 
-        whereCondition = {
-          user_id: {
-            in: storeUserIds
-          }
+        whereCondition.user_id = {
+          in: storeUserIds
         };
       } else {
         // Kullanıcı mağazaya bağlı değilse sadece kendi siparişlerini getir
-        whereCondition = {
-          user_id: userId
+        whereCondition.user_id = userId;
+      }
+
+      // Filtreleri uygula
+      if (filters?.status) {
+        whereCondition.status = filters.status;
+      }
+
+      // Fiş yazdırma filtresi - sadece CONFIRMED ve DELIVERED siparişler için geçerli
+      if (filters?.receiptPrinted !== undefined) {
+        whereCondition.status = {
+          in: ['CONFIRMED', 'DELIVERED']
         };
+        whereCondition.receipt_printed = filters.receiptPrinted;
       }
       
       const orders = await prisma.order.findMany({
@@ -1775,6 +1787,91 @@ export class OrderService {
       return {
         success: false,
         message: error.message || 'Sipariş fişi hazırlanırken bir hata oluştu',
+        statusCode: 500
+      };
+    }
+  }
+
+  /**
+   * Fiş yazdırma durumunu güncelle
+   */
+  async markReceiptPrinted(orderId: string, userId: string, isAdmin: boolean = false) {
+    try {
+      // Siparişi kontrol et
+      const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        select: {
+          id: true,
+          user_id: true,
+          status: true,
+          receipt_printed: true,
+          receipt_printed_at: true
+        }
+      });
+
+      if (!order) {
+        return { 
+          success: false, 
+          message: 'Sipariş bulunamadı',
+          statusCode: 404
+        };
+      }
+
+      // Kullanıcı kontrolü (admin değilse sadece kendi siparişlerini işaretleyebilir)
+      if (!isAdmin && order.user_id !== userId) {
+        return { 
+          success: false, 
+          message: 'Bu siparişi işaretleme yetkiniz yok',
+          statusCode: 403
+        };
+      }
+
+      // Sadece onaylanan ve teslim edilen siparişlerin fişi yazdırılabilir
+      if (!['CONFIRMED', 'DELIVERED'].includes(order.status)) {
+        return { 
+          success: false, 
+          message: `${order.status} durumundaki siparişin fişi yazdırılamaz. Sadece onaylanmış (CONFIRMED) veya teslim edilmiş (DELIVERED) siparişlerin fişi yazdırılabilir.`,
+          statusCode: 400
+        };
+      }
+
+      // Zaten yazdırılmışsa uyarı ver
+      if (order.receipt_printed) {
+        return { 
+          success: false, 
+          message: 'Bu siparişin fişi zaten yazdırılmış',
+          statusCode: 400
+        };
+      }
+
+      // Fiş yazdırma durumunu güncelle
+      const updatedOrder = await prisma.order.update({
+        where: { id: orderId },
+        data: {
+          receipt_printed: true,
+          receipt_printed_at: new Date()
+        },
+        select: {
+          id: true,
+          status: true,
+          receipt_printed: true,
+          receipt_printed_at: true,
+          total_price: true,
+          created_at: true
+        }
+      });
+
+      return {
+        success: true,
+        message: 'Fiş yazdırma durumu başarıyla güncellendi',
+        order: updatedOrder
+      };
+
+    } catch (error: any) {
+      console.error('Fiş yazdırma durumu güncelleme hatası:', error);
+      return {
+        success: false,
+        message: error.message || 'Fiş yazdırma durumu güncellenirken bir hata oluştu',
         statusCode: 500
       };
     }

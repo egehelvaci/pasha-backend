@@ -90,8 +90,22 @@ export const getUserOrders = async (req: Request, res: Response) => {
 
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
+    const status = req.query.status as string;
+    
+    // Fiş yazdırma filtresi
+    let receiptPrinted: boolean | undefined;
+    if (req.query.receiptPrinted === 'true') {
+      receiptPrinted = true;
+    } else if (req.query.receiptPrinted === 'false') {
+      receiptPrinted = false;
+    }
 
-    const orders = await orderService.getUserOrders(userId, page, limit);
+    const filters = {
+      status,
+      receiptPrinted
+    };
+
+    const orders = await orderService.getUserOrders(userId, page, limit, filters);
 
     return res.status(200).json({
       success: true,
@@ -304,6 +318,54 @@ export const getOrderReceipt = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: error.message || 'Sipariş fişi alınırken bir hata oluştu'
+    });
+  }
+};
+
+// Fiş yazdırma durumunu güncelle (sadece CONFIRMED ve DELIVERED siparişler için)
+export const markReceiptPrinted = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.userId;
+    const userType = (req as any).user?.userType;
+    const orderId = req.params.orderId;
+    
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Kullanıcı kimlik doğrulaması gerekli'
+      });
+    }
+
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Sipariş ID gerekli'
+      });
+    }
+
+    // Admin kontrolü
+    const isAdmin = userType === 'admin';
+    
+    const result = await orderService.markReceiptPrinted(orderId, userId, isAdmin);
+
+    if (!result.success) {
+      return res.status(result.statusCode || 400).json({
+        success: false,
+        message: result.message
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Fiş yazdırma durumu güncellendi',
+      data: result.order
+    });
+
+  } catch (error: any) {
+    console.error('Fiş yazdırma durumu güncelleme hatası:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Fiş yazdırma durumu güncellenirken bir hata oluştu'
     });
   }
 }; 
