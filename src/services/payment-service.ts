@@ -99,6 +99,24 @@ export class PaymentService {
    */
   private async getFirstStoreAddress(storeId: string): Promise<string> {
     try {
+      console.log(`🏠 Mağaza (${storeId}) için adres bilgisi alınıyor...`);
+      
+      // Önce mağazanın tüm adreslerini kontrol et
+      const allAddresses = await prisma.storeAddress.findMany({
+        where: {
+          store_id: storeId
+        }
+      });
+      
+      console.log(`📋 Mağaza ${storeId} için toplam ${allAddresses.length} adres bulundu:`, 
+        allAddresses.map(addr => ({ 
+          id: addr.id, 
+          title: addr.title, 
+          is_active: addr.is_active, 
+          is_default: addr.is_default 
+        }))
+      );
+
       const firstAddress = await prisma.storeAddress.findFirst({
         where: {
           store_id: storeId,
@@ -111,8 +129,32 @@ export class PaymentService {
       });
 
       if (!firstAddress) {
-        return 'Adres bilgisi bulunamadı';
+        console.log(`❌ Mağaza ${storeId} için aktif adres bulunamadı`);
+        
+        // Mağaza bilgisini al ve varsayılan adres oluşturmayı dene
+        try {
+          const store = await prisma.store.findUnique({
+            where: { store_id: storeId },
+            select: { kurum_adi: true, adres: true }
+          });
+          
+          if (store && store.adres) {
+            console.log(`🔧 Mağaza ${storeId} için mağaza tablosundaki adres kullanılıyor: ${store.adres}`);
+            return store.adres;
+          }
+        } catch (error) {
+          console.error('Mağaza adres bilgisi alınamadı:', error);
+        }
+        
+        return 'Varsayılan adres';
       }
+
+      console.log(`✅ Mağaza ${storeId} için seçilen adres:`, {
+        id: firstAddress.id,
+        title: firstAddress.title,
+        address: firstAddress.address,
+        is_default: firstAddress.is_default
+      });
 
       // Adres formatı: başlık - tam adres, şehir/ilçe, posta kodu
       const parts = [firstAddress.address];
@@ -120,7 +162,10 @@ export class PaymentService {
       if (firstAddress.city) parts.push(firstAddress.city);
       if (firstAddress.postal_code) parts.push(firstAddress.postal_code);
 
-      return parts.join(', ');
+      const formattedAddress = parts.join(', ');
+      console.log(`📍 Formatlanmış adres: ${formattedAddress}`);
+      
+      return formattedAddress;
     } catch (error) {
       console.error('Mağaza adresi alma hatası:', error);
       return 'Adres bilgisi alınamadı';
