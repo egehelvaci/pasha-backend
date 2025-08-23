@@ -260,6 +260,7 @@ export const cancelOrder = async (req: Request, res: Response) => {
 export const getOrderReceipt = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.userId;
+    const userType = (req as any).user?.userType;
     const orderId = req.params.orderId;
     
     if (!userId) {
@@ -276,7 +277,10 @@ export const getOrderReceipt = async (req: Request, res: Response) => {
       });
     }
 
-    const result = await orderService.getOrderReceipt(orderId, userId);
+    // Admin kontrolü
+    const isAdmin = userType === 'admin';
+    
+    const result = await orderService.getOrderReceipt(orderId, userId, isAdmin);
 
     if (!result.success) {
       return res.status(result.statusCode || 400).json({

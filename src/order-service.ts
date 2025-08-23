@@ -1459,7 +1459,7 @@ export class OrderService {
   }
 
   // Sipariş fişi al (onaylanan ve teslim edilenler için)
-  async getOrderReceipt(orderId: string, userId: string): Promise<{
+  async getOrderReceipt(orderId: string, userId: string, isAdmin?: boolean): Promise<{
     success: boolean;
     message: string;
     statusCode?: number;
@@ -1495,8 +1495,8 @@ export class OrderService {
         };
       }
 
-      // Kullanıcı sadece kendi siparişinin fişini alabilir
-      if (order.user_id !== userId) {
+      // Admin değilse, kullanıcı sadece kendi siparişinin fişini alabilir
+      if (!isAdmin && order.user_id !== userId) {
         return { 
           success: false, 
           message: 'Bu siparişin fişini alma yetkiniz yok',
@@ -1504,8 +1504,8 @@ export class OrderService {
         };
       }
 
-      // Sadece onaylanan veya teslim edilen siparişlerin fişi alınabilir
-      if (!['CONFIRMED', 'SHIPPED', 'DELIVERED', 'READY'].includes(order.status)) {
+      // Admin değilse, sadece onaylanan veya teslim edilen siparişlerin fişi alınabilir
+      if (!isAdmin && !['CONFIRMED', 'SHIPPED', 'DELIVERED', 'READY'].includes(order.status)) {
         return { 
           success: false, 
           message: `${order.status} durumundaki siparişin fişi alınamaz. Sadece onaylanmış veya teslim edilmiş siparişlerin fişi alınabilir.`,
@@ -1613,9 +1613,10 @@ export class OrderService {
 
         // Fiş bilgileri
         fis: {
-          fisNumarasi: `FIS-${order.id.substring(0, 8).toUpperCase()}`,
+          fisNumarasi: `${isAdmin ? 'ADM-' : ''}FIS-${order.id.substring(0, 8).toUpperCase()}`,
           olusturmaTarihi: new Date(),
-          gecerlilikTarihi: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // 1 yıl geçerli
+          gecerlilikTarihi: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 yıl geçerli
+          adminFisi: isAdmin || false
         }
       };
 
@@ -1634,6 +1635,7 @@ export class OrderService {
       };
     }
   }
+
 }
 
 export const orderService = new OrderService(); 
