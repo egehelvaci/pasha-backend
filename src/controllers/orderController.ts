@@ -27,12 +27,13 @@ export const createOrderFromCart = async (req: Request, res: Response) => {
       });
     }
 
-    const { notes } = req.body;
+    const { notes, address_id } = req.body;
 
     const orderData: CreateOrderFromCartRequest = {
       user_id: userId,
       cart_id: cart.id,
-      notes
+      notes,
+      address_id
     };
 
     const result = await orderService.createOrderFromCart(orderData);

@@ -421,7 +421,7 @@ export class AdminCartController {
         });
       }
 
-      const { targetUserId, storeId, notes } = req.body;
+      const { targetUserId, storeId, notes, address_id } = req.body;
 
       if (!targetUserId || !storeId) {
         return res.status(400).json({
@@ -478,7 +478,7 @@ export class AdminCartController {
       const orderResult = await orderService.createOrderFromAdminCart({
         user_id: targetUserId,
         admin_cart_id: adminCart.id, // Admin sepet ID'sini kullan
-        // delivery_address artık kullanılmıyor - adres sistemi değişti
+        address_id: address_id, // Seçilen adres ID'si
         store_name: targetUser.Store.kurum_adi,
         store_tax_number: targetUser.Store.vergi_numarasi || undefined,
         store_tax_office: targetUser.Store.vergi_dairesi || undefined,

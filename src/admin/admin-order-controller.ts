@@ -1406,7 +1406,7 @@ export class AdminOrderController {
    */
   async processAdminOrder(req: Request, res: Response) {
     try {
-      const { store_id, user_id, items, notes } = req.body
+      const { store_id, user_id, items, notes, address_id } = req.body
 
       // Zorunlu alanları kontrol et
       if (!store_id || !user_id || !items || !Array.isArray(items) || items.length === 0) {
@@ -1439,6 +1439,7 @@ export class AdminOrderController {
         user_id,
         store_id,
         notes,
+        address_id,
         items: items.map((item: any) => ({
           product_id: item.product_id,
           quantity: item.quantity,

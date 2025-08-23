@@ -14,7 +14,8 @@ const PRICE_LIST_MINIMUM_THRESHOLD = 1500;
 export interface CreateOrderFromCartRequest {
   user_id: string;
   cart_id: number;
-  delivery_address?: string;
+  address_id?: string;  // StoreAddress ID'si
+  delivery_address?: string; // Geriye uyumluluk için
   store_name?: string;
   store_tax_number?: string;
   store_tax_office?: string;
@@ -24,7 +25,8 @@ export interface CreateOrderFromCartRequest {
 export interface CreateOrderFromAdminCartRequest {
   user_id: string;
   admin_cart_id: number;
-  delivery_address?: string;
+  address_id?: string;  // StoreAddress ID'si
+  delivery_address?: string; // Geriye uyumluluk için
   store_name?: string;
   store_tax_number?: string;
   store_tax_office?: string;
@@ -33,7 +35,8 @@ export interface CreateOrderFromAdminCartRequest {
 
 export interface CreateOrderRequest {
   user_id: string;
-  delivery_address_id?: string;
+  address_id?: string;  // StoreAddress ID'si
+  delivery_address_id?: string; // Geriye uyumluluk için
   notes?: string;
   items: {
     product_id: string;
@@ -49,6 +52,7 @@ export interface CreateOrderRequest {
 export interface CreateAdminOrderRequest {
   user_id: string;
   store_id: string;
+  address_id?: string;  // StoreAddress ID'si
   notes?: string;
   items: {
     product_id: string;
@@ -70,6 +74,35 @@ export interface OrderValidationResult {
 }
 
 export class OrderService {
+
+  /**
+   * Address ID'den adres bilgisini alır ve delivery_address formatında döndürür
+   */
+  private async getDeliveryAddressFromId(addressId: string): Promise<string | null> {
+    try {
+      const address = await prisma.storeAddress.findUnique({
+        where: { 
+          id: addressId,
+          is_active: true 
+        }
+      });
+
+      if (!address) {
+        return null;
+      }
+
+      // Adres bilgisini tek satırda birleştir
+      const parts = [address.address];
+      if (address.district) parts.push(address.district);
+      if (address.city) parts.push(address.city);
+      if (address.postal_code) parts.push(address.postal_code);
+
+      return parts.join(', ');
+    } catch (error) {
+      console.error('Adres bilgisi alınamadı:', error);
+      return null;
+    }
+  }
   
   // Sepet limitlerini kontrol et (sadece validasyon)
   async validateCartLimits(userId: string, cartId: number): Promise<{
@@ -219,6 +252,14 @@ export class OrderService {
         };
       }
 
+      // Seçilen adresi al ve delivery_address'i ayarla
+      let deliveryAddress: string | null = null;
+      if (orderData.address_id) {
+        deliveryAddress = await this.getDeliveryAddressFromId(orderData.address_id);
+      } else if (orderData.delivery_address) {
+        deliveryAddress = orderData.delivery_address; // Geriye uyumluluk
+      }
+
       // Sipariş oluştur
       const order = await prisma.order.create({
         data: {
@@ -226,6 +267,7 @@ export class OrderService {
           cart_id: orderData.cart_id,
           total_price: cartTotal,
           status: OrderStatus.PENDING,
+          address_id: orderData.address_id || null,
           
           // Adres sistemi artık store-based olarak değişti
           store_name: user.Store.kurum_adi,
@@ -259,7 +301,8 @@ export class OrderService {
             }
           },
           user: true,
-          cart: true
+          cart: true,
+          address: true
         }
       });
 
@@ -370,6 +413,14 @@ export class OrderService {
         };
       }
 
+      // Seçilen adresi al ve delivery_address'i ayarla
+      let deliveryAddress: string | null = null;
+      if (orderData.address_id) {
+        deliveryAddress = await this.getDeliveryAddressFromId(orderData.address_id);
+      } else if (orderData.delivery_address) {
+        deliveryAddress = orderData.delivery_address; // Geriye uyumluluk
+      }
+
       // Sipariş oluştur
       const order = await prisma.order.create({
         data: {
@@ -377,6 +428,7 @@ export class OrderService {
           cart_id: orderData.admin_cart_id, // Admin sepet ID'sini kullan
           total_price: cartTotal,
           status: OrderStatus.PENDING,
+          address_id: orderData.address_id || null,
           
           // Adres sistemi artık store-based olarak değişti
           store_name: orderData.store_name || user.Store.kurum_adi,
@@ -410,7 +462,8 @@ export class OrderService {
             }
           },
           user: true,
-          cart: true
+          cart: true,
+          address: true
         }
       });
 
@@ -561,6 +614,12 @@ export class OrderService {
         })
       });
 
+      // Seçilen adresi al ve delivery_address'i ayarla
+      let deliveryAddress: string | null = null;
+      if (orderData.address_id) {
+        deliveryAddress = await this.getDeliveryAddressFromId(orderData.address_id);
+      }
+
       // Sipariş oluştur
       const order = await prisma.order.create({
         data: {
@@ -568,6 +627,7 @@ export class OrderService {
           cart_id: tempCart.id,
           total_price: orderTotal,
           status: OrderStatus.PENDING,
+          address_id: orderData.address_id || null,
           
           // Adres sistemi artık store-based olarak değişti
           store_name: user.Store.kurum_adi,
@@ -601,7 +661,8 @@ export class OrderService {
             }
           },
           user: true,
-          cart: true
+          cart: true,
+          address: true
         }
       });
 
@@ -859,7 +920,8 @@ export class OrderService {
             }
           },
           user: true,
-          cart: true
+          cart: true,
+          address: true
         }
       });
 
@@ -1494,7 +1556,8 @@ export class OrderService {
                 }
               }
             }
-          }
+          },
+          address: true
         }
       });
 
@@ -1562,7 +1625,7 @@ export class OrderService {
           soyad: order.user.surname,
           email: order.user.email,
           telefon: order.user.phoneNumber,
-          adres: null // Adres sistemi artık store-based olarak değişti
+          adres: order.address ? `${order.address.title}: ${order.address.address}, ${order.address.district || ''} ${order.address.city || ''}`.trim() : null
         },
 
         // Mağaza bilgileri
