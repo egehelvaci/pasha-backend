@@ -430,6 +430,13 @@ export class AdminCartController {
         });
       }
 
+      if (!address_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Admin sipariş oluştururken adres seçimi zorunludur'
+        });
+      }
+
       // Hedef kullanıcının varlığını ve mağaza bilgilerini kontrol et
       const targetUser = await prisma.user.findUnique({
         where: { userId: targetUserId },

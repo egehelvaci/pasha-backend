@@ -78,7 +78,8 @@ export class AdminOrderController {
                 },
                 product: true
               }
-            }
+            },
+            address: true
           },
           orderBy,
           skip,
@@ -179,7 +180,8 @@ export class AdminOrderController {
               },
               product: true
             }
-          }
+          },
+          address: true
         }
       })
 
@@ -1413,6 +1415,13 @@ export class AdminOrderController {
         return res.status(400).json({
           success: false,
           message: 'store_id, user_id ve items alanları zorunludur'
+        })
+      }
+
+      if (!address_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Admin sipariş oluştururken adres seçimi zorunludur'
         })
       }
 

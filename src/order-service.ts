@@ -103,6 +103,66 @@ export class OrderService {
       return null;
     }
   }
+
+  /**
+   * Mağazanın default adresini getirir
+   */
+  private async getDefaultStoreAddress(storeId: string): Promise<{ id: string; address: string } | null> {
+    try {
+      const defaultAddress = await prisma.storeAddress.findFirst({
+        where: { 
+          store_id: storeId,
+          is_default: true,
+          is_active: true 
+        }
+      });
+
+      if (!defaultAddress) {
+        // Default adres yoksa, ilk aktif adresi al
+        const firstAddress = await prisma.storeAddress.findFirst({
+          where: { 
+            store_id: storeId,
+            is_active: true 
+          },
+          orderBy: { created_at: 'asc' }
+        });
+
+        if (!firstAddress) {
+          return null;
+        }
+
+        // İlk adresi default yap
+        await prisma.storeAddress.update({
+          where: { id: firstAddress.id },
+          data: { is_default: true }
+        });
+
+        return {
+          id: firstAddress.id,
+          address: this.formatStoreAddress(firstAddress)
+        };
+      }
+
+      return {
+        id: defaultAddress.id,
+        address: this.formatStoreAddress(defaultAddress)
+      };
+    } catch (error) {
+      console.error('Default adres alırken hata:', error);
+      return null;
+    }
+  }
+
+  /**
+   * StoreAddress nesnesini formatlanmış string'e çevirir
+   */
+  private formatStoreAddress(address: any): string {
+    const parts = [address.address];
+    if (address.district) parts.push(address.district);
+    if (address.city) parts.push(address.city);
+    if (address.postal_code) parts.push(address.postal_code);
+    return parts.join(', ');
+  }
   
   // Sepet limitlerini kontrol et (sadece validasyon)
   async validateCartLimits(userId: string, cartId: number): Promise<{
@@ -254,10 +314,19 @@ export class OrderService {
 
       // Seçilen adresi al ve delivery_address'i ayarla
       let deliveryAddress: string | null = null;
+      let finalAddressId: string | null = orderData.address_id || null;
+      
       if (orderData.address_id) {
         deliveryAddress = await this.getDeliveryAddressFromId(orderData.address_id);
       } else if (orderData.delivery_address) {
         deliveryAddress = orderData.delivery_address; // Geriye uyumluluk
+      } else {
+        // Adres belirtilmediyse default adresi kullan
+        const defaultAddress = await this.getDefaultStoreAddress(user.Store.store_id);
+        if (defaultAddress) {
+          finalAddressId = defaultAddress.id;
+          deliveryAddress = defaultAddress.address;
+        }
       }
 
       // Sipariş oluştur
@@ -267,7 +336,7 @@ export class OrderService {
           cart_id: orderData.cart_id,
           total_price: cartTotal,
           status: OrderStatus.PENDING,
-          address_id: orderData.address_id || null,
+          address_id: finalAddressId,
           
           // Adres sistemi artık store-based olarak değişti
           store_name: user.Store.kurum_adi,
@@ -994,7 +1063,8 @@ export class OrderService {
               email: true,
               username: true
             }
-          }
+          },
+          address: true
         },
         orderBy: { created_at: 'desc' },
         skip,
