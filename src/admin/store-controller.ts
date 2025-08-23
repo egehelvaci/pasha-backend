@@ -67,12 +67,6 @@ export class StoreController {
         }
       })
       
-      // Debug: İlk mağazanın store_type'ını logla
-      if (stores.length > 0) {
-        console.log('🔍 Debug - İlk mağaza store_type:', stores[0].store_type);
-        console.log('🔍 Debug - İlk mağaza kurum_adi:', stores[0].kurum_adi);
-      }
-
       // Response formatını düzenle
       const formattedStores = stores.map(store => ({
         store_id: store.store_id,
