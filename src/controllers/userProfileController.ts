@@ -56,7 +56,6 @@ export class UserProfileController {
             username: user.username,
             email: user.email,
             phoneNumber: user.phoneNumber,
-            adres: user.adres,
             isActive: user.isActive,
             createdAt: user.createdAt,
             userType: user.userType.name
@@ -71,7 +70,6 @@ export class UserProfileController {
             yetkili_soyadi: user.Store.yetkili_soyadi,
             telefon: user.Store.telefon,
             eposta: user.Store.eposta,
-            adres: user.adres,
             faks_numarasi: user.Store.faks_numarasi,
             is_active: user.Store.is_active,
             created_at: user.Store.created_at
@@ -125,7 +123,6 @@ export class UserProfileController {
         yetkili_soyadi,
         telefon,
         eposta,
-        adres,
         faks_numarasi
       } = req.body
 
@@ -254,7 +251,6 @@ export class UserProfileController {
           yetkili_soyadi: updatedStore.yetkili_soyadi,
           telefon: updatedStore.telefon,
           eposta: updatedStore.eposta,
-          adres: user.adres,
           faks_numarasi: updatedStore.faks_numarasi,
           updated_at: updatedStore.updated_at
         }
@@ -394,7 +390,6 @@ export class UserProfileController {
    * @body {string} profileData.name - Ad (opsiyonel)
    * @body {string} profileData.surname - Soyad (opsiyonel)
    * @body {string} profileData.phoneNumber - Telefon numarası (opsiyonel)
-   * @body {string} profileData.adres - Adres (opsiyonel)
    */
   async updateMyProfile(req: Request, res: Response) {
     try {
@@ -410,8 +405,7 @@ export class UserProfileController {
       const {
         name,
         surname,
-        phoneNumber,
-        adres
+        phoneNumber
       } = req.body
 
       // Kullanıcının mevcut bilgilerini al
@@ -453,10 +447,6 @@ export class UserProfileController {
         updateData.phoneNumber = phoneNumber?.trim() || null
       }
 
-      if (adres !== undefined) {
-        updateData.adres = adres?.trim() || null
-      }
-
       // Kullanıcı bilgilerini güncelle
       const updatedUser = await prisma.user.update({
         where: { userId },
@@ -468,7 +458,6 @@ export class UserProfileController {
           username: true,
           email: true,
           phoneNumber: true,
-          adres: true,
           isActive: true,
           createdAt: true,
           userType: {

@@ -27,7 +27,6 @@ model User {
   username            String                @unique
   userTypeId          Int                   @map("user_type_id")
   store_id            String?               @db.Uuid
-  adres               String?
   orders              Order[]
   userType            UserType              @relation(fields: [userTypeId], references: [id])
   Store               Store?                @relation(fields: [store_id], references: [store_id], onUpdate: NoAction, map: "fk_user_store")
@@ -127,6 +126,7 @@ model Store {
   paymentSessions     PaymentSession[]
   paymentTransactions PaymentTransaction[]
   installmentLimits   StoreInstallmentLimit?
+  addresses           StoreAddress[]
 }
 
 model StorePriceList {
@@ -293,7 +293,7 @@ model Order {
   cart_id            Int                 @unique
   total_price        Decimal             @db.Decimal(12, 2)
   status             OrderStatus         @default(PENDING)
-  delivery_address   String?
+  address_id         String?             // StoreAddress ID'si
   store_name         String?
   store_tax_number   String?
   store_tax_office   String?
@@ -304,6 +304,7 @@ model Order {
   updated_at         DateTime            @updatedAt
   cart               carts               @relation(fields: [cart_id], references: [id])
   user               User                @relation(fields: [user_id], references: [userId])
+  address            StoreAddress?       @relation("OrderAddress", fields: [address_id], references: [id])
   items              OrderItem[]
   qr_codes           QRCode[]
   employeeOrderStats EmployeeOrderStats? @relation("OrderEmployeeStats")
@@ -517,6 +518,25 @@ model NotificationHistory {
   user     User?    @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@map("notification_history")
+}
+
+model StoreAddress {
+  id          String   @id @default(uuid())
+  store_id    String   @db.Uuid
+  title       String   // "Ana Mağaza", "Depo", "Şube 1" gibi
+  address     String   // Tam adres
+  city        String?  // Şehir
+  district    String?  // İlçe
+  postal_code String?  // Posta kodu
+  is_default  Boolean  @default(false) // Varsayılan adres
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  
+  store       Store    @relation(fields: [store_id], references: [store_id], onDelete: Cascade)
+  orders      Order[]  @relation("OrderAddress")
+
+  @@map("store_addresses")
 }
 
 enum OrderStatus {

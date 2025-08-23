@@ -35,8 +35,7 @@ router.put('/store', userProfileController.updateStoreProfile)
  * Body: {
  *   name?: string,
  *   surname?: string,
- *   phoneNumber?: string,
- *   adres?: string
+ *   phoneNumber?: string
  * }
  */
 router.put('/me', userProfileController.updateMyProfile)

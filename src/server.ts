@@ -12,6 +12,7 @@ import authRoutes from './auth/auth-routes'
 import storeRoutes from './admin/store-routes'
 import storeStatisticsRoutes from './routes/storeStatisticsRoutes'
 import userProfileRoutes from './routes/userProfileRoutes'
+import storeAddressRoutes from './routes/storeAddressRoutes'
 import paymentRoutes from './routes/paymentRoutes'
 import employeeAssignmentRoutes from './routes/employeeAssignmentRoutes'
 import employeeStatsRoutes from './routes/employeeStatsRoutes'
@@ -70,6 +71,7 @@ app.use('/api/admin', adminRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/stores', storeRoutes)
 app.use('/api/profile', userProfileRoutes)
+app.use('/api/store-addresses', storeAddressRoutes)
 app.use('/api/my-statistics', storeStatisticsRoutes)
 app.use('/api/payments', paymentRoutes)
 app.use('/api/employee-assignment', employeeAssignmentRoutes)
