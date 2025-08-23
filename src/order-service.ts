@@ -227,8 +227,7 @@ export class OrderService {
           total_price: cartTotal,
           status: OrderStatus.PENDING,
           
-          // Kullanıcı adres bilgilerini ekle
-          delivery_address: user.adres,
+          // Adres sistemi artık store-based olarak değişti
           store_name: user.Store.kurum_adi,
           store_tax_number: user.Store.vergi_numarasi,
           store_tax_office: user.Store.vergi_dairesi,
@@ -379,8 +378,7 @@ export class OrderService {
           total_price: cartTotal,
           status: OrderStatus.PENDING,
           
-          // Kullanıcı adres bilgilerini ekle
-          delivery_address: orderData.delivery_address || user.adres,
+          // Adres sistemi artık store-based olarak değişti
           store_name: orderData.store_name || user.Store.kurum_adi,
           store_tax_number: orderData.store_tax_number || user.Store.vergi_numarasi,
           store_tax_office: orderData.store_tax_office || user.Store.vergi_dairesi,
@@ -504,10 +502,7 @@ export class OrderService {
         return { success: false, message: 'Mağaza aktif değil' };
       }
 
-      // Kullanıcı adres bilgisi kontrolü
-      if (!user.adres) {
-        return { success: false, message: 'Kullanıcının adres bilgisi bulunamadı' };
-      }
+      // Adres sistemi artık store-based olarak değişti - kontrol kaldırıldı
 
       // Sipariş items'larını kontrol et
       if (!orderData.items || orderData.items.length === 0) {
@@ -574,8 +569,7 @@ export class OrderService {
           total_price: orderTotal,
           status: OrderStatus.PENDING,
           
-          // Kullanıcı adres bilgilerini ekle
-          delivery_address: user.adres,
+          // Adres sistemi artık store-based olarak değişti
           store_name: user.Store.kurum_adi,
           store_tax_number: user.Store.vergi_numarasi,
           store_tax_office: user.Store.vergi_dairesi,
@@ -1568,7 +1562,7 @@ export class OrderService {
           soyad: order.user.surname,
           email: order.user.email,
           telefon: order.user.phoneNumber,
-          adres: order.user.adres
+          adres: null // Adres sistemi artık store-based olarak değişti
         },
 
         // Mağaza bilgileri

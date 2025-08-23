@@ -478,7 +478,7 @@ export class AdminCartController {
       const orderResult = await orderService.createOrderFromAdminCart({
         user_id: targetUserId,
         admin_cart_id: adminCart.id, // Admin sepet ID'sini kullan
-        delivery_address: targetUser.adres || '',
+        // delivery_address artık kullanılmıyor - adres sistemi değişti
         store_name: targetUser.Store.kurum_adi,
         store_tax_number: targetUser.Store.vergi_numarasi || undefined,
         store_tax_office: targetUser.Store.vergi_dairesi || undefined,

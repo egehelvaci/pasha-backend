@@ -126,7 +126,7 @@ export class AuthService {
           tckn: user.Store.tckn,
           telefon: user.Store.telefon,
           eposta: user.Store.eposta,
-          adres: user.adres,
+          adres: null, // Adres sistemi artık store-based olarak değişti
           bakiye: user.Store.bakiye || 0,
           acik_hesap_tutari: user.Store.acik_hesap_tutari || 0,
           maksimum_taksit: user.Store.maksimum_taksit || 1,

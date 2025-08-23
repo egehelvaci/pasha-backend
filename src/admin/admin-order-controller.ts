@@ -1244,13 +1244,7 @@ export class AdminOrderController {
         })
       }
 
-      // Kullanıcı adres bilgisi kontrolü
-      if (!user.adres) {
-        return res.status(400).json({
-          success: false,
-          message: 'Kullanıcının adres bilgisi bulunamadı'
-        })
-      }
+      // Adres sistemi artık store-based olarak değişti - kontrol kaldırıldı
 
       // Mağazaya atanmış fiyat listesini al
       const storePriceList = await prisma.storePriceList.findFirst({
@@ -1371,7 +1365,7 @@ export class AdminOrderController {
             surname: user.surname,
             email: user.email,
             phoneNumber: user.phoneNumber,
-            adres: user.adres,
+            adres: null, // Adres sistemi artık store-based olarak değişti
             userType: user.userType.name
           },
           store: {

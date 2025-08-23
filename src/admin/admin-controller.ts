@@ -165,8 +165,7 @@ export class AdminController {
           surname,
           phoneNumber: phoneNumber || null,
           userTypeId: parseInt(finalUserTypeId),
-          store_id: finalStoreId,
-          adres: adres || null
+          store_id: finalStoreId
         },
         include: {
           userType: true,

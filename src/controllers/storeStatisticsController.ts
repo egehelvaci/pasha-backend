@@ -68,7 +68,7 @@ export class StoreStatisticsController {
           tckn: store.tckn,
           telefon: store.telefon,
           eposta: store.eposta,
-          adres: user.adres
+          adres: null // Adres sistemi artık store-based olarak değişti
         },
           balance_info: {
             bakiye: bakiye,

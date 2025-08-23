@@ -423,8 +423,8 @@ export class StoreAddressController {
           })
         }
 
-        // Başka bir adresi varsayılan yap
-        await prisma.storeAddress.updateMany({
+        // Başka bir adresi varsayılan yap - en eski adresi bul ve varsayılan yap
+        const firstAddress = await prisma.storeAddress.findFirst({
           where: {
             store_id: existingAddress.store_id,
             is_active: true,
@@ -432,12 +432,19 @@ export class StoreAddressController {
               not: addressId
             }
           },
-          data: {
-            is_default: true
-          },
-          // En eski adresi varsayılan yap
-          take: 1
+          orderBy: {
+            created_at: 'asc'
+          }
         })
+        
+        if (firstAddress) {
+          await prisma.storeAddress.update({
+            where: { id: firstAddress.id },
+            data: {
+              is_default: true
+            }
+          })
+        }
       }
 
       // Soft delete

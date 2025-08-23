@@ -55,7 +55,6 @@ export class StoreController {
               username: true,
               email: true,
               phoneNumber: true,
-              adres: true,
               isActive: true,
               createdAt: true,
               userType: {
