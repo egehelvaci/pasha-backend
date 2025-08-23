@@ -46,6 +46,7 @@ export interface PaymentRequestData {
     companyName: string;
     taxNumber: string;
     taxOffice: string;
+    address?: string; // Mağaza adresi
   };
 }
 
@@ -91,6 +92,39 @@ export class PaymentService {
     }
 
     return store;
+  }
+
+  /**
+   * Mağazanın ilk adresini (index 0) getirir
+   */
+  private async getFirstStoreAddress(storeId: string): Promise<string> {
+    try {
+      const firstAddress = await prisma.storeAddress.findFirst({
+        where: {
+          store_id: storeId,
+          is_active: true
+        },
+        orderBy: [
+          { is_default: 'desc' },
+          { created_at: 'asc' }
+        ]
+      });
+
+      if (!firstAddress) {
+        return 'Adres bilgisi bulunamadı';
+      }
+
+      // Adres formatı: başlık - tam adres, şehir/ilçe, posta kodu
+      const parts = [firstAddress.address];
+      if (firstAddress.district) parts.push(firstAddress.district);
+      if (firstAddress.city) parts.push(firstAddress.city);
+      if (firstAddress.postal_code) parts.push(firstAddress.postal_code);
+
+      return parts.join(', ');
+    } catch (error) {
+      console.error('Mağaza adresi alma hatası:', error);
+      return 'Adres bilgisi alınamadı';
+    }
   }
 
   /**
@@ -204,6 +238,9 @@ export class PaymentService {
     const userPhone = user.phoneNumber || store.telefon;
     const cleanPhone = this.cleanPhoneNumber(userPhone);
 
+    // Mağazanın ilk adresini al
+    const storeAddress = await this.getFirstStoreAddress(input.storeId);
+
     // Payment request data'sını oluştur
     const paymentRequest: PaymentRequestData = {
       expireDate: expireDate.toISOString(),
@@ -230,7 +267,8 @@ export class PaymentService {
         email: user.email || store.eposta || "bilgi@example.com",
         companyName: store.kurum_adi,
         taxNumber: store.vergi_numarasi || "1111111111",
-        taxOffice: store.vergi_dairesi || "Merkez"
+        taxOffice: store.vergi_dairesi || "Merkez",
+        address: storeAddress
       }
     };
 
