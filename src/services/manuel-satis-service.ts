@@ -57,11 +57,29 @@ export class ManuelSatisService {
       }
 
       const pricePerSquareMeter = Number(priceDetail.price_per_square_meter);
+      
+      // NaN kontrolü
+      if (isNaN(pricePerSquareMeter) || pricePerSquareMeter <= 0) {
+        throw new Error('Geçersiz fiyat bilgisi');
+      }
 
       // Boyutlu ürün ise m² bazlı hesaplama
       if (item.width && item.height) {
-        const alanM2 = (item.width * item.height) / 10000;
-        return pricePerSquareMeter * alanM2;
+        const width = Number(item.width);
+        const height = Number(item.height);
+        
+        if (isNaN(width) || isNaN(height) || width <= 0 || height <= 0) {
+          throw new Error('Geçersiz boyut bilgisi');
+        }
+        
+        const alanM2 = (width * height) / 10000;
+        const calculatedPrice = pricePerSquareMeter * alanM2;
+        
+        if (isNaN(calculatedPrice)) {
+          throw new Error('Fiyat hesaplanamadı');
+        }
+        
+        return calculatedPrice;
       }
 
       // Boyutsuz ürün için varsayılan 1m² fiyatı
@@ -127,11 +145,44 @@ export class ManuelSatisService {
       }
 
       // Boyutlu ürün - varyasyon kontrolü
-      const variation = product.productvariations.find((v: any) => 
+      // Önce tam eşleşme ara
+      let variation = product.productvariations.find((v: any) => 
         Number(v.width) === item.width && 
         Number(v.height) === item.height &&
         (v.has_fringe === item.hasFringe || v.has_fringe === null)
       );
+
+      // Tam eşleşme bulunamazsa, opsiyonel yükseklik kontrolü yap
+      if (!variation) {
+        // Opsiyonel yükseklik seçeneği var mı kontrol et
+        const sizeOption = product.productrules?.productsizeoptions?.find((so: any) => 
+          so.width === item.width && so.is_optional_height === true
+        );
+
+        if (sizeOption) {
+          // Opsiyonel yükseklik için en büyük yükseklikli varyasyonu bul
+          variation = product.productvariations.find((v: any) => 
+            Number(v.width) === item.width && 
+            Number(v.height) >= item.height! && // Girilen yükseklikten büyük veya eşit
+            (v.has_fringe === item.hasFringe || v.has_fringe === null)
+          );
+
+          // Eğer hala bulunamazsa, aynı genişlikteki en büyük varyasyonu al
+          if (!variation) {
+            const sameWidthVariations = product.productvariations.filter((v: any) => 
+              Number(v.width) === item.width &&
+              (v.has_fringe === item.hasFringe || v.has_fringe === null)
+            );
+            
+            if (sameWidthVariations.length > 0) {
+              // En büyük yükseklikli varyasyonu seç
+              variation = sameWidthVariations.reduce((max: any, current: any) => 
+                Number(current.height) > Number(max.height) ? current : max
+              );
+            }
+          }
+        }
+      }
 
       if (!variation) {
         return {
@@ -266,7 +317,7 @@ export class ManuelSatisService {
 
         // Fiyat hesapla (eğer unitPrice verilmemişse)
         let unitPrice = item.unitPrice;
-        if (!unitPrice || unitPrice <= 0) {
+        if (!unitPrice || unitPrice <= 0 || isNaN(unitPrice)) {
           try {
             unitPrice = await this.calculateProductPrice(product, item, priceList);
           } catch (error: any) {
@@ -277,10 +328,36 @@ export class ManuelSatisService {
           }
         }
 
-        const itemTotal = new Decimal(unitPrice).mul(item.quantity).toNumber();
+        // Güvenli fiyat kontrolü
+        if (isNaN(unitPrice) || unitPrice <= 0) {
+          return {
+            success: false,
+            message: `${product.name} için geçersiz fiyat: ${unitPrice}`
+          };
+        }
+
+        // Miktar kontrolü
+        const quantity = item.quantity || 0;
+        if (isNaN(quantity) || quantity <= 0) {
+          return {
+            success: false,
+            message: `${product.name} için geçersiz miktar: ${quantity}`
+          };
+        }
+
+        const itemTotal = new Decimal(unitPrice).mul(quantity).toNumber();
+        
+        // Toplam fiyat kontrolü
+        if (isNaN(itemTotal) || itemTotal <= 0) {
+          return {
+            success: false,
+            message: `${product.name} için toplam fiyat hesaplanamadı`
+          };
+        }
         
         itemsWithTotal.push({
           ...item,
+          quantity,
           unitPrice,
           totalPrice: itemTotal
         });
@@ -453,83 +530,120 @@ export class ManuelSatisService {
       }
 
       const store = muhasebeHareketi.store;
-      const totalAmount = Number(muhasebeHareketi.tutar);
+      const totalAmount = muhasebeHareketi.tutar ? Number(muhasebeHareketi.tutar) : 0;
+      
+      // NaN kontrolü
+      const safeTotalAmount = isNaN(totalAmount) ? 0 : totalAmount;
 
       // Mevcut bakiye
-      const currentBalance = Number(store.bakiye || 0);
+      const currentBalance = store.bakiye ? Number(store.bakiye) : 0;
+      const safeCurrentBalance = isNaN(currentBalance) ? 0 : currentBalance;
+      
       // Satış öncesi bakiye (mevcut + satış tutarı)
-      const previousBalance = currentBalance + totalAmount;
+      const previousBalance = safeCurrentBalance + safeTotalAmount;
+      const safePreviousBalance = isNaN(previousBalance) ? 0 : previousBalance;
 
       // Fiş verilerini hazırla
       const receipt = {
         // Satış bilgileri
         satis: {
-          fisNumarasi: muhasebeHareketi.fisNumarasi,
-          islemTuru: muhasebeHareketi.islemTuru,
-          tarih: muhasebeHareketi.tarih,
-          toplamTutar: totalAmount,
-          aciklama: muhasebeHareketi.aciklama
+          fisNumarasi: muhasebeHareketi.fisNumarasi || '',
+          islemTuru: muhasebeHareketi.islemTuru || 'Manuel Satış',
+          tarih: muhasebeHareketi.tarih || new Date(),
+          toplamTutar: safeTotalAmount,
+          aciklama: muhasebeHareketi.aciklama || ''
         },
 
         // Mağaza bilgileri
         magaza: {
-          kurumAdi: store.kurum_adi,
-          vergiNumarasi: store.vergi_numarasi,
-          vergiDairesi: store.vergi_dairesi,
-          yetkiliAdi: store.yetkili_adi,
-          yetkiliSoyadi: store.yetkili_soyadi,
-          telefon: store.telefon,
-          eposta: store.eposta,
-          adres: store.adres,
-          faksNumarasi: store.faks_numarasi
+          kurumAdi: store.kurum_adi || '',
+          vergiNumarasi: store.vergi_numarasi || '',
+          vergiDairesi: store.vergi_dairesi || '',
+          yetkiliAdi: store.yetkili_adi || '',
+          yetkiliSoyadi: store.yetkili_soyadi || '',
+          telefon: store.telefon || '',
+          eposta: store.eposta || '',
+          adres: store.adres || '',
+          faksNumarasi: store.faks_numarasi || ''
         },
 
         // Satış detayları
-        urunler: muhasebeHareketi.manuelSatisDetay.map(detail => ({
-          urunAdi: detail.product.name,
-          aciklama: detail.product.description,
-          koleksiyon: {
-            adi: detail.product.collection.name,
-            kodu: detail.product.collection.code
-          },
-          miktar: detail.quantity,
-          birimFiyat: Number(detail.unitPrice),
-          toplamFiyat: Number(detail.totalPrice),
-          olculer: {
-            en: detail.width ? Number(detail.width) : null,
-            boy: detail.height ? Number(detail.height) : null,
-            alanM2: detail.width && detail.height ? 
-              (Number(detail.width) * Number(detail.height)) / 10000 : null
-          },
-          ozellikler: {
-            sasakVar: detail.hasFringe || false,
-            kesimTipi: detail.cutType || null
-          },
-          notlar: detail.notes
-        })),
+        urunler: muhasebeHareketi.manuelSatisDetay.map(detail => {
+          // Güvenli sayı dönüşümü
+          const unitPrice = detail.unitPrice ? Number(detail.unitPrice) : 0;
+          const totalPrice = detail.totalPrice ? Number(detail.totalPrice) : 0;
+          const width = detail.width ? Number(detail.width) : null;
+          const height = detail.height ? Number(detail.height) : null;
+          
+          // NaN kontrolü
+          const safeUnitPrice = isNaN(unitPrice) ? 0 : unitPrice;
+          const safeTotalPrice = isNaN(totalPrice) ? 0 : totalPrice;
+          const safeWidth = width && !isNaN(width) ? width : null;
+          const safeHeight = height && !isNaN(height) ? height : null;
+          
+          // Alan hesaplama
+          let alanM2 = null;
+          if (safeWidth && safeHeight) {
+            const calculatedArea = (safeWidth * safeHeight) / 10000;
+            alanM2 = isNaN(calculatedArea) ? null : calculatedArea;
+          }
+          
+          return {
+            urunAdi: detail.product.name || 'Bilinmeyen Ürün',
+            aciklama: detail.product.description || '',
+            koleksiyon: {
+              adi: detail.product.collection.name || 'Bilinmeyen Koleksiyon',
+              kodu: detail.product.collection.code || ''
+            },
+            miktar: detail.quantity || 0,
+            birimFiyat: safeUnitPrice,
+            toplamFiyat: safeTotalPrice,
+            olculer: {
+              en: safeWidth,
+              boy: safeHeight,
+              alanM2: alanM2
+            },
+            ozellikler: {
+              sasakVar: detail.hasFringe || false,
+              kesimTipi: detail.cutType || null
+            },
+            notlar: detail.notes || ''
+          };
+        }),
 
         // Bakiye bilgileri
         bakiye: {
-          satisOncesi: previousBalance,
-          satisSonrasi: currentBalance,
-          satisKesintisi: totalAmount,
+          satisOncesi: safePreviousBalance,
+          satisSonrasi: safeCurrentBalance,
+          satisKesintisi: safeTotalAmount,
           tarih: new Date()
         },
 
         // Özet bilgiler
         ozet: {
-          toplamUrunSayisi: muhasebeHareketi.manuelSatisDetay.length,
+          toplamUrunSayisi: muhasebeHareketi.manuelSatisDetay.length || 0,
           toplamMiktar: muhasebeHareketi.manuelSatisDetay.reduce(
-            (sum, detail) => sum + detail.quantity, 0
+            (sum, detail) => {
+              const quantity = detail.quantity || 0;
+              return sum + (isNaN(quantity) ? 0 : quantity);
+            }, 0
           ),
           toplamAlanM2: muhasebeHareketi.manuelSatisDetay.reduce((sum, detail) => {
             if (detail.width && detail.height) {
-              const alanM2 = (Number(detail.width) * Number(detail.height)) / 10000;
-              return sum + (alanM2 * detail.quantity);
+              const width = Number(detail.width);
+              const height = Number(detail.height);
+              const quantity = detail.quantity || 0;
+              
+              if (!isNaN(width) && !isNaN(height) && !isNaN(quantity)) {
+                const alanM2 = (width * height) / 10000;
+                if (!isNaN(alanM2)) {
+                  return sum + (alanM2 * quantity);
+                }
+              }
             }
             return sum;
           }, 0),
-          toplamTutar: totalAmount
+          toplamTutar: safeTotalAmount
         },
 
         // Fiş bilgileri
@@ -670,16 +784,23 @@ export class ManuelSatisService {
         include: {
           collection: true,
           productvariations: {
-            where: {
-              OR: [
-                { stock_quantity: { gt: 0 } },
-                { stock_area_m2: { gt: 0 } }
-              ]
-            }
+            include: {
+              cuttypes: true
+            },
+            orderBy: [
+              { width: 'asc' },
+              { height: 'asc' },
+              { has_fringe: 'asc' }
+            ]
           },
           productrules: {
             include: {
-              productsizeoptions: true
+              productsizeoptions: true,
+              productrulecuttypes: {
+                include: {
+                  cuttypes: true
+                }
+              }
             }
           }
         },
@@ -712,17 +833,101 @@ export class ManuelSatisService {
             }
           }
 
+          // Varyasyonları düzenle ve stok durumunu kontrol et
+          const availableVariations = product.productvariations.filter(v => 
+            (v.stock_quantity && v.stock_quantity > 0) || 
+            (v.stock_area_m2 && Number(v.stock_area_m2) > 0)
+          );
+
+          // Ürün kurallarından boyut seçeneklerini al
+          const sizeOptions = product.productrules?.productsizeoptions || [];
+          
+          // Kesim türlerini al
+          const cutTypes = product.productrules?.productrulecuttypes?.map(prc => prc.cuttypes) || [];
+
+          // Opsiyonel yükseklik seçeneklerini belirle
+          const optionalHeightOptions = sizeOptions.filter(so => so.is_optional_height);
+          
+          // Manuel boyut girişi için uygun genişlikleri belirle
+          const availableWidths = optionalHeightOptions.map(so => so.width);
+
           return {
-            ...product,
-            hasStock: product.productvariations.length > 0,
+            productId: product.productId,
+            name: product.name,
+            description: product.description,
+            productImage: product.productImage,
+            collectionId: product.collectionId,
+            collection: {
+              collectionId: product.collection.collectionId,
+              name: product.collection.name,
+              code: product.collection.code
+            },
+            rule_id: product.rule_id,
+            hasStock: availableVariations.length > 0,
             priceInfo,
-            stockInfo: product.productvariations.map(v => ({
+            
+            // Varyasyon bilgileri
+            variations: availableVariations.map(v => ({
+              id: v.id,
               width: Number(v.width),
               height: Number(v.height),
-              stockQuantity: v.stock_quantity,
+              stockQuantity: v.stock_quantity || 0,
               stockAreaM2: Number(v.stock_area_m2 || 0),
-              hasFringe: v.has_fringe,
+              hasFringe: v.has_fringe || false,
+              cutType: v.cuttypes ? {
+                id: v.cuttypes.id,
+                name: v.cuttypes.name
+              } : null,
               // Boyutlu ürün için tahmini fiyat
+              estimatedPrice: priceInfo ? 
+                priceInfo.pricePerSquareMeter * ((Number(v.width) * Number(v.height)) / 10000) : null,
+              // Alan hesaplama
+              areaM2: (Number(v.width) * Number(v.height)) / 10000
+            })),
+
+            // Ürün kuralları
+            rules: {
+              sizeOptions: sizeOptions.map(so => ({
+                id: so.id,
+                width: so.width,
+                height: so.height,
+                isOptionalHeight: so.is_optional_height || false
+              })),
+              cutTypes: cutTypes.map(ct => ({
+                id: ct.id,
+                name: ct.name
+              })),
+              canHaveFringe: product.productrules?.can_have_fringe || false,
+              
+              // Opsiyonel yükseklik seçenekleri
+              optionalHeightOptions: optionalHeightOptions.map(so => ({
+                id: so.id,
+                width: so.width,
+                maxHeight: so.height, // Maksimum yükseklik
+                isOptionalHeight: true
+              })),
+              
+              // Manuel boyut girişi için uygun genişlikler
+              availableWidthsForCustomHeight: availableWidths,
+              
+              // Boyut giriş kuralları
+              dimensionRules: {
+                hasOptionalHeight: optionalHeightOptions.length > 0,
+                fixedSizes: sizeOptions.filter(so => !so.is_optional_height).map(so => ({
+                  width: so.width,
+                  height: so.height
+                })),
+                customHeightWidths: availableWidths
+              }
+            },
+
+            // Eski format ile uyumluluk için (deprecated)
+            stockInfo: availableVariations.map(v => ({
+              width: Number(v.width),
+              height: Number(v.height),
+              stockQuantity: v.stock_quantity || 0,
+              stockAreaM2: Number(v.stock_area_m2 || 0),
+              hasFringe: v.has_fringe || false,
               estimatedPrice: priceInfo ? 
                 priceInfo.pricePerSquareMeter * ((Number(v.width) * Number(v.height)) / 10000) : null
             }))
