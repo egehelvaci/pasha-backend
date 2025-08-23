@@ -207,4 +207,51 @@ export const checkCartLimits = async (req: Request, res: Response) => {
       message: error.message || 'Limit kontrolü yapılamadı'
     });
   }
+};
+
+// Siparişi iptal et (sadece PENDING durumundaki siparişler)
+export const cancelOrder = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.userId;
+    const orderId = req.params.orderId;
+    
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Kullanıcı kimlik doğrulaması gerekli'
+      });
+    }
+
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Sipariş ID gerekli'
+      });
+    }
+
+    // İptal sebebi (opsiyonel)
+    const { reason } = req.body;
+
+    const result = await orderService.cancelOrder(orderId, userId, reason);
+
+    if (!result.success) {
+      return res.status(result.statusCode || 400).json({
+        success: false,
+        message: result.message
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: result.message,
+      data: result.order
+    });
+
+  } catch (error: any) {
+    console.error('Sipariş iptal hatası:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Sipariş iptal edilemedi'
+    });
+  }
 }; 

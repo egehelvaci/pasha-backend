@@ -1279,6 +1279,184 @@ export class OrderService {
   }
 
   // Mağaza limitini artır (ödeme sonrası) - deliveryAddress tablosu şemada yok, kaldırıldı
+
+  // Siparişi iptal et (sadece PENDING durumundaki siparişler)
+  async cancelOrder(orderId: string, userId: string, reason?: string): Promise<{
+    success: boolean;
+    message: string;
+    statusCode?: number;
+    order?: any;
+  }> {
+    try {
+      // Siparişi bul
+      const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: {
+          user: {
+            include: {
+              Store: {
+                include: {
+                  StorePriceList: {
+                    include: {
+                      PriceList: true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          items: {
+            include: {
+              product: {
+                include: {
+                  productvariations: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      if (!order) {
+        return { 
+          success: false, 
+          message: 'Sipariş bulunamadı',
+          statusCode: 404
+        };
+      }
+
+      // Kullanıcı sadece kendi siparişini iptal edebilir
+      if (order.user_id !== userId) {
+        return { 
+          success: false, 
+          message: 'Bu siparişi iptal etme yetkiniz yok',
+          statusCode: 403
+        };
+      }
+
+      // Sadece PENDING durumundaki siparişler iptal edilebilir
+      if (order.status !== 'PENDING') {
+        return { 
+          success: false, 
+          message: `${order.status} durumundaki sipariş iptal edilemez. Sadece onay bekleyen (PENDING) siparişler iptal edilebilir.`,
+          statusCode: 400
+        };
+      }
+
+      const orderTotal = Number(order.total_price);
+      const store = order.user.Store;
+
+      // Transaction içinde tüm işlemleri yap
+      const result = await prisma.$transaction(async (tx) => {
+        // 1. Siparişi iptal et
+        const canceledOrder = await tx.order.update({
+          where: { id: orderId },
+          data: {
+            status: 'CANCELED',
+            updated_at: new Date()
+          }
+        });
+
+        // 2. Stokları geri yükle
+        for (const item of order.items) {
+          // Her item için stok varyasyonunu bul ve güncelle
+          const variation = item.product.productvariations.find(v => 
+            v.width === Number(item.width) && 
+            v.height === Number(item.height) &&
+            v.has_fringe === item.has_fringe &&
+            v.cut_type_id === (item.cut_type ? parseInt(item.cut_type) : null)
+          );
+
+          if (variation) {
+            const areaM2 = (Number(item.width) * Number(item.height)) / 10000;
+            const totalAreaM2 = areaM2 * item.quantity;
+
+            await tx.productvariations.update({
+              where: { id: variation.id },
+              data: {
+                stock_quantity: variation.stock_quantity + item.quantity,
+                stock_area_m2: Number(variation.stock_area_m2 || 0) + totalAreaM2
+              }
+            });
+
+            console.log(`📦 Stok geri yüklendi: ${item.product.name} - ${item.quantity} adet, ${totalAreaM2.toFixed(2)} m²`);
+          }
+        }
+
+        // 3. Bakiyeyi iade et
+        if (store) {
+          const currentBalance = Number(store.bakiye || 0);
+          const newBalance = currentBalance + orderTotal;
+
+          await tx.store.update({
+            where: { store_id: store.store_id },
+            data: {
+              bakiye: newBalance
+            }
+          });
+
+          console.log(`💰 Bakiye iade edildi:`);
+          console.log(`  - Önceki bakiye: ${currentBalance} TL`);
+          console.log(`  - İade tutarı: ${orderTotal} TL`);
+          console.log(`  - Yeni bakiye: ${newBalance} TL`);
+
+          // 4. Fiyat listesi limitini geri yükle (eğer varsa)
+          const storePriceList = store.StorePriceList.find((spl: any) => spl.PriceList);
+          if (storePriceList && storePriceList.PriceList.limit_amount !== null) {
+            const currentLimit = Number(storePriceList.PriceList.limit_amount);
+            const newLimit = currentLimit + orderTotal;
+
+            await tx.priceList.update({
+              where: { price_list_id: storePriceList.PriceList.price_list_id },
+              data: {
+                limit_amount: newLimit
+              }
+            });
+
+            console.log(`📋 Fiyat listesi limiti geri yüklendi: ${currentLimit} TL -> ${newLimit} TL`);
+          }
+        }
+
+        // 5. Muhasebe kaydı oluştur (iptal kaydı)
+        if (store) {
+          await tx.muhasebeHareketleri.create({
+            data: {
+              storeId: store.store_id,
+              islemTuru: 'Sipariş İptali - İade',
+              tutar: orderTotal,
+              harcama: false, // İade olduğu için gelir olarak kaydet
+              tarih: new Date(),
+              aciklama: `Sipariş #${orderId} iptal edildi. ${reason ? `Sebep: ${reason}` : ''}`
+            }
+          });
+        }
+
+        // 6. Bildirim oluştur
+        await notificationService.notifyOrderCanceled(
+          orderId,
+          userId,
+          orderId.substring(0, 8),
+          reason
+        );
+
+        return canceledOrder;
+      });
+
+      return {
+        success: true,
+        message: `Sipariş başarıyla iptal edildi. ${orderTotal.toFixed(2)} TL bakiyenize iade edildi.`,
+        order: result
+      };
+
+    } catch (error: any) {
+      console.error('Sipariş iptal hatası:', error);
+      return {
+        success: false,
+        message: error.message || 'Sipariş iptal edilirken bir hata oluştu',
+        statusCode: 500
+      };
+    }
+  }
 }
 
 export const orderService = new OrderService(); 
