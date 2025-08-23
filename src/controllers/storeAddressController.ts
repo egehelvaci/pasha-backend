@@ -28,12 +28,25 @@ export class StoreAddressController {
       let storeId: string
 
       if (userType === 'admin') {
-        // Admin farklı mağaza ID'si belirtebilir
+        // Admin için önce kendi store_id'sini kontrol et
+        const adminUser = await prisma.user.findUnique({
+          where: { userId },
+          select: { store_id: true }
+        })
+
+        // Params veya query'den store_id belirtilmişse onu kullan
         storeId = req.params.storeId || req.query.storeId as string
+        
+        // Eğer store_id belirtilmemişse admin'in kendi store_id'sini kullan
+        if (!storeId && adminUser?.store_id) {
+          storeId = adminUser.store_id
+        }
+        
+        // Hala store_id yoksa hata ver
         if (!storeId) {
           return res.status(400).json({
             success: false,
-            message: 'Admin kullanıcısı için store_id gerekli'
+            message: 'Admin kullanıcısı için store_id gerekli veya admin kullanıcısının bir mağazaya bağlı olması gerekli'
           })
         }
       } else {
@@ -104,11 +117,25 @@ export class StoreAddressController {
       let storeId: string
 
       if (userType === 'admin') {
+        // Admin için önce kendi store_id'sini kontrol et
+        const adminUser = await prisma.user.findUnique({
+          where: { userId },
+          select: { store_id: true }
+        })
+
+        // Body'den veya params'dan store_id belirtilmişse onu kullan
         storeId = req.body.store_id || req.params.storeId
+        
+        // Eğer store_id belirtilmemişse admin'in kendi store_id'sini kullan
+        if (!storeId && adminUser?.store_id) {
+          storeId = adminUser.store_id
+        }
+        
+        // Hala store_id yoksa hata ver
         if (!storeId) {
           return res.status(400).json({
             success: false,
-            message: 'Admin kullanıcısı için store_id gerekli'
+            message: 'Admin kullanıcısı için store_id gerekli veya admin kullanıcısının bir mağazaya bağlı olması gerekli'
           })
         }
       } else {
