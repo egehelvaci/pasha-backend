@@ -118,6 +118,7 @@ model Store {
   bakiye              Decimal?               @default(0) @db.Decimal(15, 2)
   maksimum_taksit     Int?                   @default(1)
   tckn                String?                @db.VarChar(11)
+  store_type          StoreType?             @default(KARGO) @map("store_type")
   StorePriceList      StorePriceList[]
   User                User[]
   adminCarts          admin_carts[]
@@ -607,4 +608,11 @@ enum SessionStatus {
   FAILED
   EXPIRED
   CANCELLED
+}
+
+enum StoreType {
+  KARGO      // Kargo - adres telefon ve ürün bilgileri
+  SERVIS     // Servis - müşteri adı ürün adı ebat kesim türü
+  KENDI_ALAN // Kendi alan - müşteri adı ürün adı ebat kesim türü  
+  AMBAR      // Ambar - adres telefon ve ürün bilgileri
 }

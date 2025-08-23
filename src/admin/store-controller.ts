@@ -67,6 +67,12 @@ export class StoreController {
         }
       })
       
+      // Debug: İlk mağazanın store_type'ını logla
+      if (stores.length > 0) {
+        console.log('🔍 Debug - İlk mağaza store_type:', stores[0].store_type);
+        console.log('🔍 Debug - İlk mağaza kurum_adi:', stores[0].kurum_adi);
+      }
+
       // Response formatını düzenle
       const formattedStores = stores.map(store => ({
         store_id: store.store_id,
@@ -84,6 +90,7 @@ export class StoreController {
         acik_hesap_tutari: store.acik_hesap_tutari,
         bakiye: store.bakiye,
         maksimum_taksit: store.maksimum_taksit,
+        store_type: store.store_type,
         is_active: store.is_active,
         created_at: store.created_at,
         updated_at: store.updated_at,
@@ -163,12 +170,15 @@ export class StoreController {
         })
       }
       
-      // Response formatını düzenle - adres alanını çıkar
-      const { adres, ...storeWithoutAddress } = store
+      // Response formatını düzenle - adres alanını çıkar ama store_type'ı dahil et
+      const { adres, ...storeData } = store
       
       return res.status(200).json({
         success: true,
-        data: storeWithoutAddress
+        data: {
+          ...storeData,
+          store_type: store.store_type // Mağaza türü bilgisini açıkça ekle
+        }
       })
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Mağaza bilgileri alınırken bir hata oluştu'
@@ -199,7 +209,8 @@ export class StoreController {
         limitsiz_acik_hesap, 
         acik_hesap_tutari,
         bakiye,
-        maksimum_taksit
+        maksimum_taksit,
+        store_type
       } = req.body
       
       // Zorunlu alanların kontrolü
@@ -207,6 +218,15 @@ export class StoreController {
         return res.status(400).json({
           success: false,
           message: 'Kurum adı zorunludur'
+        })
+      }
+
+      // Mağaza türü kontrolü
+      const validStoreTypes = ['KARGO', 'SERVIS', 'KENDI_ALAN', 'AMBAR'];
+      if (store_type && !validStoreTypes.includes(store_type)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Geçersiz mağaza türü. Geçerli türler: KARGO, SERVIS, KENDI_ALAN, AMBAR'
         })
       }
 
@@ -227,6 +247,7 @@ export class StoreController {
           acik_hesap_tutari: acik_hesap_tutari ? parseFloat(acik_hesap_tutari) : 0,
           bakiye: bakiye ? parseFloat(bakiye) : 0,
           maksimum_taksit: maksimum_taksit ? parseInt(maksimum_taksit) : 1,
+          store_type: store_type || 'KARGO', // Varsayılan olarak KARGO
           is_active: true
         }
       })
@@ -266,7 +287,8 @@ export class StoreController {
         acik_hesap_tutari,
         bakiye,
         maksimum_taksit,
-        is_active 
+        is_active,
+        store_type
       } = req.body
       
       // Güncellenecek mağazanın var olup olmadığını kontrol et
@@ -278,6 +300,15 @@ export class StoreController {
         return res.status(404).json({
           success: false,
           message: 'Güncellenecek mağaza bulunamadı'
+        })
+      }
+
+      // Mağaza türü kontrolü
+      const validStoreTypes = ['KARGO', 'SERVIS', 'KENDI_ALAN', 'AMBAR'];
+      if (store_type && !validStoreTypes.includes(store_type)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Geçersiz mağaza türü. Geçerli türler: KARGO, SERVIS, KENDI_ALAN, AMBAR'
         })
       }
       
@@ -299,6 +330,7 @@ export class StoreController {
       if (bakiye !== undefined) updateData.bakiye = parseFloat(bakiye)
       if (maksimum_taksit !== undefined) updateData.maksimum_taksit = parseInt(maksimum_taksit)
       if (is_active !== undefined) updateData.is_active = is_active
+      if (store_type !== undefined) updateData.store_type = store_type
       
       // Mağazayı güncelle
       const updatedStore = await prisma.store.update({

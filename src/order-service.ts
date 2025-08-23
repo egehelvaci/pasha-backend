@@ -1687,92 +1687,9 @@ export class OrderService {
         }
       });
 
-      // Fiş verilerini hazırla
-      const receipt = {
-        // Sipariş bilgileri
-        siparis: {
-          id: order.id,
-          siparisNumarasi: order.id.substring(0, 8).toUpperCase(),
-          durum: order.status,
-          olusturmaTarihi: order.created_at,
-          guncellemeTarihi: order.updated_at,
-          toplamTutar: orderTotal
-        },
-
-        // Müşteri bilgileri
-        musteri: {
-          ad: order.user.name,
-          soyad: order.user.surname,
-          email: order.user.email,
-          telefon: order.user.phoneNumber,
-          adres: order.address ? `${order.address.title}: ${order.address.address}, ${order.address.district || ''} ${order.address.city || ''}`.trim() : null
-        },
-
-        // Mağaza bilgileri
-        magaza: store ? {
-          kurumAdi: store.kurum_adi,
-          vergiNumarasi: store.vergi_numarasi,
-          vergiDairesi: store.vergi_dairesi,
-          yetkiliAdi: store.yetkili_adi,
-          yetkiliSoyadi: store.yetkili_soyadi,
-          telefon: store.telefon,
-          eposta: store.eposta,
-          adres: store.adres,
-          faksNumarasi: store.faks_numarasi
-        } : null,
-
-        // Sipariş detayları
-        urunler: order.items.map(item => ({
-          urunAdi: item.product.name,
-          aciklama: item.product.description,
-          koleksiyon: {
-            adi: item.product.collection.name,
-            kodu: item.product.collection.code
-          },
-          miktar: item.quantity,
-          birimFiyat: Number(item.unit_price),
-          toplamFiyat: Number(item.total_price),
-          olculer: {
-            en: item.width ? Number(item.width) : null,
-            boy: item.height ? Number(item.height) : null,
-            alanM2: item.width && item.height ? (Number(item.width) * Number(item.height)) / 10000 : null
-          },
-          ozellikler: {
-            sasakVar: item.has_fringe || false,
-            kesimTipi: item.cut_type || null
-          }
-        })),
-
-        // Bakiye bilgileri
-        bakiye: {
-          siparisOncesi: previousBalance,
-          siparisSonrasi: currentBalance,
-          siparisKesintisi: orderTotal,
-          tarih: new Date()
-        },
-
-        // Özet bilgiler
-        ozet: {
-          toplamUrunSayisi: order.items.length,
-          toplamMiktar: order.items.reduce((sum, item) => sum + item.quantity, 0),
-          toplamAlanM2: order.items.reduce((sum, item) => {
-            if (item.width && item.height) {
-              const alanM2 = (Number(item.width) * Number(item.height)) / 10000;
-              return sum + (alanM2 * item.quantity);
-            }
-            return sum;
-          }, 0),
-          toplamTutar: orderTotal
-        },
-
-        // Fiş bilgileri
-        fis: {
-          fisNumarasi: `${isAdmin ? 'ADM-' : ''}FIS-${order.id.substring(0, 8).toUpperCase()}`,
-          olusturmaTarihi: new Date(),
-          gecerlilikTarihi: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 yıl geçerli
-          adminFisi: isAdmin || false
-        }
-      };
+      // Mağaza türüne göre fiş formatını belirle
+      const storeType = store?.store_type || 'KARGO';
+      const receipt = this.formatReceiptByStoreType(order, store, orderTotal, muhasebeHareketi, storeType, isAdmin);
 
       return {
         success: true,
@@ -1787,6 +1704,141 @@ export class OrderService {
         message: error.message || 'Sipariş fişi hazırlanırken bir hata oluştu',
         statusCode: 500
       };
+    }
+  }
+
+  /**
+   * Mağaza türüne göre fiş formatını belirle
+   */
+  private formatReceiptByStoreType(order: any, store: any, orderTotal: number, muhasebeHareketi: any, storeType: string, isAdmin?: boolean) {
+    const currentBalance = Number(store?.bakiye || 0);
+    const previousBalance = currentBalance + orderTotal;
+
+    // Ortak sipariş bilgileri
+    const commonData = {
+      siparis: {
+        id: order.id,
+        siparisNumarasi: order.id.substring(0, 8).toUpperCase(),
+        durum: order.status,
+        olusturmaTarihi: order.created_at,
+        guncellemeTarihi: order.updated_at,
+        toplamTutar: orderTotal
+      },
+      fis: {
+        fisNumarasi: `${isAdmin ? 'ADM-' : ''}FIS-${order.id.substring(0, 8).toUpperCase()}`,
+        olusturmaTarihi: new Date(),
+        gecerlilikTarihi: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+        adminFisi: isAdmin || false,
+        magazaTuru: storeType
+      }
+    };
+
+    switch (storeType) {
+      case 'KARGO':
+      case 'AMBAR':
+        // Kargo ve Ambar: adres, telefon ve ürün bilgileri
+        return {
+          ...commonData,
+          magaza: store ? {
+            kurumAdi: store.kurum_adi,
+            telefon: store.telefon,
+            adres: store.adres,
+            vergiNumarasi: store.vergi_numarasi,
+            vergiDairesi: store.vergi_dairesi
+          } : null,
+          teslimatBilgileri: {
+            adres: order.address ? `${order.address.title}: ${order.address.address}, ${order.address.district || ''} ${order.address.city || ''}`.trim() : null,
+            telefon: store?.telefon
+          },
+          urunler: order.items.map((item: any) => ({
+            urunAdi: item.product.name,
+            koleksiyon: item.product.collection.name,
+            miktar: item.quantity,
+            birimFiyat: Number(item.unit_price),
+            toplamFiyat: Number(item.total_price),
+            olculer: {
+              en: item.width ? Number(item.width) : null,
+              boy: item.height ? Number(item.height) : null,
+              ebat: `${item.width || 0}x${item.height || 0}`
+            }
+          })),
+          ozet: {
+            toplamUrunSayisi: order.items.length,
+            toplamMiktar: order.items.reduce((sum: number, item: any) => sum + item.quantity, 0),
+            toplamTutar: orderTotal
+          }
+        };
+
+      case 'SERVIS':
+      case 'KENDI_ALAN':
+        // Servis ve Kendi Alan: müşteri adı, ürün adı, ebat, kesim türü
+        return {
+          ...commonData,
+          musteri: {
+            ad: order.user.name,
+            soyad: order.user.surname,
+            tamAd: `${order.user.name} ${order.user.surname}`,
+            email: order.user.email,
+            telefon: order.user.phoneNumber
+          },
+          magaza: store ? {
+            kurumAdi: store.kurum_adi,
+            telefon: store.telefon,
+            magazaTuru: storeType
+          } : null,
+          urunler: order.items.map((item: any) => ({
+            urunAdi: item.product.name,
+            koleksiyon: item.product.collection.name,
+            miktar: item.quantity,
+            birimFiyat: Number(item.unit_price),
+            toplamFiyat: Number(item.total_price),
+            olculer: {
+              en: item.width ? Number(item.width) : null,
+              boy: item.height ? Number(item.height) : null,
+              ebat: `${item.width || 0}x${item.height || 0}`,
+              alanM2: item.width && item.height ? (Number(item.width) * Number(item.height)) / 10000 : null
+            },
+            ozellikler: {
+              kesimTuru: item.cut_type || 'rectangle',
+              sasakVar: item.has_fringe ? 'Var' : 'Yok'
+            }
+          })),
+          bakiye: {
+            siparisOncesi: previousBalance,
+            siparisSonrasi: currentBalance,
+            siparisKesintisi: orderTotal,
+            tarih: new Date()
+          },
+          ozet: {
+            toplamUrunSayisi: order.items.length,
+            toplamMiktar: order.items.reduce((sum: number, item: any) => sum + item.quantity, 0),
+            toplamAlanM2: order.items.reduce((sum: number, item: any) => {
+              if (item.width && item.height) {
+                const alanM2 = (Number(item.width) * Number(item.height)) / 10000;
+                return sum + (alanM2 * item.quantity);
+              }
+              return sum;
+            }, 0),
+            toplamTutar: orderTotal
+          }
+        };
+
+      default:
+        // Varsayılan format (KARGO gibi)
+        return {
+          ...commonData,
+          magaza: store ? {
+            kurumAdi: store.kurum_adi,
+            telefon: store.telefon,
+            adres: store.adres
+          } : null,
+          urunler: order.items.map((item: any) => ({
+            urunAdi: item.product.name,
+            koleksiyon: item.product.collection.name,
+            miktar: item.quantity,
+            toplamFiyat: Number(item.total_price)
+          }))
+        };
     }
   }
 

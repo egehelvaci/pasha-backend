@@ -23,6 +23,100 @@ export class QRCodeService {
   }
 
   /**
+   * Mağaza türüne göre QR kod içeriği formatını belirle
+   */
+  private async getQRContentByStoreType(orderId: string, orderItemId: string) {
+    // Sipariş ve mağaza bilgilerini al
+    const orderData = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        user: {
+          include: {
+            Store: {
+              select: {
+                store_type: true,
+                kurum_adi: true,
+                telefon: true,
+                adres: true
+              }
+            }
+          }
+        },
+        items: {
+          where: { id: orderItemId },
+          include: {
+            product: {
+              include: {
+                collection: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!orderData || !orderData.items[0]) {
+      throw new Error('Sipariş veya ürün bilgisi bulunamadı');
+    }
+
+    const store = orderData.user.Store;
+    const item = orderData.items[0];
+    const storeType = store?.store_type || 'KARGO';
+
+    // Mağaza türüne göre farklı formatlar
+    switch (storeType) {
+      case 'KARGO':
+      case 'AMBAR':
+        // Kargo ve Ambar: adres, telefon ve ürün bilgileri
+        return {
+          siparis_id: orderId,
+          item_id: orderItemId,
+          magaza_adi: store?.kurum_adi || '',
+          telefon: store?.telefon || '',
+          adres: store?.adres || '',
+          urun_adi: item.product.name,
+          koleksiyon: item.product.collection.name,
+          miktar: item.quantity,
+          ebat: `${item.width}x${item.height}`,
+          kesim_turu: item.cut_type || 'rectangle',
+          tarih: orderData.created_at.toISOString().split('T')[0]
+        };
+
+      case 'SERVIS':
+      case 'KENDI_ALAN':
+        // Servis ve Kendi Alan: müşteri adı, ürün adı, ebat, kesim türü
+        return {
+          siparis_id: orderId,
+          item_id: orderItemId,
+          musteri_adi: `${orderData.user.name} ${orderData.user.surname}`,
+          urun_adi: item.product.name,
+          koleksiyon: item.product.collection.name,
+          miktar: item.quantity,
+          ebat: `${item.width}x${item.height}`,
+          kesim_turu: item.cut_type || 'rectangle',
+          saçak: item.has_fringe ? 'Var' : 'Yok',
+          tarih: orderData.created_at.toISOString().split('T')[0]
+        };
+
+      default:
+        // Varsayılan format (KARGO gibi)
+        return {
+          siparis_id: orderId,
+          item_id: orderItemId,
+          magaza_adi: store?.kurum_adi || '',
+          telefon: store?.telefon || '',
+          adres: store?.adres || '',
+          urun_adi: item.product.name,
+          koleksiyon: item.product.collection.name,
+          miktar: item.quantity,
+          ebat: `${item.width}x${item.height}`,
+          kesim_turu: item.cut_type || 'rectangle',
+          tarih: orderData.created_at.toISOString().split('T')[0]
+        };
+    }
+  }
+
+  /**
    * Sipariş için QR kod görselleri oluşturur, Tebi'ye yükler ve DB'yi günceller (asıl işlem)
    * Item bazlı sistem için güncellendi
    */
@@ -158,12 +252,16 @@ export class QRCodeService {
         
         const qrCodeString = this.generateUniqueQRCode()
         
+        // Mağaza türüne göre QR kod içeriği oluştur
+        const qrContent = await this.getQRContentByStoreType(orderId, item.id);
+        const qrCodeData = JSON.stringify(qrContent);
+        
         const createdQRCode = await prisma.qRCode.create({
           data: {
             order_id: orderId,
             order_item_id: item.id,
             product_id: item.product_id,
-            qr_code: `${process.env.PUBLIC_URL || 'http://localhost:3001'}/api/admin/scan-qr?qrCode=${qrCodeString}`,
+            qr_code: qrCodeData, // Mağaza türüne göre formatlanmış içerik
             is_scanned: false,
             scan_count: 0,
             required_scans: item.quantity // Item'ın quantity'si kadar okutulması gerekiyor

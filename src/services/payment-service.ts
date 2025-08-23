@@ -79,6 +79,7 @@ export class PaymentService {
         telefon: true,
         eposta: true,
         maksimum_taksit: true,
+        store_type: true,
         is_active: true
       }
     });
