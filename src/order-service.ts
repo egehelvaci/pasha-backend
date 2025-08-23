@@ -1048,11 +1048,9 @@ export class OrderService {
         whereCondition.status = filters.status;
       }
 
-      // Fiş yazdırma filtresi - sadece CONFIRMED ve DELIVERED siparişler için geçerli
+      // Fiş yazdırma filtresi - sadece DELIVERED siparişler için geçerli
       if (filters?.receiptPrinted !== undefined) {
-        whereCondition.status = {
-          in: ['CONFIRMED', 'DELIVERED']
-        };
+        whereCondition.status = 'DELIVERED';
         whereCondition.receipt_printed = filters.receiptPrinted;
       }
       
@@ -1826,11 +1824,11 @@ export class OrderService {
         };
       }
 
-      // Sadece onaylanan ve teslim edilen siparişlerin fişi yazdırılabilir
-      if (!['CONFIRMED', 'DELIVERED'].includes(order.status)) {
+      // Sadece teslim edilen siparişlerin fişi yazdırılabilir
+      if (order.status !== 'DELIVERED') {
         return { 
           success: false, 
-          message: `${order.status} durumundaki siparişin fişi yazdırılamaz. Sadece onaylanmış (CONFIRMED) veya teslim edilmiş (DELIVERED) siparişlerin fişi yazdırılabilir.`,
+          message: `${order.status} durumundaki siparişin fişi yazdırılamaz. Sadece teslim edilmiş (DELIVERED) siparişlerin fişi yazdırılabilir.`,
           statusCode: 400
         };
       }

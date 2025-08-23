@@ -2,7 +2,7 @@
 
 ## Genel Bakış
 
-Bu sistem, siparişlerde fiş yazdırma durumunu takip etmek için geliştirilmiştir. Kullanıcılar sadece onaylanan (CONFIRMED) ve teslim edilen (DELIVERED) siparişlerin fişlerini yazdırabilir ve bu durum veritabanında takip edilir.
+Bu sistem, siparişlerde fiş yazdırma durumunu takip etmek için geliştirilmiştir. Sadece admin kullanıcıları, teslim edilen (DELIVERED) siparişlerin fişlerini yazdırabilir ve bu durum veritabanında takip edilir.
 
 ## Veritabanı Değişiklikleri
 
@@ -30,7 +30,7 @@ receipt_printed_at TIMESTAMP
 - `orderId` (path): Sipariş ID'si
 
 **Koşullar:**
-- Sipariş durumu `CONFIRMED` veya `DELIVERED` olmalı
+- Sipariş durumu `DELIVERED` (teslim edilmiş) olmalı
 - Fiş daha önce yazdırılmamış olmalı
 - **Sadece admin kullanıcıları bu işlemi yapabilir**
 
@@ -68,7 +68,7 @@ receipt_printed_at TIMESTAMP
 // Geçersiz durum (400)
 {
   "success": false,
-  "message": "PENDING durumundaki siparişin fişi yazdırılamaz. Sadece onaylanmış (CONFIRMED) veya teslim edilmiş (DELIVERED) siparişlerin fişi yazdırılabilir."
+  "message": "CONFIRMED durumundaki siparişin fişi yazdırılamaz. Sadece teslim edilmiş (DELIVERED) siparişlerin fişi yazdırılabilir."
 }
 
 // Zaten yazdırılmış (400)
