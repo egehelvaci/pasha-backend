@@ -252,16 +252,18 @@ export class QRCodeService {
         
         const qrCodeString = this.generateUniqueQRCode()
         
-        // Mağaza türüne göre QR kod içeriği oluştur
-        const qrContent = await this.getQRContentByStoreType(orderId, item.id);
-        const qrCodeData = JSON.stringify(qrContent);
+        // Backend URL'ini al
+        const backendUrl = process.env.PUBLIC_URL || 'https://pasha-backend-production.up.railway.app'
+        
+        // QR kod URL'ini oluştur (backend'e yönlendirecek)
+        const qrCodeUrl = `${backendUrl}/api/admin/scan-qr?qrCode=${qrCodeString}`
         
         const createdQRCode = await prisma.qRCode.create({
           data: {
             order_id: orderId,
             order_item_id: item.id,
             product_id: item.product_id,
-            qr_code: qrCodeData, // Mağaza türüne göre formatlanmış içerik
+            qr_code: qrCodeUrl, // Backend URL'ini içeren QR kod
             is_scanned: false,
             scan_count: 0,
             required_scans: item.quantity // Item'ın quantity'si kadar okutulması gerekiyor
