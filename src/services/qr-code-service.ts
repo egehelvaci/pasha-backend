@@ -250,7 +250,9 @@ export class QRCodeService {
       for (const item of order.items) {
         console.log(`🚀 Item ${item.id} için 1 adet QR kod oluşturuluyor (Ürün: ${item.product_id}, Miktar: ${item.quantity})`)
         
-        // Mağaza türüne göre QR kod içeriği oluştur (eski JSON format - geriye uyumluluk için)
+        const qrCodeString = this.generateUniqueQRCode()
+        
+        // Mağaza türüne göre QR kod içeriği oluştur
         const qrContent = await this.getQRContentByStoreType(orderId, item.id);
         const qrCodeData = JSON.stringify(qrContent);
         
@@ -259,7 +261,7 @@ export class QRCodeService {
             order_id: orderId,
             order_item_id: item.id,
             product_id: item.product_id,
-            qr_code: qrCodeData, // JSON formatında QR kod (eski sistem ile uyumlu)
+            qr_code: qrCodeData, // Mağaza türüne göre formatlanmış içerik
             is_scanned: false,
             scan_count: 0,
             required_scans: item.quantity // Item'ın quantity'si kadar okutulması gerekiyor
@@ -435,57 +437,29 @@ export class QRCodeService {
         throw new Error('Geçersiz QR kod formatı')
       }
 
-      let qrRecord = null
-      let searchCriteria = null
-
-      // 1. JSON formatında QR kod kontrolü (eski sistem)
-      try {
-        const parsedQR = JSON.parse(qrCode)
-        if (parsedQR.siparis_id && parsedQR.item_id) {
-          console.log('📱 JSON formatında QR kod algılandı:', parsedQR.siparis_id)
-          searchCriteria = {
-            where: {
-              order_id: parsedQR.siparis_id,
-              order_item_id: parsedQR.item_id
-            }
-          }
-        }
-      } catch (e) {
-        // JSON değilse, URL formatında kontrol et
-      }
-
-      // 2. URL formatında QR kod kontrolü (yeni sistem)
-      if (!searchCriteria) {
-        let qrCodeId = qrCode
-        if (qrCode.includes('/api/admin/scan-qr?qrCode=')) {
-          const urlParts = qrCode.split('qrCode=')
-          if (urlParts.length > 1) {
-            qrCodeId = urlParts[1]
-          }
-        }
-
-        // PASHA- formatı kontrolü (sadece URL formatı için)
-        if (qrCodeId.startsWith('PASHA-')) {
-          console.log('📱 URL formatında QR kod algılandı:', qrCodeId)
-          searchCriteria = {
-            where: { 
-              OR: [
-                { qr_code: qrCode }, // Tam URL eşleşmesi
-                { qr_code: { contains: qrCodeId } } // QR kod ID'si içeren URL
-              ]
-            }
-          }
+      // Eğer gelen değer PASHA- ile başlıyorsa, bu QR kod ID'si
+      // Eğer URL formatındaysa, query parameter'dan ID'yi çıkar
+      let qrCodeId = qrCode
+      if (qrCode.includes('/api/admin/scan-qr?qrCode=')) {
+        const urlParts = qrCode.split('qrCode=')
+        if (urlParts.length > 1) {
+          qrCodeId = urlParts[1]
         }
       }
 
-      // 3. Hiçbir format uymazsa hata
-      if (!searchCriteria) {
-        throw new Error('Geçersiz QR kod formatı. QR kod JSON formatında (siparis_id, item_id içeren) veya PASHA- ile başlayan URL formatında olmalıdır.')
+      // QR kod formatını kontrol et
+      if (!qrCodeId.startsWith('PASHA-')) {
+        throw new Error('Geçersiz QR kod formatı. QR kod PASHA- ile başlamalıdır.')
       }
 
-      // QR kod kaydını bul
-      qrRecord = await prisma.qRCode.findFirst({
-        where: searchCriteria.where,
+      // QR kod kontrolü - artık URL formatında saklanan QR kodları arayalım
+      const qrRecord = await prisma.qRCode.findFirst({
+        where: { 
+          OR: [
+            { qr_code: qrCode }, // Tam URL eşleşmesi
+            { qr_code: { contains: qrCodeId } } // QR kod ID'si içeren URL
+          ]
+        },
         include: {
           order: {
             include: {
@@ -623,9 +597,9 @@ export class QRCodeService {
           })
 
           if (secondScannedQRs.length === allQRCodes.length) {
-            // Tüm QR kodlar ikinci kez okutuldu - sipariş teslim edildi
+            // Tüm QR kodlar ikinci kez okutuldu - çalışan seçimi gerekiyor
             newOrderStatus = 'DELIVERED'
-            message = 'Tüm QR kodlar ikinci kez okutuldu! Sipariş teslim edildi.'
+            message = 'Tüm QR kodlar ikinci kez okutuldu! Teslim edecek çalışanı seçin.'
             
             await prisma.order.update({
               where: { id: qrRecord.order_id },
@@ -635,12 +609,13 @@ export class QRCodeService {
               }
             })
 
-            // Artık çalışan seçimi gerekmiyor - direkt teslim edildi durumu
+            // Çalışan seçimi gerekiyor (teslim için)
             return {
               success: true,
               message,
-              requiresEmployeeSelection: false,
-              orderStatus: 'DELIVERED',
+              requiresEmployeeSelection: true,
+              selectionType: 'deliver', // Teslim için seçim (API ile uyumlu)
+              employees: (await employeeAssignmentService.getAllEmployees()).employees,
               orderId: qrRecord.order_id,
               orderDetails: {
                 total_price: currentOrder.total_price,
@@ -723,9 +698,9 @@ export class QRCodeService {
   }
 
   /**
-   * Çalışan seçimi sonrası istatistikleri güncelle - Artık sadece hazırlama için
+   * Çalışan seçimi sonrası istatistikleri güncelle
    */
-  async assignEmployeeToOrder(orderId: string, employeeId: string, assignmentType: 'prepare') {
+  async assignEmployeeToOrder(orderId: string, employeeId: string, assignmentType: 'prepare' | 'deliver') {
     try {
       const order = await prisma.order.findUnique({
         where: { id: orderId },
@@ -742,15 +717,69 @@ export class QRCodeService {
         throw new Error('Sipariş bulunamadı')
       }
 
-      // Artık sadece hazırlama için çalışan ataması yapılacak
+      const totalAmount = Number(order.total_price)
+      const totalAreaM2 = order.items.reduce((sum, item) => sum + (Number(item.width) * Number(item.height) * item.quantity / 10000), 0)
+      const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0)
+
+      // Mevcut employee stats kaydı var mı kontrol et
+      let employeeStats = await prisma.employeeOrderStats.findUnique({
+        where: { orderId: orderId }
+      })
+
       if (assignmentType === 'prepare') {
-        // QR kodlarındaki first_scan_employee_id'yi güncelle
-        await prisma.qRCode.updateMany({
-          where: { order_id: orderId },
-          data: {
-            first_scan_employee_id: employeeId
-          }
-        })
+        // İlk QR okutma - hazırlayan çalışan
+        if (!employeeStats) {
+          await prisma.employeeOrderStats.create({
+            data: {
+              employeeId: employeeId,
+              orderId: orderId,
+              totalAmount,
+              totalAreaM2,
+              totalItems,
+              orderStatus: 'READY',
+              preparedAreaM2: totalAreaM2,
+              completedAt: new Date()
+            }
+          })
+        } else {
+          await prisma.employeeOrderStats.update({
+            where: { orderId: orderId },
+            data: {
+              employeeId: employeeId, // Hazırlayan çalışan
+              preparedAreaM2: totalAreaM2,
+              orderStatus: 'READY'
+            }
+          })
+        }
+      } else if (assignmentType === 'deliver') {
+        // İkinci QR okutma - teslim eden çalışan
+        if (employeeStats) {
+          await prisma.employeeOrderStats.update({
+            where: { orderId: orderId },
+            data: {
+              deliveredAreaM2: totalAreaM2,
+              orderStatus: 'DELIVERED',
+              completedAt: new Date() // Teslim tamamlandığında güncelle
+            }
+          })
+        } else {
+          // Employee stats yoksa oluştur (edge case)
+          await prisma.employeeOrderStats.create({
+            data: {
+              employeeId: employeeId,
+              orderId: orderId,
+              totalAmount,
+              totalAreaM2,
+              totalItems,
+              orderStatus: 'DELIVERED',
+              deliveredAreaM2: totalAreaM2,
+              completedAt: new Date()
+            }
+          })
+        }
+
+        // Ayrıca teslim eden çalışan için ayrı bir kayıt tutabiliriz
+        // Şimdilik mevcut kaydı güncelliyoruz
       }
 
       return { success: true }
