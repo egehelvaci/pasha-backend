@@ -705,7 +705,7 @@ export class AdminOrderController {
 
                 if (confirm('Seçilen Çalışan: ' + employeeName + '\\n\\nOnaylıyor musunuz?')) {
                   // Çalışan seçimi API'sine gönder
-                  const assignmentType = '${selectionType}';
+                  const assignmentType = 'prepare';
                   const orderId = '${result.orderId}';
                   
                   // Loading state
