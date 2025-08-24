@@ -250,20 +250,16 @@ export class QRCodeService {
       for (const item of order.items) {
         console.log(`🚀 Item ${item.id} için 1 adet QR kod oluşturuluyor (Ürün: ${item.product_id}, Miktar: ${item.quantity})`)
         
-        const qrCodeString = this.generateUniqueQRCode()
-        
-        // Backend URL'ini al
-        const backendUrl = process.env.PUBLIC_URL || 'https://pasha-backend-production.up.railway.app'
-        
-        // QR kod URL'ini oluştur (backend'e yönlendirecek)
-        const qrCodeUrl = `${backendUrl}/api/admin/scan-qr?qrCode=${qrCodeString}`
+        // Mağaza türüne göre QR kod içeriği oluştur (eski JSON format - geriye uyumluluk için)
+        const qrContent = await this.getQRContentByStoreType(orderId, item.id);
+        const qrCodeData = JSON.stringify(qrContent);
         
         const createdQRCode = await prisma.qRCode.create({
           data: {
             order_id: orderId,
             order_item_id: item.id,
             product_id: item.product_id,
-            qr_code: qrCodeUrl, // Backend URL'ini içeren QR kod
+            qr_code: qrCodeData, // JSON formatında QR kod (eski sistem ile uyumlu)
             is_scanned: false,
             scan_count: 0,
             required_scans: item.quantity // Item'ın quantity'si kadar okutulması gerekiyor
@@ -439,29 +435,57 @@ export class QRCodeService {
         throw new Error('Geçersiz QR kod formatı')
       }
 
-      // Eğer gelen değer PASHA- ile başlıyorsa, bu QR kod ID'si
-      // Eğer URL formatındaysa, query parameter'dan ID'yi çıkar
-      let qrCodeId = qrCode
-      if (qrCode.includes('/api/admin/scan-qr?qrCode=')) {
-        const urlParts = qrCode.split('qrCode=')
-        if (urlParts.length > 1) {
-          qrCodeId = urlParts[1]
+      let qrRecord = null
+      let searchCriteria = null
+
+      // 1. JSON formatında QR kod kontrolü (eski sistem)
+      try {
+        const parsedQR = JSON.parse(qrCode)
+        if (parsedQR.siparis_id && parsedQR.item_id) {
+          console.log('📱 JSON formatında QR kod algılandı:', parsedQR.siparis_id)
+          searchCriteria = {
+            where: {
+              order_id: parsedQR.siparis_id,
+              order_item_id: parsedQR.item_id
+            }
+          }
+        }
+      } catch (e) {
+        // JSON değilse, URL formatında kontrol et
+      }
+
+      // 2. URL formatında QR kod kontrolü (yeni sistem)
+      if (!searchCriteria) {
+        let qrCodeId = qrCode
+        if (qrCode.includes('/api/admin/scan-qr?qrCode=')) {
+          const urlParts = qrCode.split('qrCode=')
+          if (urlParts.length > 1) {
+            qrCodeId = urlParts[1]
+          }
+        }
+
+        // PASHA- formatı kontrolü (sadece URL formatı için)
+        if (qrCodeId.startsWith('PASHA-')) {
+          console.log('📱 URL formatında QR kod algılandı:', qrCodeId)
+          searchCriteria = {
+            where: { 
+              OR: [
+                { qr_code: qrCode }, // Tam URL eşleşmesi
+                { qr_code: { contains: qrCodeId } } // QR kod ID'si içeren URL
+              ]
+            }
+          }
         }
       }
 
-      // QR kod formatını kontrol et
-      if (!qrCodeId.startsWith('PASHA-')) {
-        throw new Error('Geçersiz QR kod formatı. QR kod PASHA- ile başlamalıdır.')
+      // 3. Hiçbir format uymazsa hata
+      if (!searchCriteria) {
+        throw new Error('Geçersiz QR kod formatı. QR kod JSON formatında (siparis_id, item_id içeren) veya PASHA- ile başlayan URL formatında olmalıdır.')
       }
 
-      // QR kod kontrolü - artık URL formatında saklanan QR kodları arayalım
-      const qrRecord = await prisma.qRCode.findFirst({
-        where: { 
-          OR: [
-            { qr_code: qrCode }, // Tam URL eşleşmesi
-            { qr_code: { contains: qrCodeId } } // QR kod ID'si içeren URL
-          ]
-        },
+      // QR kod kaydını bul
+      qrRecord = await prisma.qRCode.findFirst({
+        where: searchCriteria.where,
         include: {
           order: {
             include: {
