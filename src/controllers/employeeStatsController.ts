@@ -47,32 +47,8 @@ export class EmployeeStatsController {
         })
       }
 
-      // Çalışanın tamamladığı siparişlerin istatistiklerini getir
-      const employeeStats = await prisma.employeeOrderStats.findMany({
-        where: {
-          employeeId: employeeId
-        },
-        include: {
-          order: {
-            select: {
-              id: true,
-              status: true,
-              total_price: true,
-              created_at: true,
-              items: {
-                select: {
-                  quantity: true,
-                  unit_price: true,
-                  total_price: true
-                }
-              }
-            }
-          }
-        },
-        orderBy: {
-          completedAt: 'desc'
-        }
-      })
+      // Artık teslimat istatistikleri tutulmayacak - sadece boş array döndür
+      const employeeStats: any[] = []
 
       // QRCode tablosundan çalışanın hazırladığı siparişleri getir
       const preparedOrdersFromQR = await prisma.qRCode.findMany({
@@ -89,12 +65,11 @@ export class EmployeeStatsController {
         distinct: ['order_id']
       })
 
-      // Teslim edilen sipariş istatistiklerini hesapla
-      const totalCompletedOrders = employeeStats.length
-      const totalAmount = employeeStats.reduce((sum, stat) => sum + Number(stat.totalAmount), 0)
-      const totalAreaCm2 = employeeStats.reduce((sum, stat) => sum + Number(stat.totalAreaM2), 0)
-      const totalAreaM2 = totalAreaCm2 / 10000 // cm²'den m²'ye dönüştür
-      const totalItems = employeeStats.reduce((sum, stat) => sum + stat.totalItems, 0)
+      // Teslimat istatistikleri artık tutulmayacak
+      const totalCompletedOrders = 0
+      const totalAmount = 0
+      const totalAreaM2 = 0
+      const totalItems = 0
 
       // Hazırlama istatistiklerini hesapla (QRCode tablosundan)
       const preparedOrderCount = preparedOrdersFromQR.length
@@ -115,17 +90,8 @@ export class EmployeeStatsController {
       const averageAreaM2 = totalCompletedOrders > 0 ? totalAreaM2 / totalCompletedOrders : 0
       const averageItems = totalCompletedOrders > 0 ? totalItems / totalCompletedOrders : 0
 
-      // Sipariş detaylarını hazırla
-      const completedOrders = employeeStats.map(stat => ({
-        orderId: stat.orderId,
-        completedAt: stat.completedAt,
-        totalAmount: Number(stat.totalAmount),
-        totalAreaM2: Number(stat.totalAreaM2) / 10000, // cm²'den m²'ye dönüştür
-        totalItems: stat.totalItems,
-        orderStatus: stat.order.status,
-        orderCreatedAt: stat.order.created_at,
-        orderTotalPrice: Number(stat.order.total_price)
-      }))
+      // Teslimat istatistikleri artık tutulmayacak
+      const completedOrders: any[] = []
 
       // Hazırlanan siparişlerin detaylarını hazırla
       const preparedOrders = preparedOrdersFromQR.map(qr => ({
@@ -141,19 +107,14 @@ export class EmployeeStatsController {
         qrCodeId: qr.id
       }))
 
-      // Son 30 günlük performans
+      // Son 30 günlük performans - teslimat istatistikleri artık tutulmayacak
       const thirtyDaysAgo = new Date()
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-      const recentStats = employeeStats.filter(stat => 
-        stat.completedAt >= thirtyDaysAgo
-      )
-
-      const recentCompletedOrders = recentStats.length
-      const recentTotalAmount = recentStats.reduce((sum, stat) => sum + Number(stat.totalAmount), 0)
-      const recentTotalAreaCm2 = recentStats.reduce((sum, stat) => sum + Number(stat.totalAreaM2), 0)
-      const recentTotalAreaM2 = recentTotalAreaCm2 / 10000 // cm²'den m²'ye dönüştür
-      const recentTotalItems = recentStats.reduce((sum, stat) => sum + stat.totalItems, 0)
+      const recentCompletedOrders = 0
+      const recentTotalAmount = 0
+      const recentTotalAreaM2 = 0
+      const recentTotalItems = 0
 
       // Son 30 günlük hazırlama performansı
       const recentPreparedOrders = preparedOrdersFromQR.filter(qr => 
@@ -181,16 +142,7 @@ export class EmployeeStatsController {
             phoneNumber: employee.phoneNumber
           },
           overallStats: {
-            // Teslim edilen siparişler (tamamlanan)
-            totalCompletedOrders,
-            totalAmount: Number(totalAmount.toFixed(2)),
-            totalAreaM2: Number(totalAreaM2.toFixed(2)),
-            totalItems,
-            averageAmount: Number(averageAmount.toFixed(2)),
-            averageAreaM2: Number(averageAreaM2.toFixed(2)),
-            averageItems: Number(averageItems.toFixed(1)),
-            
-            // Hazırlanan siparişler (QRCode'dan)
+            // Teslimat istatistikleri artık tutulmayacak - sadece hazırlama istatistikleri
             preparedOrders: preparedOrderCount,
             preparedAmount: Number(preparedAmountTotal.toFixed(2)),
             preparedAreaM2: Number(preparedAreaM2Total.toFixed(2)),
@@ -201,19 +153,12 @@ export class EmployeeStatsController {
           },
           recentStats: {
             period: 'Son 30 gün',
-            // Teslim edilen siparişler
-            completedOrders: recentCompletedOrders,
-            totalAmount: Number(recentTotalAmount.toFixed(2)),
-            totalAreaM2: Number(recentTotalAreaM2.toFixed(2)),
-            totalItems: recentTotalItems,
-            
-            // Hazırlanan siparişler
+            // Sadece hazırlama istatistikleri
             preparedOrders: recentPreparedOrderCount,
             preparedAmount: Number(recentPreparedAmount.toFixed(2)),
             preparedAreaM2: Number(recentPreparedAreaM2.toFixed(2)),
             preparedItems: recentPreparedItems
           },
-          completedOrders: completedOrders,
           preparedOrders: preparedOrders
         }
       })

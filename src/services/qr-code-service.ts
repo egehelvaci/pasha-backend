@@ -22,99 +22,7 @@ export class QRCodeService {
     }
   }
 
-  /**
-   * Mağaza türüne göre QR kod içeriği formatını belirle
-   */
-  private async getQRContentByStoreType(orderId: string, orderItemId: string) {
-    // Sipariş ve mağaza bilgilerini al
-    const orderData = await prisma.order.findUnique({
-      where: { id: orderId },
-      include: {
-        user: {
-          include: {
-            Store: {
-              select: {
-                store_type: true,
-                kurum_adi: true,
-                telefon: true,
-                adres: true
-              }
-            }
-          }
-        },
-        items: {
-          where: { id: orderItemId },
-          include: {
-            product: {
-              include: {
-                collection: true
-              }
-            }
-          }
-        }
-      }
-    });
 
-    if (!orderData || !orderData.items[0]) {
-      throw new Error('Sipariş veya ürün bilgisi bulunamadı');
-    }
-
-    const store = orderData.user.Store;
-    const item = orderData.items[0];
-    const storeType = store?.store_type || 'KARGO';
-
-    // Mağaza türüne göre farklı formatlar
-    switch (storeType) {
-      case 'KARGO':
-      case 'AMBAR':
-        // Kargo ve Ambar: adres, telefon ve ürün bilgileri
-        return {
-          siparis_id: orderId,
-          item_id: orderItemId,
-          magaza_adi: store?.kurum_adi || '',
-          telefon: store?.telefon || '',
-          adres: store?.adres || '',
-          urun_adi: item.product.name,
-          koleksiyon: item.product.collection.name,
-          miktar: item.quantity,
-          ebat: `${item.width}x${item.height}`,
-          kesim_turu: item.cut_type || 'rectangle',
-          tarih: orderData.created_at.toISOString().split('T')[0]
-        };
-
-      case 'SERVIS':
-      case 'KENDI_ALAN':
-        // Servis ve Kendi Alan: müşteri adı, ürün adı, ebat, kesim türü
-        return {
-          siparis_id: orderId,
-          item_id: orderItemId,
-          musteri_adi: `${orderData.user.name} ${orderData.user.surname}`,
-          urun_adi: item.product.name,
-          koleksiyon: item.product.collection.name,
-          miktar: item.quantity,
-          ebat: `${item.width}x${item.height}`,
-          kesim_turu: item.cut_type || 'rectangle',
-          saçak: item.has_fringe ? 'Var' : 'Yok',
-          tarih: orderData.created_at.toISOString().split('T')[0]
-        };
-
-      default:
-        // Varsayılan format (KARGO gibi)
-        return {
-          siparis_id: orderId,
-          item_id: orderItemId,
-          magaza_adi: store?.kurum_adi || '',
-          telefon: store?.telefon || '',
-          adres: store?.adres || '',
-          urun_adi: item.product.name,
-          koleksiyon: item.product.collection.name,
-          miktar: item.quantity,
-          ebat: `${item.width}x${item.height}`,
-          kesim_turu: item.cut_type || 'rectangle',
-          tarih: orderData.created_at.toISOString().split('T')[0]
-        };
-    }
-  }
 
   /**
    * Sipariş için QR kod görselleri oluşturur, Tebi'ye yükler ve DB'yi günceller (asıl işlem)
@@ -252,16 +160,18 @@ export class QRCodeService {
         
         const qrCodeString = this.generateUniqueQRCode()
         
-        // Mağaza türüne göre QR kod içeriği oluştur
-        const qrContent = await this.getQRContentByStoreType(orderId, item.id);
-        const qrCodeData = JSON.stringify(qrContent);
+        // Backend URL'ini al
+        const backendUrl = process.env.PUBLIC_URL || 'https://pasha-backend-production.up.railway.app'
+        
+        // QR kod URL'ini oluştur (backend'e yönlendirecek)
+        const qrCodeUrl = `${backendUrl}/api/admin/scan-qr?qrCode=${qrCodeString}`
         
         const createdQRCode = await prisma.qRCode.create({
           data: {
             order_id: orderId,
             order_item_id: item.id,
             product_id: item.product_id,
-            qr_code: qrCodeData, // Mağaza türüne göre formatlanmış içerik
+            qr_code: qrCodeUrl, // Backend URL'ini içeren QR kod
             is_scanned: false,
             scan_count: 0,
             required_scans: item.quantity // Item'ın quantity'si kadar okutulması gerekiyor
@@ -437,8 +347,7 @@ export class QRCodeService {
         throw new Error('Geçersiz QR kod formatı')
       }
 
-      // Eğer gelen değer PASHA- ile başlıyorsa, bu QR kod ID'si
-      // Eğer URL formatındaysa, query parameter'dan ID'yi çıkar
+      // QR kod URL formatından PASHA ID'sini çıkar
       let qrCodeId = qrCode
       if (qrCode.includes('/api/admin/scan-qr?qrCode=')) {
         const urlParts = qrCode.split('qrCode=')
@@ -447,18 +356,15 @@ export class QRCodeService {
         }
       }
 
-      // QR kod formatını kontrol et
+      // QR kod formatını kontrol et - sadece PASHA- formatı kabul edilir
       if (!qrCodeId.startsWith('PASHA-')) {
         throw new Error('Geçersiz QR kod formatı. QR kod PASHA- ile başlamalıdır.')
       }
 
-      // QR kod kontrolü - artık URL formatında saklanan QR kodları arayalım
+      // QR kod kontrolü - sadece URL formatında QR kodları ara
       const qrRecord = await prisma.qRCode.findFirst({
         where: { 
-          OR: [
-            { qr_code: qrCode }, // Tam URL eşleşmesi
-            { qr_code: { contains: qrCodeId } } // QR kod ID'si içeren URL
-          ]
+          qr_code: { contains: qrCodeId } // QR kod ID'si içeren URL
         },
         include: {
           order: {
@@ -597,9 +503,9 @@ export class QRCodeService {
           })
 
           if (secondScannedQRs.length === allQRCodes.length) {
-            // Tüm QR kodlar ikinci kez okutuldu - çalışan seçimi gerekiyor
+            // Tüm QR kodlar ikinci kez okutuldu - sipariş teslim edildi
             newOrderStatus = 'DELIVERED'
-            message = 'Tüm QR kodlar ikinci kez okutuldu! Teslim edecek çalışanı seçin.'
+            message = 'Tüm QR kodlar ikinci kez okutuldu! Sipariş teslim edildi.'
             
             await prisma.order.update({
               where: { id: qrRecord.order_id },
@@ -609,13 +515,12 @@ export class QRCodeService {
               }
             })
 
-            // Çalışan seçimi gerekiyor (teslim için)
+            // Artık çalışan seçimi gerekmiyor - direkt teslim edildi durumu
             return {
               success: true,
               message,
-              requiresEmployeeSelection: true,
-              selectionType: 'deliver', // Teslim için seçim (API ile uyumlu)
-              employees: (await employeeAssignmentService.getAllEmployees()).employees,
+              requiresEmployeeSelection: false,
+              orderStatus: 'DELIVERED',
               orderId: qrRecord.order_id,
               orderDetails: {
                 total_price: currentOrder.total_price,
@@ -698,9 +603,9 @@ export class QRCodeService {
   }
 
   /**
-   * Çalışan seçimi sonrası istatistikleri güncelle
+   * Çalışan seçimi sonrası istatistikleri güncelle - Artık sadece hazırlama için
    */
-  async assignEmployeeToOrder(orderId: string, employeeId: string, assignmentType: 'prepare' | 'deliver') {
+  async assignEmployeeToOrder(orderId: string, employeeId: string, assignmentType: 'prepare') {
     try {
       const order = await prisma.order.findUnique({
         where: { id: orderId },
@@ -717,69 +622,15 @@ export class QRCodeService {
         throw new Error('Sipariş bulunamadı')
       }
 
-      const totalAmount = Number(order.total_price)
-      const totalAreaM2 = order.items.reduce((sum, item) => sum + (Number(item.width) * Number(item.height) * item.quantity / 10000), 0)
-      const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0)
-
-      // Mevcut employee stats kaydı var mı kontrol et
-      let employeeStats = await prisma.employeeOrderStats.findUnique({
-        where: { orderId: orderId }
-      })
-
+      // Artık sadece hazırlama için çalışan ataması yapılacak
       if (assignmentType === 'prepare') {
-        // İlk QR okutma - hazırlayan çalışan
-        if (!employeeStats) {
-          await prisma.employeeOrderStats.create({
-            data: {
-              employeeId: employeeId,
-              orderId: orderId,
-              totalAmount,
-              totalAreaM2,
-              totalItems,
-              orderStatus: 'READY',
-              preparedAreaM2: totalAreaM2,
-              completedAt: new Date()
-            }
-          })
-        } else {
-          await prisma.employeeOrderStats.update({
-            where: { orderId: orderId },
-            data: {
-              employeeId: employeeId, // Hazırlayan çalışan
-              preparedAreaM2: totalAreaM2,
-              orderStatus: 'READY'
-            }
-          })
-        }
-      } else if (assignmentType === 'deliver') {
-        // İkinci QR okutma - teslim eden çalışan
-        if (employeeStats) {
-          await prisma.employeeOrderStats.update({
-            where: { orderId: orderId },
-            data: {
-              deliveredAreaM2: totalAreaM2,
-              orderStatus: 'DELIVERED',
-              completedAt: new Date() // Teslim tamamlandığında güncelle
-            }
-          })
-        } else {
-          // Employee stats yoksa oluştur (edge case)
-          await prisma.employeeOrderStats.create({
-            data: {
-              employeeId: employeeId,
-              orderId: orderId,
-              totalAmount,
-              totalAreaM2,
-              totalItems,
-              orderStatus: 'DELIVERED',
-              deliveredAreaM2: totalAreaM2,
-              completedAt: new Date()
-            }
-          })
-        }
-
-        // Ayrıca teslim eden çalışan için ayrı bir kayıt tutabiliriz
-        // Şimdilik mevcut kaydı güncelliyoruz
+        // QR kodlarındaki first_scan_employee_id'yi güncelle
+        await prisma.qRCode.updateMany({
+          where: { order_id: orderId },
+          data: {
+            first_scan_employee_id: employeeId
+          }
+        })
       }
 
       return { success: true }

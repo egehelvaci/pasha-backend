@@ -487,11 +487,77 @@ export class AdminOrderController {
 
       const result = await qrCodeService.scanQRCode(qrCode, adminUserId, selectedEmployeeId)
 
-      // Eğer çalışan seçimi gerekiyorsa (hazırlama veya teslim için)
+      // Eğer sipariş teslim edildi ise
+      if (result.orderStatus === 'DELIVERED') {
+        const deliveredHtml = `
+          <!DOCTYPE html>
+          <html lang="tr">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Sipariş Teslim Edildi</title>
+            <style>
+              body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                margin: 0;
+                background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+                color: white;
+                padding: 20px;
+              }
+              .container {
+                text-align: center;
+                background: rgba(255, 255, 255, 0.1);
+                padding: 2rem;
+                border-radius: 15px;
+                backdrop-filter: blur(10px);
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                max-width: 500px;
+                width: 100%;
+              }
+              .success-icon {
+                font-size: 4rem;
+                margin-bottom: 1rem;
+              }
+              .message {
+                font-size: 1.2rem;
+                margin-bottom: 2rem;
+                line-height: 1.4;
+              }
+              .order-details {
+                font-size: 0.9rem;
+                opacity: 0.8;
+                margin-top: 1rem;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="success-icon">✅</div>
+              <div class="message">
+                <strong>Sipariş Teslim Edildi!</strong><br>
+                ${result.message}
+              </div>
+              <div class="order-details">
+                Sipariş ID: ${result.orderId}<br>
+                Toplam Tutar: ${result.orderDetails.total_price} TL<br>
+                Toplam Alan: ${result.orderDetails.total_area_m2.toFixed(2)} m²<br>
+                Toplam Ürün: ${result.orderDetails.total_items} adet
+              </div>
+            </div>
+          </body>
+          </html>
+        `
+        return res.status(200).send(deliveredHtml)
+      }
+
+      // Eğer çalışan seçimi gerekiyorsa (sadece hazırlama için)
       if (result.requiresEmployeeSelection) {
-        const selectionType = result.selectionType || 'prepare' // prepare veya deliver
-        const titleText = selectionType === 'deliver' ? 'Sipariş Teslim!' : 'Sipariş Hazır!'
-        const messageText = selectionType === 'deliver' ? 'Lütfen teslim edecek çalışanı seçin.' : 'Lütfen sorumlu çalışanı seçin.'
+        const titleText = 'Sipariş Hazır!'
+        const messageText = 'Lütfen sorumlu çalışanı seçin.'
         const employeeSelectionHtml = `
           <!DOCTYPE html>
           <html lang="tr">
@@ -639,7 +705,7 @@ export class AdminOrderController {
 
                 if (confirm('Seçilen Çalışan: ' + employeeName + '\\n\\nOnaylıyor musunuz?')) {
                   // Çalışan seçimi API'sine gönder
-                  const assignmentType = '${selectionType}';
+                  const assignmentType = 'prepare';
                   const orderId = '${result.orderId}';
                   
                   // Loading state
@@ -1520,12 +1586,14 @@ export class AdminOrderController {
         })
       }
 
-      // Çalışan ataması yap
-      await qrCodeService.assignEmployeeToOrder(orderId, employeeId, assignmentType as 'prepare' | 'deliver')
+      // Çalışan ataması yap - artık sadece hazırlama için
+      if (assignmentType === 'prepare') {
+        await qrCodeService.assignEmployeeToOrder(orderId, employeeId, 'prepare')
+      }
 
       return res.status(200).json({
         success: true,
-        message: `Çalışan ${assignmentType === 'prepare' ? 'hazırlama' : 'teslim'} işlemi için başarıyla atandı`,
+        message: `Çalışan hazırlama işlemi için başarıyla atandı`,
         data: {
           orderId,
           employee: {
