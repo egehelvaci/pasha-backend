@@ -597,9 +597,9 @@ export class QRCodeService {
           })
 
           if (secondScannedQRs.length === allQRCodes.length) {
-            // Tüm QR kodlar ikinci kez okutuldu - çalışan seçimi gerekiyor
+            // Tüm QR kodlar ikinci kez okutuldu - sipariş teslim edildi
             newOrderStatus = 'DELIVERED'
-            message = 'Tüm QR kodlar ikinci kez okutuldu! Teslim edecek çalışanı seçin.'
+            message = 'Tüm QR kodlar ikinci kez okutuldu! Sipariş teslim edildi.'
             
             await prisma.order.update({
               where: { id: qrRecord.order_id },
@@ -609,13 +609,12 @@ export class QRCodeService {
               }
             })
 
-            // Çalışan seçimi gerekiyor (teslim için)
+            // Artık çalışan seçimi gerekmiyor - direkt teslim edildi durumu
             return {
               success: true,
               message,
-              requiresEmployeeSelection: true,
-              selectionType: 'deliver', // Teslim için seçim (API ile uyumlu)
-              employees: (await employeeAssignmentService.getAllEmployees()).employees,
+              requiresEmployeeSelection: false,
+              orderStatus: 'DELIVERED',
               orderId: qrRecord.order_id,
               orderDetails: {
                 total_price: currentOrder.total_price,
@@ -698,9 +697,9 @@ export class QRCodeService {
   }
 
   /**
-   * Çalışan seçimi sonrası istatistikleri güncelle
+   * Çalışan seçimi sonrası istatistikleri güncelle - Artık sadece hazırlama için
    */
-  async assignEmployeeToOrder(orderId: string, employeeId: string, assignmentType: 'prepare' | 'deliver') {
+  async assignEmployeeToOrder(orderId: string, employeeId: string, assignmentType: 'prepare') {
     try {
       const order = await prisma.order.findUnique({
         where: { id: orderId },
@@ -717,69 +716,15 @@ export class QRCodeService {
         throw new Error('Sipariş bulunamadı')
       }
 
-      const totalAmount = Number(order.total_price)
-      const totalAreaM2 = order.items.reduce((sum, item) => sum + (Number(item.width) * Number(item.height) * item.quantity / 10000), 0)
-      const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0)
-
-      // Mevcut employee stats kaydı var mı kontrol et
-      let employeeStats = await prisma.employeeOrderStats.findUnique({
-        where: { orderId: orderId }
-      })
-
+      // Artık sadece hazırlama için çalışan ataması yapılacak
       if (assignmentType === 'prepare') {
-        // İlk QR okutma - hazırlayan çalışan
-        if (!employeeStats) {
-          await prisma.employeeOrderStats.create({
-            data: {
-              employeeId: employeeId,
-              orderId: orderId,
-              totalAmount,
-              totalAreaM2,
-              totalItems,
-              orderStatus: 'READY',
-              preparedAreaM2: totalAreaM2,
-              completedAt: new Date()
-            }
-          })
-        } else {
-          await prisma.employeeOrderStats.update({
-            where: { orderId: orderId },
-            data: {
-              employeeId: employeeId, // Hazırlayan çalışan
-              preparedAreaM2: totalAreaM2,
-              orderStatus: 'READY'
-            }
-          })
-        }
-      } else if (assignmentType === 'deliver') {
-        // İkinci QR okutma - teslim eden çalışan
-        if (employeeStats) {
-          await prisma.employeeOrderStats.update({
-            where: { orderId: orderId },
-            data: {
-              deliveredAreaM2: totalAreaM2,
-              orderStatus: 'DELIVERED',
-              completedAt: new Date() // Teslim tamamlandığında güncelle
-            }
-          })
-        } else {
-          // Employee stats yoksa oluştur (edge case)
-          await prisma.employeeOrderStats.create({
-            data: {
-              employeeId: employeeId,
-              orderId: orderId,
-              totalAmount,
-              totalAreaM2,
-              totalItems,
-              orderStatus: 'DELIVERED',
-              deliveredAreaM2: totalAreaM2,
-              completedAt: new Date()
-            }
-          })
-        }
-
-        // Ayrıca teslim eden çalışan için ayrı bir kayıt tutabiliriz
-        // Şimdilik mevcut kaydı güncelliyoruz
+        // QR kodlarındaki first_scan_employee_id'yi güncelle
+        await prisma.qRCode.updateMany({
+          where: { order_id: orderId },
+          data: {
+            first_scan_employee_id: employeeId
+          }
+        })
       }
 
       return { success: true }
