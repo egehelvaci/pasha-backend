@@ -92,7 +92,8 @@ export class AdminController {
         userTypeName, 
         storeId, 
         store_id,
-        adres
+        adres,
+        canSeePrice
       } = req.body
       
       // Zorunlu alanları kontrol et
@@ -165,7 +166,8 @@ export class AdminController {
           surname,
           phoneNumber: phoneNumber || null,
           userTypeId: parseInt(finalUserTypeId),
-          store_id: finalStoreId
+          store_id: finalStoreId,
+          canSeePrice: canSeePrice !== undefined ? canSeePrice : true
         },
         include: {
           userType: true,
@@ -202,7 +204,8 @@ export class AdminController {
         userTypeId, 
         userTypeName,
         store_id, 
-        storeId
+        storeId,
+        canSeePrice
       } = req.body
       
       console.log('Update User Request:', { userId, body: req.body })
@@ -242,6 +245,7 @@ export class AdminController {
       if (userTypeId !== undefined) updateData.userTypeId = parseInt(userTypeId)
       if (store_id !== undefined) updateData.store_id = store_id
       if (storeId !== undefined) updateData.store_id = storeId
+      if (canSeePrice !== undefined) updateData.canSeePrice = canSeePrice
       
       // UserType name'e göre ID bul
       if (userTypeName && !userTypeId) {
