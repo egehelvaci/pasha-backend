@@ -1550,11 +1550,11 @@ export class OrderService {
           }
 
           // Varyasyonu bul (doğru target boyutları ile)
+          // Cut type ve fringe kontrolleri daha esnek yapıldı
           const variation = item.product.productvariations.find((v: any) => 
             v.width === targetWidth && 
-            v.height === targetHeight &&
-            v.has_fringe === itemHasFringe &&
-            v.cut_type_id === (item.cut_type ? parseInt(item.cut_type) : null)
+            v.height === targetHeight
+            // has_fringe ve cut_type_id kontrollerini kaldırdık çünkü kesim ürünlerde genellikle farklı olabiliyor
           );
 
           if (variation) {
@@ -1585,7 +1585,8 @@ export class OrderService {
             });
 
           } else {
-            console.warn(`⚠️ Stok varyasyonu bulunamadı: ${item.product.name} - ${item.width}x${item.height}`);
+            console.warn(`⚠️ Stok varyasyonu bulunamadı: ${item.product.name} - ${targetWidth}x${targetHeight} (aranan varyasyon)`);
+            console.warn(`   Orijinal item ebatı: ${item.width}x${item.height}`);
           }
         }
 
