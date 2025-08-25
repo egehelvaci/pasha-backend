@@ -7,7 +7,7 @@ const cutTypesController = new CutTypesController()
 
 // Tüm cut types rotaları için önce kimlik doğrulama ve yetkilendirme gerekiyor
 router.use(authMiddleware)
-router.use(authorizeRoles('admin'))
+router.use(authorizeRoles('admin', 'editor'))
 
 // =========== CUT TYPES CRUD ===========
 

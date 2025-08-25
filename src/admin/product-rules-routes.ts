@@ -7,7 +7,7 @@ const productRulesController = new ProductRulesController()
 
 // Tüm product rules rotaları için önce kimlik doğrulama ve yetkilendirme gerekiyor
 router.use(authMiddleware)
-router.use(authorizeRoles('admin'))
+router.use(authorizeRoles('admin', 'editor'))
 
 // =========== PRODUCT RULES CRUD ===========
 
