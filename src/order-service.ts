@@ -1527,19 +1527,41 @@ export class OrderService {
         console.log(`📦 Sipariş iptal ediliyor: ${orderId} - Durum: ${order.status}`);
         
         for (const item of order.items) {
-          // Her item için stok varyasyonunu bul ve güncelle
-          const variation = item.product.productvariations.find(v => 
-            v.width === Number(item.width) && 
-            v.height === Number(item.height) &&
-            v.has_fringe === item.has_fringe &&
+          const itemWidth = item.width ? Math.round(Number(item.width)) : 0
+          const itemHeight = item.height ? Math.round(Number(item.height)) : 0
+          const itemHasFringe = item.has_fringe || false
+
+          // Kullanılacak varyasyon boyutunu belirle (stok düşürme mantığıyla aynı)
+          let targetWidth = itemWidth
+          let targetHeight = itemHeight
+
+          // Ürün kuralını kontrol et
+          if (item.product.rule_id && item.product.productrules) {
+            const sizeOptions = item.product.productrules.productsizeoptions
+            
+            // Bu genişlik için opsiyonel yükseklik seçeneği var mı?
+            const widthOption = sizeOptions.find((opt: any) => opt.width === itemWidth)
+            
+            if (widthOption && widthOption.is_optional_height) {
+              // Opsiyonel yükseklik kuralı var - maksimum yükseklik değerini kullan
+              targetHeight = widthOption.height
+              console.log(`📏 İptal - Opsiyonel yükseklik kuralı: ${itemWidth}x${itemHeight} → ${targetWidth}x${targetHeight} varyasyonu kullanılacak`)
+            }
+          }
+
+          // Varyasyonu bul (doğru target boyutları ile)
+          const variation = item.product.productvariations.find((v: any) => 
+            v.width === targetWidth && 
+            v.height === targetHeight &&
+            v.has_fringe === itemHasFringe &&
             v.cut_type_id === (item.cut_type ? parseInt(item.cut_type) : null)
           );
 
           if (variation) {
-            // Ürünün opsiyonel yükseklik olup olmadığını kontrol et (stok düşürme mantığıyla aynı)
+            // Opsiyonel yükseklik kontrolü (target width ile)
             const sizeOptions = item.product.productrules?.productsizeoptions || []
             const isOptionalHeight = sizeOptions.some((so: any) => 
-              so.width === variation.width && so.is_optional_height
+              so.width === targetWidth && so.is_optional_height
             )
 
             const areaM2 = (Number(item.width) * Number(item.height)) / 10000;
