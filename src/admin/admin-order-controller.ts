@@ -18,6 +18,7 @@ export class AdminOrderController {
     this.createOrderForStore = this.createOrderForStore.bind(this)
     this.processAdminOrder = this.processAdminOrder.bind(this)
     this.assignEmployeeToOrder = this.assignEmployeeToOrder.bind(this)
+    this.bulkConfirmOrders = this.bulkConfirmOrders.bind(this)
   }
 
   /**
@@ -1608,6 +1609,165 @@ export class AdminOrderController {
       return res.status(500).json({
         success: false,
         message: error.message || 'Çalışan ataması sırasında bir hata oluştu'
+      })
+    }
+  }
+
+  /**
+   * Toplu sipariş onaylama
+   */
+  async bulkConfirmOrders(req: Request, res: Response) {
+    try {
+      const { orderIds } = req.body
+      const adminUserId = (req as any).user?.userId
+
+      if (!adminUserId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Admin kimlik doğrulaması gerekli'
+        })
+      }
+
+      if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Onaylanacak sipariş ID\'leri gerekli (orderIds array)'
+        })
+      }
+
+      if (orderIds.length > 50) {
+        return res.status(400).json({
+          success: false,
+          message: 'Aynı anda en fazla 50 sipariş onaylanabilir'
+        })
+      }
+
+      // Siparişlerin varlığını ve durumlarını kontrol et
+      const orders = await prisma.order.findMany({
+        where: {
+          id: { in: orderIds },
+          status: 'PENDING'
+        },
+        select: {
+          id: true,
+          status: true,
+          total_price: true,
+          user: {
+            select: {
+              name: true,
+              surname: true,
+              Store: {
+                select: {
+                  kurum_adi: true
+                }
+              }
+            }
+          }
+        }
+      })
+
+      if (orders.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Onaylanabilir (PENDING durumunda) sipariş bulunamadı'
+        })
+      }
+
+      const foundOrderIds = orders.map(order => order.id)
+      const notFoundOrderIds = orderIds.filter(id => !foundOrderIds.includes(id))
+
+      // Toplu onaylama işlemi
+      const results: {
+        success: Array<{
+          orderId: string;
+          customerName: string;
+          storeName: string;
+          amount: number;
+          qrCodeCount: number;
+          message: string;
+        }>;
+        failed: Array<{
+          orderId: string;
+          customerName: string;
+          error: string;
+        }>;
+        summary: {
+          total: number;
+          successful: number;
+          failed: number;
+          totalAmount: number;
+        };
+      } = {
+        success: [],
+        failed: [],
+        summary: {
+          total: orderIds.length,
+          successful: 0,
+          failed: 0,
+          totalAmount: 0
+        }
+      }
+
+      // Her siparişi ayrı ayrı onayla
+      for (const order of orders) {
+        try {
+          // QR kodları oluştur
+          const qrResult = await qrCodeService.generateQRCodesForOrder(order.id)
+          
+          if (qrResult.success) {
+            results.success.push({
+              orderId: order.id,
+              customerName: `${order.user.name} ${order.user.surname}`,
+              storeName: order.user.Store?.kurum_adi || 'Bilinmeyen Mağaza',
+              amount: Number(order.total_price),
+              qrCodeCount: qrResult.totalQRCodes || 0,
+              message: 'Sipariş başarıyla onaylandı ve QR kodları oluşturuldu'
+            })
+            results.summary.successful++
+            results.summary.totalAmount += Number(order.total_price)
+          } else {
+            results.failed.push({
+              orderId: order.id,
+              customerName: `${order.user.name} ${order.user.surname}`,
+              error: qrResult.message || 'QR kod oluşturma hatası'
+            })
+            results.summary.failed++
+          }
+        } catch (error: any) {
+          results.failed.push({
+            orderId: order.id,
+            customerName: `${order.user.name} ${order.user.surname}`,
+            error: error.message || 'Bilinmeyen hata'
+          })
+          results.summary.failed++
+        }
+      }
+
+      // Bulunamayan siparişleri failed'e ekle
+      if (notFoundOrderIds.length > 0) {
+        notFoundOrderIds.forEach(orderId => {
+          results.failed.push({
+            orderId,
+            customerName: 'Bilinmiyor',
+            error: 'Sipariş bulunamadı veya PENDING durumunda değil'
+          })
+          results.summary.failed++
+        })
+      }
+
+      // Response status'unu belirle
+      const statusCode = results.summary.successful > 0 ? 200 : 400
+
+      return res.status(statusCode).json({
+        success: results.summary.successful > 0,
+        message: `${results.summary.successful} sipariş başarıyla onaylandı, ${results.summary.failed} sipariş başarısız`,
+        data: results
+      })
+    } catch (error: any) {
+      console.error('Toplu sipariş onaylama hatası:', error)
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Toplu sipariş onaylama sırasında bir hata oluştu'
       })
     }
   }

@@ -49,6 +49,7 @@ router.get('/orders/:orderId', adminOrderController.getOrderById)
 router.get('/orders/:orderId/receipt', getOrderReceipt)
 router.put('/orders/:orderId/cancel', cancelOrder)
 router.post('/orders/:orderId/confirm', adminOrderController.confirmOrder)
+router.post('/orders/bulk-confirm', adminOrderController.bulkConfirmOrders)
 
 // Admin sipariş oluşturma rotaları
 router.post('/orders/create-for-store', adminOrderController.createOrderForStore)
