@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { ManuelSatisController } from './manuel-satis-controller'
-import { authMiddleware } from '../auth/auth-middleware'
+import { authMiddleware, authorizeRoles } from '../auth/auth-middleware'
 
 const router = Router()
 const manuelSatisController = new ManuelSatisController()
@@ -10,25 +10,25 @@ const manuelSatisController = new ManuelSatisController()
  * Base path: /api/admin/manuel-satis
  */
 
-// Ürün arama - yazarken filtreleme
-router.get('/search-products', authMiddleware, manuelSatisController.searchProducts)
+// Ürün arama - yazarken filtreleme - Admin ve Editör erişimi
+router.get('/search-products', authMiddleware, authorizeRoles('admin', 'editor'), manuelSatisController.searchProducts)
 
-// Manuel satış oluştur
-router.post('/create', authMiddleware, manuelSatisController.createManuelSatis)
+// Manuel satış oluştur - Admin ve Editör erişimi
+router.post('/create', authMiddleware, authorizeRoles('admin', 'editor'), manuelSatisController.createManuelSatis)
 
-// Ürün fiyatı hesapla
-router.post('/calculate-price', authMiddleware, manuelSatisController.calculateProductPrice)
+// Ürün fiyatı hesapla - Admin ve Editör erişimi
+router.post('/calculate-price', authMiddleware, authorizeRoles('admin', 'editor'), manuelSatisController.calculateProductPrice)
 
-// Manuel satış listesi
-router.get('/list', authMiddleware, manuelSatisController.getManuelSatisList)
+// Manuel satış listesi - Admin ve Editör erişimi
+router.get('/list', authMiddleware, authorizeRoles('admin', 'editor'), manuelSatisController.getManuelSatisList)
 
-// Manuel satış fişi al
-router.get('/receipt/:fisNumarasi', authMiddleware, manuelSatisController.getManuelSatisReceipt)
+// Manuel satış fişi al - Admin ve Editör erişimi
+router.get('/receipt/:fisNumarasi', authMiddleware, authorizeRoles('admin', 'editor'), manuelSatisController.getManuelSatisReceipt)
 
-// Manuel satış detayı getir
-router.get('/:fisNumarasi', authMiddleware, manuelSatisController.getManuelSatisById)
+// Manuel satış detayı getir - Admin ve Editör erişimi
+router.get('/:fisNumarasi', authMiddleware, authorizeRoles('admin', 'editor'), manuelSatisController.getManuelSatisById)
 
-// Manuel satış iptal et (gelecekte implementasyon)
-router.delete('/:fisNumarasi', authMiddleware, manuelSatisController.cancelManuelSatis)
+// Manuel satış iptal et - Admin ve Editör erişimi
+router.delete('/:fisNumarasi', authMiddleware, authorizeRoles('admin', 'editor'), manuelSatisController.cancelManuelSatis)
 
 export default router

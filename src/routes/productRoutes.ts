@@ -36,11 +36,11 @@ router.get('/:id/variations', authMiddleware, authorizeRoles('admin', 'editor'),
 // Admin ve editör erişebilir - Ürünün varyasyonlarını yeniden oluştur
 router.post('/:id/regenerate-variations', authMiddleware, authorizeRoles('admin', 'editor'), regenerateProductVariations);
 
-// Sadece admin erişebilir - Belirli kurala sahip ürünlerin varyasyonlarını yeniden oluştur
-router.post('/regenerate-variations/rule/:ruleId', authMiddleware, authorizeRoles('admin'), regenerateVariationsForRule);
+// Admin ve editör erişebilir - Belirli kurala sahip ürünlerin varyasyonlarını yeniden oluştur
+router.post('/regenerate-variations/rule/:ruleId', authMiddleware, authorizeRoles('admin', 'editor'), regenerateVariationsForRule);
 
-// Sadece admin erişebilir - Tüm ürünlerin varyasyonlarını yeniden oluştur
-router.post('/regenerate-variations/all', authMiddleware, authorizeRoles('admin'), regenerateAllVariations);
+// Admin ve editör erişebilir - Tüm ürünlerin varyasyonlarını yeniden oluştur
+router.post('/regenerate-variations/all', authMiddleware, authorizeRoles('admin', 'editor'), regenerateAllVariations);
 
 // Sadece giriş yapmış kullanıcılar - ID'ye göre ürün getir
 router.get('/:id', authMiddleware, getProductById);
@@ -54,8 +54,8 @@ router.post('/', authMiddleware, authorizeRoles('admin', 'editor'), uploadProduc
 // Admin ve editör erişebilir - Ürün güncelle (görsel yükleme ile)
 router.put('/:id', authMiddleware, authorizeRoles('admin', 'editor'), uploadProductImage, updateProduct);
 
-// Sadece admin erişebilir - Ürün sil
-router.delete('/:id', authMiddleware, authorizeRoles('admin'), deleteProduct);
+// Admin ve editör erişebilir - Ürün sil
+router.delete('/:id', authMiddleware, authorizeRoles('admin', 'editor'), deleteProduct);
 
 // Admin ve editör erişebilir - Stok güncelle
 router.patch('/:id/stock', authMiddleware, authorizeRoles('admin', 'editor'), updateProductStock);

@@ -84,10 +84,10 @@ router.delete('/users/:userId', authorizeRoles('admin', 'editor'), adminControll
 router.post('/users/:userId/assign-store', authorizeRoles('admin', 'editor'), adminController.assignUserToStore)
 router.delete('/users/:userId/remove-store', authorizeRoles('admin', 'editor'), adminController.removeUserFromStore)
 
-// Excel Export API'leri
-router.get('/export/orders', excelExportController.exportOrders)
+// Excel Export API'leri - Editör ve Admin erişimi
+router.get('/export/orders', authorizeRoles('admin', 'editor'), excelExportController.exportOrders)
 
-// Payment API'leri
-router.get('/payments', adminPaymentController.getAllPayments)
+// Payment API'leri - Editör ve Admin erişimi
+router.get('/payments', authorizeRoles('admin', 'editor'), adminPaymentController.getAllPayments)
 
 export default router 

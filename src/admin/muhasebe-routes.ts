@@ -6,7 +6,7 @@ const router = express.Router()
 
 // Tüm muhasebe rotaları için önce kimlik doğrulama ve yetkilendirme gerekiyor
 router.use(authMiddleware)
-router.use(authorizeRoles('admin'))
+router.use(authorizeRoles('admin', 'editor'))
 
 // Ana muhasebe endpoint'leri
 router.get('/muhasebe-hareketleri', muhasebeController.getAllMuhasebeHareketleri)
