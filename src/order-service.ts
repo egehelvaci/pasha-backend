@@ -1445,7 +1445,12 @@ export class OrderService {
             include: {
               product: {
                 include: {
-                  productvariations: true
+                  productvariations: true,
+                  productrules: {
+                    include: {
+                      productsizeoptions: true
+                    }
+                  }
                 }
               }
             }
@@ -1470,16 +1475,16 @@ export class OrderService {
         };
       }
 
-      // Admin değilse, PENDING ve CONFIRMED durumundaki siparişler iptal edilebilir
-      if (!isAdmin && !['PENDING', 'CONFIRMED'].includes(order.status)) {
+      // Admin değilse, sadece PENDING durumundaki siparişler iptal edilebilir
+      if (!isAdmin && order.status !== 'PENDING') {
         return { 
           success: false, 
-          message: `${order.status} durumundaki sipariş iptal edilemez. Sadece onay bekleyen (PENDING) ve onaylanmış (CONFIRMED) siparişler iptal edilebilir.`,
+          message: `${order.status} durumundaki sipariş iptal edilemez. Sadece onay bekleyen (PENDING) siparişler iptal edilebilir.`,
           statusCode: 400
         };
       }
 
-      // Admin ise tüm durumları iptal edebilir, ancak DELIVERED ve CANCELED olanları kontrol et
+      // Admin ise PENDING ve CONFIRMED durumlarını iptal edebilir, DELIVERED ve CANCELED kontrol et
       if (isAdmin && order.status === 'CANCELED') {
         return { 
           success: false, 
@@ -1492,6 +1497,14 @@ export class OrderService {
         return { 
           success: false, 
           message: 'Teslim edilmiş siparişler iptal edilemez.',
+          statusCode: 400
+        };
+      }
+
+      if (isAdmin && !['PENDING', 'CONFIRMED'].includes(order.status)) {
+        return { 
+          success: false, 
+          message: `Admin sadece PENDING ve CONFIRMED durumundaki siparişleri iptal edebilir. Bu sipariş durumu: ${order.status}`,
           statusCode: 400
         };
       }
@@ -1523,18 +1536,32 @@ export class OrderService {
           );
 
           if (variation) {
+            // Ürünün opsiyonel yükseklik olup olmadığını kontrol et (stok düşürme mantığıyla aynı)
+            const sizeOptions = item.product.productrules?.productsizeoptions || []
+            const isOptionalHeight = sizeOptions.some((so: any) => 
+              so.width === variation.width && so.is_optional_height
+            )
+
             const areaM2 = (Number(item.width) * Number(item.height)) / 10000;
             const totalAreaM2 = areaM2 * item.quantity;
 
+            let updateData: any = {}
+
+            if (isOptionalHeight) {
+              // Opsiyonel yükseklik: Sadece m² iade et
+              updateData.stock_area_m2 = Number(variation.stock_area_m2 || 0) + totalAreaM2;
+              console.log(`📦 Opsiyonel yükseklik stok iadesi: ${item.product.name} - ${totalAreaM2.toFixed(2)} m²`);
+            } else {
+              // Hazır kesim: Sadece adet iade et
+              updateData.stock_quantity = variation.stock_quantity + item.quantity;
+              console.log(`📦 Hazır kesim stok iadesi: ${item.product.name} - ${item.quantity} adet`);
+            }
+
             await tx.productvariations.update({
               where: { id: variation.id },
-              data: {
-                stock_quantity: variation.stock_quantity + item.quantity,
-                stock_area_m2: Number(variation.stock_area_m2 || 0) + totalAreaM2
-              }
+              data: updateData
             });
 
-            console.log(`📦 Stok geri yüklendi: ${item.product.name} - ${item.quantity} adet, ${totalAreaM2.toFixed(2)} m²`);
           } else {
             console.warn(`⚠️ Stok varyasyonu bulunamadı: ${item.product.name} - ${item.width}x${item.height}`);
           }
