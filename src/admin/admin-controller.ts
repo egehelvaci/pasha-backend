@@ -202,8 +202,7 @@ export class AdminController {
         userTypeId, 
         userTypeName,
         store_id, 
-        storeId,
-        adres
+        storeId
       } = req.body
       
       console.log('Update User Request:', { userId, body: req.body })
@@ -243,7 +242,6 @@ export class AdminController {
       if (userTypeId !== undefined) updateData.userTypeId = parseInt(userTypeId)
       if (store_id !== undefined) updateData.store_id = store_id
       if (storeId !== undefined) updateData.store_id = storeId
-      if (adres !== undefined) updateData.adres = adres
       
       // UserType name'e göre ID bul
       if (userTypeName && !userTypeId) {
