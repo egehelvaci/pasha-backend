@@ -62,19 +62,24 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
 export const authorizeRoles = (...roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
+      console.log('❌ Authorization failed: No user in request')
       return res.status(401).json({
         success: false,
         message: 'Yetkilendirme başarısız: Lütfen önce giriş yapın'
       })
     }
 
+    console.log(`🔍 Authorization check: User type: "${req.user.userType}", Required roles: [${roles.join(', ')}]`)
+    
     if (!roles.includes(req.user.userType)) {
+      console.log(`❌ Authorization failed: User type "${req.user.userType}" not in required roles [${roles.join(', ')}]`)
       return res.status(403).json({
         success: false,
-        message: 'Bu işlemi yapmak için yetkiniz bulunmuyor'
+        message: `Bu işlemi yapmak için yetkiniz bulunmuyor. Gerekli rol: [${roles.join(', ')}], Mevcut rol: ${req.user.userType}`
       })
     }
 
+    console.log(`✅ Authorization successful: User type "${req.user.userType}" allowed`)
     next()
   }
 } 
