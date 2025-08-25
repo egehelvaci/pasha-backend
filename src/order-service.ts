@@ -1577,7 +1577,7 @@ export class OrderService {
               storeId: store.store_id,
               islemTuru: `Sipariş İptali - ${isAdmin ? 'Admin' : 'Müşteri'} İade`,
               tutar: orderTotal,
-              harcama: false, // İade olduğu için gelir olarak kaydet
+              harcama: true, // İade olduğu için harcama olarak kaydet (admin para iade ediyor)
               tarih: new Date(),
               aciklama: `Sipariş #${orderId} ${isAdmin ? 'admin tarafından' : 'müşteri tarafından'} iptal edildi. ${reason ? `Sebep: ${reason}` : ''}`
             }
