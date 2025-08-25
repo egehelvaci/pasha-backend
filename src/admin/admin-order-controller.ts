@@ -27,7 +27,7 @@ export class AdminOrderController {
     try {
       const { 
         page = 1, 
-        limit = 100, // Varsayılan olarak 100 sipariş
+        limit = 1000, // Varsayılan olarak 1000 sipariş
         status, 
         userId,
         sortBy = 'created_at',
