@@ -27,6 +27,7 @@ model User {
   username            String                @unique
   userTypeId          Int                   @map("user_type_id")
   store_id            String?               @db.Uuid
+  canSeePrice         Boolean               @default(true) @map("can_see_price")
   orders              Order[]
   userType            UserType              @relation(fields: [userTypeId], references: [id])
   Store               Store?                @relation(fields: [store_id], references: [store_id], onUpdate: NoAction, map: "fk_user_store")

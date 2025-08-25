@@ -149,6 +149,7 @@ export class AuthService {
           createdAt: user.createdAt,
           userTypeId: user.userTypeId,
           userType: user.userType.name,
+          canSeePrice: user.canSeePrice,
           store: storeInfo
         }
       }

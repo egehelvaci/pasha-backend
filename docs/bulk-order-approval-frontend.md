@@ -6,57 +6,7 @@ Backend'de yeni eklenen toplu sipariş onaylama API'si (`/api/admin/orders/bulk-
 
 ## API Endpoint Bilgileri
 
-### Endpoint
-```
-POST /api/admin/orders/bulk-confirm
-```
-
-### Authentication
-- Admin kimlik doğrulaması gerekli
-- Authorization header'ında Bearer token
-
-### Request Formatı
-```json
-{
-  "orderIds": [
-    "order-id-1",
-    "order-id-2", 
-    "order-id-3"
-  ]
-}
-```
-
-### Response Formatı
-```json
-{
-  "success": true,
-  "message": "3 sipariş başarıyla onaylandı, 0 sipariş başarısız",
-  "data": {
-    "success": [
-      {
-        "orderId": "order-id-1",
-        "customerName": "Ahmet Yılmaz",
-        "storeName": "ABC Mağaza",
-        "amount": 1250.50,
-        "qrCodeCount": 3,
-        "message": "Sipariş başarıyla onaylandı ve QR kodları oluşturuldu"
-      }
-    ],
-    "failed": [
-      {
-        "orderId": "order-id-2",
-        "customerName": "Mehmet Kaya",
-        "error": "Sipariş bulunamadı veya PENDING durumunda değil"
-      }
-    ],
-    "summary": {
-      "total": 3,
-      "successful": 2,
-      "failed": 1,
-      "totalAmount": 2500.75
-    }
-  }
-}
+tesli
 ```
 
 ## Frontend'de Yapılacak Değişiklikler
