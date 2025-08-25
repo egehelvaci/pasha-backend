@@ -7,8 +7,8 @@ const router = express.Router()
 // Tüm rotalar için authentication gerekli
 router.use(authMiddleware)
 
-// Mağaza adres yönetimi rotaları - Editör ve Admin erişimi
-router.use(authorizeRoles('admin', 'editor'))
+// Mağaza adres yönetimi rotaları - Viewer, Editör ve Admin erişimi
+router.use(authorizeRoles('admin', 'editor', 'viewer'))
 
 /**
  * Mağaza adreslerini listele

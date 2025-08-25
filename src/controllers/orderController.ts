@@ -248,8 +248,8 @@ export const cancelOrder = async (req: Request, res: Response) => {
     // İptal sebebi (opsiyonel)
     const { reason } = req.body;
 
-    // Admin kontrolü
-    const isAdmin = userType === 'admin';
+    // Admin/Editor kontrolü - viewer'lar da kendi siparişlerini iptal edebilir
+    const isAdmin = ['admin', 'editor'].includes(userType);
 
     const result = await orderService.cancelOrder(orderId, userId, reason, isAdmin);
 
@@ -296,8 +296,8 @@ export const getOrderReceipt = async (req: Request, res: Response) => {
       });
     }
 
-    // Admin kontrolü
-    const isAdmin = userType === 'admin';
+    // Admin/Editor kontrolü
+    const isAdmin = ['admin', 'editor'].includes(userType);
     
     const result = await orderService.getOrderReceipt(orderId, userId, isAdmin);
 
@@ -343,8 +343,8 @@ export const markReceiptPrinted = async (req: Request, res: Response) => {
       });
     }
 
-    // Admin kontrolü
-    const isAdmin = userType === 'admin';
+    // Admin/Editor kontrolü
+    const isAdmin = ['admin', 'editor'].includes(userType);
     
     const result = await orderService.markReceiptPrinted(orderId, userId, isAdmin);
 
