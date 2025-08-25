@@ -23,9 +23,10 @@ router.post('/scan-qr', adminOrderController.scanQRCode)
 router.get('/scan-qr', adminOrderController.scanQRCode)
 router.post('/orders/:orderId/assign-employee', adminOrderController.assignEmployeeToOrder)
 
-// Tüm diğer admin rotaları için önce kimlik doğrulama ve yetkilendirme gerekiyor
+// Tüm diğer admin rotaları için önce kimlik doğrulama gerekiyor
 router.use(authMiddleware)
-router.use(authorizeRoles('admin'))
+
+// Editör ve admin için ayrı yetkilendirme gerektiren rotalar
 
 // Mağaza yönetimi rotalarını ekle
 router.use('/stores', storeRoutes)
@@ -42,60 +43,46 @@ router.use('/', muhasebeRoutes)
 // Admin sepet yönetimi rotalarını ekle
 router.use('/cart', adminCartRoutes)
 
-// Sipariş yönetimi rotaları
-router.get('/orders', adminOrderController.getAllOrders)
-router.get('/orders/stats', adminOrderController.getOrderStats)
-router.get('/orders/:orderId', adminOrderController.getOrderById)
-router.get('/orders/:orderId/receipt', getOrderReceipt)
-router.put('/orders/:orderId/cancel', cancelOrder)
-router.post('/orders/:orderId/confirm', adminOrderController.confirmOrder)
-router.post('/orders/bulk-confirm', adminOrderController.bulkConfirmOrders)
+// Sipariş yönetimi rotaları - Editör ve Admin erişimi
+router.get('/orders', authorizeRoles('admin', 'editor'), adminOrderController.getAllOrders)
+router.get('/orders/stats', authorizeRoles('admin', 'editor'), adminOrderController.getOrderStats)
+router.get('/orders/:orderId', authorizeRoles('admin', 'editor'), adminOrderController.getOrderById)
+router.get('/orders/:orderId/receipt', authorizeRoles('admin', 'editor'), getOrderReceipt)
+router.put('/orders/:orderId/cancel', authorizeRoles('admin', 'editor'), cancelOrder)
+router.post('/orders/:orderId/confirm', authorizeRoles('admin', 'editor'), adminOrderController.confirmOrder)
+router.post('/orders/bulk-confirm', authorizeRoles('admin', 'editor'), adminOrderController.bulkConfirmOrders)
 
-// Admin sipariş oluşturma rotaları
-router.post('/orders/create-for-store', adminOrderController.createOrderForStore)
-router.post('/orders/process-admin-order', adminOrderController.processAdminOrder)
+// Admin sipariş oluşturma rotaları - Editör ve Admin erişimi
+router.post('/orders/create-for-store', authorizeRoles('admin', 'editor'), adminOrderController.createOrderForStore)
+router.post('/orders/process-admin-order', authorizeRoles('admin', 'editor'), adminOrderController.processAdminOrder)
 
-// QR Kod yönetimi rotaları
-router.post('/orders/:orderId/generate-qr', adminOrderController.generateQRCodes);
-router.post('/orders/:orderId/generate-qr-images', adminOrderController.generateQRCodeImages);
-router.get('/orders/:orderId/qrcodes', adminOrderController.getOrderQRCodes)
+// QR Kod yönetimi rotaları - Editör ve Admin erişimi
+router.post('/orders/:orderId/generate-qr', authorizeRoles('admin', 'editor'), adminOrderController.generateQRCodes);
+router.post('/orders/:orderId/generate-qr-images', authorizeRoles('admin', 'editor'), adminOrderController.generateQRCodeImages);
+router.get('/orders/:orderId/qrcodes', authorizeRoles('admin', 'editor'), adminOrderController.getOrderQRCodes)
 
-// Sipariş durumu güncelleme
-router.put('/orders/:orderId/status', adminOrderController.updateOrderStatus)
+// Sipariş durumu güncelleme - Editör ve Admin erişimi
+router.put('/orders/:orderId/status', authorizeRoles('admin', 'editor'), adminOrderController.updateOrderStatus)
 
-// İstatistik API'leri
-router.get('/statistics/top-stores', adminStatisticsController.getTopStores)
-router.get('/statistics/top-products', adminStatisticsController.getTopProducts)
-router.get('/statistics/orders-over-time', adminStatisticsController.getOrdersOverTime)
-router.get('/statistics/totals', adminStatisticsController.getTotalStatistics)
+// İstatistik API'leri - Editör ve Admin erişimi
+router.get('/statistics/top-stores', authorizeRoles('admin', 'editor'), adminStatisticsController.getTopStores)
+router.get('/statistics/top-products', authorizeRoles('admin', 'editor'), adminStatisticsController.getTopProducts)
+router.get('/statistics/orders-over-time', authorizeRoles('admin', 'editor'), adminStatisticsController.getOrdersOverTime)
+router.get('/statistics/totals', authorizeRoles('admin', 'editor'), adminStatisticsController.getTotalStatistics)
 
-// Çalışan istatistikleri API'leri
-router.get('/employees/stats', employeeStatsController.getAllEmployeeStats)
-router.get('/employees/:employeeId/stats', employeeStatsController.getEmployeeStats)
+// Çalışan istatistikleri API'leri - Editör ve Admin erişimi
+router.get('/employees/stats', authorizeRoles('admin', 'editor'), employeeStatsController.getAllEmployeeStats)
+router.get('/employees/:employeeId/stats', authorizeRoles('admin', 'editor'), employeeStatsController.getEmployeeStats)
 
-// Kullanıcı tiplerini listeleme
-router.get('/user-types', adminController.getUserTypes)
-
-// Kullanıcıları listeleme
-router.get('/users', adminController.getAllUsers)
-
-// Belirli bir kullanıcıyı getirme
-router.get('/users/:userId', adminController.getUserById)
-
-// Yeni kullanıcı oluşturma
-router.post('/users', adminController.createUser)
-
-// Kullanıcı bilgilerini güncelleme
-router.put('/users/:userId', adminController.updateUser)
-
-// Kullanıcı silme
-router.delete('/users/:userId', adminController.deleteUser)
-
-// Kullanıcıyı mağazaya ata
-router.post('/users/:userId/assign-store', adminController.assignUserToStore)
-
-// Kullanıcıyı mağazadan kaldır
-router.delete('/users/:userId/remove-store', adminController.removeUserFromStore)
+// Kullanıcı yönetimi rotaları - Editör ve Admin erişimi
+router.get('/user-types', authorizeRoles('admin', 'editor'), adminController.getUserTypes)
+router.get('/users', authorizeRoles('admin', 'editor'), adminController.getAllUsers)
+router.get('/users/:userId', authorizeRoles('admin', 'editor'), adminController.getUserById)
+router.post('/users', authorizeRoles('admin', 'editor'), adminController.createUser)
+router.put('/users/:userId', authorizeRoles('admin', 'editor'), adminController.updateUser)
+router.delete('/users/:userId', authorizeRoles('admin', 'editor'), adminController.deleteUser)
+router.post('/users/:userId/assign-store', authorizeRoles('admin', 'editor'), adminController.assignUserToStore)
+router.delete('/users/:userId/remove-store', authorizeRoles('admin', 'editor'), adminController.removeUserFromStore)
 
 // Excel Export API'leri
 router.get('/export/orders', excelExportController.exportOrders)

@@ -1,8 +1,13 @@
 import express from 'express';
 import { AdminCartController } from './admin-cart-controller';
+import { authMiddleware, authorizeRoles } from '../auth/auth-middleware';
 
 const router = express.Router();
 const adminCartController = new AdminCartController();
+
+// Tüm admin cart rotaları için kimlik doğrulama ve yetkilendirme gerekiyor
+router.use(authMiddleware);
+router.use(authorizeRoles('admin', 'editor'));
 
 // Admin için kullanıcı admin sepetine ürün ekleme
 // POST /admin/cart/add-to-admin-cart

@@ -1,11 +1,14 @@
 import express from 'express'
 import { storeAddressController } from '../controllers/storeAddressController'
-import { authMiddleware } from '../auth/auth-middleware'
+import { authMiddleware, authorizeRoles } from '../auth/auth-middleware'
 
 const router = express.Router()
 
 // Tüm rotalar için authentication gerekli
 router.use(authMiddleware)
+
+// Mağaza adres yönetimi rotaları - Editör ve Admin erişimi
+router.use(authorizeRoles('admin', 'editor'))
 
 /**
  * Mağaza adreslerini listele

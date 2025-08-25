@@ -30,11 +30,11 @@ router.get('/rules', getAllProductRules);
 // Sadece giriş yapmış kullanıcılar - Koleksiyona göre ürünleri getir
 router.get('/by-collection/:collectionId', authMiddleware, getProductsByCollection);
 
-// Sadece admin erişebilir - Ürünün stok varyasyon seçeneklerini getir
-router.get('/:id/variations', authMiddleware, authorizeRoles('admin'), getProductVariationOptions);
+// Admin ve editör erişebilir - Ürünün stok varyasyon seçeneklerini getir
+router.get('/:id/variations', authMiddleware, authorizeRoles('admin', 'editor'), getProductVariationOptions);
 
-// Sadece admin erişebilir - Ürünün varyasyonlarını yeniden oluştur
-router.post('/:id/regenerate-variations', authMiddleware, authorizeRoles('admin'), regenerateProductVariations);
+// Admin ve editör erişebilir - Ürünün varyasyonlarını yeniden oluştur
+router.post('/:id/regenerate-variations', authMiddleware, authorizeRoles('admin', 'editor'), regenerateProductVariations);
 
 // Sadece admin erişebilir - Belirli kurala sahip ürünlerin varyasyonlarını yeniden oluştur
 router.post('/regenerate-variations/rule/:ruleId', authMiddleware, authorizeRoles('admin'), regenerateVariationsForRule);
@@ -45,25 +45,25 @@ router.post('/regenerate-variations/all', authMiddleware, authorizeRoles('admin'
 // Sadece giriş yapmış kullanıcılar - ID'ye göre ürün getir
 router.get('/:id', authMiddleware, getProductById);
 
-// Sadece admin erişebilir - Test amaçlı basit ürün oluşturma endpoint'i
-router.post('/test-create', authMiddleware, authorizeRoles('admin'), uploadProductImage, createProductSimple);
+// Admin ve editör erişebilir - Test amaçlı basit ürün oluşturma endpoint'i
+router.post('/test-create', authMiddleware, authorizeRoles('admin', 'editor'), uploadProductImage, createProductSimple);
 
-// Sadece admin erişebilir - Yeni ürün oluştur (görsel yükleme ile)
-router.post('/', authMiddleware, authorizeRoles('admin'), uploadProductImage, createProduct);
+// Admin ve editör erişebilir - Yeni ürün oluştur (görsel yükleme ile)
+router.post('/', authMiddleware, authorizeRoles('admin', 'editor'), uploadProductImage, createProduct);
 
-// Sadece admin erişebilir - Ürün güncelle (görsel yükleme ile)
-router.put('/:id', authMiddleware, authorizeRoles('admin'), uploadProductImage, updateProduct);
+// Admin ve editör erişebilir - Ürün güncelle (görsel yükleme ile)
+router.put('/:id', authMiddleware, authorizeRoles('admin', 'editor'), uploadProductImage, updateProduct);
 
 // Sadece admin erişebilir - Ürün sil
 router.delete('/:id', authMiddleware, authorizeRoles('admin'), deleteProduct);
 
-// Sadece admin erişebilir - Stok güncelle
-router.patch('/:id/stock', authMiddleware, authorizeRoles('admin'), updateProductStock);
+// Admin ve editör erişebilir - Stok güncelle
+router.patch('/:id/stock', authMiddleware, authorizeRoles('admin', 'editor'), updateProductStock);
 
-// Sadece admin erişebilir - M² bazlı stok güncelle
-router.patch('/:id/stock-area', authMiddleware, authorizeRoles('admin'), updateProductStockAreaM2);
+// Admin ve editör erişebilir - M² bazlı stok güncelle
+router.patch('/:id/stock-area', authMiddleware, authorizeRoles('admin', 'editor'), updateProductStockAreaM2);
 
-// Sadece admin erişebilir - Hibrit stok güncelle
-router.patch('/:id/stock-hybrid', authMiddleware, authorizeRoles('admin'), updateProductStockHybrid);
+// Admin ve editör erişebilir - Hibrit stok güncelle
+router.patch('/:id/stock-hybrid', authMiddleware, authorizeRoles('admin', 'editor'), updateProductStockHybrid);
 
 export default router; 
