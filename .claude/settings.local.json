@@ -13,7 +13,10 @@
       "Bash(npm install)",
       "Bash(PORT=3002 npm run api:dev)",
       "Bash(npx tsc:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(node:*)",
+      "Bash(test:*)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": [],

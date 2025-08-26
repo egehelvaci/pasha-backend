@@ -1816,6 +1816,12 @@ export class OrderService {
               ebat: `${item.width || 0}x${item.height || 0}`
             }
           })),
+          bakiye: {
+            siparisOncesi: previousBalance,
+            siparisSonrasi: currentBalance,
+            siparisKesintisi: orderTotal,
+            tarih: new Date()
+          },
           ozet: {
             toplamUrunSayisi: order.items.length,
             toplamMiktar: order.items.reduce((sum: number, item: any) => sum + item.quantity, 0),
