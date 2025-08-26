@@ -356,7 +356,8 @@ export class OrderService {
               has_fringe: item.has_fringe,
               width: item.width,
               height: item.height,
-              cut_type: item.cut_type === 'rectangle' ? 'standart' : item.cut_type?.toString()
+              cut_type: item.cut_type === 'rectangle' ? 'standart' : item.cut_type?.toString(),
+              notes: item.notes
             }))
           }
         },
@@ -518,7 +519,8 @@ export class OrderService {
               has_fringe: item.has_fringe,
               width: item.width,
               height: item.height,
-              cut_type: item.cut_type === 'rectangle' ? 'standart' : item.cut_type?.toString()
+              cut_type: item.cut_type === 'rectangle' ? 'standart' : item.cut_type?.toString(),
+              notes: item.notes
             }))
           }
         },
@@ -718,7 +720,8 @@ export class OrderService {
               has_fringe: item.has_fringe,
               width: item.width,
               height: item.height,
-              cut_type: item.cut_type?.toString()
+              cut_type: item.cut_type?.toString(),
+              notes: item.notes
             }))
           }
         },

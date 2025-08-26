@@ -327,6 +327,7 @@ model OrderItem {
   width       Decimal? @db.Decimal(8, 2)
   height      Decimal? @db.Decimal(8, 2)
   cut_type    String?
+  notes       String?  // Ürün notları
   order       Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
   product     Product  @relation(fields: [product_id], references: [productId])
   qr_codes    QRCode[]
