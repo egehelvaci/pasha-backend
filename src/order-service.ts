@@ -337,6 +337,7 @@ export class OrderService {
           total_price: cartTotal,
           status: OrderStatus.PENDING,
           address_id: finalAddressId,
+          notes: orderData.notes,
           
           // Adres sistemi artık store-based olarak değişti
           store_name: user.Store.kurum_adi,
@@ -498,6 +499,7 @@ export class OrderService {
           total_price: cartTotal,
           status: OrderStatus.PENDING,
           address_id: orderData.address_id || null,
+          notes: orderData.notes,
           
           // Adres sistemi artık store-based olarak değişti
           store_name: orderData.store_name || user.Store.kurum_adi,
@@ -697,6 +699,7 @@ export class OrderService {
           total_price: orderTotal,
           status: OrderStatus.PENDING,
           address_id: orderData.address_id || null,
+          notes: orderData.notes,
           
           // Adres sistemi artık store-based olarak değişti
           store_name: user.Store.kurum_adi,

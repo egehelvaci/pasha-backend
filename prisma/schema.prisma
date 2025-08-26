@@ -303,6 +303,7 @@ model Order {
   store_phone        String?
   store_email        String?
   store_fax          String?
+  notes              String?             // Sipariş notları
   receipt_printed    Boolean             @default(false) @map("receipt_printed")
   receipt_printed_at DateTime?           @map("receipt_printed_at")
   created_at         DateTime            @default(now())
