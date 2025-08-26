@@ -492,7 +492,7 @@ export class OrderService {
         deliveryAddress = orderData.delivery_address; // Geriye uyumluluk
       }
 
-      // Sipariş oluştur
+      // Sipariş oluşturr
       const order = await prisma.order.create({
         data: {
           user_id: orderData.user_id,
