@@ -1490,7 +1490,7 @@ export class OrderService {
         };
       }
 
-      // Admin ise PENDING ve CONFIRMED durumlarını iptal edebilir, DELIVERED ve CANCELED kontrol et
+      // Admin ise CANCELED durumunu kontrol et (DELIVERED artık iptal edilebilir)
       if (isAdmin && order.status === 'CANCELED') {
         return { 
           success: false, 
@@ -1499,18 +1499,11 @@ export class OrderService {
         };
       }
 
-      if (isAdmin && order.status === 'DELIVERED') {
+      // Admin artık PENDING, CONFIRMED ve DELIVERED durumlarını iptal edebilir
+      if (isAdmin && !['PENDING', 'CONFIRMED', 'DELIVERED'].includes(order.status)) {
         return { 
           success: false, 
-          message: 'Teslim edilmiş siparişler iptal edilemez.',
-          statusCode: 400
-        };
-      }
-
-      if (isAdmin && !['PENDING', 'CONFIRMED'].includes(order.status)) {
-        return { 
-          success: false, 
-          message: `Admin sadece PENDING ve CONFIRMED durumundaki siparişleri iptal edebilir. Bu sipariş durumu: ${order.status}`,
+          message: `Admin sadece PENDING, CONFIRMED ve DELIVERED durumundaki siparişleri iptal edebilir. Bu sipariş durumu: ${order.status}`,
           statusCode: 400
         };
       }
