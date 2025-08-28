@@ -2,12 +2,14 @@ import prisma from '../utils/prisma';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
 import { OctetLoginService } from './octet-login-service';
+import { exchangeRateService } from './exchange-rate-service';
 
 export interface CreatePaymentRequestInput {
   storeId: string;
   userId: string;
   amount: number;
   aciklama?: string;
+  currencyCode?: 'TRY' | 'USD';
 }
 
 export interface CreateCheckoutInput {
@@ -18,6 +20,7 @@ export interface CreateCheckoutInput {
   channel?: 'web' | 'mobile';
   idempotencyKey?: string;
   orderId?: string;
+  currencyCode?: 'TRY' | 'USD';
 }
 
 export interface PaymentRequestData {
@@ -80,7 +83,9 @@ export class PaymentService {
         eposta: true,
         maksimum_taksit: true,
         store_type: true,
-        is_active: true
+        is_active: true,
+        currency: true,
+        bakiye: true
       }
     });
 
@@ -192,7 +197,9 @@ export class PaymentService {
             telefon: true,
             eposta: true,
             maksimum_taksit: true,
-            is_active: true
+            is_active: true,
+            currency: true,
+            bakiye: true
           }
         },
         userType: {
@@ -288,12 +295,15 @@ export class PaymentService {
     console.log(`💳 Payment request için adres alınıyor - StoreId: ${input.storeId}, UserId: ${input.userId}`);
     const storeAddress = await this.getFirstStoreAddress(input.storeId);
 
+    // Para birimi belirle (input'ta varsa onu kullan, yoksa mağazanın varsayılan para birimini)
+    const currencyCode = input.currencyCode || (store.currency as 'TRY' | 'USD') || 'TRY';
+
     // Payment request data'sını oluştur
     const paymentRequest: PaymentRequestData = {
       expireDate: expireDate.toISOString(),
       amount: input.amount,
       languageCode: "TUR",
-      currencyCode: "TRY",
+      currencyCode: currencyCode,
       sellerReference,
       productTypes: [1],
       paymentRequestCommonDetail: {

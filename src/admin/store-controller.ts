@@ -83,6 +83,7 @@ export class StoreController {
         limitsiz_acik_hesap: store.limitsiz_acik_hesap,
         acik_hesap_tutari: store.acik_hesap_tutari,
         bakiye: store.bakiye,
+        currency: store.currency,
         maksimum_taksit: store.maksimum_taksit,
         store_type: store.store_type,
         is_active: store.is_active,
@@ -204,7 +205,8 @@ export class StoreController {
         acik_hesap_tutari,
         bakiye,
         maksimum_taksit,
-        store_type
+        store_type,
+        currency
       } = req.body
       
       // Zorunlu alanların kontrolü
@@ -221,6 +223,15 @@ export class StoreController {
         return res.status(400).json({
           success: false,
           message: 'Geçersiz mağaza türü. Geçerli türler: KARGO, SERVIS, KENDI_ALAN, AMBAR'
+        })
+      }
+
+      // Para birimi kontrolü
+      const validCurrencies = ['TRY', 'USD'];
+      if (currency && !validCurrencies.includes(currency)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Geçersiz para birimi. Geçerli birimler: TRY, USD'
         })
       }
 
@@ -242,6 +253,7 @@ export class StoreController {
           bakiye: bakiye ? parseFloat(bakiye) : 0,
           maksimum_taksit: maksimum_taksit ? parseInt(maksimum_taksit) : 1,
           store_type: store_type || 'KARGO', // Varsayılan olarak KARGO
+          currency: currency || 'TRY', // Varsayılan para birimi TRY
           is_active: true
         }
       })
@@ -282,7 +294,8 @@ export class StoreController {
         bakiye,
         maksimum_taksit,
         is_active,
-        store_type
+        store_type,
+        currency
       } = req.body
       
       // Güncellenecek mağazanın var olup olmadığını kontrol et
@@ -305,6 +318,15 @@ export class StoreController {
           message: 'Geçersiz mağaza türü. Geçerli türler: KARGO, SERVIS, KENDI_ALAN, AMBAR'
         })
       }
+
+      // Para birimi kontrolü
+      const validCurrencies = ['TRY', 'USD'];
+      if (currency && !validCurrencies.includes(currency)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Geçersiz para birimi. Geçerli birimler: TRY, USD'
+        })
+      }
       
       // Güncelleme verileri
       const updateData: any = {}
@@ -325,6 +347,7 @@ export class StoreController {
       if (maksimum_taksit !== undefined) updateData.maksimum_taksit = parseInt(maksimum_taksit)
       if (is_active !== undefined) updateData.is_active = is_active
       if (store_type !== undefined) updateData.store_type = store_type
+      if (currency !== undefined) updateData.currency = currency
       
       // Mağazayı güncelle
       const updatedStore = await prisma.store.update({

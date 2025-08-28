@@ -120,6 +120,7 @@ model Store {
   maksimum_taksit     Int?                   @default(1)
   tckn                String?                @db.VarChar(11)
   store_type          StoreType?             @default(KARGO) @map("store_type")
+  currency            Currency?              @default(TRY)
   StorePriceList      StorePriceList[]
   User                User[]
   adminCarts          admin_carts[]
@@ -439,6 +440,19 @@ model AdminStoreConfig {
   store        Store    @relation(fields: [storeId], references: [store_id], onDelete: Cascade)
 
   @@map("admin_store_config")
+}
+
+model ExchangeRate {
+  id              String   @id @default(uuid())
+  source_currency Currency @default(TRY)
+  target_currency Currency @default(USD)
+  rate            Decimal  @db.Decimal(10, 4)
+  is_active       Boolean  @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  @@unique([source_currency, target_currency])
+  @@map("exchange_rates")
 }
 
 model DbyeOdemeLogin {

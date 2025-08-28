@@ -128,6 +128,7 @@ export class AuthService {
           eposta: user.Store.eposta,
           adres: null, // Adres sistemi artık store-based olarak değişti
           bakiye: user.Store.bakiye || 0,
+          currency: user.Store.currency || 'TRY',
           acik_hesap_tutari: user.Store.acik_hesap_tutari || 0,
           maksimum_taksit: user.Store.maksimum_taksit || 1,
           limitsiz_acik_hesap: user.Store.limitsiz_acik_hesap || false,

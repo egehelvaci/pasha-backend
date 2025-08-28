@@ -1,6 +1,7 @@
 import { PrismaClient } from '../../generated/prisma';
 import crypto from 'crypto';
 import { notificationService } from './notification-service';
+import { balanceService } from './balance-service';
 
 const prisma = new PrismaClient();
 
@@ -15,6 +16,7 @@ interface DbyeWebhookData {
   ApprovalCode?: string;
   Hash: string;
   HashParameters: string;
+  CurrencyCode?: string; // Para birimi
 }
 
 export class WebhookService {
@@ -189,6 +191,9 @@ export class WebhookService {
         }
       });
 
+      // Para birimi belirle (webhook'ta varsa onu kullan, yoksa TRY)
+      const currencyCode = (webhookData.CurrencyCode as 'TRY' | 'USD') || 'TRY';
+      
       // Admin store kontrolü
       const isAdminStore = await this.isAdminStore(transaction.store);
       
@@ -213,30 +218,35 @@ export class WebhookService {
         
         console.log('💰 Admin store ödemesi - Kasa bakiyesi artırıldı:', webhookData.PaymentAmount);
       } else {
-        // Normal store ise store bakiyesini artır
-        updatedStore = await prisma.store.update({
-          where: { store_id: transaction.storeId },
-          data: {
-            bakiye: {
-              increment: webhookData.PaymentAmount
-            }
-          }
+        // Normal store için döviz desteği ile bakiye güncelleme
+        await balanceService.processPaymentBalance(
+          transaction.storeId,
+          webhookData.PaymentAmount,
+          currencyCode,
+          `Sanal POS Ödemesi - Onay Kodu: ${webhookData.ApprovalCode || 'N/A'}`
+        );
+        
+        // Güncel store bilgisini al
+        updatedStore = await prisma.store.findUnique({
+          where: { store_id: transaction.storeId }
         });
         
-        console.log('💰 Normal store ödemesi - Store bakiyesi artırıldı:', webhookData.PaymentAmount);
+        console.log(`💰 Normal store ödemesi - Bakiye artırıldı: ${webhookData.PaymentAmount} ${currencyCode}`);
       }
 
-      // Muhasebe hareketi ekle
-      await prisma.muhasebeHareketleri.create({
-        data: {
-          storeId: transaction.storeId,
-          islemTuru: isAdminStore ? 'ADMIN_ÖDEME' : 'ÖDEME',
-          tutar: webhookData.PaymentAmount,
-          harcama: false, // Gelir
-          tarih: new Date(webhookData.PaymentDate),
-          aciklama: `Sanal POS Ödemesi - ${webhookData.PaymentAmount} TL - Onay Kodu: ${webhookData.ApprovalCode || 'N/A'}`
-        }
-      });
+      // Muhasebe hareketi ekle (balance service zaten ekliyor, admin için manuel ekliyoruz)
+      if (isAdminStore) {
+        await prisma.muhasebeHareketleri.create({
+          data: {
+            storeId: transaction.storeId,
+            islemTuru: 'ADMIN_ÖDEME',
+            tutar: webhookData.PaymentAmount,
+            harcama: false, // Gelir
+            tarih: new Date(webhookData.PaymentDate),
+            aciklama: `Sanal POS Ödemesi - ${webhookData.PaymentAmount} ${currencyCode} - Onay Kodu: ${webhookData.ApprovalCode || 'N/A'}`
+          }
+        });
+      }
 
       console.log('✅ Başarılı ödeme işlendi:', {
         transactionId: transaction.id,
@@ -244,7 +254,7 @@ export class WebhookService {
         storeName: transaction.store.kurum_adi,
         isAdminStore,
         amount: webhookData.PaymentAmount,
-        balanceUpdate: isAdminStore ? 'Kasa bakiyesi artırıldı' : `Store bakiyesi: ${updatedStore.bakiye}`
+        balanceUpdate: isAdminStore ? 'Kasa bakiyesi artırıldı' : `Store bakiyesi: ${updatedStore?.bakiye || 0}`
       });
 
       // Kullanıcıya ödeme başarılı bildirimi gönder
