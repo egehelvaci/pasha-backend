@@ -578,10 +578,13 @@ export class UserProfileController {
         take: 50 // Son 50 sipariş
       })
 
-      // Ödeme işlemlerini al
+      // Ödeme işlemlerini al (sadece COMPLETED ve FAILED durumlarını göster)
       const paymentTransactions = await prisma.paymentTransaction.findMany({
         where: {
-          storeId: user.store_id
+          storeId: user.store_id,
+          status: {
+            in: ['COMPLETED', 'FAILED'] // PENDING ödemeleri gösterme
+          }
         },
         select: {
           id: true,
