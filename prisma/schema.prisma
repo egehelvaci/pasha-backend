@@ -130,6 +130,7 @@ model Store {
   paymentSessions     PaymentSession[]
   paymentTransactions PaymentTransaction[]
   installmentLimits   StoreInstallmentLimit?
+  currencySummaries   CurrencySummary[]
   addresses           StoreAddress[]
 }
 
@@ -307,6 +308,13 @@ model Order {
   notes              String?             // Sipariş notları
   receipt_printed    Boolean             @default(false) @map("receipt_printed")
   receipt_printed_at DateTime?           @map("receipt_printed_at")
+  
+  // YENI ALANLAR - Currency tracking
+  order_currency     Currency?           @default(TRY) @map("order_currency")
+  payment_currency   Currency?           @default(TRY) @map("payment_currency")
+  exchange_rate      Decimal?            @db.Decimal(10, 4) @map("exchange_rate")
+  original_amount    Decimal?            @db.Decimal(12, 2) @map("original_amount")
+  converted_amount   Decimal?            @db.Decimal(12, 2) @map("converted_amount")
   created_at         DateTime            @default(now())
   updated_at         DateTime            @updatedAt
   cart               carts               @relation(fields: [cart_id], references: [id])
@@ -396,6 +404,12 @@ model MuhasebeHareketleri {
   createdAt         DateTime             @default(now()) @map("created_at")
   isManuelSatis     Boolean?             @default(false) @map("is_manuel_satis")
   fisNumarasi       String?              @unique @map("fis_numarasi") @db.VarChar(50)
+  
+  // YENI ALANLAR - Currency tracking
+  currency          Currency?            @default(TRY) @map("currency")
+  original_currency Currency?            @default(TRY) @map("original_currency")
+  exchange_rate     Decimal?             @db.Decimal(10, 4) @map("exchange_rate")
+  original_amount   Decimal?             @db.Decimal(10, 2) @map("original_amount")
   
   store             Store                @relation(fields: [storeId], references: [store_id])
   manuelSatisDetay  ManuelSatisDetay[]
@@ -492,6 +506,14 @@ model PaymentTransaction {
   paymentDate        DateTime?     @map("payment_date")
   createdAt          DateTime      @default(now()) @map("created_at")
   updatedAt          DateTime      @updatedAt @map("updated_at")
+  
+  // YENI ALANLAR - Currency tracking
+  store_currency     Currency?     @default(TRY) @map("store_currency")
+  payment_currency   Currency?     @default(TRY) @map("payment_currency")
+  exchange_rate      Decimal?      @db.Decimal(10, 4) @map("exchange_rate")
+  original_amount    Decimal?      @db.Decimal(12, 2) @map("original_amount")
+  converted_amount   Decimal?      @db.Decimal(12, 2) @map("converted_amount")
+  
   store              Store         @relation(fields: [storeId], references: [store_id])
 
   @@map("payment_transactions")
@@ -632,4 +654,23 @@ enum StoreType {
   SERVIS     // Servis - müşteri adı ürün adı ebat kesim türü
   KENDI_ALAN // Kendi alan - müşteri adı ürün adı ebat kesim türü  
   AMBAR      // Ambar - adres telefon ve ürün bilgileri
+}
+
+// YENI TABLO - Currency özet verileri için
+model CurrencySummary {
+  id                String    @id @default(uuid())
+  store_id          String    @db.Uuid
+  currency          Currency
+  period_start      DateTime
+  period_end        DateTime
+  total_revenue     Decimal   @db.Decimal(12, 2)
+  total_orders      Int
+  average_rate      Decimal?  @db.Decimal(10, 4)
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+  
+  store             Store     @relation(fields: [store_id], references: [store_id])
+  
+  @@unique([store_id, currency, period_start, period_end])
+  @@map("currency_summaries")
 }

@@ -347,6 +347,11 @@ export class OrderService {
           store_email: user.Store.eposta,
           store_fax: user.Store.faks_numarasi,
           
+          // YENI - Currency tracking
+          order_currency: user.Store.currency || 'TRY',
+          payment_currency: user.Store.currency || 'TRY',
+          original_amount: cartTotal,
+          
           items: {
             create: cart.cart_items.map(item => ({
               product_id: item.product_id,
@@ -509,6 +514,11 @@ export class OrderService {
           store_phone: user.Store.telefon,
           store_email: user.Store.eposta,
           store_fax: user.Store.faks_numarasi,
+          
+          // YENI - Currency tracking
+          order_currency: user.Store.currency || 'TRY',
+          payment_currency: user.Store.currency || 'TRY',
+          original_amount: cartTotal,
           
           items: {
             create: adminCart.admin_cart_items.map(item => ({
@@ -710,6 +720,11 @@ export class OrderService {
           store_phone: user.Store.telefon,
           store_email: user.Store.eposta,
           store_fax: user.Store.faks_numarasi,
+          
+          // YENI - Currency tracking
+          order_currency: user.Store.currency || 'TRY',
+          payment_currency: user.Store.currency || 'TRY',
+          original_amount: orderTotal,
           
           items: {
             create: orderItems.map(item => ({

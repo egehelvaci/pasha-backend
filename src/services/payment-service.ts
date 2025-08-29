@@ -414,7 +414,13 @@ export class PaymentService {
   /**
    * Payment transaction kaydı oluşturur
    */
-  private async createPaymentTransaction(paymentRequest: PaymentRequestData, storeId: string): Promise<string> {
+  private async createPaymentTransaction(paymentRequest: PaymentRequestData, storeId: string, currencyInfo?: {
+    storeCurrency?: string;
+    paymentCurrency?: string;
+    exchangeRate?: number | null;
+    originalAmount?: number;
+    convertedAmount?: number | null;
+  }): Promise<string> {
     // Güvenlik token'ı oluştur
     const webhookToken = uuidv4();
 
@@ -426,7 +432,13 @@ export class PaymentService {
         amount: paymentRequest.amount,
         description: paymentRequest.paymentRequestCommonDetail.referenceInformation,
         status: 'PENDING',
-        webhookToken
+        webhookToken,
+        // YENI currency alanları
+        store_currency: currencyInfo?.storeCurrency as any || 'TRY',
+        payment_currency: currencyInfo?.paymentCurrency as any || 'TRY',
+        exchange_rate: currencyInfo?.exchangeRate,
+        original_amount: currencyInfo?.originalAmount,
+        converted_amount: currencyInfo?.convertedAmount
       }
     });
 
@@ -463,6 +475,35 @@ export class PaymentService {
             checkoutUrl: existingSession.paymentUrl || undefined,
             paymentSessionId: existingSession.id
           };
+        }
+      }
+      
+      // Store bilgilerini al ve currency bilgileri işle
+      const store = await this.getStoreInfo(input.storeId);
+      const storeCurrency = store.currency || 'TRY';
+      const paymentCurrency = input.currencyCode || storeCurrency;
+      let finalAmount = input.amount;
+      let exchangeRate = null;
+      let originalAmount = input.amount;
+      let convertedAmount = null;
+      
+      // Currency çevrimi gerekiyorsa
+      if (paymentCurrency !== storeCurrency) {
+        const { exchangeRateService } = await import('../services/exchange-rate-service');
+        
+        if (paymentCurrency === 'USD' && storeCurrency === 'TRY') {
+          convertedAmount = await exchangeRateService.convertUSDtoTRY(input.amount);
+          finalAmount = convertedAmount;
+        } else if (paymentCurrency === 'TRY' && storeCurrency === 'USD') {
+          convertedAmount = await exchangeRateService.convertTRYtoUSD(input.amount);
+          finalAmount = convertedAmount;
+        }
+        
+        const rates = await exchangeRateService.getRates();
+        if (paymentCurrency === 'USD' && storeCurrency === 'TRY') {
+          exchangeRate = rates.USD;
+        } else if (paymentCurrency === 'TRY' && storeCurrency === 'USD') {
+          exchangeRate = 1 / rates.USD;
         }
       }
 
@@ -561,7 +602,7 @@ export class PaymentService {
       // Payment request oluştur
       const paymentRequest = await this.createPaymentRequest(input);
 
-      // Transaction kaydı oluştur ve webhook token al
+      // Transaction kaydı oluştur ve webhook token al  
       const webhookToken = await this.createPaymentTransaction(paymentRequest, input.storeId);
 
       // Webhook URL'lerini güvenli hale getir

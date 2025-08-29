@@ -153,7 +153,7 @@ export class MuhasebeController {
    */
   async createMuhasebeHareketi(req: Request, res: Response) {
     try {
-      const { storeId, islemTuru, tutar, tarih, aciklama } = req.body
+      const { storeId, islemTuru, tutar, tarih, aciklama, currency } = req.body
       const adminStoreId = (req as any).user?.store_id
 
       // Girdi doğrulama
@@ -196,7 +196,12 @@ export class MuhasebeController {
 
       // Mağaza var mı kontrolü
       const store = await prisma.store.findUnique({
-        where: { store_id: storeId }
+        where: { store_id: storeId },
+        select: {
+          store_id: true,
+          kurum_adi: true,
+          currency: true
+        }
       })
 
       if (!store) {
@@ -209,6 +214,24 @@ export class MuhasebeController {
       // Admin kendi mağazasına mı işlem yapıyor kontrolü
       const isAdminOwnStore = adminStoreId === storeId
 
+      // Currency bilgileri
+      const storeCurrency = store.currency || 'TRY'
+      const transactionCurrency = currency || storeCurrency
+      let exchangeRate: number | null = null
+      let originalAmount = tutar
+
+      // Currency farklıysa exchange rate hesapla
+      if (transactionCurrency !== storeCurrency && transactionCurrency !== 'TRY') {
+        const { exchangeRateService } = await import('../services/exchange-rate-service')
+        // Get current exchange rate from service
+        const rates = await exchangeRateService.getRates()
+        if (transactionCurrency === 'USD' && storeCurrency === 'TRY') {
+          exchangeRate = rates.USD
+        } else if (transactionCurrency === 'TRY' && storeCurrency === 'USD') {
+          exchangeRate = 1 / rates.USD
+        }
+      }
+
       // Transaction başlat
       const result = await prisma.$transaction(async (tx) => {
         // Yeni muhasebe hareketi oluştur
@@ -219,7 +242,12 @@ export class MuhasebeController {
             tutar,
             harcama,
             tarih: tarihDate,
-            aciklama
+            aciklama,
+            // YENI currency alanları
+            currency: transactionCurrency as any,
+            original_currency: transactionCurrency as any,
+            exchange_rate: exchangeRate,
+            original_amount: originalAmount
           },
           include: {
             store: {
