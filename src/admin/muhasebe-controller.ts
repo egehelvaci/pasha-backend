@@ -236,33 +236,58 @@ export class MuhasebeController {
           where: { id: 1 }
         })
 
-        if (!adminVarliklar) {
-          // İlk kez oluşturuluyor
-          await tx.adminVarliklari.create({
-            data: {
-              id: 1,
-              kasaBakiyesi: harcama ? -tutar : tutar
-            }
-          })
-        } else {
-          // Mevcut bakiyeyi güncelle
-          await tx.adminVarliklari.update({
-            where: { id: 1 },
-            data: {
-              kasaBakiyesi: {
-                increment: harcama ? -tutar : tutar
+        // Admin kendi mağazasına işlem yapıyorsa
+        if (isAdminOwnStore) {
+          // Admin kendi mağazasına işlem yapıyor - sadece admin kasası etkilenir
+          if (!adminVarliklar) {
+            await tx.adminVarliklari.create({
+              data: {
+                id: 1,
+                kasaBakiyesi: harcama ? -tutar : tutar
               }
-            }
-          })
-        }
+            })
+          } else {
+            await tx.adminVarliklari.update({
+              where: { id: 1 },
+              data: {
+                kasaBakiyesi: {
+                  increment: harcama ? -tutar : tutar
+                }
+              }
+            })
+          }
+        } else {
+          // Admin başka bir mağazaya işlem yapıyor
+          // Parakende Satış gibi gelir türleri: Admin'e gelir, mağazaya gider
+          // Gider türleri: Admin'e gider, mağazaya gelir
+          
+          // Admin kasa güncellemesi
+          if (!adminVarliklar) {
+            await tx.adminVarliklari.create({
+              data: {
+                id: 1,
+                kasaBakiyesi: harcama ? -tutar : tutar
+              }
+            })
+          } else {
+            await tx.adminVarliklari.update({
+              where: { id: 1 },
+              data: {
+                kasaBakiyesi: {
+                  increment: harcama ? -tutar : tutar
+                }
+              }
+            })
+          }
 
-        // Mağaza bakiyesini güncelle (sadece admin kendi mağazasına işlem yapmıyorsa)
-        if (!isAdminOwnStore) {
+          // Mağaza bakiyesi güncellemesi - ters işaret
+          // Gelir (harcama=false) ise mağaza için gider (-), Admin için gelir (+)
+          // Gider (harcama=true) ise mağaza için gelir (+), Admin için gider (-)
           await tx.store.update({
             where: { store_id: storeId },
             data: {
               bakiye: {
-                increment: harcama ? -tutar : tutar
+                increment: harcama ? tutar : -tutar
               }
             }
           })
