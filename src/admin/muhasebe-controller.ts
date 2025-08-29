@@ -308,14 +308,27 @@ export class MuhasebeController {
             })
           }
 
-          // Mağaza bakiyesi güncellemesi - ters işaret
-          // Gelir (harcama=false) ise mağaza için gider (-), Admin için gelir (+)
-          // Gider (harcama=true) ise mağaza için gelir (+), Admin için gider (-)
+          // Mağaza bakiyesi güncellemesi - Borç verme ve borç tahsilatı için özel mantık
+          let magazaBakiyeDeğişimi: number
+          
+          if (islemTuru === 'Borç Verme') {
+            // Admin mağazaya borç veriyor: mağaza borca giriyor (bakiye azalmalı)
+            magazaBakiyeDeğişimi = -tutar
+          } else if (islemTuru === 'Borç Tahsilatı') {
+            // Admin mağazadan borç tahsil ediyor: mağaza borcunu ödüyor (bakiye artmalı)
+            magazaBakiyeDeğişimi = tutar
+          } else {
+            // Diğer işlemler için eski mantık
+            // Gelir (harcama=false) ise mağaza için gider (-), Admin için gelir (+)
+            // Gider (harcama=true) ise mağaza için gelir (+), Admin için gider (-)
+            magazaBakiyeDeğişimi = harcama ? tutar : -tutar
+          }
+          
           await tx.store.update({
             where: { store_id: storeId },
             data: {
               bakiye: {
-                increment: harcama ? tutar : -tutar
+                increment: magazaBakiyeDeğişimi
               }
             }
           })
