@@ -397,7 +397,7 @@ export class OrderService {
       }
 
       // Sipariş sonrası işlemleri gerçekleştir (bakiye düşürme vs.)
-      await this.processPostOrderOperations(user, cartTotal);
+      await this.processPostOrderOperations(user, cartTotal, order.id);
 
       // Sepeti pasif hale getir
       await prisma.carts.update({
@@ -565,7 +565,7 @@ export class OrderService {
       }
 
       // Admin sipariş sonrası işlemleri gerçekleştir (bakiye düşürme vs.)
-      await this.processAdminOrderOperations(user, cartTotal);
+      await this.processAdminOrderOperations(user, cartTotal, order.id);
 
       // Admin sepeti pasif hale getir
       await prisma.admin_carts.update({
@@ -771,7 +771,7 @@ export class OrderService {
       }
 
       // Admin siparişi için özel işlemler - AÇIK HESAP LİMİTİ KONTROLÜ YOK
-      await this.processAdminOrderOperations(user, orderTotal);
+      await this.processAdminOrderOperations(user, orderTotal, order.id);
 
       // Admin'e yeni sipariş bildirimi gönder
       try {
@@ -1241,7 +1241,7 @@ export class OrderService {
   }
 
   // Sipariş sonrası işlemler
-  private async processPostOrderOperations(user: any, orderTotal: number): Promise<void> {
+  private async processPostOrderOperations(user: any, orderTotal: number, orderId?: string): Promise<void> {
     const store = user.Store;
     
     try {
@@ -1268,6 +1268,48 @@ export class OrderService {
         console.log(`  - Sipariş tutarı: ${orderTotal} TL`)
         console.log(`  - Yeni bakiye: ${newBalance} TL`)
         console.log(`  - Açık hesap limiti: ${currentOpenAccountLimit} TL (değişmez)`)
+        
+        // Admin kasa bakiyesini güncelle ve muhasebe hareketi oluştur
+        const adminVarliklar = await prisma.adminVarliklari.findFirst({
+          where: { id: 1 }
+        });
+        
+        if (!adminVarliklar) {
+          await prisma.adminVarliklari.create({
+            data: {
+              id: 1,
+              kasaBakiyesi: orderTotal
+            }
+          });
+        } else {
+          await prisma.adminVarliklari.update({
+            where: { id: 1 },
+            data: {
+              kasaBakiyesi: {
+                increment: orderTotal
+              }
+            }
+          });
+        }
+        
+        console.log(`💰 Admin kasa bakiyesi güncellendi: +${orderTotal} TL`);
+        
+        // Muhasebe hareketi oluştur
+        await prisma.muhasebeHareketleri.create({
+          data: {
+            storeId: store.store_id,
+            islemTuru: 'Parekende Satış',
+            tutar: orderTotal,
+            harcama: false, // Gelir
+            tarih: new Date(),
+            aciklama: `Sipariş #${orderId || 'N/A'} - ${store.kurum_adi} mağazası tarafından verilen sipariş`,
+            currency: store.currency || 'TRY',
+            original_currency: store.currency || 'TRY',
+            original_amount: orderTotal
+          }
+        });
+        
+        console.log(`📋 Muhasebe hareketi oluşturuldu: Sipariş #${orderId || 'N/A'}`);
       }
 
       // 2. Fiyat listesi limitini güncelle
@@ -1353,7 +1395,7 @@ export class OrderService {
   }
 
   // Admin siparişi sonrası işlemler - Açık hesap limiti kontrolsüz
-  private async processAdminOrderOperations(user: any, orderTotal: number): Promise<void> {
+  private async processAdminOrderOperations(user: any, orderTotal: number, orderId?: string): Promise<void> {
     const store = user.Store;
     
     try {
@@ -1381,6 +1423,48 @@ export class OrderService {
       console.log(`  - Sipariş tutarı: ${orderTotal} TL`)
       console.log(`  - Yeni bakiye: ${newBalance} TL`)
       console.log(`  - Açık hesap limiti: DEĞİŞMEDİ (Admin siparişi)`)
+      
+      // Admin kasa bakiyesini güncelle ve muhasebe hareketi oluştur
+      const adminVarliklar = await prisma.adminVarliklari.findFirst({
+        where: { id: 1 }
+      });
+      
+      if (!adminVarliklar) {
+        await prisma.adminVarliklari.create({
+          data: {
+            id: 1,
+            kasaBakiyesi: orderTotal
+          }
+        });
+      } else {
+        await prisma.adminVarliklari.update({
+          where: { id: 1 },
+          data: {
+            kasaBakiyesi: {
+              increment: orderTotal
+            }
+          }
+        });
+      }
+      
+      console.log(`💰 Admin kasa bakiyesi güncellendi: +${orderTotal} TL`);
+      
+      // Muhasebe hareketi oluştur
+      await prisma.muhasebeHareketleri.create({
+        data: {
+          storeId: store.store_id,
+          islemTuru: 'Parekende Satış',
+          tutar: orderTotal,
+          harcama: false, // Gelir
+          tarih: new Date(),
+          aciklama: `Admin Siparişi #${orderId || 'N/A'} - ${store.kurum_adi} mağazası için admin tarafından oluşturulan sipariş`,
+          currency: store.currency || 'TRY',
+          original_currency: store.currency || 'TRY',
+          original_amount: orderTotal
+        }
+      });
+      
+      console.log(`📋 Muhasebe hareketi oluşturuldu: Admin Siparişi #${orderId || 'N/A'}`);
 
       // Fiyat listesi limitini güncelle (eğer varsa)
       const storePriceList = store.StorePriceList.find((spl: any) => spl.PriceList);
@@ -1620,6 +1704,23 @@ export class OrderService {
           console.log(`  - Önceki bakiye: ${currentBalance} TL`);
           console.log(`  - İade tutarı: ${orderTotal} TL`);
           console.log(`  - Yeni bakiye: ${newBalance} TL`);
+          
+          // Admin kasa bakiyesini güncelle (sipariş iptal edildiği için kasadan düşülür)
+          const adminVarliklar = await tx.adminVarliklari.findFirst({
+            where: { id: 1 }
+          });
+          
+          if (adminVarliklar) {
+            await tx.adminVarliklari.update({
+              where: { id: 1 },
+              data: {
+                kasaBakiyesi: {
+                  decrement: orderTotal
+                }
+              }
+            });
+            console.log(`💰 Admin kasa bakiyesi güncellendi: -${orderTotal} TL`);
+          }
 
           // 4. Fiyat listesi limitini geri yükle (eğer varsa)
           const storePriceList = store.StorePriceList.find((spl: any) => spl.PriceList);
@@ -1643,13 +1744,17 @@ export class OrderService {
           await tx.muhasebeHareketleri.create({
             data: {
               storeId: store.store_id,
-              islemTuru: `Sipariş İptali - ${isAdmin ? 'Admin' : 'Müşteri'} İade`,
+              islemTuru: 'Diğer Giderler', // İptal/İade işlemi
               tutar: orderTotal,
               harcama: true, // İade olduğu için harcama olarak kaydet (admin para iade ediyor)
               tarih: new Date(),
-              aciklama: `Sipariş #${orderId} ${isAdmin ? 'admin tarafından' : 'müşteri tarafından'} iptal edildi. ${reason ? `Sebep: ${reason}` : ''}`
+              aciklama: `Sipariş İptali #${orderId} - ${store.kurum_adi} mağazasının siparişi ${isAdmin ? 'admin tarafından' : 'müşteri tarafından'} iptal edildi. ${reason ? `Sebep: ${reason}` : ''}`,
+              currency: store.currency || 'TRY',
+              original_currency: store.currency || 'TRY',
+              original_amount: orderTotal
             }
           });
+          console.log(`📋 Muhasebe hareketi oluşturuldu: Sipariş İptali #${orderId}`);
         }
 
         // 6. Bildirim oluştur
