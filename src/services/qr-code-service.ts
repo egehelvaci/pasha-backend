@@ -304,19 +304,19 @@ export class QRCodeService {
           let updateData: any = {}
           
           if (isOptionalHeight) {
-            // Opsiyonel yükseklik: Sadece m² düşür
+            // Opsiyonel yükseklik: Sadece m² düşür (negatif stok izni)
             const actualPieceAreaM2 = (itemWidth * itemHeight) / 10000;
             const usedAreaM2 = item.quantity * actualPieceAreaM2;
             const currentAreaM2 = Number(variation.stock_area_m2 || 0);
-            const newAreaM2 = Math.max(0, currentAreaM2 - usedAreaM2);
+            const newAreaM2 = currentAreaM2 - usedAreaM2; // Negatife düşebilir
             
             updateData.stock_area_m2 = newAreaM2;
-            console.log(`📦 Opsiyonel yükseklik stok güncellendi: ${currentAreaM2} → ${newAreaM2}m² (Kullanılan: ${usedAreaM2}m²)`)
+            console.log(`📦 Opsiyonel yükseklik stok güncellendi: ${currentAreaM2} → ${newAreaM2}m² (Kullanılan: ${usedAreaM2}m²) ${newAreaM2 < 0 ? '⚠️ NEGATİF STOK' : ''}`)
           } else {
-            // Hazır kesim: Sadece adet düşür
-            const newStock = Math.max(0, variation.stock_quantity - item.quantity)
+            // Hazır kesim: Sadece adet düşür (negatif stok izni)
+            const newStock = variation.stock_quantity - item.quantity; // Negatife düşebilir
             updateData.stock_quantity = newStock;
-            console.log(`📦 Hazır kesim stok güncellendi: ${variation.stock_quantity} → ${newStock} adet`)
+            console.log(`📦 Hazır kesim stok güncellendi: ${variation.stock_quantity} → ${newStock} adet ${newStock < 0 ? '⚠️ NEGATİF STOK' : ''}`)
           }
           
           await prisma.productvariations.update({

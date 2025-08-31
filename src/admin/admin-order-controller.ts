@@ -251,8 +251,14 @@ export class AdminOrderController {
       // QR kodlar oluştur ve siparişi onayla
       const qrResult = await qrCodeService.generateQRCodesForOrder(orderId)
       
-      // ESKI MANTIK: Stokları düşür - ARTIK YAPILMAYACAK
-      // await qrCodeService.reduceStockForOrder(orderId)
+      // YENİ MANTIK: Stokları düşür (negatif stok izinli)
+      try {
+        await qrCodeService.reduceStockForOrder(orderId)
+        console.log(`✅ Sipariş onaylandı ve stok düşürüldü: ${orderId}`);
+      } catch (stockError) {
+        console.warn('⚠️ Stok düşürme sırasında uyarı:', stockError);
+        console.log(`✅ Sipariş onaylandı (stok durumu: negatif/sıfır): ${orderId}`);
+      }
 
       // Güncellenmiş sipariş bilgilerini al
       const updatedOrder = await prisma.order.findUnique({
@@ -1050,8 +1056,14 @@ export class AdminOrderController {
       if (status === 'CONFIRMED' && existingOrder.status !== 'CONFIRMED') {
         try {
           qrResult = await qrCodeService.generateQRCodesForOrder(orderId)
-          // ESKI MANTIK: Stok düşür - ARTIK YAPILMAYACAK
-          // await qrCodeService.reduceStockForOrder(orderId)
+          // YENİ MANTIK: Stok düşür (negatif stok izinli)
+          try {
+            await qrCodeService.reduceStockForOrder(orderId)
+            console.log(`✅ Sipariş CONFIRMED durumuna geçti ve stok düşürüldü: ${orderId}`);
+          } catch (stockError) {
+            console.warn('⚠️ CONFIRMED durumunda stok düşürme uyarısı:', stockError);
+            console.log(`✅ Sipariş CONFIRMED durumuna geçti (stok durumu: negatif/sıfır): ${orderId}`);
+          }
           console.log(`✅ Sipariş ${orderId} CONFIRMED olarak güncellendi - QR kod oluşturuldu`)
         } catch (qrError) {
           console.error('QR kod oluşturma hatası:', qrError)

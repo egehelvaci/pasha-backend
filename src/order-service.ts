@@ -387,13 +387,9 @@ export class OrderService {
         await qrCodeService.reduceStockForOrder(order.id);
         console.log(`✅ Sipariş ${order.id} oluşturuldu ve stok düşürüldü`);
       } catch (stockError) {
-        console.error('❌ Stok düşürme hatası:', stockError);
-        // Stok hatası durumunda siparişi iptal et
-        await prisma.order.update({
-          where: { id: order.id },
-          data: { status: OrderStatus.CANCELED }
-        });
-        return { success: false, message: 'Stok yetersizliği nedeniyle sipariş oluşturulamadı' };
+        console.warn('⚠️ Stok düşürme sırasında uyarı:', stockError);
+        // Stok 0 veya negatif olsa bile sipariş devam etsin
+        console.log(`✅ Sipariş ${order.id} oluşturuldu (stok durumu: negatif/sıfır)`);
       }
 
       // Sipariş sonrası işlemleri gerçekleştir (bakiye düşürme vs.)
@@ -555,13 +551,9 @@ export class OrderService {
         await qrCodeService.reduceStockForOrder(order.id);
         console.log(`✅ Admin sepetinden sipariş ${order.id} oluşturuldu ve stok düşürüldü`);
       } catch (stockError) {
-        console.error('❌ Stok düşürme hatası:', stockError);
-        // Stok hatası durumunda siparişi iptal et
-        await prisma.order.update({
-          where: { id: order.id },
-          data: { status: OrderStatus.CANCELED }
-        });
-        return { success: false, message: 'Stok yetersizliği nedeniyle sipariş oluşturulamadı' };
+        console.warn('⚠️ Admin sepetinden stok düşürme sırasında uyarı:', stockError);
+        // Stok 0 veya negatif olsa bile sipariş devam etsin
+        console.log(`✅ Admin sepetinden sipariş ${order.id} oluşturuldu (stok durumu: negatif/sıfır)`);
       }
 
       // Admin sipariş sonrası işlemleri gerçekleştir (bakiye düşürme vs.)
@@ -761,13 +753,9 @@ export class OrderService {
         await qrCodeService.reduceStockForOrder(order.id);
         console.log(`✅ Admin siparişi ${order.id} oluşturuldu ve stok düşürüldü`);
       } catch (stockError) {
-        console.error('❌ Admin siparişi stok düşürme hatası:', stockError);
-        // Stok hatası durumunda siparişi iptal et
-        await prisma.order.update({
-          where: { id: order.id },
-          data: { status: OrderStatus.CANCELED }
-        });
-        return { success: false, message: 'Stok yetersizliği nedeniyle admin siparişi oluşturulamadı' };
+        console.warn('⚠️ Admin siparişi stok düşürme sırasında uyarı:', stockError);
+        // Stok 0 veya negatif olsa bile sipariş devam etsin
+        console.log(`✅ Admin siparişi ${order.id} oluşturuldu (stok durumu: negatif/sıfır)`);
       }
 
       // Admin siparişi için özel işlemler - AÇIK HESAP LİMİTİ KONTROLÜ YOK
