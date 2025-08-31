@@ -460,8 +460,8 @@ export class CartService {
         
         console.log(`📦 Sepet güncelleme - Stok bilgisi: ${width}x${height}cm - Adet: ${availableStock}, m²: ${availableAreaM2} (Kontrol devre dışı)`);
       } else {
-        // Size option bulunamazsa hata ver
-        throw new Error(`Bu boyut (${width}x${height}cm) için stok bilgisi bulunamadı`);
+        // Size option bulunamazsa uyar ama hata verme
+        console.warn(`⚠️ Bu boyut (${width}x${height}cm) için stok bilgisi bulunamadı - İşlem devam ediyor`);
       }
 
       // Saçak kontrolü
@@ -1166,7 +1166,7 @@ export class CartService {
         
         console.log(`📦 Sepet güncelleme - Stok bilgisi: ${width}x${height}cm - Adet: ${availableStock}, m²: ${availableAreaM2} (Kontrol devre dışı)`);
       } else {
-        throw new Error(`Bu boyut (${width}x${height}cm) için stok bilgisi bulunamadı`);
+        console.warn(`⚠️ Bu boyut (${width}x${height}cm) için stok bilgisi bulunamadı - İşlem devam ediyor`);
       }
 
       // Saçak kontrolü
