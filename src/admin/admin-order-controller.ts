@@ -87,6 +87,19 @@ export class AdminOrderController {
                 product: true
               }
             },
+            barcodes: {
+              include: {
+                order_item: {
+                  include: {
+                    product: true
+                  }
+                },
+                product: true
+              },
+              orderBy: {
+                created_at: 'asc'
+              }
+            },
             address: true
           },
           orderBy,

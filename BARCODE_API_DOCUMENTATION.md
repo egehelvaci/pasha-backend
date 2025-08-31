@@ -102,52 +102,7 @@ enum OrderStatus {
 
 ### 2. Çoklu Barkod Okutma
 
-**Endpoint:** `POST /api/admin/barcode/scan-multiple`
-
-**Headers:**
-```json
-{
-  "Authorization": "Bearer {token}",
-  "Content-Type": "application/json"
-}
-```
-
-**Request Body:**
-```json
-{
-  "barcodes": [
-    "BAR-1234567890-ABCDEF",
-    "BAR-1234567890-GHIJKL",
-    "BAR-1234567890-MNOPQR"
-  ]
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "results": [
-    {
-      "success": true,
-      "barcode": "BAR-1234567890-ABCDEF",
-      "order": {...},
-      "scanInfo": {...}
-    },
-    {
-      "success": false,
-      "barcode": "BAR-1234567890-GHIJKL",
-      "error": "Bu barkod zaten okutulmuş"
-    }
-  ],
-  "summary": {
-    "total_scanned": 2,
-    "total_failed": 1,
-    "completed_orders": ["order-uuid-1"],
-    "completed_orders_count": 1
-  }
-}
-```
+görse
 
 ### 3. Sipariş Barkodlarını Getir
 
