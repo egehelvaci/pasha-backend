@@ -6,10 +6,11 @@ Bu döküman, sipariş yönetim sistemine eklenen barkod okutma özelliğinin AP
 
 ## Sistem Akışı
 
-1. **QR Kod Okutma**: Tüm QR kodlar okutulduğunda sipariş durumu `READY` olur
-2. **Otomatik Barkod Oluşturma**: Sipariş `CONFIRMED` olduğunda (QR kod oluşturma esnasında) her ürün için otomatik barkod oluşturulur
-3. **Barkod Okutma**: Barkodlar okutulup gönderildiğinde sipariş `DELIVERED` durumuna geçer
-4. **Çoklu Sipariş Desteği**: Birden fazla siparişin barkodları aynı anda okutulabilir
+1. **Sipariş Onayı**: Admin sipariş onayladığında `generate-qrcodes` API'si çağrılır
+2. **Otomatik QR + Barkod Oluşturma**: Bu API çağrısında hem QR kodlar hem de barkodlar otomatik oluşturulur
+3. **QR Kod Okutma**: Tüm QR kodlar okutulduğunda sipariş durumu `READY` olur
+4. **Barkod Okutma**: READY siparişteki barkodlar okutulup gönderildiğinde sipariş `DELIVERED` durumuna geçer
+5. **Çoklu Sipariş Desteği**: Birden fazla siparişin barkodları aynı anda okutulabilir
 
 ## Database Değişiklikleri
 
