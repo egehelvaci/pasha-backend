@@ -27,8 +27,8 @@ export class StoreAddressController {
 
       let storeId: string
 
-      if (userType === 'admin') {
-        // Admin için önce kendi store_id'sini kontrol et
+      if (userType === 'admin' || userType === 'editor') {
+        // Admin/Editor için önce kendi store_id'sini kontrol et
         const adminUser = await prisma.user.findUnique({
           where: { userId },
           select: { store_id: true }
@@ -37,7 +37,7 @@ export class StoreAddressController {
         // Params veya query'den store_id belirtilmişse onu kullan
         storeId = req.params.storeId || req.query.storeId as string
         
-        // Eğer store_id belirtilmemişse admin'in kendi store_id'sini kullan
+        // Eğer store_id belirtilmemişse admin/editor'ın kendi store_id'sini kullan
         if (!storeId && adminUser?.store_id) {
           storeId = adminUser.store_id
         }
@@ -46,7 +46,7 @@ export class StoreAddressController {
         if (!storeId) {
           return res.status(400).json({
             success: false,
-            message: 'Admin kullanıcısı için store_id gerekli veya admin kullanıcısının bir mağazaya bağlı olması gerekli'
+            message: 'Admin/Editor kullanıcısı için store_id gerekli veya kullanıcının bir mağazaya bağlı olması gerekli'
           })
         }
       } else {
@@ -116,8 +116,8 @@ export class StoreAddressController {
 
       let storeId: string
 
-      if (userType === 'admin') {
-        // Admin için önce kendi store_id'sini kontrol et
+      if (userType === 'admin' || userType === 'editor') {
+        // Admin/Editor için önce kendi store_id'sini kontrol et
         const adminUser = await prisma.user.findUnique({
           where: { userId },
           select: { store_id: true }
@@ -126,7 +126,7 @@ export class StoreAddressController {
         // Body'den veya params'dan store_id belirtilmişse onu kullan
         storeId = req.body.store_id || req.params.storeId
         
-        // Eğer store_id belirtilmemişse admin'in kendi store_id'sini kullan
+        // Eğer store_id belirtilmemişse admin/editor'ın kendi store_id'sini kullan
         if (!storeId && adminUser?.store_id) {
           storeId = adminUser.store_id
         }
@@ -135,7 +135,7 @@ export class StoreAddressController {
         if (!storeId) {
           return res.status(400).json({
             success: false,
-            message: 'Admin kullanıcısı için store_id gerekli veya admin kullanıcısının bir mağazaya bağlı olması gerekli'
+            message: 'Admin/Editor kullanıcısı için store_id gerekli veya kullanıcının bir mağazaya bağlı olması gerekli'
           })
         }
       } else {
@@ -236,7 +236,7 @@ export class StoreAddressController {
       }
 
       // Yetki kontrolü
-      if (userType !== 'admin') {
+      if (userType !== 'admin' && userType !== 'editor') {
         const user = await prisma.user.findUnique({
           where: { userId },
           select: { store_id: true }
@@ -328,7 +328,7 @@ export class StoreAddressController {
       }
 
       // Yetki kontrolü
-      if (userType !== 'admin') {
+      if (userType !== 'admin' && userType !== 'editor') {
         const user = await prisma.user.findUnique({
           where: { userId },
           select: { store_id: true }
@@ -417,7 +417,7 @@ export class StoreAddressController {
       }
 
       // Yetki kontrolü
-      if (userType !== 'admin') {
+      if (userType !== 'admin' && userType !== 'editor') {
         const user = await prisma.user.findUnique({
           where: { userId },
           select: { store_id: true }

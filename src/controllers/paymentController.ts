@@ -48,12 +48,12 @@ export class PaymentController {
         });
       }
 
-      // Admin için storeId kullanımı kontrolü
+      // Admin/Editor için storeId kullanımı kontrolü
       let targetStoreId = storeId;
       let targetUserId = userId;
 
-      if (userType === 'admin') {
-        // Admin kullanıcı, belirtilen mağaza için ödeme başlatabilir
+      if (userType === 'admin' || userType === 'editor') {
+        // Admin/Editor kullanıcı, belirtilen mağaza için ödeme başlatabilir
         targetStoreId = storeId;
         targetUserId = userId;
       } else {
@@ -93,7 +93,7 @@ export class PaymentController {
         channel: channel || 'web',
         orderId,
         idempotencyKey,
-        isAdmin: userType === 'admin'
+        isAdmin: userType === 'admin' || userType === 'editor'
       });
 
       // Checkout işlemi
@@ -160,20 +160,20 @@ export class PaymentController {
         });
       }
 
-      // Admin kontrolü - admin ise herhangi bir mağaza için ödeme alabilir
+      // Admin/Editor kontrolü - admin/editor ise herhangi bir mağaza için ödeme alabilir
       let targetStoreId = storeId;
       let targetUserId = userId;
 
-      if (userType === 'admin') {
-        console.log('👑 Admin kullanıcı ödeme request oluşturuyor:', { 
+      if (userType === 'admin' || userType === 'editor') {
+        console.log(`👑 ${userType.toUpperCase()} kullanıcı ödeme request oluşturuyor:`, { 
           adminUserId: userId, 
           targetStoreId: storeId, 
           amount, 
           aciklama 
         });
-        // Admin için storeId direkt kullanılabilir
+        // Admin/Editor için storeId direkt kullanılabilir
         targetStoreId = storeId;
-        targetUserId = userId; // Admin kendi adına ödeme alıyor
+        targetUserId = userId; // Admin/Editor kendi adına ödeme alıyor
       } else {
         // Normal kullanıcı - sadece kendi mağazası için ödeme alabilir
         const userStoreId = (req as any).user?.store_id;
@@ -192,7 +192,7 @@ export class PaymentController {
         storeId: targetStoreId, 
         amount, 
         aciklama,
-        isAdmin: userType === 'admin'
+        isAdmin: userType === 'admin' || userType === 'editor'
       });
 
       // Sadece request objesi oluştur, Octet'e gönderme
@@ -246,20 +246,20 @@ export class PaymentController {
         });
       }
 
-      // Admin kontrolü - admin ise herhangi bir mağaza için ödeme alabilir
+      // Admin/Editor kontrolü - admin/editor ise herhangi bir mağaza için ödeme alabilir
       let targetStoreId = storeId;
       let targetUserId = userId;
 
-      if (userType === 'admin') {
-        console.log('👑 Admin kullanıcı ödeme işlemi başlatıyor:', { 
+      if (userType === 'admin' || userType === 'editor') {
+        console.log(`👑 ${userType.toUpperCase()} kullanıcı ödeme işlemi başlatıyor:`, { 
           adminUserId: userId, 
           targetStoreId: storeId, 
           amount, 
           aciklama 
         });
-        // Admin için storeId direkt kullanılabilir
+        // Admin/Editor için storeId direkt kullanılabilir
         targetStoreId = storeId;
-        targetUserId = userId; // Admin kendi adına ödeme alıyor
+        targetUserId = userId; // Admin/Editor kendi adına ödeme alıyor
       } else {
         // Normal kullanıcı - sadece kendi mağazası için ödeme alabilir
         const userStoreId = (req as any).user?.store_id;
@@ -278,7 +278,7 @@ export class PaymentController {
         storeId: targetStoreId, 
         amount, 
         aciklama,
-        isAdmin: userType === 'admin'
+        isAdmin: userType === 'admin' || userType === 'editor'
       });
 
       // Request oluştur ve Octet'e gönder
