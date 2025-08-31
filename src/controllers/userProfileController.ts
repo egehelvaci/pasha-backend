@@ -601,13 +601,15 @@ export class UserProfileController {
         take: 50 // Son 50 ödeme
       })
 
-      // Toplam harcama ve ödeme hesapla
+      // Toplam harcama ve ödeme hesapla (Kullanıcı perspektifinden)
+      // Admin geliri (harcama=false) = Kullanıcı harcaması
+      // Admin gideri (harcama=true) = Kullanıcı geliri/iadesi
       const toplamHarcama = muhasebeHareketleri
-        .filter(h => h.harcama === true)
+        .filter(h => !h.harcama && (h.islemTuru === 'Parekende Satış' || h.islemTuru === 'Toptan Satış'))
         .reduce((sum, h) => sum + Number(h.tutar), 0)
 
       const toplamOdeme = muhasebeHareketleri
-        .filter(h => h.harcama === false)
+        .filter(h => h.harcama && h.islemTuru === 'Diğer Giderler' && h.aciklama?.includes('İptal'))
         .reduce((sum, h) => sum + Number(h.tutar), 0)
 
       const toplamSiparisTutari = orders.reduce((sum, order) => 
@@ -628,15 +630,39 @@ export class UserProfileController {
             bekleyenSiparisler,
             teslimEdilenSiparisler
           },
-          muhasebeHareketleri: muhasebeHareketleri.map(hareket => ({
-            id: hareket.id,
-            islemTuru: hareket.islemTuru,
-            tutar: Number(hareket.tutar),
-            harcamaMi: hareket.harcama,
-            tarih: hareket.tarih,
-            aciklama: hareket.aciklama,
-            createdAt: hareket.createdAt
-          })),
+          muhasebeHareketleri: muhasebeHareketleri.map(hareket => {
+            // Kullanıcı perspektifinden işlemleri göster
+            // Admin perspektifinde: Parekende Satış = gelir (harcama: false), İptal = gider (harcama: true)
+            // Kullanıcı perspektifinde: Sipariş = gider (-), İptal = gelir (+)
+            let kullaniciPerspektifiTutar = Number(hareket.tutar);
+            
+            // Parekende Satış veya benzeri gelir işlemleri kullanıcı için gider (negatif)
+            if (!hareket.harcama && (hareket.islemTuru === 'Parekende Satış' || hareket.islemTuru === 'Toptan Satış')) {
+              kullaniciPerspektifiTutar = -Math.abs(kullaniciPerspektifiTutar);
+            }
+            // İptal/İade işlemleri kullanıcı için gelir (pozitif)
+            else if (hareket.harcama && hareket.islemTuru === 'Diğer Giderler' && hareket.aciklama?.includes('İptal')) {
+              kullaniciPerspektifiTutar = Math.abs(kullaniciPerspektifiTutar);
+            }
+            // Diğer admin giderleri kullanıcı için gelir
+            else if (hareket.harcama) {
+              kullaniciPerspektifiTutar = Math.abs(kullaniciPerspektifiTutar);
+            }
+            // Diğer admin gelirleri kullanıcı için gider
+            else {
+              kullaniciPerspektifiTutar = -Math.abs(kullaniciPerspektifiTutar);
+            }
+            
+            return {
+              id: hareket.id,
+              islemTuru: hareket.islemTuru,
+              tutar: kullaniciPerspektifiTutar,
+              harcamaMi: !hareket.harcama, // Tersine çevir: Admin geliri = Kullanıcı harcaması
+              tarih: hareket.tarih,
+              aciklama: hareket.aciklama,
+              createdAt: hareket.createdAt
+            };
+          }),
           siparisler: orders.map(order => ({
             id: order.id,
             toplamTutar: Number(order.total_price),

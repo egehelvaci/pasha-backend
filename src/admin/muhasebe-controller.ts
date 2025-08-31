@@ -40,6 +40,7 @@ export class MuhasebeController {
     this.getExpenseTypes = this.getExpenseTypes.bind(this)
     this.getAdminToplam = this.getAdminToplam.bind(this)
     this.getManuelSatislar = this.getManuelSatislar.bind(this)
+    this.getMuhasebeHareketleriByStore = this.getMuhasebeHareketleriByStore.bind(this)
   }
 
   /**
@@ -532,6 +533,148 @@ export class MuhasebeController {
       return res.status(500).json({
         success: false,
         message: error.message || 'Manuel satış listesi getirilemedi'
+      })
+    }
+  }
+
+  /**
+   * Belirli bir mağazanın muhasebe hareketlerini listele
+   */
+  async getMuhasebeHareketleriByStore(req: Request, res: Response) {
+    try {
+      const { storeId } = req.params
+      const page = parseInt(req.query.page as string) || 1
+      const limit = parseInt(req.query.limit as string) || 20
+      const startDate = req.query.startDate as string
+      const endDate = req.query.endDate as string
+      const islemTuru = req.query.islemTuru as string
+      
+      // Mağaza var mı kontrolü
+      const store = await prisma.store.findUnique({
+        where: { store_id: storeId },
+        select: {
+          store_id: true,
+          kurum_adi: true,
+          bakiye: true,
+          currency: true,
+          acik_hesap_tutari: true,
+          limitsiz_acik_hesap: true
+        }
+      })
+
+      if (!store) {
+        return res.status(404).json({
+          success: false,
+          message: 'Mağaza bulunamadı'
+        })
+      }
+
+      // Filtreleme koşulları
+      const whereCondition: any = {
+        storeId: storeId
+      }
+
+      // Tarih filtreleri
+      if (startDate || endDate) {
+        whereCondition.tarih = {}
+        if (startDate) {
+          whereCondition.tarih.gte = new Date(startDate)
+        }
+        if (endDate) {
+          const endDateTime = new Date(endDate)
+          endDateTime.setHours(23, 59, 59, 999)
+          whereCondition.tarih.lte = endDateTime
+        }
+      }
+
+      // İşlem türü filtresi
+      if (islemTuru) {
+        whereCondition.islemTuru = islemTuru
+      }
+
+      // Sayfalama hesaplaması
+      const skip = (page - 1) * limit
+
+      // Muhasebe hareketlerini getir
+      const [hareketler, totalCount] = await Promise.all([
+        prisma.muhasebeHareketleri.findMany({
+          where: whereCondition,
+          include: {
+            store: {
+              select: {
+                store_id: true,
+                kurum_adi: true
+              }
+            }
+          },
+          orderBy: {
+            tarih: 'desc'
+          },
+          skip,
+          take: limit
+        }),
+        prisma.muhasebeHareketleri.count({ where: whereCondition })
+      ])
+
+      // Toplam gelir ve gider hesapla
+      const toplamGelir = await prisma.muhasebeHareketleri.aggregate({
+        where: {
+          ...whereCondition,
+          harcama: false
+        },
+        _sum: {
+          tutar: true
+        }
+      })
+
+      const toplamGider = await prisma.muhasebeHareketleri.aggregate({
+        where: {
+          ...whereCondition,
+          harcama: true
+        },
+        _sum: {
+          tutar: true
+        }
+      })
+
+      // Mağaza bakiye durumu
+      const bakiye = store.bakiye?.toNumber() || 0
+      const bakiyeDurumu = {
+        bakiye: bakiye,
+        durum: bakiye === 0 ? 'DENGEDE' : bakiye < 0 ? 'BORCLU' : 'ALACAKLI',
+        tutar: Math.abs(bakiye),
+        acikHesapLimiti: store.acik_hesap_tutari?.toNumber() || 0,
+        limitsizAcikHesap: store.limitsiz_acik_hesap,
+        currency: store.currency || 'TRY'
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          magaza: {
+            store_id: store.store_id,
+            kurum_adi: store.kurum_adi,
+            bakiyeDurumu
+          },
+          hareketler,
+          ozet: {
+            toplamGelir: toplamGelir._sum.tutar?.toNumber() || 0,
+            toplamGider: toplamGider._sum.tutar?.toNumber() || 0,
+            net: (toplamGelir._sum.tutar?.toNumber() || 0) - (toplamGider._sum.tutar?.toNumber() || 0)
+          },
+          pagination: {
+            page,
+            limit,
+            total: totalCount,
+            totalPages: Math.ceil(totalCount / limit)
+          }
+        }
+      })
+    } catch (error: any) {
+      console.error('Mağaza muhasebe hareketleri hatası:', error)
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Mağaza muhasebe hareketleri getirilemedi'
       })
     }
   }

@@ -20,4 +20,7 @@ router.get('/muhasebe/admin-toplam', muhasebeController.getAdminToplam)
 // Manuel satış endpoint'leri
 router.get('/muhasebe/manuel-satislar', muhasebeController.getManuelSatislar)
 
+// Mağaza bazlı muhasebe hareketleri
+router.get('/muhasebe/store/:storeId', muhasebeController.getMuhasebeHareketleriByStore)
+
 export default router 
