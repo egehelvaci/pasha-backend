@@ -106,7 +106,7 @@ görse
 
 ### 3. Sipariş Barkodlarını Getir
 
-**Endpoint:** `GET /api/admin/orders/{orderId}/barcodes`
+**Endpoint:** `GET /api/admin/orders/{orderId}/barcodess`
 
 **Headers:**
 ```json
