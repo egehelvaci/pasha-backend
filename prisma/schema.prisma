@@ -384,6 +384,9 @@ model Barcode {
   scanned_by      String?    @db.VarChar(36) // User ID of who scanned
   created_at      DateTime   @default(now())
   quantity        Int        @default(1) // How many items this barcode represents
+  scan_count      Int        @default(0) // Kaç kez okutuldu
+  required_scans  Int        @default(1) // Kaç kez okutulması gerekiyor (quantity ile aynı)
+  last_scan_at    DateTime?  @map("last_scan_at") // Son okutma zamanı
   order           Order      @relation(fields: [order_id], references: [id], onDelete: Cascade)
   order_item      OrderItem  @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
   product         Product?   @relation(fields: [product_id], references: [productId], onDelete: Cascade)

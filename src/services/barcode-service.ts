@@ -43,28 +43,28 @@ export class BarcodeService {
 
       const createdBarcodes = []
 
-      // Her sipariş item'ı için quantity kadar barkod oluştur
+      // Her sipariş item'ı için 1 barkod oluştur (quantity'den bağımsız)
       for (const item of order.items) {
-        for (let i = 0; i < item.quantity; i++) {
-          console.log(`🚀 Item ${item.id} için barkod oluşturuluyor (${i + 1}/${item.quantity})`)
-          
-          const barcodeString = this.generateUniqueBarcode()
-          
-          const createdBarcode = await prisma.barcode.create({
-            data: {
-              order_id: orderId,
-              order_item_id: item.id,
-              product_id: item.product_id,
-              barcode: barcodeString,
-              barcode_type: 'CODE128',
-              is_scanned: false,
-              quantity: 1
-            }
-          })
+        console.log(`🚀 Item ${item.id} için 1 adet barkod oluşturuluyor (Ürün: ${item.product_id}, Miktar: ${item.quantity})`)
+        
+        const barcodeString = this.generateUniqueBarcode()
+        
+        const createdBarcode = await prisma.barcode.create({
+          data: {
+            order_id: orderId,
+            order_item_id: item.id,
+            product_id: item.product_id,
+            barcode: barcodeString,
+            barcode_type: 'CODE128',
+            is_scanned: false,
+            quantity: item.quantity,
+            required_scans: item.quantity, // Item'ın quantity'si kadar okutulması gerekiyor
+            scan_count: 0
+          }
+        })
 
-          createdBarcodes.push(createdBarcode)
-          console.log(`✅ Barkod oluşturuldu: ${createdBarcode.barcode}`)
-        }
+        createdBarcodes.push(createdBarcode)
+        console.log(`✅ Barkod oluşturuldu: ${createdBarcode.barcode} (${item.quantity} kez okutulacak)`)
       }
 
       const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0)
@@ -129,21 +129,29 @@ export class BarcodeService {
         throw new Error('Geçersiz barkod')
       }
 
-      if (barcodeRecord.is_scanned) {
+      // Gerekli scan sayısına ulaşıp ulaşmadığını kontrol et
+      if (barcodeRecord.scan_count >= barcodeRecord.required_scans) {
         return {
           success: false,
-          message: 'Bu barkod zaten okutulmuş',
-          alreadyScanned: true,
-          barcode: barcodeRecord
+          message: `Bu barkod zaten ${barcodeRecord.required_scans} kez okutulmuş (tamamlandı)`,
+          alreadyCompleted: true,
+          barcode: barcodeRecord,
+          scanCount: barcodeRecord.scan_count,
+          requiredScans: barcodeRecord.required_scans
         }
       }
 
-      // Barkodu okutuldu olarak işaretle
+      // Scan sayısını artır
+      const newScanCount = barcodeRecord.scan_count + 1
+      const isCompleted = newScanCount >= barcodeRecord.required_scans
+
       await prisma.barcode.update({
         where: { id: barcodeRecord.id },
         data: {
-          is_scanned: true,
-          scanned_at: new Date(),
+          scan_count: newScanCount,
+          is_scanned: isCompleted, // Sadece tüm scanler tamamlandığında true
+          last_scan_at: new Date(),
+          scanned_at: isCompleted ? new Date() : barcodeRecord.scanned_at, // İlk tamamlandığında set et
           scanned_by: userId
         }
       })
@@ -184,8 +192,12 @@ export class BarcodeService {
 
       return {
         success: true,
-        message,
-        barcode: barcodeRecord,
+        message: `Barkod okutuldu (${newScanCount}/${barcodeRecord.required_scans}) - ${barcodeRecord.order_item?.product?.name || 'Bilinmeyen ürün'}${isCompleted ? ' ✅ Tamamlandı!' : ''}`,
+        barcode: {
+          ...barcodeRecord,
+          scan_count: newScanCount,
+          is_scanned: isCompleted
+        },
         order: {
           id: barcodeRecord.order.id,
           status: allScanned ? 'DELIVERED' : barcodeRecord.order.status,
@@ -198,7 +210,10 @@ export class BarcodeService {
           }
         },
         scanInfo: {
-          scanned_count: scannedBarcodes.length,
+          current_scan_count: newScanCount,
+          required_scans: barcodeRecord.required_scans,
+          item_completed: isCompleted,
+          total_barcodes_completed: scannedBarcodes.length,
           total_count: allBarcodes.length,
           is_completed: allScanned,
           progress_percentage: Math.round((scannedBarcodes.length / allBarcodes.length) * 100)
