@@ -61,6 +61,14 @@ router.post('/orders/:orderId/generate-qr', authorizeRoles('admin', 'editor'), a
 router.post('/orders/:orderId/generate-qr-images', authorizeRoles('admin', 'editor'), adminOrderController.generateQRCodeImages);
 router.get('/orders/:orderId/qrcodes', authorizeRoles('admin', 'editor'), adminOrderController.getOrderQRCodes)
 
+// Barkod yönetimi rotaları - Editör ve Admin erişimi
+router.post('/barcode/scan', authorizeRoles('admin', 'editor'), adminOrderController.scanBarcode)
+router.post('/barcode/scan-multiple', authorizeRoles('admin', 'editor'), adminOrderController.scanMultipleBarcodes)
+router.get('/orders/:orderId/barcodes', authorizeRoles('admin', 'editor'), adminOrderController.getOrderBarcodes)
+router.post('/orders/:orderId/generate-barcode-images', authorizeRoles('admin', 'editor'), adminOrderController.generateBarcodeImages)
+router.get('/barcode/stats', authorizeRoles('admin', 'editor'), adminOrderController.getBarcodeStats)
+router.get('/orders/ready/with-barcodes', authorizeRoles('admin', 'editor'), adminOrderController.getReadyOrdersWithBarcodes)
+
 // Sipariş durumu güncelleme - Editör ve Admin erişimi
 router.put('/orders/:orderId/status', authorizeRoles('admin', 'editor'), adminOrderController.updateOrderStatus)
 

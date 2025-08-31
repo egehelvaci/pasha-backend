@@ -3,6 +3,7 @@ import prisma from '../utils/prisma'
 import { UploadService } from '../utils/upload-service'
 import { EmployeeAssignmentService } from './employee-assignment-service'
 import { notificationService } from './notification-service'
+import { barcodeService } from './barcode-service'
 
 const employeeAssignmentService = new EmployeeAssignmentService()
 
@@ -458,6 +459,7 @@ export class QRCodeService {
               console.error('❌ Sipariş hazır bildirim hatası:', notificationError);
               // Bildirim hatası ana işlemi etkilemesin
             }
+
 
             // Çalışan seçimi gerekiyor
             return {

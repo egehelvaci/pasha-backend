@@ -66,6 +66,7 @@ model Product {
   collection        Collection          @relation(fields: [collectionId], references: [collectionId])
   productrules      productrules?       @relation(fields: [rule_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   qr_codes          QRCode[]
+  barcodes          Barcode[]
   admin_cart_items  admin_cart_items[]
   cart_items        cart_items[]
   productvariations productvariations[]
@@ -322,6 +323,7 @@ model Order {
   address            StoreAddress?       @relation("OrderAddress", fields: [address_id], references: [id])
   items              OrderItem[]
   qr_codes           QRCode[]
+  barcodes           Barcode[]
   employeeOrderStats EmployeeOrderStats? @relation("OrderEmployeeStats")
 }
 
@@ -340,6 +342,7 @@ model OrderItem {
   order       Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
   product     Product  @relation(fields: [product_id], references: [productId])
   qr_codes    QRCode[]
+  barcodes    Barcode[]
 }
 
 model QRCode {
@@ -366,6 +369,29 @@ model QRCode {
   @@index([order_id], map: "idx_qr_code_order_id")
   @@index([order_item_id], map: "idx_qr_code_order_item_id")
   @@index([product_id], map: "idx_qr_code_product_id")
+}
+
+model Barcode {
+  id              String     @id @default(uuid())
+  order_id        String
+  order_item_id   String
+  product_id      String?    @db.VarChar(36)
+  barcode         String     @unique
+  barcode_type    String     @default("CODE128") // CODE128, QR, EAN13, etc.
+  barcode_image_url String?  @map("barcode_image_url") // Barkod görseli URL'si
+  is_scanned      Boolean    @default(false)
+  scanned_at      DateTime?
+  scanned_by      String?    @db.VarChar(36) // User ID of who scanned
+  created_at      DateTime   @default(now())
+  quantity        Int        @default(1) // How many items this barcode represents
+  order           Order      @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  order_item      OrderItem  @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  product         Product?   @relation(fields: [product_id], references: [productId], onDelete: Cascade)
+
+  @@index([order_id], map: "idx_barcode_order_id")
+  @@index([order_item_id], map: "idx_barcode_order_item_id")
+  @@index([product_id], map: "idx_barcode_product_id")
+  @@index([barcode], map: "idx_barcode_code")
 }
 
 model PasswordResetToken {

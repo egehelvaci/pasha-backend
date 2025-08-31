@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
 import { OrderService } from '../order-service'
 import { qrCodeService } from '../services/qr-code-service'
+import { barcodeService } from '../services/barcode-service'
 import { notificationService } from '../services/notification-service'
 import prisma from '../utils/prisma'
 
@@ -19,6 +20,12 @@ export class AdminOrderController {
     this.processAdminOrder = this.processAdminOrder.bind(this)
     this.assignEmployeeToOrder = this.assignEmployeeToOrder.bind(this)
     this.bulkConfirmOrders = this.bulkConfirmOrders.bind(this)
+    this.scanBarcode = this.scanBarcode.bind(this)
+    this.scanMultipleBarcodes = this.scanMultipleBarcodes.bind(this)
+    this.getOrderBarcodes = this.getOrderBarcodes.bind(this)
+    this.getBarcodeStats = this.getBarcodeStats.bind(this)
+    this.getReadyOrdersWithBarcodes = this.getReadyOrdersWithBarcodes.bind(this)
+    this.generateBarcodeImages = this.generateBarcodeImages.bind(this)
   }
 
   /**
@@ -180,6 +187,19 @@ export class AdminOrderController {
                 }
               },
               product: true
+            }
+          },
+          barcodes: {
+            include: {
+              order_item: {
+                include: {
+                  product: true
+                }
+              },
+              product: true
+            },
+            orderBy: {
+              created_at: 'asc'
             }
           },
           address: true
@@ -1253,8 +1273,30 @@ export class AdminOrderController {
   async generateQRCodes(req: Request, res: Response): Promise<void> {
     try {
       const { orderId } = req.params;
-      const result = await qrCodeService.generateQRCodesForOrder(orderId);
-      res.status(200).json(result);
+      
+      // QR kodları oluştur
+      const qrResult = await qrCodeService.generateQRCodesForOrder(orderId);
+      
+      // Sipariş durumunu kontrol et ve CONFIRMED ise barkodları da oluştur
+      const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        select: { status: true }
+      });
+      
+      let barcodeResult = null;
+      if (order && order.status === 'CONFIRMED') {
+        try {
+          barcodeResult = await barcodeService.generateBarcodesForOrder(orderId);
+          console.log('✅ Barkodlar da oluşturuldu');
+        } catch (barcodeError) {
+          console.error('❌ Barkod oluşturma hatası:', barcodeError);
+        }
+      }
+      
+      res.status(200).json({
+        ...qrResult,
+        barcodes: barcodeResult
+      });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
@@ -1327,39 +1369,39 @@ export class AdminOrderController {
 
       // Adres sistemi artık store-based olarak değişti - kontrol kaldırıldı
 
-      // Mağazaya atanmış fiyat listesini al
-      const storePriceList = await prisma.storePriceList.findFirst({
-        where: { store_id: store_id },
-        include: {
-          PriceList: {
-            include: {
-              PriceListDetail: {
-                include: {
-                  Collection: {
-                    include: {
-                      products: {
-                        include: {
-                          productrules: {
-                            include: {
-                              productsizeoptions: true,
-                              productrulecuttypes: {
-                                include: {
-                                  cuttypes: true
-                                }
-                              }
-                            }
-                          },
-                          productvariations: true
-                        }
-                      }
-                    }
+      // Tüm ürünleri ve mağazaya atanmış fiyat listesini al
+      const [storePriceList, allProducts] = await Promise.all([
+        prisma.storePriceList.findFirst({
+          where: { store_id: store_id },
+          include: {
+            PriceList: {
+              include: {
+                PriceListDetail: {
+                  include: {
+                    Collection: true
                   }
                 }
               }
             }
           }
-        }
-      })
+        }),
+        prisma.product.findMany({
+          include: {
+            collection: true,
+            productrules: {
+              include: {
+                productsizeoptions: true,
+                productrulecuttypes: {
+                  include: {
+                    cuttypes: true
+                  }
+                }
+              }
+            },
+            productvariations: true
+          }
+        })
+      ])
 
       if (!storePriceList) {
         return res.status(400).json({
@@ -1376,64 +1418,74 @@ export class AdminOrderController {
         })
       }
 
-      // Tüm ürünleri fiyat listesi ile birlikte hazırla
+      // Fiyat listesinden koleksiyon-fiyat haritası oluştur
+      const collectionPriceMap = new Map()
+      for (const priceDetail of storePriceList.PriceList.PriceListDetail) {
+        collectionPriceMap.set(priceDetail.Collection.collectionId, {
+          price: Number(priceDetail.price_per_square_meter),
+          currency: storePriceList.PriceList.currency || "TRY",
+          priceListName: storePriceList.PriceList.name
+        })
+      }
+
+      // Tüm ürünleri fiyat bilgisiyle birlikte hazırla
       const productsWithPricing = []
 
-      for (const priceDetail of storePriceList.PriceList.PriceListDetail) {
-        const collection = priceDetail.Collection
-        const price = Number(priceDetail.price_per_square_meter)
+      for (const product of allProducts) {
+        // Ürün kural bilgilerini işle
+        let sizeOptions: any[] = []
+        let cutTypes: any[] = []
+        let canHaveFringe = false
 
-        for (const product of collection.products) {
-                     // Ürün kural bilgilerini işle
-           let sizeOptions: any[] = []
-           let cutTypes: any[] = []
-           let canHaveFringe = false
-
-          if (product.productrules) {
-            canHaveFringe = product.productrules.can_have_fringe
+        if (product.productrules) {
+          canHaveFringe = product.productrules.can_have_fringe
+          
+          // Boyut seçeneklerini ekle
+          sizeOptions = product.productrules.productsizeoptions?.map(so => {
+            const stockForSize = product.productvariations?.find(v => 
+              v.width === so.width && v.height === so.height
+            )
             
-            // Boyut seçeneklerini ekle
-            sizeOptions = product.productrules.productsizeoptions?.map(so => {
-              const stockForSize = product.productvariations?.find(v => 
-                v.width === so.width && v.height === so.height
-              )
-              
-              return {
-                id: so.id,
-                width: so.width,
-                height: so.height,
-                is_optional_height: so.is_optional_height || false,
-                stockQuantity: stockForSize ? stockForSize.stock_quantity : 0,
-                stockAreaM2: stockForSize ? Number(stockForSize.stock_area_m2 || 0) : 0
-              }
-            }) || []
+            return {
+              id: so.id,
+              width: so.width,
+              height: so.height,
+              is_optional_height: so.is_optional_height || false,
+              stockQuantity: stockForSize ? stockForSize.stock_quantity : 0,
+              stockAreaM2: stockForSize ? Number(stockForSize.stock_area_m2 || 0) : 0
+            }
+          }) || []
 
-            // Kesim tiplerini ekle
-            cutTypes = product.productrules.productrulecuttypes?.map(ct => ({
-              id: ct.cuttypes.id,
-              name: ct.cuttypes.name
-            })) || []
-          }
-
-          productsWithPricing.push({
-            productId: product.productId,
-            name: product.name,
-            description: product.description,
-            productImage: product.productImage,
-            collectionId: product.collectionId,
-            collectionName: collection.name,
-            pricing: {
-              price: price,
-              currency: storePriceList.PriceList.currency || "TRY",
-              priceListName: storePriceList.PriceList.name
-            },
-            canHaveFringe: canHaveFringe,
-            sizeOptions: sizeOptions,
-            cutTypes: cutTypes,
-            createdAt: product.createdAt,
-            updatedAt: product.updatedAt
-          })
+          // Kesim tiplerini ekle
+          cutTypes = product.productrules.productrulecuttypes?.map(ct => ({
+            id: ct.cuttypes.id,
+            name: ct.cuttypes.name
+          })) || []
         }
+
+        // Bu koleksiyon için fiyat bilgisi var mı kontrol et
+        const pricingInfo = collectionPriceMap.get(product.collectionId)
+        
+        productsWithPricing.push({
+          productId: product.productId,
+          name: product.name,
+          description: product.description,
+          productImage: product.productImage,
+          collectionId: product.collectionId,
+          collectionName: product.collection?.name || 'Bilinmeyen Koleksiyon',
+          pricing: pricingInfo || {
+            price: 0,
+            currency: "TRY",
+            priceListName: "Fiyat Belirlenmemiş",
+            available: false
+          },
+          hasPricing: !!pricingInfo,
+          canHaveFringe: canHaveFringe,
+          sizeOptions: sizeOptions,
+          cutTypes: cutTypes,
+          createdAt: product.createdAt,
+          updatedAt: product.updatedAt
+        })
       }
 
       return res.status(200).json({
@@ -1780,6 +1832,178 @@ export class AdminOrderController {
       return res.status(500).json({
         success: false,
         message: error.message || 'Toplu sipariş onaylama sırasında bir hata oluştu'
+      })
+    }
+  }
+
+  /**
+   * Barkod okut
+   */
+  async scanBarcode(req: Request, res: Response) {
+    try {
+      const { barcode } = req.body
+      const userId = req.user?.userId
+
+      if (!barcode) {
+        return res.status(400).json({
+          success: false,
+          message: 'Barkod gereklidir'
+        })
+      }
+
+      const result = await barcodeService.scanBarcode(barcode, userId)
+      return res.status(200).json(result)
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Barkod okuma sırasında bir hata oluştu'
+      })
+    }
+  }
+
+  /**
+   * Birden çok barkod okut (toplu gönderim)
+   */
+  async scanMultipleBarcodes(req: Request, res: Response) {
+    try {
+      const { barcodes } = req.body
+      const userId = req.user?.userId
+
+      if (!barcodes || !Array.isArray(barcodes) || barcodes.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Barkod listesi gereklidir'
+        })
+      }
+
+      const result = await barcodeService.scanMultipleBarcodes(barcodes, userId)
+      return res.status(200).json(result)
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Toplu barkod okuma sırasında bir hata oluştu'
+      })
+    }
+  }
+
+  /**
+   * Sipariş için barkodları getir
+   */
+  async getOrderBarcodes(req: Request, res: Response) {
+    try {
+      const { orderId } = req.params
+
+      const result = await barcodeService.getBarcodesForOrder(orderId)
+      return res.status(200).json(result)
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Barkod bilgileri alınırken bir hata oluştu'
+      })
+    }
+  }
+
+  /**
+   * Barkod istatistikleri
+   */
+  async getBarcodeStats(req: Request, res: Response) {
+    try {
+      const { orderId } = req.query
+
+      const result = await barcodeService.getBarcodeStats(orderId as string)
+      return res.status(200).json({
+        success: true,
+        data: result
+      })
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Barkod istatistikleri alınırken bir hata oluştu'
+      })
+    }
+  }
+
+  /**
+   * READY durumundaki siparişleri barkodları ile birlikte getir
+   */
+  async getReadyOrdersWithBarcodes(req: Request, res: Response) {
+    try {
+      const readyOrders = await prisma.order.findMany({
+        where: {
+          status: 'READY'
+        },
+        include: {
+          user: {
+            include: {
+              Store: true,
+              userType: true
+            }
+          },
+          items: {
+            include: {
+              product: true
+            }
+          },
+          barcodes: {
+            orderBy: {
+              created_at: 'asc'
+            }
+          }
+        },
+        orderBy: {
+          created_at: 'desc'
+        }
+      })
+
+      // Her sipariş için barkod durumunu hesapla
+      const ordersWithBarcodeInfo = readyOrders.map(order => {
+        const totalBarcodes = order.barcodes.length
+        const scannedBarcodes = order.barcodes.filter(b => b.is_scanned).length
+        const pendingBarcodes = totalBarcodes - scannedBarcodes
+        
+        return {
+          ...order,
+          barcodeInfo: {
+            total: totalBarcodes,
+            scanned: scannedBarcodes,
+            pending: pendingBarcodes,
+            completionRate: totalBarcodes > 0 ? Math.round((scannedBarcodes / totalBarcodes) * 100) : 0,
+            isComplete: scannedBarcodes === totalBarcodes && totalBarcodes > 0
+          }
+        }
+      })
+
+      return res.status(200).json({
+        success: true,
+        data: ordersWithBarcodeInfo,
+        summary: {
+          totalOrders: ordersWithBarcodeInfo.length,
+          ordersWithAllBarcodesScanned: ordersWithBarcodeInfo.filter(o => o.barcodeInfo.isComplete).length,
+          ordersWithPendingBarcodes: ordersWithBarcodeInfo.filter(o => !o.barcodeInfo.isComplete && o.barcodeInfo.total > 0).length,
+          ordersWithoutBarcodes: ordersWithBarcodeInfo.filter(o => o.barcodeInfo.total === 0).length
+        }
+      })
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'READY siparişler alınırken bir hata oluştu'
+      })
+    }
+  }
+
+  /**
+   * Barkod görsellerini oluştur
+   */
+  async generateBarcodeImages(req: Request, res: Response) {
+    try {
+      const { orderId } = req.params
+
+      const result = await barcodeService.generateBarcodeImagesForOrder(orderId)
+      return res.status(200).json(result)
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Barkod görselleri oluşturulurken bir hata oluştu'
       })
     }
   }
