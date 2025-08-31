@@ -1586,11 +1586,11 @@ export class OrderService {
         };
       }
 
-      // Admin artık PENDING, CONFIRMED ve DELIVERED durumlarını iptal edebilir
-      if (isAdmin && !['PENDING', 'CONFIRMED', 'DELIVERED'].includes(order.status)) {
+      // Admin artık PENDING, CONFIRMED, READY ve DELIVERED durumlarını iptal edebilir
+      if (isAdmin && !['PENDING', 'CONFIRMED', 'READY', 'DELIVERED'].includes(order.status)) {
         return { 
           success: false, 
-          message: `Admin sadece PENDING, CONFIRMED ve DELIVERED durumundaki siparişleri iptal edebilir. Bu sipariş durumu: ${order.status}`,
+          message: `Admin sadece PENDING, CONFIRMED, READY ve DELIVERED durumundaki siparişleri iptal edebilir. Bu sipariş durumu: ${order.status}`,
           statusCode: 400
         };
       }
