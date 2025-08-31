@@ -527,8 +527,8 @@ export class AdminOrderController {
 
       const result = await qrCodeService.scanQRCode(qrCode, adminUserId, selectedEmployeeId)
 
-      // Eğer sipariş teslim edildi ise
-      if (result.orderStatus === 'DELIVERED') {
+      // QR kodlar artık teslim yapmaz, sadece hazır duruma geçirir
+      if (false) {
         const deliveredHtml = `
           <!DOCTYPE html>
           <html lang="tr">
@@ -583,9 +583,9 @@ export class AdminOrderController {
               </div>
               <div class="order-details">
                 Sipariş ID: ${result.orderId}<br>
-                Toplam Tutar: ${result.orderDetails.total_price} TL<br>
-                Toplam Alan: ${result.orderDetails.total_area_m2.toFixed(2)} m²<br>
-                Toplam Ürün: ${result.orderDetails.total_items} adet
+                Toplam Tutar: ${result.orderDetails?.total_price} TL<br>
+                Toplam Alan: ${result.orderDetails?.total_area_m2?.toFixed(2)} m²<br>
+                Toplam Ürün: ${result.orderDetails?.total_items} adet
               </div>
             </div>
           </body>
@@ -790,8 +790,9 @@ export class AdminOrderController {
         return res.status(200).send(employeeSelectionHtml)
       }
 
-      // Eğer tüm QR kodlar tamamlandıysa ve sipariş teslim edildiyse
-      if (result.deliveryInfo?.order_status === 'DELIVERED') {
+      // QR kodlar artık DELIVERED durumuna geçirmez, sadece READY yapar
+      // Bu blok artık çalışmayacak çünkü QR ile teslim mantığı kaldırıldı
+      if (false) {
         const successHtml = `
           <!DOCTYPE html>
           <html lang="tr">
@@ -896,8 +897,7 @@ export class AdminOrderController {
               ${result.message}
             </div>
             <div class="status">
-              Tarama Durumu: ${result.deliveryInfo?.first_scan_completed || 0}/${result.deliveryInfo?.total_qr_codes || 0} (İlk)<br>
-              Teslim Durumu: ${result.deliveryInfo?.second_scan_completed || 0}/${result.deliveryInfo?.total_qr_codes || 0} (İkinci)
+              Tarama Durumu: ${result.deliveryInfo?.first_scan_completed || 0}/${result.deliveryInfo?.total_qr_codes || 0} (QR Okutma Tamamlandı)
             </div>
           </div>
         </body>
@@ -1318,8 +1318,33 @@ export class AdminOrderController {
   async generateQRCodeImages(req: Request, res: Response): Promise<void> {
     try {
       const { orderId } = req.params;
-      const result = await qrCodeService.generateQRCodeImagesForOrder(orderId);
-      res.status(200).json(result);
+      
+      // QR kod görsellerini oluştur
+      const qrResult = await qrCodeService.generateQRCodeImagesForOrder(orderId);
+      
+      // Siparişi kontrol et ve barkod oluştur
+      const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        select: { status: true }
+      });
+      
+      let barcodeResult = null;
+      if (order && (order.status === 'CONFIRMED' || order.status === 'READY')) {
+        try {
+          // Barkodları oluştur
+          const barcodes = await barcodeService.generateBarcodesForOrder(orderId);
+          // Barkod görsellerini oluştur
+          barcodeResult = await barcodeService.generateBarcodeImagesForOrder(orderId);
+          console.log('✅ Barkodlar ve barkod görselleri oluşturuldu');
+        } catch (barcodeError) {
+          console.error('❌ Barkod oluşturma hatası:', barcodeError);
+        }
+      }
+      
+      res.status(200).json({
+        ...qrResult,
+        barcodes: barcodeResult
+      });
     } catch (error: any) {
       res.status(500).json({ message: 'QR kod görselleri oluşturulurken bir hata oluştu.', error: error.message });
     }
