@@ -235,32 +235,58 @@ export class StoreController {
         })
       }
 
-      // Yeni mağaza oluştur
-      const newStore = await prisma.store.create({
-        data: {
-          kurum_adi,
-          vergi_numarasi,
-          vergi_dairesi,
-          tckn,
-          yetkili_adi,
-          yetkili_soyadi,
-          telefon,
-          eposta,
-          faks_numarasi,
-          aciklama,
-          limitsiz_acik_hesap: limitsiz_acik_hesap || false,
-          acik_hesap_tutari: acik_hesap_tutari ? parseFloat(acik_hesap_tutari) : 0,
-          bakiye: bakiye ? parseFloat(bakiye) : 0,
-          maksimum_taksit: maksimum_taksit ? parseInt(maksimum_taksit) : 1,
-          store_type: store_type || 'KARGO', // Varsayılan olarak KARGO
-          currency: currency || 'TRY', // Varsayılan para birimi TRY
-          is_active: true
+      // Yeni mağaza oluştur ve varsayılan fiyat listesi ata
+      const result = await prisma.$transaction(async (tx) => {
+        // Mağazayı oluştur
+        const newStore = await tx.store.create({
+          data: {
+            kurum_adi,
+            vergi_numarasi,
+            vergi_dairesi,
+            tckn,
+            yetkili_adi,
+            yetkili_soyadi,
+            telefon,
+            eposta,
+            faks_numarasi,
+            aciklama,
+            limitsiz_acik_hesap: limitsiz_acik_hesap || false,
+            acik_hesap_tutari: acik_hesap_tutari ? parseFloat(acik_hesap_tutari) : 0,
+            bakiye: bakiye ? parseFloat(bakiye) : 0,
+            maksimum_taksit: maksimum_taksit ? parseInt(maksimum_taksit) : 1,
+            store_type: store_type || 'KARGO', // Varsayılan olarak KARGO
+            currency: currency || 'TRY', // Varsayılan para birimi TRY
+            is_active: true
+          }
+        })
+
+        // Varsayılan fiyat listesini bul
+        const defaultPriceList = await tx.priceList.findFirst({
+          where: { 
+            is_default: true,
+            is_active: true 
+          }
+        })
+
+        // Varsayılan fiyat listesi varsa mağazaya ata
+        if (defaultPriceList) {
+          await tx.storePriceList.create({
+            data: {
+              store_id: newStore.store_id,
+              price_list_id: defaultPriceList.price_list_id
+            }
+          })
+          console.log(`✅ Yeni mağaza ${newStore.kurum_adi} için varsayılan fiyat listesi ${defaultPriceList.name} atandı`)
+        } else {
+          console.warn(`⚠️ Varsayılan fiyat listesi bulunamadı. Mağaza ${newStore.kurum_adi} için fiyat listesi ataması yapılamadı.`)
         }
+
+        return newStore
       })
       
       return res.status(201).json({
         success: true,
-        data: newStore
+        data: result
       })
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Mağaza oluşturulurken bir hata oluştu'
