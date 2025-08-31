@@ -152,31 +152,11 @@ export class CartService {
         throw new Error(`Seçilen kesim türü (${data.cutType}) bu ürün için geçerli değil. Mevcut kesim türleri: ${availableCutTypes}`);
       }
 
-      // Stok kontrolü
+      // Stok kontrolü kaldırıldı - Her zaman sepete eklenebilir
       const availableStock = sizeOption.stockQuantity || 0;
       const availableAreaM2 = sizeOption.stockAreaM2 || 0;
       
-      if (sizeOption.is_optional_height) {
-        const actualPieceAreaM2 = (data.width * data.height) / 10000;
-        const requestedAreaM2 = data.quantity * actualPieceAreaM2;
-
-        if (availableAreaM2 <= 0) {
-          throw new Error(`Seçilen boyut (${data.width}x${data.height}cm) için stok bulunmuyor`);
-        }
-
-        const maxQuantityFromArea = Math.floor(availableAreaM2 / actualPieceAreaM2);
-        if (data.quantity > maxQuantityFromArea) {
-          throw new Error(`Yeterli stok yok. Seçilen boyut (${data.width}x${data.height}cm) için maksimum sipariş: ${maxQuantityFromArea} adet (Mevcut: ${availableAreaM2}m²)`);
-        }
-      } else {
-        if (availableStock <= 0) {
-          throw new Error(`Seçilen boyut (${data.width}x${data.height}cm) için stok bulunmuyor`);
-        }
-
-        if (data.quantity > availableStock) {
-          throw new Error(`Yeterli stok yok. Seçilen boyut (${data.width}x${data.height}cm) için maksimum sipariş: ${availableStock} adet`);
-        }
-      }
+      console.log(`📦 Stok bilgisi: ${data.width}x${data.height}cm - Adet: ${availableStock}, m²: ${availableAreaM2} (Kontrol devre dışı)`);
 
       // Fiyat hesaplama
       const areaM2 = (data.width * data.height) / 10000;
@@ -339,33 +319,11 @@ export class CartService {
         throw new Error(`Seçilen kesim türü (${data.cutType}) bu ürün için geçerli değil. Mevcut kesim türleri: ${availableCutTypes}`);
       }
 
-      // Stok kontrolü - opsiyonel yükseklik vs hazır kesim
+      // Stok kontrolü kaldırıldı - Admin sepete her zaman eklenebilir
       const availableStock = sizeOption.stockQuantity || 0;
       const availableAreaM2 = sizeOption.stockAreaM2 || 0;
       
-      if (sizeOption.is_optional_height) {
-        // Opsiyonel yükseklik: Sadece m² bazlı kontrol
-        const actualPieceAreaM2 = (data.width * data.height) / 10000;
-        const requestedAreaM2 = data.quantity * actualPieceAreaM2;
-
-        if (availableAreaM2 <= 0) {
-          throw new Error(`Seçilen boyut (${data.width}x${data.height}cm) için stok bulunmuyor`);
-        }
-
-        const maxQuantityFromArea = Math.floor(availableAreaM2 / actualPieceAreaM2);
-        if (data.quantity > maxQuantityFromArea) {
-          throw new Error(`Yeterli stok yok. Seçilen boyut (${data.width}x${data.height}cm) için maksimum sipariş: ${maxQuantityFromArea} adet (Mevcut: ${availableAreaM2}m²)`);
-        }
-      } else {
-        // Hazır kesim: Sadece adet bazlı kontrol
-        if (availableStock <= 0) {
-          throw new Error(`Seçilen boyut (${data.width}x${data.height}cm) için stok bulunmuyor`);
-        }
-
-        if (data.quantity > availableStock) {
-          throw new Error(`Yeterli stok yok. Seçilen boyut (${data.width}x${data.height}cm) için maksimum sipariş: ${availableStock} adet`);
-        }
-      }
+      console.log(`📦 Admin sepet - Stok bilgisi: ${data.width}x${data.height}cm - Adet: ${availableStock}, m²: ${availableAreaM2} (Kontrol devre dışı)`);
 
       // Fiyat hesaplama
       const areaM2 = (data.width * data.height) / 10000; // cm²'den m²'ye çevirme
@@ -500,29 +458,7 @@ export class CartService {
         const availableStock = sizeOption.stockQuantity || 0;
         const availableAreaM2 = sizeOption.stockAreaM2 || 0;
         
-        if (sizeOption.is_optional_height) {
-          // Opsiyonel yükseklik: Sadece m² bazlı kontrol
-          const actualPieceAreaM2 = (width * height) / 10000;
-          const requestedAreaM2 = data.quantity * actualPieceAreaM2;
-
-          if (availableAreaM2 <= 0) {
-            throw new Error(`Seçilen boyut (${width}x${height}cm) için stok bulunmuyor`);
-          }
-
-          const maxQuantityFromArea = Math.floor(availableAreaM2 / actualPieceAreaM2);
-          if (data.quantity > maxQuantityFromArea) {
-            throw new Error(`Yeterli stok yok. Seçilen boyut (${width}x${height}cm) için maksimum sipariş: ${maxQuantityFromArea} adet (Mevcut: ${availableAreaM2}m²)`);
-          }
-        } else {
-          // Hazır kesim: Sadece adet bazlı kontrol
-          if (availableStock <= 0) {
-            throw new Error(`Seçilen boyut (${width}x${height}cm) için stok bulunmuyor`);
-          }
-
-          if (data.quantity > availableStock) {
-            throw new Error(`Yeterli stok yok. Seçilen boyut (${width}x${height}cm) için maksimum sipariş: ${availableStock} adet`);
-          }
-        }
+        console.log(`📦 Sepet güncelleme - Stok bilgisi: ${width}x${height}cm - Adet: ${availableStock}, m²: ${availableAreaM2} (Kontrol devre dışı)`);
       } else {
         // Size option bulunamazsa hata ver
         throw new Error(`Bu boyut (${width}x${height}cm) için stok bilgisi bulunamadı`);
@@ -1228,29 +1164,7 @@ export class CartService {
         const availableStock = sizeOption.stockQuantity || 0;
         const availableAreaM2 = sizeOption.stockAreaM2 || 0;
         
-        if (sizeOption.is_optional_height) {
-          // Opsiyonel yükseklik: Sadece m² bazlı kontrol
-          const actualPieceAreaM2 = (width * height) / 10000;
-          const requestedAreaM2 = data.quantity * actualPieceAreaM2;
-
-          if (availableAreaM2 <= 0) {
-            throw new Error(`Seçilen boyut (${width}x${height}cm) için stok bulunmuyor`);
-          }
-
-          const maxQuantityFromArea = Math.floor(availableAreaM2 / actualPieceAreaM2);
-          if (data.quantity > maxQuantityFromArea) {
-            throw new Error(`Yeterli stok yok. Seçilen boyut (${width}x${height}cm) için maksimum sipariş: ${maxQuantityFromArea} adet (Mevcut: ${availableAreaM2}m²)`);
-          }
-        } else {
-          // Hazır kesim: Sadece adet bazlı kontrol
-          if (availableStock <= 0) {
-            throw new Error(`Seçilen boyut (${width}x${height}cm) için stok bulunmuyor`);
-          }
-
-          if (data.quantity > availableStock) {
-            throw new Error(`Yeterli stok yok. Seçilen boyut (${width}x${height}cm) için maksimum sipariş: ${availableStock} adet`);
-          }
-        }
+        console.log(`📦 Sepet güncelleme - Stok bilgisi: ${width}x${height}cm - Adet: ${availableStock}, m²: ${availableAreaM2} (Kontrol devre dışı)`);
       } else {
         throw new Error(`Bu boyut (${width}x${height}cm) için stok bilgisi bulunamadı`);
       }
