@@ -86,10 +86,17 @@ export class BalanceService {
           data: {
             storeId: input.storeId,
             islemTuru,
-            tutar: new Decimal(input.amount),
+            tutar: new Decimal(effectiveAmount), // Mağaza currency'sinde tutar
             harcama: input.operation === 'subtract',
             tarih: new Date(),
-            aciklama: `${input.amount} ${input.currencyCode} ${input.operation === 'add' ? 'eklendi' : 'düşüldü'}`
+            aciklama: `${input.amount} ${input.currencyCode} ${input.operation === 'add' ? 'eklendi' : 'düşüldü'}`,
+            // Currency tracking alanları
+            currency: storeCurrency as any,
+            original_currency: input.currencyCode as any,
+            original_amount: new Decimal(input.amount), // Orijinal tutar
+            exchange_rate: input.currencyCode !== storeCurrency ? 
+              (input.currencyCode === 'USD' ? new Decimal(1 / effectiveAmount * input.amount) : new Decimal(effectiveAmount / input.amount)) 
+              : null
           }
         });
         console.log('📝 Muhasebe kaydı oluşturuldu');

@@ -72,11 +72,73 @@ export class MuhasebeController {
         }
       })
 
+      // Ödeme ile ilgili islemTuru'ları tanımla
+      const paymentRelatedTypes = [
+        'ADMIN_ÖDEME',
+        'Sanal POS Ödemesi', 
+        'Ödeme alındı',
+        'TRY Ekleme İşlemi',
+        'USD Ekleme İşlemi'
+      ]
+
+      // FAILED ödemelerle ilgili muhasebe hareketlerini filtrele
+      const filteredHareketler = []
+      for (const hareket of hareketlerData) {
+        const isPaymentRelated = paymentRelatedTypes.some(type => 
+          hareket.islemTuru.includes(type) || hareket.aciklama?.includes('POS') || hareket.aciklama?.includes('Ödeme')
+        )
+        
+        if (isPaymentRelated) {
+          // Ödeme ile ilgiliyse, COMPLETED payment transaction var mı kontrol et
+          const hasCompletedPayment = await prisma.paymentTransaction.findFirst({
+            where: {
+              storeId: hareket.storeId,
+              status: 'COMPLETED',
+              paymentDate: {
+                gte: new Date(hareket.tarih.getTime() - 60000), // 1 dakika öncesi
+                lte: new Date(hareket.tarih.getTime() + 60000)  // 1 dakika sonrası
+              }
+            }
+          })
+          
+          if (hasCompletedPayment) {
+            filteredHareketler.push(hareket)
+          }
+          // COMPLETED payment yoksa, bu hareket gösterilmez (FAILED ödeme olabilir)
+        } else {
+          // Ödeme ile ilgili değilse (manuel hareket, sipariş vs.), normal şekilde dahil et
+          filteredHareketler.push(hareket)
+        }
+      }
+
       // Hareketlerdeki store bilgilerini de borç/alacak formatında düzenle
-      const hareketler = hareketlerData.map(hareket => {
+      const hareketler = filteredHareketler.map(hareket => {
         const bakiye = hareket.store.bakiye?.toNumber() || 0
+        
+        // Ödeme ile ilgili hareketlerde original currency tutarını kullan
+        const isPaymentRelated = paymentRelatedTypes.some(type => 
+          hareket.islemTuru.includes(type) || hareket.aciklama?.includes('POS') || hareket.aciklama?.includes('Ödeme')
+        )
+        
+        let displayAmount = Number(hareket.tutar)
+        let displayCurrency = hareket.currency || 'TRY'
+        
+        if (isPaymentRelated && hareket.original_amount && hareket.original_currency) {
+          // Ödeme ile ilgiliyse, orijinal tutarı ve currency'sini kullan
+          displayAmount = Number(hareket.original_amount)
+          displayCurrency = hareket.original_currency
+        }
+        
         return {
           ...hareket,
+          // Display için orijinal tutar ve currency
+          display_amount: displayAmount,
+          display_currency: displayCurrency,
+          // Mevcut alanları da koru
+          tutar: Number(hareket.tutar),
+          original_amount: hareket.original_amount ? Number(hareket.original_amount) : null,
+          original_currency: hareket.original_currency,
+          exchange_rate: hareket.exchange_rate ? Number(hareket.exchange_rate) : null,
           store: {
             store_id: hareket.store.store_id,
             kurum_adi: hareket.store.kurum_adi,
