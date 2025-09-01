@@ -131,3 +131,12 @@ build
 
 generated/prisma/*
 !generated/prisma/.gitkeep
+
+############################
+# Backup files
+############################
+
+*-backup.*
+*.backup
+*-backup.ts
+*-backup.js
