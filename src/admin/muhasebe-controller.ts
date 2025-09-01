@@ -48,15 +48,23 @@ export class MuhasebeController {
    */
   async getAllMuhasebeHareketleri(req: Request, res: Response) {
     try {
-      // Muhasebe hareketlerini getir
+      // Muhasebe hareketlerini getir - USD mağazaları hariç
       const hareketlerData = await prisma.muhasebeHareketleri.findMany({
         include: {
           store: {
                     select: {
           store_id: true,
           kurum_adi: true,
-          bakiye: true
+          bakiye: true,
+          currency: true // Currency bilgisini de al
         }
+          }
+        },
+        where: {
+          store: {
+            currency: {
+              not: 'USD' // USD mağazalarını hariç tut
+            }
           }
         },
         orderBy: {
@@ -79,16 +87,20 @@ export class MuhasebeController {
         }
       })
 
-      // Tüm mağazaların bakiyelerini getir
+      // Tüm mağazaların bakiyelerini getir - USD mağazaları hariç
       const magazaData = await prisma.store.findMany({
         select: {
           store_id: true,
           kurum_adi: true,
           bakiye: true,
-          is_active: true
+          is_active: true,
+          currency: true
         },
         where: {
-          is_active: true
+          is_active: true,
+          currency: {
+            not: 'USD' // USD mağazalarını hariç tut
+          }
         },
         orderBy: {
           kurum_adi: 'asc'
@@ -209,6 +221,14 @@ export class MuhasebeController {
         return res.status(404).json({
           success: false,
           message: 'Belirtilen mağaza bulunamadı'
+        })
+      }
+
+      // USD mağazası ise muhasebe hareketi yaratılamaz
+      if (store.currency === ('USD' as any)) {
+        return res.status(403).json({
+          success: false,
+          message: 'USD currency\'ne sahip mağazaların muhasebe hareketleri ayrı tutulmaktadır ve bu sistemde muhasebe hareketi yaratılamaz.'
         })
       }
 
@@ -566,6 +586,14 @@ export class MuhasebeController {
         return res.status(404).json({
           success: false,
           message: 'Mağaza bulunamadı'
+        })
+      }
+
+      // USD mağazası ise muhasebe hareketleri gösterilmez
+      if (store.currency === 'USD') {
+        return res.status(403).json({
+          success: false,
+          message: 'USD currency\'ne sahip mağazaların muhasebe hareketleri ayrı tutulmaktadır ve bu sistemde görüntülenemez.'
         })
       }
 

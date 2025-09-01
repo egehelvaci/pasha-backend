@@ -77,20 +77,25 @@ export class BalanceService {
         }
       });
 
-      // Muhasebe kaydı oluştur
-      const islemTuru = input.description || 
-        `${input.currencyCode} ${input.operation === 'add' ? 'Ekleme' : 'Düşme'} İşlemi`;
-      
-      await prisma.muhasebeHareketleri.create({
-        data: {
-          storeId: input.storeId,
-          islemTuru,
-          tutar: new Decimal(input.amount),
-          harcama: input.operation === 'subtract',
-          tarih: new Date(),
-          aciklama: `${input.amount} ${input.currencyCode} ${input.operation === 'add' ? 'eklendi' : 'düşüldü'}`
-        }
-      });
+      // Muhasebe kaydı oluştur - USD mağazaları için muhasebe kaydı yaratılmaz
+      if (storeCurrency !== ('USD' as any)) {
+        const islemTuru = input.description || 
+          `${input.currencyCode} ${input.operation === 'add' ? 'Ekleme' : 'Düşme'} İşlemi`;
+        
+        await prisma.muhasebeHareketleri.create({
+          data: {
+            storeId: input.storeId,
+            islemTuru,
+            tutar: new Decimal(input.amount),
+            harcama: input.operation === 'subtract',
+            tarih: new Date(),
+            aciklama: `${input.amount} ${input.currencyCode} ${input.operation === 'add' ? 'eklendi' : 'düşüldü'}`
+          }
+        });
+        console.log('📝 Muhasebe kaydı oluşturuldu');
+      } else {
+        console.log('📝 USD mağazası için muhasebe kaydı oluşturulmadı - ayrı sistemde takip edilir');
+      }
 
       const operationText = input.operation === 'add' ? 'eklendi' : 'düşüldü';
       

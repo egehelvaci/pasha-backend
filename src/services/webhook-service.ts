@@ -244,11 +244,11 @@ export class WebhookService {
           console.log(`💰 Store TRY kullanıyor - Dönüşüm yok: ${finalAmount} TRY`);
         }
         
-        // Bakiye güncelleme - store'un currency'sinde
+        // Bakiye güncelleme - asıl ödeme currency'sini geç (TRY) ki döviz çevrimi yapılsın
         await balanceService.processPaymentBalance(
           transaction.storeId,
-          finalAmount,
-          finalCurrency,
+          webhookData.PaymentAmount, // Asıl TRY tutarı
+          'TRY', // Asıl ödeme currency'si
           `Sanal POS Ödemesi - Onay Kodu: ${webhookData.ApprovalCode || 'N/A'}`
         );
         
@@ -261,7 +261,8 @@ export class WebhookService {
       }
 
       // Muhasebe hareketi ekle (balance service zaten ekliyor, admin için manuel ekliyoruz)
-      if (isAdminStore) {
+      // USD mağazaları için muhasebe kaydı yaratılmaz
+      if (isAdminStore && storeCurrency !== ('USD' as any)) {
         await prisma.muhasebeHareketleri.create({
           data: {
             storeId: transaction.storeId,
@@ -276,6 +277,9 @@ export class WebhookService {
             exchange_rate: transaction.exchange_rate
           }
         });
+        console.log('📝 Admin store muhasebe kaydı oluşturuldu');
+      } else if (isAdminStore && storeCurrency === ('USD' as any)) {
+        console.log('📝 USD admin store için muhasebe kaydı oluşturulmadı - ayrı sistemde takip edilir');
       }
 
       console.log('✅ Başarılı ödeme işlendi:', {
