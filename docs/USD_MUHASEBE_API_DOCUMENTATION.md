@@ -42,7 +42,7 @@ TL ile yapılan ödemeler USD mağazalarında artık doğru şekilde çevrilmekt
 Authorization: Bearer {admin_token}
 ```
 
-**Response:**
+**Response:***
 ```json
 {
   "success": true,
