@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { authenticateJWT } from '../middlewares/authMiddleware'
+import { authMiddleware } from '../auth/auth-middleware'
 import { usdMuhasebeController } from '../admin/usd-muhasebe-controller'
 
 const router = Router()
@@ -7,31 +7,31 @@ const router = Router()
 // USD Muhasebe hareketleri routes
 router.get(
   '/hareketler',
-  authenticateJWT,
+  authMiddleware,
   usdMuhasebeController.getAllUsdMuhasebeHareketleri
 )
 
 router.get(
   '/store/:storeId',
-  authenticateJWT,
+  authMiddleware,
   usdMuhasebeController.getUsdMuhasebeHareketleriByStore
 )
 
 router.post(
   '/hareketler',
-  authenticateJWT,
+  authMiddleware,
   usdMuhasebeController.createUsdMuhasebeHareketi
 )
 
 router.get(
   '/income-types',
-  authenticateJWT,
+  authMiddleware,
   usdMuhasebeController.getUsdIncomeTypes
 )
 
 router.get(
   '/expense-types',
-  authenticateJWT,
+  authMiddleware,
   usdMuhasebeController.getUsdExpenseTypes
 )
 
