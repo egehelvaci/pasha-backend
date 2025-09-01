@@ -599,34 +599,29 @@ export class PaymentService {
    */
   async processPayment(input: CreatePaymentRequestInput): Promise<OctetPaymentResponse> {
     try {
-      // Store bilgilerini al ve currency bilgileri işle
+      // Store bilgilerini al
       const store = await this.getStoreInfo(input.storeId);
       const storeCurrency = store.currency || 'TRY';
-      const paymentCurrency = input.currencyCode || storeCurrency;
-      let finalAmount = input.amount;
+      const paymentCurrency = input.currencyCode || 'TRY'; // Varsayılan TRY
+      
+      // ÖNEMLI: Octet'e her zaman TRY olarak gönder
+      // Kullanıcı USD girerse bile TRY'ye çevir
+      let amountInTRY = input.amount;
       let exchangeRate = null;
       let originalAmount = input.amount;
-      let convertedAmount = null;
       
-      // Currency çevrimi gerekiyorsa
-      if (paymentCurrency !== storeCurrency) {
-        if (paymentCurrency === 'USD' && storeCurrency === 'TRY') {
-          convertedAmount = await exchangeRateService.convertUSDtoTRY(input.amount);
-          finalAmount = convertedAmount;
-          const rates = await exchangeRateService.getRates();
-          exchangeRate = rates.USD;
-        } else if (paymentCurrency === 'TRY' && storeCurrency === 'USD') {
-          convertedAmount = await exchangeRateService.convertTRYtoUSD(input.amount);
-          finalAmount = convertedAmount;
-          const rates = await exchangeRateService.getRates();
-          exchangeRate = 1 / rates.USD;
-        }
+      // Eğer kullanıcı USD girerse, TRY'ye çevir
+      if (paymentCurrency === 'USD') {
+        amountInTRY = await exchangeRateService.convertUSDtoTRY(input.amount);
+        const rates = await exchangeRateService.getRates();
+        exchangeRate = rates.USD;
+        console.log(`💱 USD → TRY dönüşümü: ${input.amount} USD = ${amountInTRY} TRY (Kur: ${exchangeRate})`);
       }
 
-      // Payment request oluştur (dönüştürülmüş tutar ile)
+      // Payment request oluştur (her zaman TRY ile)
       const paymentRequestInput = {
         ...input,
-        amount: finalAmount // Octet'e TRY olarak gönder
+        amount: amountInTRY // Octet'e her zaman TRY gönder
       };
       const paymentRequest = await this.createPaymentRequest(paymentRequestInput);
 

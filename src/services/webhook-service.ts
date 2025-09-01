@@ -191,8 +191,10 @@ export class WebhookService {
         }
       });
 
-      // Para birimi belirle (webhook'ta varsa onu kullan, yoksa TRY)
-      const currencyCode = (webhookData.CurrencyCode as 'TRY' | 'USD') || 'TRY';
+      // Transaction'dan currency bilgilerini al
+      const paymentCurrency = transaction.payment_currency || 'TRY';
+      const storeCurrency = transaction.store_currency || transaction.store.currency || 'TRY';
+      const originalAmount = Number(transaction.original_amount || webhookData.PaymentAmount);
       
       // Admin store kontrolü
       const isAdminStore = await this.isAdminStore(transaction.store);
@@ -218,11 +220,35 @@ export class WebhookService {
         
         console.log('💰 Admin store ödemesi - Kasa bakiyesi artırıldı:', webhookData.PaymentAmount);
       } else {
-        // Normal store için döviz desteği ile bakiye güncelleme
+        // Normal store için bakiye güncelleme
+        let finalAmount = webhookData.PaymentAmount; // Octet'ten gelen TRY tutarı
+        let finalCurrency = 'TRY' as 'TRY' | 'USD';
+        
+        // Store'un currency'si USD ise, TRY tutarı USD'ye çevir
+        if (storeCurrency === 'USD') {
+          const { exchangeRateService } = await import('./exchange-rate-service');
+          finalAmount = await exchangeRateService.convertTRYtoUSD(webhookData.PaymentAmount);
+          finalCurrency = 'USD';
+          console.log(`💱 Store USD kullanıyor - Döviz dönüşümü: ${webhookData.PaymentAmount} TRY → ${finalAmount} USD`);
+          
+          // Exchange rate'i güncelle
+          const rates = await exchangeRateService.getRates();
+          await prisma.paymentTransaction.update({
+            where: { id: transaction.id },
+            data: { 
+              exchange_rate: rates.USD,
+              converted_amount: finalAmount
+            }
+          });
+        } else {
+          console.log(`💰 Store TRY kullanıyor - Dönüşüm yok: ${finalAmount} TRY`);
+        }
+        
+        // Bakiye güncelleme - store'un currency'sinde
         await balanceService.processPaymentBalance(
           transaction.storeId,
-          webhookData.PaymentAmount,
-          currencyCode,
+          finalAmount,
+          finalCurrency,
           `Sanal POS Ödemesi - Onay Kodu: ${webhookData.ApprovalCode || 'N/A'}`
         );
         
@@ -231,7 +257,7 @@ export class WebhookService {
           where: { store_id: transaction.storeId }
         });
         
-        console.log(`💰 Normal store ödemesi - Bakiye artırıldı: ${webhookData.PaymentAmount} ${currencyCode}`);
+        console.log(`💰 Normal store ödemesi - Bakiye artırıldı: ${finalAmount} ${finalCurrency} (Octet'ten gelen: ${webhookData.PaymentAmount} TRY)`);
       }
 
       // Muhasebe hareketi ekle (balance service zaten ekliyor, admin için manuel ekliyoruz)
@@ -243,7 +269,11 @@ export class WebhookService {
             tutar: webhookData.PaymentAmount,
             harcama: false, // Gelir
             tarih: new Date(webhookData.PaymentDate),
-            aciklama: `Sanal POS Ödemesi - ${webhookData.PaymentAmount} ${currencyCode} - Onay Kodu: ${webhookData.ApprovalCode || 'N/A'}`
+            aciklama: `Sanal POS Ödemesi - ${originalAmount} ${paymentCurrency} - Onay Kodu: ${webhookData.ApprovalCode || 'N/A'}`,
+            currency: storeCurrency as any,
+            original_currency: paymentCurrency as any,
+            original_amount: originalAmount,
+            exchange_rate: transaction.exchange_rate
           }
         });
       }
