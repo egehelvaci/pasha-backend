@@ -18,7 +18,8 @@
       "Bash(test:*)",
       "Bash(dir:*)",
       "Bash(npm install:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(powershell:*)"
     ],
     "deny": [],
     "ask": [],

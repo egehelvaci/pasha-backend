@@ -222,7 +222,7 @@ export class PaymentController {
     try {
       const userId = (req as any).user?.userId;
       const userType = (req as any).user?.userType;
-      const { storeId, amount, aciklama } = req.body;
+      const { storeId, amount, aciklama, currencyCode } = req.body;
 
       if (!userId) {
         return res.status(401).json({
@@ -243,6 +243,14 @@ export class PaymentController {
         return res.status(400).json({
           success: false,
           message: 'amount pozitif bir sayı olmalıdır'
+        });
+      }
+
+      // Currency validasyonu
+      if (currencyCode && !['TRY', 'USD'].includes(currencyCode)) {
+        return res.status(400).json({
+          success: false,
+          message: 'currencyCode sadece TRY veya USD olabilir'
         });
       }
 
@@ -278,6 +286,7 @@ export class PaymentController {
         storeId: targetStoreId, 
         amount, 
         aciklama,
+        currencyCode: currencyCode || 'TRY',
         isAdmin: userType === 'admin' || userType === 'editor'
       });
 
@@ -286,7 +295,8 @@ export class PaymentController {
         userId: targetUserId,
         storeId: targetStoreId,
         amount,
-        aciklama
+        aciklama,
+        currencyCode
       });
 
       return res.status(200).json(result);

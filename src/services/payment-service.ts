@@ -599,11 +599,46 @@ export class PaymentService {
    */
   async processPayment(input: CreatePaymentRequestInput): Promise<OctetPaymentResponse> {
     try {
-      // Payment request oluştur
-      const paymentRequest = await this.createPaymentRequest(input);
+      // Store bilgilerini al ve currency bilgileri işle
+      const store = await this.getStoreInfo(input.storeId);
+      const storeCurrency = store.currency || 'TRY';
+      const paymentCurrency = input.currencyCode || storeCurrency;
+      let finalAmount = input.amount;
+      let exchangeRate = null;
+      let originalAmount = input.amount;
+      let convertedAmount = null;
+      
+      // Currency çevrimi gerekiyorsa
+      if (paymentCurrency !== storeCurrency) {
+        if (paymentCurrency === 'USD' && storeCurrency === 'TRY') {
+          convertedAmount = await exchangeRateService.convertUSDtoTRY(input.amount);
+          finalAmount = convertedAmount;
+          const rates = await exchangeRateService.getRates();
+          exchangeRate = rates.USD;
+        } else if (paymentCurrency === 'TRY' && storeCurrency === 'USD') {
+          convertedAmount = await exchangeRateService.convertTRYtoUSD(input.amount);
+          finalAmount = convertedAmount;
+          const rates = await exchangeRateService.getRates();
+          exchangeRate = 1 / rates.USD;
+        }
+      }
 
-      // Transaction kaydı oluştur ve webhook token al  
-      const webhookToken = await this.createPaymentTransaction(paymentRequest, input.storeId);
+      // Payment request oluştur (dönüştürülmüş tutar ile)
+      const paymentRequestInput = {
+        ...input,
+        amount: finalAmount // Octet'e TRY olarak gönder
+      };
+      const paymentRequest = await this.createPaymentRequest(paymentRequestInput);
+
+      // Transaction kaydı oluştur ve webhook token al
+      const currencyInfo = {
+        storeCurrency,
+        paymentCurrency,
+        exchangeRate,
+        originalAmount,
+        convertedAmount
+      };
+      const webhookToken = await this.createPaymentTransaction(paymentRequest, input.storeId, currencyInfo);
 
       // Webhook URL'lerini güvenli hale getir
       const backendUrl = process.env.PUBLIC_URL || 'https://pasha-backend-production.up.railway.app';
@@ -619,7 +654,10 @@ export class PaymentService {
           paymentUrl: result.data.commonPaymentPageUrl,
           sellerReference: paymentRequest.sellerReference,
           apiReferenceNumber: paymentRequest.paymentRequestCommonDetail.apiReferenceNumber,
-          amount: paymentRequest.amount
+          amount: originalAmount, // Kullanıcıya orijinal tutarı göster
+          currencyCode: paymentCurrency,
+          convertedAmount: convertedAmount,
+          exchangeRate: exchangeRate
         };
       }
 
