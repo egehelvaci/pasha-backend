@@ -293,16 +293,23 @@ export class UsdMuhasebeController {
         exchange_rate: hareket.exchange_rate ? Number(hareket.exchange_rate) : null
       }))
 
+      // Bakiye durumu hesaplama
+      const bakiye = Number(store.bakiye || 0)
+      const bakiyeDurumu = {
+        bakiye: bakiye,
+        durum: bakiye === 0 ? 'DENGEDE' : bakiye < 0 ? 'BORCLU' : 'ALACAKLI',
+        tutar: Math.abs(bakiye),
+        acikHesapLimiti: 3000, // USD mağazaları için varsayılan limit
+        limitsizAcikHesap: false,
+        currency: store.currency
+      }
+
       return res.status(200).json({
         success: true,
         data: {
-          store: {
-            store_id: store.store_id,
-            kurum_adi: store.kurum_adi,
-            currency: store.currency,
-            bakiye: Number(store.bakiye || 0),
-            is_active: store.is_active
-          },
+          store_id: store.store_id,
+          kurum_adi: store.kurum_adi,
+          bakiyeDurumu,
           hareketler: formattedHareketler,
           total: hareketler.length
         }
