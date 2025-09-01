@@ -80,7 +80,7 @@ export class BalanceService {
       // Muhasebe kaydı oluştur - USD mağazaları için muhasebe kaydı yaratılmaz
       if (storeCurrency !== ('USD' as any)) {
         const islemTuru = input.description || 
-          `${input.currencyCode} ${input.operation === 'add' ? 'Ekleme' : 'Düşme'} İşlemi`;
+          (input.operation === 'add' ? 'Parekende Satış' : 'Diğer Giderler');
         
         await prisma.muhasebeHareketleri.create({
           data: {
@@ -89,7 +89,9 @@ export class BalanceService {
             tutar: new Decimal(effectiveAmount), // Mağaza currency'sinde tutar
             harcama: input.operation === 'subtract',
             tarih: new Date(),
-            aciklama: `${input.amount} ${input.currencyCode} ${input.operation === 'add' ? 'eklendi' : 'düşüldü'}`,
+            aciklama: input.operation === 'add' ? 
+              `Sanal POS Ödemesi - ${input.amount} ${input.currencyCode}` : 
+              `Gider Kaydı - ${input.amount} ${input.currencyCode}`,
             // Currency tracking alanları
             currency: storeCurrency as any,
             original_currency: input.currencyCode as any,
@@ -144,7 +146,7 @@ export class BalanceService {
       amount,
       currencyCode,
       operation: 'add',
-      description: description || 'Ödeme alındı'
+      description: 'Parekende Satış' // Gelir türü olarak belirleyelim
     });
   }
 

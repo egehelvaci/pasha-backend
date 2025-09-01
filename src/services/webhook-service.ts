@@ -215,6 +215,14 @@ export class WebhookService {
           }
         });
         
+        // Admin store için de normal mağaza gibi bakiye işlemi yap
+        await balanceService.processPaymentBalance(
+          transaction.storeId,
+          webhookData.PaymentAmount, // Asıl TRY tutarı
+          'TRY', // Asıl ödeme currency'si
+          `Sanal POS Ödemesi - Onay Kodu: ${webhookData.ApprovalCode || 'N/A'}`
+        );
+        
         // Admin store bakiyesi değişmez, sadece transaction için store bilgisini al
         updatedStore = transaction.store;
         
@@ -260,26 +268,12 @@ export class WebhookService {
         console.log(`💰 Normal store ödemesi - Bakiye artırıldı: ${finalAmount} ${finalCurrency} (Octet'ten gelen: ${webhookData.PaymentAmount} TRY)`);
       }
 
-      // Muhasebe hareketi ekle (balance service zaten ekliyor, admin için manuel ekliyoruz)
-      // USD mağazaları için muhasebe kaydı yaratılmaz
-      if (isAdminStore && storeCurrency !== ('USD' as any)) {
-        await prisma.muhasebeHareketleri.create({
-          data: {
-            storeId: transaction.storeId,
-            islemTuru: 'ADMIN_ÖDEME',
-            tutar: webhookData.PaymentAmount,
-            harcama: false, // Gelir
-            tarih: new Date(webhookData.PaymentDate),
-            aciklama: `Sanal POS Ödemesi - ${originalAmount} ${paymentCurrency} - Onay Kodu: ${webhookData.ApprovalCode || 'N/A'}`,
-            currency: storeCurrency as any,
-            original_currency: paymentCurrency as any,
-            original_amount: originalAmount,
-            exchange_rate: transaction.exchange_rate
-          }
-        });
-        console.log('📝 Admin store muhasebe kaydı oluşturuldu');
-      } else if (isAdminStore && storeCurrency === ('USD' as any)) {
-        console.log('📝 USD admin store için muhasebe kaydı oluşturulmadı - ayrı sistemde takip edilir');
+      // Artık hem admin hem normal store'lar için balance-service muhasebe kaydı yaratıyor
+      // Sadece log mesajı ekleyelim
+      if (isAdminStore) {
+        console.log('📝 Admin store için muhasebe kaydı balance-service tarafından oluşturuldu');
+      } else {
+        console.log('📝 Normal store için muhasebe kaydı balance-service tarafından oluşturuldu');
       }
 
       console.log('✅ Başarılı ödeme işlendi:', {
