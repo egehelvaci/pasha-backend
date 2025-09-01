@@ -233,6 +233,12 @@ export class AdminPaymentController {
         octetPaymentId: payment.octetPaymentId,
         createdAt: payment.createdAt,
         updatedAt: payment.updatedAt,
+        // Currency bilgileri eklendi
+        store_currency: payment.store_currency,
+        payment_currency: payment.payment_currency,
+        exchange_rate: payment.exchange_rate ? Number(payment.exchange_rate) : null,
+        original_amount: payment.original_amount ? Number(payment.original_amount) : null,
+        converted_amount: payment.converted_amount ? Number(payment.converted_amount) : null,
         store: {
           store_id: payment.store.store_id,
           kurum_adi: payment.store.kurum_adi
