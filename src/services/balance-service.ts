@@ -80,7 +80,7 @@ export class BalanceService {
       // Muhasebe kaydı oluştur - USD mağazaları için muhasebe kaydı yaratılmaz
       if (storeCurrency !== ('USD' as any)) {
         const islemTuru = input.description || 
-          (input.operation === 'add' ? 'Parekende Satış' : 'Diğer Giderler');
+          (input.operation === 'add' ? 'Sanal POS Ödemesi' : 'Diğer Giderler');
         
         await prisma.muhasebeHareketleri.create({
           data: {
@@ -146,7 +146,7 @@ export class BalanceService {
       amount,
       currencyCode,
       operation: 'add',
-      description: 'Parekende Satış' // Gelir türü olarak belirleyelim
+      description: 'Sanal POS Ödemesi' // Doğru işlem türü
     });
   }
 

@@ -6,6 +6,7 @@ const incomeTypes = [
   'Parekende Satış',
   'Toptan Satış',
   'Hizmet Geliri',
+  'Sanal POS Ödemesi',
   'Faiz Geliri',
   'Kira Geliri',
   'Diğer Gelirler',
