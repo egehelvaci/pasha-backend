@@ -93,7 +93,7 @@ export class AdminPaymentController {
       }))
 
       // Özet istatistikler
-      const [completedCount, failedCount, totalAmount, tryPaymentsTotal, tryPaymentsCount, usdPaymentsTotal, usdPaymentsCount] = await Promise.all([
+      const [completedCount, failedCount, totalAmount] = await Promise.all([
         prisma.paymentTransaction.count({
           where: { ...where, status: 'COMPLETED' }
         }),
@@ -103,38 +103,6 @@ export class AdminPaymentController {
         prisma.paymentTransaction.aggregate({
           where: { ...where, status: 'COMPLETED' },
           _sum: { amount: true }
-        }),
-        // TL ödemeler toplamı
-        prisma.paymentTransaction.aggregate({
-          where: { 
-            ...where, 
-            status: 'COMPLETED',
-            payment_currency: 'TRY'
-          },
-          _sum: { original_amount: true }
-        }),
-        prisma.paymentTransaction.count({
-          where: { 
-            ...where, 
-            status: 'COMPLETED',
-            payment_currency: 'TRY'
-          }
-        }),
-        // USD ödemeler toplamı
-        prisma.paymentTransaction.aggregate({
-          where: { 
-            ...where, 
-            status: 'COMPLETED',
-            payment_currency: 'USD'
-          },
-          _sum: { original_amount: true }
-        }),
-        prisma.paymentTransaction.count({
-          where: { 
-            ...where, 
-            status: 'COMPLETED',
-            payment_currency: 'USD'
-          }
         })
       ])
 
@@ -278,7 +246,7 @@ export class AdminPaymentController {
       }))
 
       // Özet istatistikler
-      const [completedCount, failedCount, totalAmount, tryPaymentsTotal, tryPaymentsCount, usdPaymentsTotal, usdPaymentsCount] = await Promise.all([
+      const [completedCount, failedCount, totalAmount] = await Promise.all([
         prisma.paymentTransaction.count({
           where: { ...where, status: 'COMPLETED' }
         }),
@@ -288,38 +256,6 @@ export class AdminPaymentController {
         prisma.paymentTransaction.aggregate({
           where: { ...where, status: 'COMPLETED' },
           _sum: { amount: true }
-        }),
-        // TL ödemeler toplamı
-        prisma.paymentTransaction.aggregate({
-          where: { 
-            ...where, 
-            status: 'COMPLETED',
-            payment_currency: 'TRY'
-          },
-          _sum: { original_amount: true }
-        }),
-        prisma.paymentTransaction.count({
-          where: { 
-            ...where, 
-            status: 'COMPLETED',
-            payment_currency: 'TRY'
-          }
-        }),
-        // USD ödemeler toplamı
-        prisma.paymentTransaction.aggregate({
-          where: { 
-            ...where, 
-            status: 'COMPLETED',
-            payment_currency: 'USD'
-          },
-          _sum: { original_amount: true }
-        }),
-        prisma.paymentTransaction.count({
-          where: { 
-            ...where, 
-            status: 'COMPLETED',
-            payment_currency: 'USD'
-          }
         })
       ])
 
