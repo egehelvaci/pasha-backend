@@ -609,10 +609,12 @@ export class PaymentService {
       let amountInTRY = input.amount;
       let exchangeRate = null;
       let originalAmount = input.amount;
+      let convertedAmount = null;
       
       // Eğer kullanıcı USD girerse, TRY'ye çevir
       if (paymentCurrency === 'USD') {
         amountInTRY = await exchangeRateService.convertUSDtoTRY(input.amount);
+        convertedAmount = amountInTRY;
         const rates = await exchangeRateService.getRates();
         exchangeRate = rates.USD;
         console.log(`💱 USD → TRY dönüşümü: ${input.amount} USD = ${amountInTRY} TRY (Kur: ${exchangeRate})`);
