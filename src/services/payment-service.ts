@@ -602,38 +602,22 @@ export class PaymentService {
       // Store bilgilerini al
       const store = await this.getStoreInfo(input.storeId);
       const storeCurrency = store.currency || 'TRY';
-      const paymentCurrency = input.currencyCode || 'TRY'; // Varsayılan TRY
+      const paymentCurrency = input.currencyCode || 'TRY';
       
-      // ÖNEMLI: Octet'e her zaman TRY olarak gönder
-      // Kullanıcı USD girerse bile TRY'ye çevir
-      let amountInTRY = input.amount;
-      let exchangeRate = null;
-      let originalAmount = input.amount;
-      let convertedAmount = null;
+      // ÖNEMLI: Hiç dönüşüm yapmadan direkt gönder
+      // Kullanıcı hangi tutarı girerse o gider
+      const originalAmount = input.amount;
       
-      // Eğer kullanıcı USD girerse, TRY'ye çevir
-      if (paymentCurrency === 'USD') {
-        amountInTRY = await exchangeRateService.convertUSDtoTRY(input.amount);
-        convertedAmount = amountInTRY;
-        const rates = await exchangeRateService.getRates();
-        exchangeRate = rates.USD;
-        console.log(`💱 USD → TRY dönüşümü: ${input.amount} USD = ${amountInTRY} TRY (Kur: ${exchangeRate})`);
-      }
-
-      // Payment request oluştur (her zaman TRY ile)
-      const paymentRequestInput = {
-        ...input,
-        amount: amountInTRY // Octet'e her zaman TRY gönder
-      };
-      const paymentRequest = await this.createPaymentRequest(paymentRequestInput);
+      // Payment request oluştur (girilen tutar ile)
+      const paymentRequest = await this.createPaymentRequest(input);
 
       // Transaction kaydı oluştur ve webhook token al
       const currencyInfo = {
         storeCurrency,
         paymentCurrency,
-        exchangeRate,
+        exchangeRate: null, // Henüz dönüşüm yok
         originalAmount,
-        convertedAmount
+        convertedAmount: null // Henüz dönüşüm yok
       };
       const webhookToken = await this.createPaymentTransaction(paymentRequest, input.storeId, currencyInfo);
 
@@ -652,9 +636,7 @@ export class PaymentService {
           sellerReference: paymentRequest.sellerReference,
           apiReferenceNumber: paymentRequest.paymentRequestCommonDetail.apiReferenceNumber,
           amount: originalAmount, // Kullanıcıya orijinal tutarı göster
-          currencyCode: paymentCurrency,
-          convertedAmount: convertedAmount,
-          exchangeRate: exchangeRate
+          currencyCode: paymentCurrency
         };
       }
 
