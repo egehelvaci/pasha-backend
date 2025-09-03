@@ -1231,6 +1231,7 @@ export class OrderService {
   // Sipariş sonrası işlemler
   private async processPostOrderOperations(user: any, orderTotal: number, orderId?: string): Promise<void> {
     const store = user.Store;
+    const currency = store.currency || 'TRY';
     
     try {
       // 1. YENİ MANTIK: Sadece bakiyeden düş, açık hesap limiti değişmez
@@ -1252,35 +1253,63 @@ export class OrderService {
         });
 
         console.log(`💰 Bakiye güncellendi:`)
-        console.log(`  - Önceki bakiye: ${currentBalance} TL`)
-        console.log(`  - Sipariş tutarı: ${orderTotal} TL`)
-        console.log(`  - Yeni bakiye: ${newBalance} TL`)
-        console.log(`  - Açık hesap limiti: ${currentOpenAccountLimit} TL (değişmez)`)
+        console.log(`  - Önceki bakiye: ${currentBalance} ${currency}`)
+        console.log(`  - Sipariş tutarı: ${orderTotal} ${currency}`)
+        console.log(`  - Yeni bakiye: ${newBalance} ${currency}`)
+        console.log(`  - Açık hesap limiti: ${currentOpenAccountLimit} ${currency} (değişmez)`)
         
-        // Admin kasa bakiyesini güncelle ve muhasebe hareketi oluştur
-        const adminVarliklar = await prisma.adminVarliklari.findFirst({
-          where: { id: 1 }
-        });
-        
-        if (!adminVarliklar) {
-          await prisma.adminVarliklari.create({
-            data: {
-              id: 1,
-              kasaBakiyesi: orderTotal
-            }
+        // Currency'e göre admin kasa bakiyesini güncelle
+        if (currency === 'USD') {
+          // USD mağazalar için ayrı admin varlıkları yönetimi
+          const usdAdminVarliklar = await prisma.adminVarliklari.findFirst({
+            where: { id: 2 } // USD için ID 2
           });
-        } else {
-          await prisma.adminVarliklari.update({
-            where: { id: 1 },
-            data: {
-              kasaBakiyesi: {
-                increment: orderTotal
+          
+          if (!usdAdminVarliklar) {
+            await prisma.adminVarliklari.create({
+              data: {
+                id: 2,
+                kasaBakiyesi: orderTotal
               }
-            }
+            });
+          } else {
+            await prisma.adminVarliklari.update({
+              where: { id: 2 },
+              data: {
+                kasaBakiyesi: {
+                  increment: orderTotal
+                }
+              }
+            });
+          }
+          
+          console.log(`💰 USD Admin kasa bakiyesi güncellendi: +${orderTotal} USD`);
+        } else {
+          // TRY mağazalar için mevcut sistem
+          const adminVarliklar = await prisma.adminVarliklari.findFirst({
+            where: { id: 1 }
           });
+          
+          if (!adminVarliklar) {
+            await prisma.adminVarliklari.create({
+              data: {
+                id: 1,
+                kasaBakiyesi: orderTotal
+              }
+            });
+          } else {
+            await prisma.adminVarliklari.update({
+              where: { id: 1 },
+              data: {
+                kasaBakiyesi: {
+                  increment: orderTotal
+                }
+              }
+            });
+          }
+          
+          console.log(`💰 TRY Admin kasa bakiyesi güncellendi: +${orderTotal} TRY`);
         }
-        
-        console.log(`💰 Admin kasa bakiyesi güncellendi: +${orderTotal} TL`);
         
         // Muhasebe hareketi oluştur
         await prisma.muhasebeHareketleri.create({
@@ -1291,13 +1320,13 @@ export class OrderService {
             harcama: false, // Gelir
             tarih: new Date(),
             aciklama: `Sipariş #${orderId || 'N/A'} - ${store.kurum_adi} mağazası tarafından verilen sipariş`,
-            currency: store.currency || 'TRY',
-            original_currency: store.currency || 'TRY',
+            currency: currency,
+            original_currency: currency,
             original_amount: orderTotal
           }
         });
         
-        console.log(`📋 Muhasebe hareketi oluşturuldu: Sipariş #${orderId || 'N/A'}`);
+        console.log(`📋 ${currency} Muhasebe hareketi oluşturuldu: Sipariş #${orderId || 'N/A'}`);
       }
 
       // 2. Fiyat listesi limitini güncelle
@@ -1385,12 +1414,13 @@ export class OrderService {
   // Admin siparişi sonrası işlemler - Açık hesap limiti kontrolsüz
   private async processAdminOrderOperations(user: any, orderTotal: number, orderId?: string): Promise<void> {
     const store = user.Store;
+    const currency = store.currency || 'TRY';
     
     try {
       console.log(`🔧 ADMİN SİPARİŞİ: Bakiye işlemleri başlatılıyor`)
       console.log(`  - Mağaza: ${store.kurum_adi}`)
-      console.log(`  - Sipariş tutarı: ${orderTotal} TL`)
-      console.log(`  - Mevcut bakiye: ${store.bakiye} TL`)
+      console.log(`  - Sipariş tutarı: ${orderTotal} ${currency}`)
+      console.log(`  - Mevcut bakiye: ${store.bakiye} ${currency}`)
       console.log(`  - Açık hesap kontrolü: YAPILMAYACAK (Admin siparişi)`)
       
       // Admin siparişi - Açık hesap limiti kontrolü yapılmaz
@@ -1407,35 +1437,63 @@ export class OrderService {
       });
 
       console.log(`💰 ADMİN SİPARİŞİ: Bakiye güncellendi`)
-      console.log(`  - Önceki bakiye: ${currentBalance} TL`)
-      console.log(`  - Sipariş tutarı: ${orderTotal} TL`)
-      console.log(`  - Yeni bakiye: ${newBalance} TL`)
+      console.log(`  - Önceki bakiye: ${currentBalance} ${currency}`)
+      console.log(`  - Sipariş tutarı: ${orderTotal} ${currency}`)
+      console.log(`  - Yeni bakiye: ${newBalance} ${currency}`)
       console.log(`  - Açık hesap limiti: DEĞİŞMEDİ (Admin siparişi)`)
       
-      // Admin kasa bakiyesini güncelle ve muhasebe hareketi oluştur
-      const adminVarliklar = await prisma.adminVarliklari.findFirst({
-        where: { id: 1 }
-      });
-      
-      if (!adminVarliklar) {
-        await prisma.adminVarliklari.create({
-          data: {
-            id: 1,
-            kasaBakiyesi: orderTotal
-          }
+      // Currency'e göre admin kasa bakiyesini güncelle
+      if (currency === 'USD') {
+        // USD mağazalar için ayrı admin varlıkları yönetimi
+        const usdAdminVarliklar = await prisma.adminVarliklari.findFirst({
+          where: { id: 2 } // USD için ID 2
         });
-      } else {
-        await prisma.adminVarliklari.update({
-          where: { id: 1 },
-          data: {
-            kasaBakiyesi: {
-              increment: orderTotal
+        
+        if (!usdAdminVarliklar) {
+          await prisma.adminVarliklari.create({
+            data: {
+              id: 2,
+              kasaBakiyesi: orderTotal
             }
-          }
+          });
+        } else {
+          await prisma.adminVarliklari.update({
+            where: { id: 2 },
+            data: {
+              kasaBakiyesi: {
+                increment: orderTotal
+              }
+            }
+          });
+        }
+        
+        console.log(`💰 USD Admin kasa bakiyesi güncellendi: +${orderTotal} USD`);
+      } else {
+        // TRY mağazalar için mevcut sistem
+        const adminVarliklar = await prisma.adminVarliklari.findFirst({
+          where: { id: 1 }
         });
+        
+        if (!adminVarliklar) {
+          await prisma.adminVarliklari.create({
+            data: {
+              id: 1,
+              kasaBakiyesi: orderTotal
+            }
+          });
+        } else {
+          await prisma.adminVarliklari.update({
+            where: { id: 1 },
+            data: {
+              kasaBakiyesi: {
+                increment: orderTotal
+              }
+            }
+          });
+        }
+        
+        console.log(`💰 TRY Admin kasa bakiyesi güncellendi: +${orderTotal} TRY`);
       }
-      
-      console.log(`💰 Admin kasa bakiyesi güncellendi: +${orderTotal} TL`);
       
       // Muhasebe hareketi oluştur
       await prisma.muhasebeHareketleri.create({
@@ -1446,13 +1504,13 @@ export class OrderService {
           harcama: false, // Gelir
           tarih: new Date(),
           aciklama: `Admin Siparişi #${orderId || 'N/A'} - ${store.kurum_adi} mağazası için admin tarafından oluşturulan sipariş`,
-          currency: store.currency || 'TRY',
-          original_currency: store.currency || 'TRY',
+          currency: currency,
+          original_currency: currency,
           original_amount: orderTotal
         }
       });
       
-      console.log(`📋 Muhasebe hareketi oluşturuldu: Admin Siparişi #${orderId || 'N/A'}`);
+      console.log(`📋 ${currency} Muhasebe hareketi oluşturuldu: Admin Siparişi #${orderId || 'N/A'}`);
 
       // Fiyat listesi limitini güncelle (eğer varsa)
       const storePriceList = store.StorePriceList.find((spl: any) => spl.PriceList);
