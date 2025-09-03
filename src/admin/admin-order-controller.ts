@@ -284,6 +284,20 @@ export class AdminOrderController {
       // QR kodlar oluştur ve siparişi onayla
       const qrResult = await qrCodeService.generateQRCodesForOrder(orderId)
       
+      // Barkod oluştur ve görselleri yükle
+      let barcodeResult = null
+      let barcodeImagesResult = null
+      try {
+        barcodeResult = await barcodeService.generateBarcodesForOrder(orderId)
+        console.log('✅ Barkodlar oluşturuldu')
+        
+        // Barkod görsellerini oluştur
+        barcodeImagesResult = await barcodeService.generateBarcodeImagesForOrder(orderId)
+        console.log('✅ Barkod görselleri oluşturuldu')
+      } catch (barcodeError) {
+        console.error('❌ Barkod oluşturma hatası:', barcodeError)
+      }
+      
       // YENİ MANTIK: Stokları düşür (negatif stok izinli)
       try {
         await qrCodeService.reduceStockForOrder(orderId)
@@ -1084,11 +1098,26 @@ export class AdminOrderController {
       }
 
       let qrResult = null
+      let barcodeResult = null
+      let barcodeImagesResult = null
 
-      // CONFIRMED durumuna geçerken QR kod oluştur
+      // CONFIRMED durumuna geçerken QR kod ve barkod oluştur
       if (status === 'CONFIRMED' && existingOrder.status !== 'CONFIRMED') {
         try {
           qrResult = await qrCodeService.generateQRCodesForOrder(orderId)
+          
+          // Barkod oluştur
+          try {
+            barcodeResult = await barcodeService.generateBarcodesForOrder(orderId)
+            console.log('✅ Barkodlar oluşturuldu')
+            
+            // Barkod görsellerini oluştur
+            barcodeImagesResult = await barcodeService.generateBarcodeImagesForOrder(orderId)
+            console.log('✅ Barkod görselleri oluşturuldu')
+          } catch (barcodeError) {
+            console.error('❌ Barkod oluşturma hatası:', barcodeError)
+          }
+          
           // YENİ MANTIK: Stok düşür (negatif stok izinli)
           try {
             await qrCodeService.reduceStockForOrder(orderId)
@@ -1097,7 +1126,7 @@ export class AdminOrderController {
             console.warn('⚠️ CONFIRMED durumunda stok düşürme uyarısı:', stockError);
             console.log(`✅ Sipariş CONFIRMED durumuna geçti (stok durumu: negatif/sıfır): ${orderId}`);
           }
-          console.log(`✅ Sipariş ${orderId} CONFIRMED olarak güncellendi - QR kod oluşturuldu`)
+          console.log(`✅ Sipariş ${orderId} CONFIRMED olarak güncellendi - QR kod ve barkodlar oluşturuldu`)
         } catch (qrError) {
           console.error('QR kod oluşturma hatası:', qrError)
           // QR kod hatası durumunda bile sipariş durumunu güncelle
@@ -1297,10 +1326,15 @@ export class AdminOrderController {
       });
       
       let barcodeResult = null;
+      let barcodeImagesResult = null;
       if (order && order.status === 'CONFIRMED') {
         try {
           barcodeResult = await barcodeService.generateBarcodesForOrder(orderId);
-          console.log('✅ Barkodlar da oluşturuldu');
+          console.log('✅ Barkodlar oluşturuldu');
+          
+          // Barkod görsellerini de oluştur
+          barcodeImagesResult = await barcodeService.generateBarcodeImagesForOrder(orderId);
+          console.log('✅ Barkod görselleri de oluşturuldu');
         } catch (barcodeError) {
           console.error('❌ Barkod oluşturma hatası:', barcodeError);
         }
@@ -1308,7 +1342,8 @@ export class AdminOrderController {
       
       res.status(200).json({
         ...qrResult,
-        barcodes: barcodeResult
+        barcodes: barcodeResult,
+        barcodeImages: barcodeImagesResult
       });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
