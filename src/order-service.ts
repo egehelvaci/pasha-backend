@@ -1236,13 +1236,21 @@ export class OrderService {
     try {
       // 1. YENİ MANTIK: Sadece bakiyeden düş, açık hesap limiti değişmez
       // Bakiye + açık hesap limiti toplam kontrol zaten yapıldı, güvenle bakiyeden düşebiliriz
-      if (!store.limitsiz_acik_hesap) {
+      // USD mağazalar için özel durum: limitsiz_acik_hesap olsa bile bakiye düşür
+      if (!store.limitsiz_acik_hesap || currency === 'USD') {
         const currentBalance = Number(store.bakiye || 0);
         const currentOpenAccountLimit = Number(store.acik_hesap_tutari || 0);
         
         // Bakiyeden sipariş tutarını düş
-        // Bakiye negatif olmayacak şekilde sınırla (en fazla açık hesap limiti kadar düşebilir)
-        const newBalance = Math.max(currentBalance - orderTotal, -currentOpenAccountLimit);
+        // USD mağazalar için özel mantık: Açık hesap limiti olmayabilir, direkt düş
+        let newBalance;
+        if (currency === 'USD') {
+          // USD mağazalar: Direkt bakiyeden düş (negatife gidebilir)
+          newBalance = currentBalance - orderTotal;
+        } else {
+          // TRY mağazalar: Bakiye negatif olmayacak şekilde sınırla (en fazla açık hesap limiti kadar düşebilir)
+          newBalance = Math.max(currentBalance - orderTotal, -currentOpenAccountLimit);
+        }
         
         await prisma.store.update({
           where: { store_id: store.store_id },
