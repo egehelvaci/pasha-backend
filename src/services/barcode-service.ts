@@ -454,30 +454,49 @@ export class BarcodeService {
    */
   private generateBarcodeSVG(barcodeText: string): string {
     // JSDOM ile sanal DOM oluştur
-    const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>')
-    const document = dom.window.document
+    const dom = new JSDOM('<!DOCTYPE html><html><body><div id="barcode"></div></body></html>')
+    const window = dom.window
+    const document = window.document
     
-    // SVG elementi oluştur
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+    // Global document ve window'u geçici olarak ayarla
+    const originalDocument = global.document
+    const originalWindow = global.window
+    global.document = document as any
+    global.window = window as any
     
-    // JsBarcode ile Code128 barkod oluştur
-    JsBarcode(svg, barcodeText, {
-      format: 'CODE128',
-      width: 2,
-      height: 100,
-      displayValue: true,
-      fontSize: 16,
-      fontOptions: 'bold',
-      textMargin: 2,
-      margin: 10,
-      background: '#ffffff',
-      lineColor: '#000000'
-    })
-    
-    // SVG'yi string'e dönüştür
-    const svgString = svg.outerHTML
-    
-    return svgString
+    try {
+      // Div elementi al
+      const container = document.getElementById('barcode')
+      
+      // JsBarcode ile Code128 barkod oluştur
+      JsBarcode(container, barcodeText, {
+        format: 'CODE128',
+        width: 2,
+        height: 100,
+        displayValue: true,
+        fontSize: 16,
+        fontOptions: 'bold',
+        textMargin: 2,
+        margin: 10,
+        background: '#ffffff',
+        lineColor: '#000000'
+      })
+      
+      // SVG elementini al
+      const svg = container?.querySelector('svg')
+      if (!svg) {
+        throw new Error('SVG element not found')
+      }
+      
+      // SVG'yi string'e dönüştür
+      const svgString = svg.outerHTML
+      
+      return svgString
+    } finally {
+      // Global değişkenleri eski haline getir
+      global.document = originalDocument
+      global.window = originalWindow
+    }
   }
 
   /**
