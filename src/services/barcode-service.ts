@@ -2,6 +2,8 @@ import crypto from 'crypto'
 import prisma from '../utils/prisma'
 import { notificationService } from './notification-service'
 import { UploadService } from '../utils/upload-service'
+import JsBarcode from 'jsbarcode'
+import { createCanvas } from 'canvas'
 
 export class BarcodeService {
   /**
@@ -448,36 +450,31 @@ export class BarcodeService {
   }
 
   /**
-   * Basit SVG barkod oluştur
+   * Gerçek Code128 SVG barkod oluştur
    */
   private generateBarcodeSVG(barcodeText: string): string {
-    // Basit çubuk deseni oluştur (gerçek CODE128 algoritması değil, sadece görsel amaçlı)
-    const bars: number[] = []
-    for (let i = 0; i < barcodeText.length; i++) {
-      const char = barcodeText.charCodeAt(i)
-      // Her karakter için farklı bar deseni
-      bars.push(1, 1, 2, 1, 1) // Basit desen
-    }
-
-    let svgBars = ''
-    let x = 10
-    const barWidth = 2
-    const barHeight = 60
-
-    for (let i = 0; i < bars.length; i++) {
-      const barSize = bars[i]
-      if (i % 2 === 0) { // Siyah çubuk
-        svgBars += `<rect x="${x}" y="20" width="${barSize * barWidth}" height="${barHeight}" fill="#000000"/>`
-      }
-      x += barSize * barWidth
-    }
-
-    return `<?xml version="1.0" encoding="UTF-8"?>
-<svg width="300" height="120" xmlns="http://www.w3.org/2000/svg">
-  <rect width="300" height="120" fill="#ffffff"/>
-  ${svgBars}
-  <text x="150" y="100" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#000000">${barcodeText}</text>
-</svg>`
+    // Canvas oluştur
+    const canvas = createCanvas(400, 150)
+    
+    // JsBarcode ile Code128 barkod oluştur
+    JsBarcode(canvas, barcodeText, {
+      format: 'CODE128',
+      width: 2,
+      height: 100,
+      displayValue: true,
+      fontSize: 16,
+      fontOptions: 'bold',
+      textMargin: 2,
+      margin: 10,
+      background: '#ffffff',
+      lineColor: '#000000'
+    })
+    
+    // Canvas'ı SVG string'e dönüştür
+    const svgString = canvas.toBuffer('image/svg+xml').toString('utf-8')
+    
+    // SVG'yi temizle ve düzgün formata getir
+    return svgString
   }
 
   /**
