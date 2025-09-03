@@ -454,22 +454,26 @@ export class BarcodeService {
    */
   private generateBarcodeSVG(barcodeText: string): string {
     // JSDOM ile sanal DOM oluştur
-    const dom = new JSDOM('<!DOCTYPE html><html><body><div id="barcode"></div></body></html>')
+    const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>')
     const window = dom.window
     const document = window.document
     
     // Global document ve window'u geçici olarak ayarla
     const originalDocument = global.document
     const originalWindow = global.window
+    const originalDOMImplementation = global.DOMImplementation
+    
     global.document = document as any
     global.window = window as any
+    global.DOMImplementation = window.DOMImplementation as any
     
     try {
-      // Div elementi al
-      const container = document.getElementById('barcode')
+      // SVG elementi oluştur
+      const svgNS = 'http://www.w3.org/2000/svg'
+      const svg = document.createElementNS(svgNS, 'svg')
       
       // JsBarcode ile Code128 barkod oluştur
-      JsBarcode(container, barcodeText, {
+      JsBarcode(svg, barcodeText, {
         format: 'CODE128',
         width: 2,
         height: 100,
@@ -482,20 +486,15 @@ export class BarcodeService {
         lineColor: '#000000'
       })
       
-      // SVG elementini al
-      const svg = container?.querySelector('svg')
-      if (!svg) {
-        throw new Error('SVG element not found')
-      }
-      
       // SVG'yi string'e dönüştür
-      const svgString = svg.outerHTML
+      const svgString = svg.outerHTML || new window.XMLSerializer().serializeToString(svg)
       
       return svgString
     } finally {
       // Global değişkenleri eski haline getir
       global.document = originalDocument
       global.window = originalWindow
+      global.DOMImplementation = originalDOMImplementation
     }
   }
 
