@@ -284,16 +284,11 @@ export class AdminOrderController {
       // QR kodlar oluştur ve siparişi onayla
       const qrResult = await qrCodeService.generateQRCodesForOrder(orderId)
       
-      // Barkod oluştur ve görselleri yükle
+      // Barkod oluştur (görseller generateQRCodeImages API'sinde oluşturulacak)
       let barcodeResult = null
-      let barcodeImagesResult = null
       try {
         barcodeResult = await barcodeService.generateBarcodesForOrder(orderId)
         console.log('✅ Barkodlar oluşturuldu')
-        
-        // Barkod görsellerini oluştur
-        barcodeImagesResult = await barcodeService.generateBarcodeImagesForOrder(orderId)
-        console.log('✅ Barkod görselleri oluşturuldu')
       } catch (barcodeError) {
         console.error('❌ Barkod oluşturma hatası:', barcodeError)
       }
@@ -1099,21 +1094,16 @@ export class AdminOrderController {
 
       let qrResult = null
       let barcodeResult = null
-      let barcodeImagesResult = null
 
       // CONFIRMED durumuna geçerken QR kod ve barkod oluştur
       if (status === 'CONFIRMED' && existingOrder.status !== 'CONFIRMED') {
         try {
           qrResult = await qrCodeService.generateQRCodesForOrder(orderId)
           
-          // Barkod oluştur
+          // Barkod oluştur (görseller generateQRCodeImages API'sinde oluşturulacak)
           try {
             barcodeResult = await barcodeService.generateBarcodesForOrder(orderId)
             console.log('✅ Barkodlar oluşturuldu')
-            
-            // Barkod görsellerini oluştur
-            barcodeImagesResult = await barcodeService.generateBarcodeImagesForOrder(orderId)
-            console.log('✅ Barkod görselleri oluşturuldu')
           } catch (barcodeError) {
             console.error('❌ Barkod oluşturma hatası:', barcodeError)
           }
@@ -1326,15 +1316,10 @@ export class AdminOrderController {
       });
       
       let barcodeResult = null;
-      let barcodeImagesResult = null;
       if (order && order.status === 'CONFIRMED') {
         try {
           barcodeResult = await barcodeService.generateBarcodesForOrder(orderId);
           console.log('✅ Barkodlar oluşturuldu');
-          
-          // Barkod görsellerini de oluştur
-          barcodeImagesResult = await barcodeService.generateBarcodeImagesForOrder(orderId);
-          console.log('✅ Barkod görselleri de oluşturuldu');
         } catch (barcodeError) {
           console.error('❌ Barkod oluşturma hatası:', barcodeError);
         }
@@ -1342,8 +1327,7 @@ export class AdminOrderController {
       
       res.status(200).json({
         ...qrResult,
-        barcodes: barcodeResult,
-        barcodeImages: barcodeImagesResult
+        barcodes: barcodeResult
       });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
