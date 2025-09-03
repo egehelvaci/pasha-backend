@@ -56,7 +56,7 @@ export class BarcodeService {
             order_item_id: item.id,
             product_id: item.product_id,
             barcode: barcodeString,
-            barcode_type: 'CODE128',
+            barcode_type: 'EAN13',
             is_scanned: false,
             quantity: item.quantity,
             required_scans: item.quantity, // Item'ın quantity'si kadar okutulması gerekiyor
@@ -408,8 +408,16 @@ export class BarcodeService {
       // Her barkod için SVG görsel oluştur
       for (const barcodeRecord of barcodesNeedingImages) {
         try {
-          // Basit SVG barkod oluştur
-          const svgContent = this.generateBarcodeSVG(barcodeRecord.barcode)
+          // Barkod tipini al
+          const fullBarcodeRecord = await prisma.barcode.findUnique({
+            where: { id: barcodeRecord.id },
+            select: { barcode_type: true }
+          })
+          
+          const barcodeType = fullBarcodeRecord?.barcode_type || 'EAN13'
+          
+          // Barkod tipine göre SVG oluştur
+          const svgContent = this.generateBarcodeSVG(barcodeRecord.barcode, barcodeType)
           const svgBuffer = Buffer.from(svgContent, 'utf-8')
 
           // Dosyayı Tebi'ye yükle
@@ -449,27 +457,51 @@ export class BarcodeService {
   }
 
   /**
-   * Gerçek Code128 SVG barkod oluştur
+   * Barkod tipine göre SVG oluştur (hybrid sistem - CODE128 ve EAN13 desteği)
    */
-  private generateBarcodeSVG(barcodeText: string): string {
+  private generateBarcodeSVG(barcodeText: string, barcodeType: string = 'EAN13'): string {
     try {
-      // bwip-js ile Code128 barkod oluştur
-      const svg = bwipjs.toSVG({
-        bcid: 'code128',       // Barcode type
-        text: barcodeText,     // Text to encode
-        scale: 3,              // 3x scaling factor
-        height: 10,            // Bar height, in millimeters
-        includetext: true,     // Show human-readable text
-        textxalign: 'center',  // Always good to set this
-        textsize: 13,          // Font size
-        paddingwidth: 10,      // Padding
-        paddingheight: 10
-      })
-      
-      return svg
+      if (barcodeType === 'EAN13') {
+        // EAN13 format kontrolü
+        if (!/^\d{13}$/.test(barcodeText)) {
+          throw new Error('EAN13 formatı için 13 haneli sayısal kod gerekli')
+        }
+
+        // bwip-js ile EAN13 barkod oluştur
+        const svg = bwipjs.toSVG({
+          bcid: 'ean13',         // Barcode type (EAN13)
+          text: barcodeText,     // Text to encode
+          scale: 3,              // 3x scaling factor
+          height: 10,            // Bar height, in millimeters
+          includetext: true,     // Show human-readable text
+          textxalign: 'center',  // Always good to set this
+          textsize: 13,          // Font size
+          paddingwidth: 10,      // Padding
+          paddingheight: 10
+        })
+        
+        return svg
+      } else if (barcodeType === 'CODE128') {
+        // Eski CODE128 barkodlar için
+        const svg = bwipjs.toSVG({
+          bcid: 'code128',       // Barcode type (CODE128)
+          text: barcodeText,     // Text to encode
+          scale: 3,              // 3x scaling factor
+          height: 10,            // Bar height, in millimeters
+          includetext: true,     // Show human-readable text
+          textxalign: 'center',  // Always good to set this
+          textsize: 13,          // Font size
+          paddingwidth: 10,      // Padding
+          paddingheight: 10
+        })
+        
+        return svg
+      } else {
+        throw new Error(`Desteklenmeyen barkod tipi: ${barcodeType}`)
+      }
     } catch (error: any) {
-      console.error('Barkod oluşturma hatası:', error)
-      throw new Error(`Barkod oluşturulamadı: ${error.message}`)
+      console.error(`${barcodeType} barkod oluşturma hatası:`, error)
+      throw new Error(`${barcodeType} barkod oluşturulamadı: ${error.message}`)
     }
   }
 
@@ -487,12 +519,56 @@ export class BarcodeService {
   }
 
   /**
-   * Benzersiz barkod üret
+   * EAN13 checksum hesapla
+   */
+  private calculateEAN13Checksum(digits: string): string {
+    if (digits.length !== 12) {
+      throw new Error('EAN13 için 12 haneli kod gerekli')
+    }
+    
+    let sum = 0
+    for (let i = 0; i < 12; i++) {
+      const digit = parseInt(digits[i])
+      // Çift pozisyonlardaki (1, 3, 5, ...) rakamları 3 ile çarp
+      if (i % 2 === 1) {
+        sum += digit * 3
+      } else {
+        sum += digit
+      }
+    }
+    
+    const checksum = (10 - (sum % 10)) % 10
+    return checksum.toString()
+  }
+
+  /**
+   * Benzersiz EAN13 barkod üret
+   */
+  private generateUniqueEAN13Barcode(): string {
+    // Türkiye ülke kodu: 869
+    const countryCode = '869'
+    
+    // Timestamp'in son 6 hanesini al
+    const timestamp = Date.now().toString().slice(-6)
+    
+    // 3 haneli rastgele sayı ekle
+    const randomPart = Math.floor(Math.random() * 1000).toString().padStart(3, '0')
+    
+    // 12 haneli kod oluştur: 869 + 6 hane timestamp + 3 hane random
+    const baseCode = countryCode + timestamp + randomPart
+    
+    // Checksum hesapla
+    const checksum = this.calculateEAN13Checksum(baseCode)
+    
+    return baseCode + checksum
+  }
+
+  /**
+   * Benzersiz barkod üret (geriye uyumluluk için)
    */
   private generateUniqueBarcode(): string {
-    const timestamp = Date.now()
-    const randomBytes = crypto.randomBytes(6).toString('hex').toUpperCase()
-    return `BAR-${timestamp}-${randomBytes}`
+    // Artık EAN13 formatında üret
+    return this.generateUniqueEAN13Barcode()
   }
 
   /**

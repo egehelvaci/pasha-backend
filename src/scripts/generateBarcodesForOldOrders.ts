@@ -54,7 +54,7 @@ async function generateBarcodesForOldOrders() {
           try {
             // Barkod görselini oluştur
             const png = await bwipjs.toBuffer({
-              bcid: 'code128',
+              bcid: 'ean13',
               text: barcodeData,
               scale: 3,
               height: 10,
@@ -74,7 +74,7 @@ async function generateBarcodesForOldOrders() {
                 order_item_id: item.id,
                 product_id: item.product_id,
                 barcode: barcodeData,
-                barcode_type: 'CODE128',
+                barcode_type: 'EAN13',
                 barcode_image_url: `/barcodes/${fileName}`,
                 quantity: 1,
                 required_scans: 1,

@@ -58,7 +58,7 @@ async function fixBarcodes() {
         try {
           // Barkod görselini oluştur
           const png = await bwipjs.toBuffer({
-            bcid: 'code128',
+            bcid: 'ean13',
             text: barcodeString,
             scale: 3,
             height: 10,
@@ -82,7 +82,7 @@ async function fixBarcodes() {
               order_item_id: item.id,
               product_id: item.product_id,
               barcode: barcodeString,
-              barcode_type: 'CODE128',
+              barcode_type: 'EAN13',
               barcode_image_url: imageUrl,
               quantity: item.quantity,
               required_scans: item.quantity,
