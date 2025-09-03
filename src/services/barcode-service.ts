@@ -2,8 +2,7 @@ import crypto from 'crypto'
 import prisma from '../utils/prisma'
 import { notificationService } from './notification-service'
 import { UploadService } from '../utils/upload-service'
-import JsBarcode from 'jsbarcode'
-import { JSDOM } from 'jsdom'
+import bwipjs from '@bwip-js/node'
 
 export class BarcodeService {
   /**
@@ -453,48 +452,24 @@ export class BarcodeService {
    * Gerçek Code128 SVG barkod oluştur
    */
   private generateBarcodeSVG(barcodeText: string): string {
-    // JSDOM ile sanal DOM oluştur
-    const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>')
-    const window = dom.window
-    const document = window.document
-    
-    // Global document ve window'u geçici olarak ayarla
-    const originalDocument = global.document
-    const originalWindow = global.window
-    const originalDOMImplementation = global.DOMImplementation
-    
-    global.document = document as any
-    global.window = window as any
-    global.DOMImplementation = window.DOMImplementation as any
-    
     try {
-      // SVG elementi oluştur
-      const svgNS = 'http://www.w3.org/2000/svg'
-      const svg = document.createElementNS(svgNS, 'svg')
-      
-      // JsBarcode ile Code128 barkod oluştur
-      JsBarcode(svg, barcodeText, {
-        format: 'CODE128',
-        width: 2,
-        height: 100,
-        displayValue: true,
-        fontSize: 16,
-        fontOptions: 'bold',
-        textMargin: 2,
-        margin: 10,
-        background: '#ffffff',
-        lineColor: '#000000'
+      // bwip-js ile Code128 barkod oluştur
+      const svg = bwipjs.toSVG({
+        bcid: 'code128',       // Barcode type
+        text: barcodeText,     // Text to encode
+        scale: 3,              // 3x scaling factor
+        height: 10,            // Bar height, in millimeters
+        includetext: true,     // Show human-readable text
+        textxalign: 'center',  // Always good to set this
+        textsize: 13,          // Font size
+        paddingwidth: 10,      // Padding
+        paddingheight: 10
       })
       
-      // SVG'yi string'e dönüştür
-      const svgString = svg.outerHTML || new window.XMLSerializer().serializeToString(svg)
-      
-      return svgString
-    } finally {
-      // Global değişkenleri eski haline getir
-      global.document = originalDocument
-      global.window = originalWindow
-      global.DOMImplementation = originalDOMImplementation
+      return svg
+    } catch (error: any) {
+      console.error('Barkod oluşturma hatası:', error)
+      throw new Error(`Barkod oluşturulamadı: ${error.message}`)
     }
   }
 
