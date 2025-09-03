@@ -3,7 +3,7 @@ import prisma from '../utils/prisma'
 import { notificationService } from './notification-service'
 import { UploadService } from '../utils/upload-service'
 import JsBarcode from 'jsbarcode'
-import { createCanvas } from 'canvas'
+import { JSDOM } from 'jsdom'
 
 export class BarcodeService {
   /**
@@ -453,11 +453,15 @@ export class BarcodeService {
    * Gerçek Code128 SVG barkod oluştur
    */
   private generateBarcodeSVG(barcodeText: string): string {
-    // Canvas oluştur
-    const canvas = createCanvas(400, 150)
+    // JSDOM ile sanal DOM oluştur
+    const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>')
+    const document = dom.window.document
+    
+    // SVG elementi oluştur
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
     
     // JsBarcode ile Code128 barkod oluştur
-    JsBarcode(canvas, barcodeText, {
+    JsBarcode(svg, barcodeText, {
       format: 'CODE128',
       width: 2,
       height: 100,
@@ -470,10 +474,9 @@ export class BarcodeService {
       lineColor: '#000000'
     })
     
-    // Canvas'ı SVG string'e dönüştür
-    const svgString = canvas.toBuffer('image/svg+xml').toString('utf-8')
+    // SVG'yi string'e dönüştür
+    const svgString = svg.outerHTML
     
-    // SVG'yi temizle ve düzgün formata getir
     return svgString
   }
 
