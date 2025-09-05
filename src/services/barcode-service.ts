@@ -544,7 +544,7 @@ export class BarcodeService {
   /**
    * Benzersiz EAN13 barkod üret
    */
-  private generateUniqueEAN13Barcode(): string {
+  public generateUniqueEAN13Barcode(): string {
     // Türkiye ülke kodu: 869
     const countryCode = '869'
     

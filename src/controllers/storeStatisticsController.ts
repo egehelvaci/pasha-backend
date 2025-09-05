@@ -123,14 +123,14 @@ export class StoreStatisticsController {
           break
       }
 
-      // Sadece onaylanmış siparişler için where clause
+      // Sadece teslim edilmiş siparişler için where clause
       const confirmedOrdersWhere = {
         user_id: userId,
         created_at: {
           gte: startDate
         },
         status: {
-          in: [OrderStatus.CONFIRMED, OrderStatus.SHIPPED, OrderStatus.DELIVERED] // Sadece onaylanmış siparişler
+          in: [OrderStatus.DELIVERED] // Sadece teslim edilmiş siparişler
         }
       }
 
@@ -223,11 +223,11 @@ export class StoreStatisticsController {
         })
       ])
 
-      console.log('Kullanıcı İstatistik Raporu (Sadece Onaylanmış Siparişler):')
+      console.log('Kullanıcı İstatistik Raporu (Sadece Teslim Edilmiş Siparişler):')
       console.log('- Kullanıcı ID:', userId)
       console.log('- Zaman aralığı:', startDate, 'dan', now, 'a kadar')
-      console.log('- Dahil edilen durumlar: CONFIRMED, SHIPPED, DELIVERED')
-      console.log('- Toplam onaylanmış sipariş sayısı:', totalConfirmedOrders)
+      console.log('- Dahil edilen durumlar: DELIVERED')
+      console.log('- Toplam teslim edilmiş sipariş sayısı:', totalConfirmedOrders)
       console.log('- Toplam tutar:', Number(totalAmount._sum?.total_price || 0))
 
       return res.status(200).json({
@@ -258,8 +258,8 @@ export class StoreStatisticsController {
           })),
           // Debug bilgileri
           debug: {
-            included_statuses: ['CONFIRMED', 'SHIPPED', 'DELIVERED'],
-            excluded_statuses: ['PENDING', 'CANCELED']
+            included_statuses: ['DELIVERED'],
+            excluded_statuses: ['PENDING', 'CONFIRMED', 'SHIPPED', 'CANCELED']
           }
         }
       })
@@ -314,7 +314,7 @@ export class StoreStatisticsController {
               gte: startDate
             },
             status: {
-              in: [OrderStatus.CONFIRMED, OrderStatus.SHIPPED, OrderStatus.DELIVERED] // Sadece onaylanmış siparişler
+              in: [OrderStatus.DELIVERED] // Sadece teslim edilmiş siparişler
             }
           }
         },
@@ -360,7 +360,7 @@ export class StoreStatisticsController {
           start_date: startDate,
           end_date: now,
           total_products: productData.length,
-          included_statuses: ['CONFIRMED', 'SHIPPED', 'DELIVERED']
+          included_statuses: ['DELIVERED']
         }
       })
 
@@ -412,7 +412,7 @@ export class StoreStatisticsController {
             gte: startDate
           },
           status: {
-            in: [OrderStatus.CONFIRMED, OrderStatus.SHIPPED, OrderStatus.DELIVERED] // Sadece onaylanmış siparişler
+            in: [OrderStatus.DELIVERED] // Sadece teslim edilmiş siparişler
           }
         },
         include: {
@@ -482,7 +482,7 @@ export class StoreStatisticsController {
           group_by: groupBy,
           start_date: startDate,
           end_date: now,
-          included_statuses: ['CONFIRMED', 'SHIPPED', 'DELIVERED']
+          included_statuses: ['DELIVERED']
         }
       })
 
@@ -527,14 +527,14 @@ export class StoreStatisticsController {
           break
       }
 
-      // Sadece onaylanmış siparişler için where clause
+      // Sadece teslim edilmiş siparişler için where clause
       const whereClause = {
         user_id: userId,
         created_at: {
           gte: startDate
         },
         status: {
-          in: [OrderStatus.CONFIRMED, OrderStatus.SHIPPED, OrderStatus.DELIVERED]
+          in: [OrderStatus.DELIVERED]
         }
       }
 
@@ -616,10 +616,10 @@ export class StoreStatisticsController {
       const totalAmount = Number(totalAmountFromOrders._sum?.total_price || 0)
       const totalAmountFromItems = Number(totalAmountFromOrderItems._sum?.total_price || 0)
 
-      console.log('Kullanıcı Toplam İstatistik Raporu (Sadece Onaylanmış Siparişler):')
+      console.log('Kullanıcı Toplam İstatistik Raporu (Sadece Teslim Edilmiş Siparişler):')
       console.log('- Kullanıcı ID:', userId)
       console.log('- Zaman aralığı:', startDate, 'dan', now, 'a kadar')
-      console.log('- Dahil edilen durumlar: CONFIRMED, SHIPPED, DELIVERED')
+      console.log('- Dahil edilen durumlar: DELIVERED')
       console.log('- Toplam sipariş sayısı:', totalOrdersResult)
       console.log('- Order tablosundan toplam tutar:', totalAmount)
       console.log('- OrderItem tablosundan toplam tutar:', totalAmountFromItems)
@@ -643,7 +643,7 @@ export class StoreStatisticsController {
             end_date: now
           },
           debug: {
-            included_statuses: ['CONFIRMED', 'SHIPPED', 'DELIVERED'],
+            included_statuses: ['DELIVERED'],
             area_calculated_items: orderItemsForArea.length,
             amount_difference: Math.abs(totalAmount - totalAmountFromItems)
           }
@@ -744,7 +744,7 @@ export class StoreStatisticsController {
                 gte: startDate
               },
               status: {
-                in: [OrderStatus.CONFIRMED, OrderStatus.SHIPPED, OrderStatus.DELIVERED] // Sadece onaylanmış siparişler
+                in: [OrderStatus.DELIVERED] // Sadece teslim edilmiş siparişler
               }
             }
           },
@@ -763,7 +763,7 @@ export class StoreStatisticsController {
           take: 10
         }),
 
-        // En çok sipariş verilen koleksiyonlar (Top 5) - Sadece onaylanmış siparişlerden
+        // En çok sipariş verilen koleksiyonlar (Top 5) - Sadece teslim edilmiş siparişlerden
         prisma.$queryRaw`
           SELECT 
             p.collection_id,
@@ -778,13 +778,13 @@ export class StoreStatisticsController {
           INNER JOIN "Collection" c ON p.collection_id = c.collection_id
           WHERE o.user_id = ${userId}
             AND o.created_at >= ${startDate}
-            AND o.status IN ('CONFIRMED', 'SHIPPED', 'DELIVERED')
+            AND o.status IN ('DELIVERED')
           GROUP BY p.collection_id, c.name, c.code
           ORDER BY total_quantity DESC
           LIMIT 5
         `,
 
-        // Aylık sipariş dağılımı (Son 12 ay) - Sadece onaylanmış siparişlerden
+        // Aylık sipariş dağılımı (Son 12 ay) - Sadece teslim edilmiş siparişlerden
         prisma.$queryRaw`
           SELECT 
             DATE_TRUNC('month', o.created_at) as month,
@@ -793,13 +793,13 @@ export class StoreStatisticsController {
           FROM "Order" o
           WHERE o.user_id = ${userId}
             AND o.created_at >= ${startDate}
-            AND o.status IN ('CONFIRMED', 'SHIPPED', 'DELIVERED')
+            AND o.status IN ('DELIVERED')
           GROUP BY DATE_TRUNC('month', o.created_at)
           ORDER BY month DESC
           LIMIT 12
         `,
 
-        // Metrekare hesaplama için OrderItem'lar - Sadece onaylanmış siparişlerden
+        // Metrekare hesaplama için OrderItem'lar - Sadece teslim edilmiş siparişlerden
         prisma.orderItem.findMany({
           where: {
             order: {
@@ -808,7 +808,7 @@ export class StoreStatisticsController {
                 gte: startDate
               },
               status: {
-                in: [OrderStatus.CONFIRMED, OrderStatus.SHIPPED, OrderStatus.DELIVERED]
+                in: [OrderStatus.DELIVERED]
               }
             },
             AND: [
@@ -912,7 +912,7 @@ export class StoreStatisticsController {
       console.log('- Kullanıcı ID:', userId)
       console.log('- Zaman aralığı:', startDate, 'dan', now, 'a kadar')
       console.log('- Tüm siparişlerden toplam tutar:', totalAmountAllOrders)
-      console.log('- Sadece onaylanmış siparişlerden tutar:', confirmedOrdersAmount)
+      console.log('- Sadece teslim edilmiş siparişlerden tutar:', confirmedOrdersAmount)
       console.log('- Hesaplanan toplam metrekare:', totalAreaM2)
 
       return res.status(200).json({
@@ -946,8 +946,8 @@ export class StoreStatisticsController {
             end_date: now
           },
           debug: {
-            calculation_note: 'Toplam tutar ve metrekare sadece onaylanmış siparişlerden (CONFIRMED, SHIPPED, DELIVERED) hesaplanır',
-            included_statuses_for_amount: ['CONFIRMED', 'SHIPPED', 'DELIVERED'],
+            calculation_note: 'Toplam tutar ve metrekare sadece teslim edilmiş siparişlerden (DELIVERED) hesaplanır',
+            included_statuses_for_amount: ['DELIVERED'],
             area_calculated_items: orderItemsForArea.length
           }
         }

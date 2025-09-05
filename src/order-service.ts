@@ -1236,19 +1236,22 @@ export class OrderService {
     try {
       // 1. YENİ MANTIK: Sadece bakiyeden düş, açık hesap limiti değişmez
       // Bakiye + açık hesap limiti toplam kontrol zaten yapıldı, güvenle bakiyeden düşebiliriz
-      // USD mağazalar için özel durum: limitsiz_acik_hesap olsa bile bakiye düşür
-      if (!store.limitsiz_acik_hesap || currency === 'USD') {
+      // Tüm mağazalar için bakiye işlemi yap (limitsiz açık hesap olsa bile)
+      if (true) {
         const currentBalance = Number(store.bakiye || 0);
         const currentOpenAccountLimit = Number(store.acik_hesap_tutari || 0);
         
         // Bakiyeden sipariş tutarını düş
-        // USD mağazalar için özel mantık: Açık hesap limiti olmayabilir, direkt düş
+        // Limitsiz açık hesap olan mağazalar için özel mantık
         let newBalance;
         if (currency === 'USD') {
           // USD mağazalar: Direkt bakiyeden düş (negatife gidebilir)
           newBalance = currentBalance - orderTotal;
+        } else if (store.limitsiz_acik_hesap) {
+          // Limitsiz açık hesap olan TRY mağazalar: Direkt bakiyeden düş (negatife gidebilir)
+          newBalance = currentBalance - orderTotal;
         } else {
-          // TRY mağazalar: Bakiye negatif olmayacak şekilde sınırla (en fazla açık hesap limiti kadar düşebilir)
+          // Normal TRY mağazalar: Bakiye negatif olmayacak şekilde sınırla (en fazla açık hesap limiti kadar düşebilir)
           newBalance = Math.max(currentBalance - orderTotal, -currentOpenAccountLimit);
         }
         
@@ -1264,6 +1267,7 @@ export class OrderService {
         console.log(`  - Önceki bakiye: ${currentBalance} ${currency}`)
         console.log(`  - Sipariş tutarı: ${orderTotal} ${currency}`)
         console.log(`  - Yeni bakiye: ${newBalance} ${currency}`)
+        console.log(`  - Limitsiz açık hesap: ${store.limitsiz_acik_hesap ? 'Evet' : 'Hayır'}`)
         console.log(`  - Açık hesap limiti: ${currentOpenAccountLimit} ${currency} (değişmez)`)
         
         // Currency'e göre admin kasa bakiyesini güncelle

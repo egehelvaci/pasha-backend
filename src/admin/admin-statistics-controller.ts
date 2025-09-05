@@ -40,7 +40,7 @@ export class AdminStatisticsController {
             gte: startDate
           },
           status: {
-            in: [OrderStatus.CONFIRMED, OrderStatus.SHIPPED, OrderStatus.DELIVERED] // Sadece onaylanmış siparişler
+            in: [OrderStatus.DELIVERED] // Sadece teslim edilmiş siparişler
           }
         },
         _count: {
@@ -126,7 +126,7 @@ export class AdminStatisticsController {
               gte: startDate
             },
             status: {
-              in: [OrderStatus.CONFIRMED, OrderStatus.SHIPPED, OrderStatus.DELIVERED] // Sadece onaylanmış siparişler
+              in: [OrderStatus.DELIVERED] // Sadece teslim edilmiş siparişler
             }
           }
         },
@@ -210,7 +210,7 @@ export class AdminStatisticsController {
             gte: startDate
           },
           status: {
-            in: [OrderStatus.CONFIRMED, OrderStatus.SHIPPED, OrderStatus.DELIVERED] // Sadece onaylanmış siparişler
+            in: [OrderStatus.DELIVERED] // Sadece teslim edilmiş siparişler
           }
         },
         include: {
@@ -313,13 +313,13 @@ export class AdminStatisticsController {
           break
       }
 
-      // Sadece onaylanmış siparişler
+      // Sadece teslim edilmiş siparişler
       const whereClause = {
         created_at: {
           gte: startDate
         },
         status: {
-          in: [OrderStatus.CONFIRMED, OrderStatus.SHIPPED, OrderStatus.DELIVERED]
+          in: [OrderStatus.DELIVERED]
         }
       }
 
@@ -392,9 +392,9 @@ export class AdminStatisticsController {
       const totalAmount = Number(totalAmountFromOrders._sum?.total_price || 0)
       const totalAmountFromItems = Number(totalAmountFromOrderItems._sum?.total_price || 0)
 
-      console.log('İstatistik Raporu (Sadece Onaylanmış Siparişler):')
+      console.log('İstatistik Raporu (Sadece Teslim Edilmiş Siparişler):')
       console.log('- Zaman aralığı:', startDate, 'dan', now, 'a kadar')
-      console.log('- Dahil edilen durumlar: CONFIRMED, SHIPPED, DELIVERED')
+      console.log('- Dahil edilen durumlar: DELIVERED')
       console.log('- Toplam sipariş sayısı:', totalOrdersResult)
       console.log('- Order tablosundan toplam tutar:', totalAmount)
       console.log('- OrderItem tablosundan toplam tutar:', totalAmountFromItems)
@@ -411,7 +411,7 @@ export class AdminStatisticsController {
           period,
           start_date: startDate,
           end_date: now,
-          included_statuses: ['CONFIRMED', 'SHIPPED', 'DELIVERED'],
+          included_statuses: ['DELIVERED'],
           debug: {
             area_calculated_items: orderItemsForArea.length,
             amount_difference: Math.abs(totalAmount - totalAmountFromItems)
