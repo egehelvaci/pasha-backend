@@ -819,7 +819,8 @@ export class OrderService {
 
     // Mağaza açık hesap limiti kontrol et
     if (store.limitsiz_acik_hesap) {
-      console.log(`✅ Sınırsız açık hesap - sipariş verilebilir`)
+      console.log(`✅ Sınırsız açık hesap - bakiye kontrolü yapılmadan sipariş verilebilir`)
+      console.log(`  - Not: Bakiye sipariş sonrası düşürülecek (negatife gidebilir)`)
       return { isValid: true, canProceed: true };
     }
 
