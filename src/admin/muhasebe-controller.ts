@@ -382,30 +382,55 @@ export class MuhasebeController {
           // Mağaza bakiyesi güncellemesi - Borç verme ve borç tahsilatı için özel mantık
           let magazaBakiyeDeğişimi: number
           
+          console.log(`🔍 BAKIYE DEBUG - İşlem Öncesi:`);
+          console.log(`   Mağaza: ${store.kurum_adi}`);
+          console.log(`   İşlem Türü: ${islemTuru}`);
+          console.log(`   Tutar: ${tutar}`);
+          console.log(`   Harcama Flag: ${harcama}`);
+          console.log(`   USD Store: ${isUSDStore}`);
+          
           if (islemTuru === 'Borç Verme') {
             // Admin mağazaya borç veriyor: mağaza borca giriyor (bakiye azalmalı)
             magazaBakiyeDeğişimi = -tutar
+            console.log(`   Borç Verme Mantığı: -${tutar}`);
           } else if (islemTuru === 'Borç Tahsilatı') {
             // Admin mağazadan borç tahsil ediyor: mağaza borcunu ödüyor (bakiye artmalı)
             magazaBakiyeDeğişimi = tutar
+            console.log(`   Borç Tahsilatı Mantığı: +${tutar}`);
           } else {
-            // Diğer işlemler için eski mantık
-            // Gelir (harcama=false) ise mağaza için gider (-), Admin için gelir (+)
-            // Gider (harcama=true) ise mağaza için gelir (+), Admin için gider (-)
+            // Diğer işlemler için admin muhasebe mantığı
+            // Gelir (harcama=false): Admin'e gelir, mağaza için borç (-) 
+            // Gider (harcama=true): Admin'den gider, mağaza için alacak (+)
             magazaBakiyeDeğişimi = harcama ? tutar : -tutar
+            console.log(`   Genel Mantık: harcama=${harcama} → ${magazaBakiyeDeğişimi > 0 ? '+' : ''}${magazaBakiyeDeğişimi}`);
           }
           
+          console.log(`🔧 BAKIYE GÜNCELLEMESI:`);
+          console.log(`   Hesaplanan Değişim: ${magazaBakiyeDeğişimi > 0 ? '+' : ''}${magazaBakiyeDeğişimi}`);
+          
+          // Önceki bakiyeyi al
+          const oncekiBakiye = await tx.store.findUnique({
+            where: { store_id: storeId },
+            select: { bakiye: true }
+          });
+          
+          console.log(`   Önceki Bakiye: ${oncekiBakiye?.bakiye || 0}`);
+          
           // USD mağazaları da dahil olmak üzere tüm mağazaların bakiyesini güncelle
-          await tx.store.update({
+          const guncellenmisMagaza = await tx.store.update({
             where: { store_id: storeId },
             data: {
               bakiye: {
                 increment: magazaBakiyeDeğişimi
               }
+            },
+            select: {
+              bakiye: true
             }
           })
           
-          console.log(`💰 Mağaza bakiyesi güncellendi: ${store.kurum_adi} (${isUSDStore ? 'USD' : 'TRY'}) - ${magazaBakiyeDeğişimi > 0 ? '+' : ''}${magazaBakiyeDeğişimi}`);
+          console.log(`   Yeni Bakiye: ${guncellenmisMagaza.bakiye}`);
+          console.log(`💰 BAŞARILI: ${store.kurum_adi} bakiyesi güncellendi → ${guncellenmisMagaza.bakiye} ${isUSDStore ? 'USD' : 'TRY'}`);
         }
 
         return yeniHareket

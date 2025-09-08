@@ -1,0 +1,194 @@
+[1mdiff --git a/src/admin/muhasebe-controller.ts b/src/admin/muhasebe-controller.ts[m
+[1mindex 7fc5e6d..1127065 100644[m
+[1m--- a/src/admin/muhasebe-controller.ts[m
+[1m+++ b/src/admin/muhasebe-controller.ts[m
+[36m@@ -49,7 +49,7 @@[m [mexport class MuhasebeController {[m
+    */[m
+   async getAllMuhasebeHareketleri(req: Request, res: Response) {[m
+     try {[m
+[31m-      // Muhasebe hareketlerini getir - USD mağazaları hariç[m
+[32m+[m[32m      // Muhasebe hareketlerini getir - USD mağazaları dahil[m
+       const hareketlerData = await prisma.muhasebeHareketleri.findMany({[m
+         include: {[m
+           store: {[m
+[36m@@ -61,13 +61,6 @@[m [mexport class MuhasebeController {[m
+         }[m
+           }[m
+         },[m
+[31m-        where: {[m
+[31m-          store: {[m
+[31m-            currency: {[m
+[31m-              not: 'USD' // USD mağazalarını hariç tut[m
+[31m-            }[m
+[31m-          }[m
+[31m-        },[m
+         orderBy: {[m
+           createdAt: 'desc'[m
+         }[m
+[36m@@ -145,12 +138,13 @@[m [mexport class MuhasebeController {[m
+             kurum_adi: hareket.store.kurum_adi,[m
+             bakiye: bakiye,[m
+             durum: bakiye === 0 ? 'DENGEDE' : bakiye < 0 ? 'BORCLU' : 'ALACAKLI',[m
+[31m-            tutar: Math.abs(bakiye)[m
+[32m+[m[32m            tutar: Math.abs(bakiye),[m
+[32m+[m[32m            currency: hareket.store.currency || 'TRY'[m
+           }[m
+         }[m
+       })[m
+ [m
+[31m-      // Tüm mağazaların bakiyelerini getir - USD mağazaları hariç[m
+[32m+[m[32m      // Tüm mağazaların bakiyelerini getir - USD mağazaları dahil[m
+       const magazaData = await prisma.store.findMany({[m
+         select: {[m
+           store_id: true,[m
+[36m@@ -160,10 +154,7 @@[m [mexport class MuhasebeController {[m
+           currency: true[m
+         },[m
+         where: {[m
+[31m-          is_active: true,[m
+[31m-          currency: {[m
+[31m-            not: 'USD' // USD mağazalarını hariç tut[m
+[31m-          }[m
+[32m+[m[32m          is_active: true[m
+         },[m
+         orderBy: {[m
+           kurum_adi: 'asc'[m
+[36m@@ -179,7 +170,8 @@[m [mexport class MuhasebeController {[m
+           bakiye: bakiye,[m
+           durum: bakiye === 0 ? 'DENGEDE' : bakiye < 0 ? 'BORCLU' : 'ALACAKLI',[m
+           tutar: Math.abs(bakiye),[m
+[31m-          is_active: magaza.is_active[m
+[32m+[m[32m          is_active: magaza.is_active,[m
+[32m+[m[32m          currency: magaza.currency || 'TRY'[m
+         }[m
+       })[m
+ [m
+[36m@@ -287,13 +279,8 @@[m [mexport class MuhasebeController {[m
+         })[m
+       }[m
+ [m
+[31m-      // USD mağazası ise muhasebe hareketi yaratılamaz[m
+[31m-      if (store.currency === ('USD' as any)) {[m
+[31m-        return res.status(403).json({[m
+[31m-          success: false,[m
+[31m-          message: 'USD currency\'ne sahip mağazaların muhasebe hareketleri ayrı tutulmaktadır ve bu sistemde muhasebe hareketi yaratılamaz.'[m
+[31m-        })[m
+[31m-      }[m
+[32m+[m[32m      // USD mağazası için özel kontrol - sadece uyarı ver ama işleme devam et[m
+[32m+[m[32m      const isUSDStore = store.currency === ('USD' as any);[m
+ [m
+       // Admin kendi mağazasına mı işlem yapıyor kontrolü[m
+       const isAdminOwnStore = adminStoreId === storeId[m
+[36m@@ -408,6 +395,7 @@[m [mexport class MuhasebeController {[m
+             magazaBakiyeDeğişimi = harcama ? tutar : -tutar[m
+           }[m
+           [m
+[32m+[m[32m          // USD mağazaları da dahil olmak üzere tüm mağazaların bakiyesini güncelle[m
+           await tx.store.update({[m
+             where: { store_id: storeId },[m
+             data: {[m
+[36m@@ -416,6 +404,8 @@[m [mexport class MuhasebeController {[m
+               }[m
+             }[m
+           })[m
+[32m+[m[41m          [m
+[32m+[m[32m          console.log(`💰 Mağaza bakiyesi güncellendi: ${store.kurum_adi} (${isUSDStore ? 'USD' : 'TRY'}) - ${magazaBakiyeDeğişimi > 0 ? '+' : ''}${magazaBakiyeDeğişimi}`);[m
+         }[m
+ [m
+         return yeniHareket[m
+[36m@@ -652,13 +642,8 @@[m [mexport class MuhasebeController {[m
+         })[m
+       }[m
+ [m
+[31m-      // USD mağazası ise muhasebe hareketleri gösterilmez[m
+[31m-      if (store.currency === 'USD') {[m
+[31m-        return res.status(403).json({[m
+[31m-          success: false,[m
+[31m-          message: 'USD currency\'ne sahip mağazaların muhasebe hareketleri ayrı tutulmaktadır ve bu sistemde görüntülenemez.'[m
+[31m-        })[m
+[31m-      }[m
+[32m+[m[32m      // USD mağazası için özel bilgi mesajı[m
+[32m+[m[32m      const isUSDStore = store.currency === 'USD';[m
+ [m
+       // Filtreleme koşulları[m
+       const whereCondition: any = {[m
+[36m@@ -730,13 +715,14 @@[m [mexport class MuhasebeController {[m
+ [m
+       // Mağaza bakiye durumu[m
+       const bakiye = store.bakiye?.toNumber() || 0[m
+[31m-      const bakiyeDurumu = {[m
+[32m+[m[32m      const         bakiyeDurumu = {[m
+         bakiye: bakiye,[m
+         durum: bakiye === 0 ? 'DENGEDE' : bakiye < 0 ? 'BORCLU' : 'ALACAKLI',[m
+         tutar: Math.abs(bakiye),[m
+         acikHesapLimiti: store.acik_hesap_tutari?.toNumber() || 0,[m
+         limitsizAcikHesap: store.limitsiz_acik_hesap,[m
+[31m-        currency: store.currency || 'TRY'[m
+[32m+[m[32m        currency: store.currency || 'TRY',[m
+[32m+[m[32m        isUSDStore: isUSDStore[m
+       }[m
+ [m
+       return res.status(200).json({[m
+[1mdiff --git a/src/services/balance-service.ts b/src/services/balance-service.ts[m
+[1mindex 85798bc..79b2045 100644[m
+[1m--- a/src/services/balance-service.ts[m
+[1m+++ b/src/services/balance-service.ts[m
+[36m@@ -77,34 +77,30 @@[m [mexport class BalanceService {[m
+         }[m
+       });[m
+ [m
+[31m-      // Muhasebe kaydı oluştur - USD mağazaları için muhasebe kaydı yaratılmaz[m
+[31m-      if (storeCurrency !== ('USD' as any)) {[m
+[31m-        const islemTuru = input.description || [m
+[31m-          (input.operation === 'add' ? 'Sanal POS Ödemesi' : 'Diğer Giderler');[m
+[31m-        [m
+[31m-        await prisma.muhasebeHareketleri.create({[m
+[31m-          data: {[m
+[31m-            storeId: input.storeId,[m
+[31m-            islemTuru,[m
+[31m-            tutar: new Decimal(effectiveAmount), // Mağaza currency'sinde tutar[m
+[31m-            harcama: input.operation === 'subtract',[m
+[31m-            tarih: new Date(),[m
+[31m-            aciklama: input.operation === 'add' ? [m
+[31m-              `Sanal POS Ödemesi - ${input.amount} ${input.currencyCode}` : [m
+[31m-              `Gider Kaydı - ${input.amount} ${input.currencyCode}`,[m
+[31m-            // Currency tracking alanları[m
+[31m-            currency: storeCurrency as any,[m
+[31m-            original_currency: input.currencyCode as any,[m
+[31m-            original_amount: new Decimal(input.amount), // Orijinal tutar[m
+[31m-            exchange_rate: input.currencyCode !== storeCurrency ? [m
+[31m-              (input.currencyCode === 'USD' ? new Decimal(1 / effectiveAmount * input.amount) : new Decimal(effectiveAmount / input.amount)) [m
+[31m-              : null[m
+[31m-          }[m
+[31m-        });[m
+[31m-        console.log('📝 Muhasebe kaydı oluşturuldu');[m
+[31m-      } else {[m
+[31m-        console.log('📝 USD mağazası için muhasebe kaydı oluşturulmadı - ayrı sistemde takip edilir');[m
+[31m-      }[m
+[32m+[m[32m      // Muhasebe kaydı oluştur - USD mağazaları dahil tüm mağazalar için[m
+[32m+[m[32m      const islemTuru = input.description ||[m[41m [m
+[32m+[m[32m        (input.operation === 'add' ? 'Sanal POS Ödemesi' : 'Diğer Giderler');[m
+[32m+[m[41m      [m
+[32m+[m[32m      await prisma.muhasebeHareketleri.create({[m
+[32m+[m[32m        data: {[m
+[32m+[m[32m          storeId: input.storeId,[m
+[32m+[m[32m          islemTuru,[m
+[32m+[m[32m          tutar: new Decimal(effectiveAmount), // Mağaza currency'sinde tutar[m
+[32m+[m[32m          harcama: input.operation === 'subtract',[m
+[32m+[m[32m          tarih: new Date(),[m
+[32m+[m[32m          aciklama: input.operation === 'add' ?[m[41m [m
+[32m+[m[32m            `Sanal POS Ödemesi - ${input.amount} ${input.currencyCode}` :[m[41m [m
+[32m+[m[32m            `Gider Kaydı - ${input.amount} ${input.currencyCode}`,[m
+[32m+[m[32m          // Currency tracking alanları[m
+[32m+[m[32m          currency: storeCurrency as any,[m
+[32m+[m[32m          original_currency: input.currencyCode as any,[m
+[32m+[m[32m          original_amount: new Decimal(input.amount), // Orijinal tutar[m
+[32m+[m[32m          exchange_rate: input.currencyCode !== storeCurrency ?[m[41m [m
+[32m+[m[32m            (input.currencyCode === 'USD' ? new Decimal(1 / effectiveAmount * input.amount) : new Decimal(effectiveAmount / input.amount))[m[41m [m
+[32m+[m[32m            : null[m
+[32m+[m[32m        }[m
+[32m+[m[32m      });[m
+[32m+[m[32m      console.log(`📝 Muhasebe kaydı oluşturuldu (${storeCurrency} mağazası için)`);[m
+ [m
+       const operationText = input.operation === 'add' ? 'eklendi' : 'düşüldü';[m
+       [m
