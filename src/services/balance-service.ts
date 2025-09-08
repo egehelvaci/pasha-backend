@@ -77,34 +77,30 @@ export class BalanceService {
         }
       });
 
-      // Muhasebe kaydı oluştur - USD mağazaları için muhasebe kaydı yaratılmaz
-      if (storeCurrency !== ('USD' as any)) {
-        const islemTuru = input.description || 
-          (input.operation === 'add' ? 'Sanal POS Ödemesi' : 'Diğer Giderler');
-        
-        await prisma.muhasebeHareketleri.create({
-          data: {
-            storeId: input.storeId,
-            islemTuru,
-            tutar: new Decimal(effectiveAmount), // Mağaza currency'sinde tutar
-            harcama: input.operation === 'subtract',
-            tarih: new Date(),
-            aciklama: input.operation === 'add' ? 
-              `Sanal POS Ödemesi - ${input.amount} ${input.currencyCode}` : 
-              `Gider Kaydı - ${input.amount} ${input.currencyCode}`,
-            // Currency tracking alanları
-            currency: storeCurrency as any,
-            original_currency: input.currencyCode as any,
-            original_amount: new Decimal(input.amount), // Orijinal tutar
-            exchange_rate: input.currencyCode !== storeCurrency ? 
-              (input.currencyCode === 'USD' ? new Decimal(1 / effectiveAmount * input.amount) : new Decimal(effectiveAmount / input.amount)) 
-              : null
-          }
-        });
-        console.log('📝 Muhasebe kaydı oluşturuldu');
-      } else {
-        console.log('📝 USD mağazası için muhasebe kaydı oluşturulmadı - ayrı sistemde takip edilir');
-      }
+      // Muhasebe kaydı oluştur - USD mağazaları dahil tüm mağazalar için
+      const islemTuru = input.description || 
+        (input.operation === 'add' ? 'Sanal POS Ödemesi' : 'Diğer Giderler');
+      
+      await prisma.muhasebeHareketleri.create({
+        data: {
+          storeId: input.storeId,
+          islemTuru,
+          tutar: new Decimal(effectiveAmount), // Mağaza currency'sinde tutar
+          harcama: input.operation === 'subtract',
+          tarih: new Date(),
+          aciklama: input.operation === 'add' ? 
+            `Sanal POS Ödemesi - ${input.amount} ${input.currencyCode}` : 
+            `Gider Kaydı - ${input.amount} ${input.currencyCode}`,
+          // Currency tracking alanları
+          currency: storeCurrency as any,
+          original_currency: input.currencyCode as any,
+          original_amount: new Decimal(input.amount), // Orijinal tutar
+          exchange_rate: input.currencyCode !== storeCurrency ? 
+            (input.currencyCode === 'USD' ? new Decimal(1 / effectiveAmount * input.amount) : new Decimal(effectiveAmount / input.amount)) 
+            : null
+        }
+      });
+      console.log(`📝 Muhasebe kaydı oluşturuldu (${storeCurrency} mağazası için)`);
 
       const operationText = input.operation === 'add' ? 'eklendi' : 'düşüldü';
       

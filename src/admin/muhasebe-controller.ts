@@ -49,7 +49,7 @@ export class MuhasebeController {
    */
   async getAllMuhasebeHareketleri(req: Request, res: Response) {
     try {
-      // Muhasebe hareketlerini getir - USD mağazaları hariç
+      // Muhasebe hareketlerini getir - USD mağazaları dahil
       const hareketlerData = await prisma.muhasebeHareketleri.findMany({
         include: {
           store: {
@@ -59,13 +59,6 @@ export class MuhasebeController {
           bakiye: true,
           currency: true // Currency bilgisini de al
         }
-          }
-        },
-        where: {
-          store: {
-            currency: {
-              not: 'USD' // USD mağazalarını hariç tut
-            }
           }
         },
         orderBy: {
@@ -145,12 +138,13 @@ export class MuhasebeController {
             kurum_adi: hareket.store.kurum_adi,
             bakiye: bakiye,
             durum: bakiye === 0 ? 'DENGEDE' : bakiye < 0 ? 'BORCLU' : 'ALACAKLI',
-            tutar: Math.abs(bakiye)
+            tutar: Math.abs(bakiye),
+            currency: hareket.store.currency || 'TRY'
           }
         }
       })
 
-      // Tüm mağazaların bakiyelerini getir - USD mağazaları hariç
+      // Tüm mağazaların bakiyelerini getir - USD mağazaları dahil
       const magazaData = await prisma.store.findMany({
         select: {
           store_id: true,
@@ -160,10 +154,7 @@ export class MuhasebeController {
           currency: true
         },
         where: {
-          is_active: true,
-          currency: {
-            not: 'USD' // USD mağazalarını hariç tut
-          }
+          is_active: true
         },
         orderBy: {
           kurum_adi: 'asc'
@@ -179,7 +170,8 @@ export class MuhasebeController {
           bakiye: bakiye,
           durum: bakiye === 0 ? 'DENGEDE' : bakiye < 0 ? 'BORCLU' : 'ALACAKLI',
           tutar: Math.abs(bakiye),
-          is_active: magaza.is_active
+          is_active: magaza.is_active,
+          currency: magaza.currency || 'TRY'
         }
       })
 
@@ -287,13 +279,8 @@ export class MuhasebeController {
         })
       }
 
-      // USD mağazası ise muhasebe hareketi yaratılamaz
-      if (store.currency === ('USD' as any)) {
-        return res.status(403).json({
-          success: false,
-          message: 'USD currency\'ne sahip mağazaların muhasebe hareketleri ayrı tutulmaktadır ve bu sistemde muhasebe hareketi yaratılamaz.'
-        })
-      }
+      // USD mağazası için özel kontrol - sadece uyarı ver ama işleme devam et
+      const isUSDStore = store.currency === ('USD' as any);
 
       // Admin kendi mağazasına mı işlem yapıyor kontrolü
       const isAdminOwnStore = adminStoreId === storeId
@@ -408,6 +395,7 @@ export class MuhasebeController {
             magazaBakiyeDeğişimi = harcama ? tutar : -tutar
           }
           
+          // USD mağazaları da dahil olmak üzere tüm mağazaların bakiyesini güncelle
           await tx.store.update({
             where: { store_id: storeId },
             data: {
@@ -416,6 +404,8 @@ export class MuhasebeController {
               }
             }
           })
+          
+          console.log(`💰 Mağaza bakiyesi güncellendi: ${store.kurum_adi} (${isUSDStore ? 'USD' : 'TRY'}) - ${magazaBakiyeDeğişimi > 0 ? '+' : ''}${magazaBakiyeDeğişimi}`);
         }
 
         return yeniHareket
@@ -652,13 +642,8 @@ export class MuhasebeController {
         })
       }
 
-      // USD mağazası ise muhasebe hareketleri gösterilmez
-      if (store.currency === 'USD') {
-        return res.status(403).json({
-          success: false,
-          message: 'USD currency\'ne sahip mağazaların muhasebe hareketleri ayrı tutulmaktadır ve bu sistemde görüntülenemez.'
-        })
-      }
+      // USD mağazası için özel bilgi mesajı
+      const isUSDStore = store.currency === 'USD';
 
       // Filtreleme koşulları
       const whereCondition: any = {
@@ -730,13 +715,14 @@ export class MuhasebeController {
 
       // Mağaza bakiye durumu
       const bakiye = store.bakiye?.toNumber() || 0
-      const bakiyeDurumu = {
+      const         bakiyeDurumu = {
         bakiye: bakiye,
         durum: bakiye === 0 ? 'DENGEDE' : bakiye < 0 ? 'BORCLU' : 'ALACAKLI',
         tutar: Math.abs(bakiye),
         acikHesapLimiti: store.acik_hesap_tutari?.toNumber() || 0,
         limitsizAcikHesap: store.limitsiz_acik_hesap,
-        currency: store.currency || 'TRY'
+        currency: store.currency || 'TRY',
+        isUSDStore: isUSDStore
       }
 
       return res.status(200).json({
