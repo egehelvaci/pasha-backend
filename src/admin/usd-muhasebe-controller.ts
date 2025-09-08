@@ -384,38 +384,162 @@ export class UsdMuhasebeController {
         })
       }
 
-      // Muhasebe hareketi oluştur
-      const muhasebeHareketi = await prisma.muhasebeHareketleri.create({
-        data: {
-          storeId,
-          islemTuru,
-          tutar,
-          harcama,
-          tarih: new Date(tarih),
-          aciklama,
-          currency: currency || 'USD',
-          original_currency: currency || 'USD',
-          original_amount: tutar
-        },
-        include: {
-          store: {
-            select: {
-              store_id: true,
-              kurum_adi: true,
-              currency: true
+      // Admin kendi mağazasına mı işlem yapıyor kontrolü
+      const isAdminOwnStore = adminStoreId === storeId
+      
+      console.log(`🔍 USD BAKIYE DEBUG - İşlem Öncesi:`);
+      console.log(`   Mağaza: ${store.kurum_adi}`);
+      console.log(`   İşlem Türü: ${islemTuru}`);
+      console.log(`   Tutar: ${tutar}`);
+      console.log(`   Harcama Flag: ${harcama}`);
+      console.log(`   USD Store: true`);
+      console.log(`   Admin Own Store: ${isAdminOwnStore}`);
+
+      // Currency bilgileri
+      const storeCurrency = store.currency || 'USD'
+      const transactionCurrency = currency || storeCurrency
+      let exchangeRate: number | null = null
+      let originalAmount = tutar
+
+      // Transaction başlat - Normal muhasebe controller ile birebir aynı mantık
+      const result = await prisma.$transaction(async (tx) => {
+        // Yeni muhasebe hareketi oluştur
+        const yeniHareket = await tx.muhasebeHareketleri.create({
+          data: {
+            storeId,
+            islemTuru,
+            tutar,
+            harcama,
+            tarih: new Date(tarih),
+            aciklama,
+            currency: transactionCurrency as any,
+            original_currency: transactionCurrency as any,
+            exchange_rate: exchangeRate,
+            original_amount: originalAmount
+          },
+          include: {
+            store: {
+              select: {
+                store_id: true,
+                kurum_adi: true,
+                currency: true
+              }
             }
           }
+        })
+
+        // Admin kasa bakiyesini güncelle
+        let adminVarliklar = await tx.adminVarliklari.findFirst({
+          where: { id: 1 }
+        })
+
+        // Admin kendi mağazasına işlem yapıyorsa
+        if (isAdminOwnStore) {
+          // Admin kendi mağazasına işlem yapıyor - sadece admin kasası etkilenir
+          if (!adminVarliklar) {
+            await tx.adminVarliklari.create({
+              data: {
+                id: 1,
+                kasaBakiyesi: harcama ? -tutar : tutar
+              }
+            })
+          } else {
+            await tx.adminVarliklari.update({
+              where: { id: 1 },
+              data: {
+                kasaBakiyesi: {
+                  increment: harcama ? -tutar : tutar
+                }
+              }
+            })
+          }
+        } else {
+          // Admin başka bir mağazaya işlem yapıyor
+          
+          // Admin kasa güncellemesi
+          if (!adminVarliklar) {
+            await tx.adminVarliklari.create({
+              data: {
+                id: 1,
+                kasaBakiyesi: harcama ? -tutar : tutar
+              }
+            })
+          } else {
+            await tx.adminVarliklari.update({
+              where: { id: 1 },
+              data: {
+                kasaBakiyesi: {
+                  increment: harcama ? -tutar : tutar
+                }
+              }
+            })
+          }
+
+          // Mağaza bakiyesi güncellemesi - Borç verme ve borç tahsilatı için özel mantık
+          let magazaBakiyeDeğişimi: number
+          
+          console.log(`🔍 USD BAKIYE DEBUG - İşlem Öncesi:`);
+          console.log(`   Mağaza: ${store.kurum_adi}`);
+          console.log(`   İşlem Türü: ${islemTuru}`);
+          console.log(`   Tutar: ${tutar}`);
+          console.log(`   Harcama Flag: ${harcama}`);
+          console.log(`   USD Store: true`);
+          
+          if (islemTuru === 'Borç Verme') {
+            // Admin mağazaya borç veriyor: mağaza borca giriyor (bakiye azalmalı)
+            magazaBakiyeDeğişimi = -tutar
+            console.log(`   Borç Verme Mantığı: -${tutar}`);
+          } else if (islemTuru === 'Borç Tahsilatı') {
+            // Admin mağazadan borç tahsil ediyor: mağaza borcunu ödüyor (bakiye artmalı)
+            magazaBakiyeDeğişimi = tutar
+            console.log(`   Borç Tahsilatı Mantığı: +${tutar}`);
+          } else {
+            // Diğer işlemler için admin muhasebe mantığı
+            // Gelir (harcama=false): Admin'e gelir, mağaza için borç (-) 
+            // Gider (harcama=true): Admin'den gider, mağaza için alacak (+)
+            magazaBakiyeDeğişimi = harcama ? tutar : -tutar
+            console.log(`   Genel Mantık: harcama=${harcama} → ${magazaBakiyeDeğişimi > 0 ? '+' : ''}${magazaBakiyeDeğişimi}`);
+          }
+          
+          console.log(`🔧 BAKIYE GÜNCELLEMESI:`);
+          console.log(`   Hesaplanan Değişim: ${magazaBakiyeDeğişimi > 0 ? '+' : ''}${magazaBakiyeDeğişimi}`);
+          
+          // Önceki bakiyeyi al
+          const oncekiBakiye = await tx.store.findUnique({
+            where: { store_id: storeId },
+            select: { bakiye: true }
+          });
+          
+          console.log(`   Önceki Bakiye: ${oncekiBakiye?.bakiye || 0}`);
+          
+          // USD mağazaları da dahil olmak üzere tüm mağazaların bakiyesini güncelle
+          const guncellenmisMagaza = await tx.store.update({
+            where: { store_id: storeId },
+            data: {
+              bakiye: {
+                increment: magazaBakiyeDeğişimi
+              }
+            },
+            select: {
+              bakiye: true
+            }
+          })
+          
+          console.log(`   Yeni Bakiye: ${guncellenmisMagaza.bakiye}`);
+          console.log(`💰 BAŞARILI: ${store.kurum_adi} bakiyesi güncellendi → ${guncellenmisMagaza.bakiye} USD`);
         }
+
+        return yeniHareket
       })
 
       return res.status(201).json({
         success: true,
-        message: 'USD Muhasebe hareketi başarıyla oluşturuldu',
+        message: 'USD Muhasebe hareketi başarıyla oluşturuldu ve bakiye güncellendi',
         data: {
-          ...muhasebeHareketi,
-          tutar: Number(muhasebeHareketi.tutar),
-          original_amount: muhasebeHareketi.original_amount ? Number(muhasebeHareketi.original_amount) : null,
-          exchange_rate: muhasebeHareketi.exchange_rate ? Number(muhasebeHareketi.exchange_rate) : null
+          ...result,
+          tutar: Number(result.tutar),
+          original_amount: result.original_amount ? Number(result.original_amount) : null,
+          exchange_rate: result.exchange_rate ? Number(result.exchange_rate) : null
         }
       })
     } catch (error: any) {
