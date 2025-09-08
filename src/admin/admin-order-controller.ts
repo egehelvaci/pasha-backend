@@ -5,6 +5,17 @@ import { barcodeService } from '../services/barcode-service'
 import { notificationService } from '../services/notification-service'
 import prisma from '../utils/prisma'
 
+// Store type display helper fonksiyonu
+function getStoreTypeDisplay(storeType: string): string {
+  const storeTypeMap: { [key: string]: string } = {
+    'KARGO': 'Kargo',
+    'SERVIS': 'Servis',
+    'KENDI_ALAN': 'Kendi Alan',
+    'AMBAR': 'Ambar'
+  }
+  return storeTypeMap[storeType] || 'Kargo'
+}
+
 export class AdminOrderController {
   constructor() {
     this.getAllOrders = this.getAllOrders.bind(this)
@@ -129,13 +140,24 @@ export class AdminOrderController {
 
       const totalPages = Math.ceil(totalCount / Number(limit))
 
-      // Orders'ta cut_type'ları rectangle'dan standart'a dönüştür
+      // Orders'ta cut_type'ları rectangle'dan standart'a dönüştür ve mağaza durumunu ekle
       const processedOrders = orders.map(order => ({
         ...order,
         items: order.items.map(item => ({
           ...item,
           cut_type: item.cut_type === 'rectangle' ? 'standart' : item.cut_type
-        }))
+        })),
+        // Mağaza durum bilgilerini ekle
+        store_info: order.user?.Store ? {
+          store_id: order.user.Store.store_id,
+          kurum_adi: order.user.Store.kurum_adi,
+          store_type: order.user.Store.store_type || 'KARGO',
+          store_type_display: getStoreTypeDisplay(order.user.Store.store_type || 'KARGO'),
+          currency: order.user.Store.currency || 'TRY',
+          is_active: order.user.Store.is_active,
+          telefon: order.user.Store.telefon,
+          eposta: order.user.Store.eposta
+        } : null
       }))
 
       return res.status(200).json({
