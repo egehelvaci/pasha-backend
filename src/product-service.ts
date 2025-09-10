@@ -155,7 +155,7 @@ export class ProductService {
   }) {
     try {
       const page = options?.page || 1;
-      const limit = Math.min(options?.limit || 50, 100); // Max 100 ürün
+      const limit = options?.limit || 50; // Limit sınırlaması kaldırıldı
       const skip = (page - 1) * limit;
 
       // Temel sorgu koşulları
