@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   getAllProducts,
+  getAllProductsWithoutPagination,
   getProductById,
   getProductsByCollection,
   createProduct,
@@ -23,6 +24,9 @@ const router = express.Router();
 
 // Sadece giriş yapmış kullanıcılar - Tüm ürünleri getir
 router.get('/', authMiddleware, getAllProducts);
+
+// Sadece giriş yapmış kullanıcılar - Tüm ürünleri getir (pagination olmadan)
+router.get('/all', authMiddleware, getAllProductsWithoutPagination);
 
 // Herkes erişebilir - Tüm ürün kurallarını getir (dropdown için)
 router.get('/rules', getAllProductRules);

@@ -72,6 +72,39 @@ export const getAllProducts = async (req: Request, res: Response) => {
   }
 };
 
+// Tüm ürünleri getir - PAGİNATİON OLMADAN
+export const getAllProductsWithoutPagination = async (req: Request, res: Response) => {
+  try {
+    // Kullanıcı ID'sini al (eğer varsa)
+    const userId = (req as any).user?.userId;
+    
+    // Query parametrelerini al (sayfalama olmadan)
+    const collectionId = req.query.collectionId as string;
+    const search = req.query.search as string;
+    const hasStock = req.query.hasStock ? req.query.hasStock === 'true' : undefined;
+    
+    // Tüm ürünleri getir (limit yok)
+    const result = await productService.getAllProducts(userId, {
+      page: 1,
+      limit: 999999, // Çok büyük bir limit ile tüm ürünleri getir
+      collectionId,
+      search,
+      hasStock
+    });
+    
+    return res.status(200).json({
+      success: true,
+      data: result.products,
+      total: result.pagination.total
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Ürünler getirilemedi'
+    });
+  }
+};
+
 // ID'ye göre ürün getir - Kullanıcı bazlı fiyatlandırma
 export const getProductById = async (req: Request, res: Response) => {
   try {
