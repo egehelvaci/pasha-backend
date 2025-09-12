@@ -49,8 +49,25 @@ export class MuhasebeController {
    */
   async getAllMuhasebeHareketleri(req: Request, res: Response) {
     try {
-      // Muhasebe hareketlerini getir - USD mağazaları dahil
+      // Admin store'ları al
+      const adminStores = await prisma.adminStoreConfig.findMany({
+        where: {
+          isAdminStore: true
+        },
+        select: {
+          storeId: true
+        }
+      })
+      
+      const adminStoreIds = adminStores.map(config => config.storeId)
+      
+      // Muhasebe hareketlerini getir - USD mağazaları dahil, admin store'lar hariç
       const hareketlerData = await prisma.muhasebeHareketleri.findMany({
+        where: {
+          storeId: {
+            notIn: adminStoreIds
+          }
+        },
         include: {
           store: {
                     select: {
@@ -144,7 +161,7 @@ export class MuhasebeController {
         }
       })
 
-      // Tüm mağazaların bakiyelerini getir - USD mağazaları dahil
+      // Tüm mağazaların bakiyelerini getir - USD mağazaları dahil, admin store'lar hariç
       const magazaData = await prisma.store.findMany({
         select: {
           store_id: true,
@@ -154,7 +171,10 @@ export class MuhasebeController {
           currency: true
         },
         where: {
-          is_active: true
+          is_active: true,
+          store_id: {
+            notIn: adminStoreIds
+          }
         },
         orderBy: {
           kurum_adi: 'asc'
