@@ -1362,7 +1362,7 @@ export class OrderService {
         await prisma.muhasebeHareketleri.create({
           data: {
             storeId: store.store_id,
-            islemTuru: 'Parekende Satış',
+            islemTuru: 'Satış',
             tutar: orderTotal,
             harcama: false, // Gelir
             tarih: new Date(),

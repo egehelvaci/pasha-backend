@@ -605,7 +605,7 @@ export class UserProfileController {
       // Admin geliri (harcama=false) = Kullanıcı harcaması
       // Admin gideri (harcama=true) = Kullanıcı geliri/iadesi
       const toplamHarcama = muhasebeHareketleri
-        .filter(h => !h.harcama && (h.islemTuru === 'Parekende Satış' || h.islemTuru === 'Toptan Satış'))
+        .filter(h => !h.harcama && (h.islemTuru === 'Satış' || h.islemTuru === 'Toptan Satış'))
         .reduce((sum, h) => sum + Number(h.tutar), 0)
 
       const toplamOdeme = muhasebeHareketleri
@@ -632,12 +632,12 @@ export class UserProfileController {
           },
           muhasebeHareketleri: muhasebeHareketleri.map(hareket => {
             // Kullanıcı perspektifinden işlemleri göster
-            // Admin perspektifinde: Parekende Satış = gelir (harcama: false), İptal = gider (harcama: true)
+            // Admin perspektifinde: Satış = gelir (harcama: false), İptal = gider (harcama: true)
             // Kullanıcı perspektifinde: Sipariş = gider (-), İptal = gelir (+)
             let kullaniciPerspektifiTutar = Number(hareket.tutar);
             
-            // Parekende Satış veya benzeri gelir işlemleri kullanıcı için gider (negatif)
-            if (!hareket.harcama && (hareket.islemTuru === 'Parekende Satış' || hareket.islemTuru === 'Toptan Satış')) {
+            // Satış veya benzeri gelir işlemleri kullanıcı için gider (negatif)
+            if (!hareket.harcama && (hareket.islemTuru === 'Satış' || hareket.islemTuru === 'Toptan Satış')) {
               kullaniciPerspektifiTutar = -Math.abs(kullaniciPerspektifiTutar);
             }
             // İptal/İade işlemleri kullanıcı için gelir (pozitif)

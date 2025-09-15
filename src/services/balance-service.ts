@@ -79,7 +79,7 @@ export class BalanceService {
 
       // Muhasebe kaydı oluştur - USD mağazaları dahil tüm mağazalar için
       const islemTuru = input.description || 
-        (input.operation === 'add' ? 'Sanal POS Ödemesi' : 'Diğer Giderler');
+        (input.operation === 'add' ? 'Sanal POS' : 'Diğer Giderler');
       
       await prisma.muhasebeHareketleri.create({
         data: {
@@ -89,7 +89,7 @@ export class BalanceService {
           harcama: input.operation === 'subtract',
           tarih: new Date(),
           aciklama: input.operation === 'add' ? 
-            `Sanal POS Ödemesi - ${input.amount} ${input.currencyCode}` : 
+            `Sanal POS - ${input.amount} ${input.currencyCode}` : 
             `Gider Kaydı - ${input.amount} ${input.currencyCode}`,
           // Currency tracking alanları
           currency: storeCurrency as any,
@@ -142,7 +142,7 @@ export class BalanceService {
       amount,
       currencyCode,
       operation: 'add',
-      description: 'Sanal POS Ödemesi' // Doğru işlem türü
+      description: 'Sanal POS' // Doğru işlem türü
     });
   }
 

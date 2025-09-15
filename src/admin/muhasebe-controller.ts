@@ -3,14 +3,14 @@ import prisma from '../utils/prisma'
 
 // Gelir türleri (harcama: false)
 const incomeTypes = [
-  'Parekende Satış',
+  'Satış',
   'Toptan Satış',
   'Hizmet Geliri',
-  'Sanal POS Ödemesi',
+  'Sanal POS',
   'Faiz Geliri',
   'Kira Geliri',
   'Diğer Gelirler',
-  'Borç Tahsilatı'
+  'Tahsilat'
 ]
 
 // Gider türleri (harcama: true)
@@ -86,7 +86,7 @@ export class MuhasebeController {
       // Ödeme ile ilgili islemTuru'ları tanımla
       const paymentRelatedTypes = [
         'ADMIN_ÖDEME',
-        'Sanal POS Ödemesi', 
+        'Sanal POS', 
         'Ödeme alındı',
         'TRY Ekleme İşlemi',
         'USD Ekleme İşlemi'
@@ -413,10 +413,10 @@ export class MuhasebeController {
             // Admin mağazaya borç veriyor: mağaza borca giriyor (bakiye azalmalı)
             magazaBakiyeDeğişimi = -tutar
             console.log(`   Borç Verme Mantığı: -${tutar}`);
-          } else if (islemTuru === 'Borç Tahsilatı') {
+          } else if (islemTuru === 'Tahsilat') {
             // Admin mağazadan borç tahsil ediyor: mağaza borcunu ödüyor (bakiye artmalı)
             magazaBakiyeDeğişimi = tutar
-            console.log(`   Borç Tahsilatı Mantığı: +${tutar}`);
+            console.log(`   Tahsilat Mantığı: +${tutar}`);
           } else {
             // Diğer işlemler için admin muhasebe mantığı
             // Gelir (harcama=false): Admin'e gelir, mağaza için borç (-) 

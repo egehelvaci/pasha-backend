@@ -218,7 +218,7 @@ export class WebhookService {
           transaction.storeId,
           webhookData.PaymentAmount, // Asıl TRY tutarı
           'TRY', // Asıl ödeme currency'si
-          `Sanal POS Ödemesi - Onay Kodu: ${webhookData.ApprovalCode || 'N/A'}`
+          `Sanal POS - Onay Kodu: ${webhookData.ApprovalCode || 'N/A'}`
         );
         
         // Admin store bakiyesi değişmez, sadece transaction için store bilgisini al
@@ -255,7 +255,7 @@ export class WebhookService {
           transaction.storeId,
           webhookData.PaymentAmount, // Asıl TRY tutarı
           'TRY', // Asıl ödeme currency'si
-          `Sanal POS Ödemesi - Onay Kodu: ${webhookData.ApprovalCode || 'N/A'}`
+          `Sanal POS - Onay Kodu: ${webhookData.ApprovalCode || 'N/A'}`
         );
         
         // Güncel store bilgisini al
