@@ -577,11 +577,27 @@ export class OrderService {
       // Admin sipariş sonrası işlemleri gerçekleştir (bakiye düşürme vs.)
       await this.processAdminOrderOperations(user, cartTotal, order.id);
 
-      // Admin sepeti pasif hale getir
+      // Admin sepeti pasif hale getir ve yeni aktif sepet oluştur
       await prisma.admin_carts.update({
         where: { id: orderData.admin_cart_id },
         data: { is_active: false }
       });
+
+      // Yeni aktif admin sepet oluştur (sonraki siparişler için)
+      try {
+        await prisma.admin_carts.create({
+          data: {
+            target_user_id: orderData.user_id,
+            admin_user_id: adminCart.admin_user_id,
+            store_id: adminCart.store_id,
+            is_active: true
+          }
+        });
+        console.log(`✅ Yeni aktif admin sepet oluşturuldu (kullanıcı: ${orderData.user_id})`);
+      } catch (newCartError) {
+        console.error('❌ Yeni admin sepet oluşturma hatası:', newCartError);
+        // Bu hata ana işlemi etkilemesin
+      }
 
       // Admin'e yeni sipariş bildirimi gönder
       try {
