@@ -725,7 +725,7 @@ export class MuhasebeController {
       // Sayfalama hesaplaması
       const skip = (page - 1) * limit
 
-      // Muhasebe hareketlerini getir
+      // Muhasebe hareketlerini getir - sipariş detayları ile birlikte
       const [hareketler, totalCount] = await Promise.all([
         prisma.muhasebeHareketleri.findMany({
           where: whereCondition,
@@ -733,7 +733,32 @@ export class MuhasebeController {
             store: {
               select: {
                 store_id: true,
-                kurum_adi: true
+                kurum_adi: true,
+                currency: true
+              }
+            },
+            // Sipariş detaylarını getir (eğer order_id varsa)
+            order: {
+              select: {
+                id: true,
+                total_price: true,
+                status: true,
+                created_at: true,
+                items: {
+                  select: {
+                    product_id: true,
+                    quantity: true,
+                    unit_price: true,
+                    total_price: true,
+                    width: true,
+                    height: true,
+                    product: {
+                      select: {
+                        name: true
+                      }
+                    }
+                  }
+                }
               }
             }
           },
@@ -767,6 +792,47 @@ export class MuhasebeController {
         }
       })
 
+      // Hareketleri formatla - sipariş detayları ile birlikte
+      const formattedHareketler = hareketler.map(hareket => {
+        const baseHareket = {
+          ...hareket,
+          tutar: Number(hareket.tutar)
+        };
+
+        // Sipariş detayları varsa ekle
+        if ((hareket as any).order && (hareket as any).order.items.length > 0) {
+          const orderDetails = {
+            orderId: (hareket as any).order.id,
+            orderStatus: (hareket as any).order.status,
+            orderDate: (hareket as any).order.created_at,
+            orderTotal: Number((hareket as any).order.total_price),
+            items: (hareket as any).order.items.map((item: any) => {
+              const areaM2 = item.width && item.height 
+                ? (Number(item.width) * Number(item.height)) / 10000 // cm² to m²
+                : 0;
+              
+              return {
+                productId: item.product_id,
+                productName: item.product.name,
+                quantity: item.quantity,
+                width: item.width ? Number(item.width) : null,
+                height: item.height ? Number(item.height) : null,
+                areaM2: areaM2,
+                unitPrice: Number(item.unit_price),
+                totalPrice: Number(item.total_price)
+              };
+            })
+          };
+          
+          return {
+            ...baseHareket,
+            orderDetails
+          };
+        }
+
+        return baseHareket;
+      });
+
       // Mağaza bakiye durumu
       const bakiye = store.bakiye?.toNumber() || 0
       const         bakiyeDurumu = {
@@ -787,7 +853,7 @@ export class MuhasebeController {
             kurum_adi: store.kurum_adi,
             bakiyeDurumu
           },
-          hareketler,
+          hareketler: formattedHareketler,
           ozet: {
             toplamGelir: toplamGelir._sum.tutar?.toNumber() || 0,
             toplamGider: toplamGider._sum.tutar?.toNumber() || 0,

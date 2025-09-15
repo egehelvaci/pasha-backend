@@ -326,6 +326,7 @@ model Order {
   qr_codes           QRCode[]
   barcodes           Barcode[]
   employeeOrderStats EmployeeOrderStats? @relation("OrderEmployeeStats")
+  muhasebeHareketleri MuhasebeHareketleri[]
 }
 
 model OrderItem {
@@ -440,8 +441,10 @@ model MuhasebeHareketleri {
   original_currency Currency?            @default(TRY) @map("original_currency")
   exchange_rate     Decimal?             @db.Decimal(10, 4) @map("exchange_rate")
   original_amount   Decimal?             @db.Decimal(10, 2) @map("original_amount")
+  order_id          String?              @map("order_id") // Sipariş ile ilişki
   
   store             Store                @relation(fields: [storeId], references: [store_id])
+  order             Order?               @relation(fields: [order_id], references: [id])
   manuelSatisDetay  ManuelSatisDetay[]
 
   @@map("muhasebe_hareketleri")
