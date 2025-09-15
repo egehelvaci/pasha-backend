@@ -518,8 +518,8 @@ export class AdminCartController {
         });
       }
 
-      // Kullanıcının admin sepetini kontrol et ve cart_id'yi al
-      const adminCart = await prisma.admin_carts.findFirst({
+      // Kullanıcının admin sepetini kontrol et - önce aktif olanı ara
+      let adminCart = await prisma.admin_carts.findFirst({
         where: {
           target_user_id: targetUserId,
           admin_user_id: adminUserId,
@@ -535,10 +535,48 @@ export class AdminCartController {
         }
       });
 
+      // Aktif sepet yoksa, pasif sepeti ara ve aktif hale getir
+      if (!adminCart) {
+        adminCart = await prisma.admin_carts.findFirst({
+          where: {
+            target_user_id: targetUserId,
+            admin_user_id: adminUserId,
+            store_id: storeId,
+            is_active: false
+          },
+          include: {
+            admin_cart_items: {
+              include: {
+                Product: true
+              }
+            }
+          }
+        });
+
+        if (adminCart && adminCart.admin_cart_items.length > 0) {
+          // Pasif sepeti aktif hale getir
+          adminCart = await prisma.admin_carts.update({
+            where: { id: adminCart.id },
+            data: { 
+              is_active: true,
+              updated_at: new Date()
+            },
+            include: {
+              admin_cart_items: {
+                include: {
+                  Product: true
+                }
+              }
+            }
+          });
+          console.log(`Pasif admin sepet sipariş için aktif hale getirildi: ${adminCart.id}`);
+        }
+      }
+
       if (!adminCart || adminCart.admin_cart_items.length === 0) {
         return res.status(400).json({
           success: false,
-          message: 'Kullanıcının aktif admin sepeti bulunamadı veya sepet boş'
+          message: 'Kullanıcının admin sepeti bulunamadı veya sepet boş'
         });
       }
 

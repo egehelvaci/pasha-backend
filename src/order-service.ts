@@ -475,9 +475,16 @@ export class OrderService {
       });
 
       if (existingOrder) {
+        console.error(`❌ Admin sepet ID ${orderData.admin_cart_id} ile daha önce sipariş oluşturulmuş:`, {
+          existingOrderId: existingOrder.id,
+          existingOrderDate: existingOrder.created_at,
+          adminCartId: orderData.admin_cart_id,
+          adminCartActive: adminCart.is_active
+        });
+        
         return { 
           success: false, 
-          message: 'Bu admin sepeti ile daha önce sipariş oluşturulmuş. Lütfen sepeti yenileyin veya yeni bir sepet oluşturun.' 
+          message: `Bu admin sepeti (ID: ${orderData.admin_cart_id}) ile daha önce sipariş oluşturulmuş. Sipariş ID: ${existingOrder.id}. Lütfen yeni ürün ekleyerek sepeti yenileyin.` 
         };
       }
 
