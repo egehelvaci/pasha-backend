@@ -54,6 +54,7 @@ export class CartService {
   async getOrCreateAdminCart(targetUserId: string, adminUserId: string, storeId: string) {
     console.log(`Admin (${adminUserId}) kullanıcı (${targetUserId}) için admin sepet oluşturuyor/getiriyor`);
     
+    // Önce aktif sepeti ara
     let adminCart = await prisma.admin_carts.findFirst({
       where: {
         target_user_id: targetUserId,
@@ -64,15 +65,42 @@ export class CartService {
     });
 
     if (!adminCart) {
-      adminCart = await prisma.admin_carts.create({
-        data: {
+      // Aktif sepet yoksa, pasif sepeti ara ve aktif hale getir
+      adminCart = await prisma.admin_carts.findFirst({
+        where: {
           target_user_id: targetUserId,
           admin_user_id: adminUserId,
           store_id: storeId,
-          is_active: true
+          is_active: false
         }
       });
-      console.log(`Yeni admin sepet oluşturuldu: ${adminCart.id}`);
+
+      if (adminCart) {
+        // Pasif sepeti aktif hale getir ve temizle
+        await prisma.admin_cart_items.deleteMany({
+          where: { admin_cart_id: adminCart.id }
+        });
+
+        adminCart = await prisma.admin_carts.update({
+          where: { id: adminCart.id },
+          data: { 
+            is_active: true,
+            updated_at: new Date()
+          }
+        });
+        console.log(`Pasif admin sepet aktif hale getirildi ve temizlendi: ${adminCart.id}`);
+      } else {
+        // Hiç sepet yoksa yeni oluştur
+        adminCart = await prisma.admin_carts.create({
+          data: {
+            target_user_id: targetUserId,
+            admin_user_id: adminUserId,
+            store_id: storeId,
+            is_active: true
+          }
+        });
+        console.log(`Yeni admin sepet oluşturuldu: ${adminCart.id}`);
+      }
     }
 
     return adminCart;
