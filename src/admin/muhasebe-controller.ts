@@ -177,7 +177,8 @@ export class MuhasebeController {
           is_active: true,
           store_id: {
             notIn: adminStoreIds
-          }
+          },
+          currency: 'TRY' // Sadece TRY mağazaları
         },
         orderBy: {
           kurum_adi: 'asc'
