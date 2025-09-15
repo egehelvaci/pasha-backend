@@ -499,6 +499,23 @@ model ExchangeRate {
   @@map("exchange_rates")
 }
 
+model ContactForm {
+  id           Int      @id @default(autoincrement())
+  companyName  String   @map("company_name") @db.VarChar(200)
+  authorityName String  @map("authority_name") @db.VarChar(100)
+  authoritySurname String @map("authority_surname") @db.VarChar(100)
+  email        String   @db.VarChar(150)
+  phone        String   @db.VarChar(20)
+  address      String   @db.Text
+  isRead       Boolean  @default(false) @map("is_read")
+  isContacted  Boolean  @default(false) @map("is_contacted")
+  notes        String?  @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("contact_forms")
+}
+
 model DbyeOdemeLogin {
   id        Int      @id @default(autoincrement())
   email     String   @unique

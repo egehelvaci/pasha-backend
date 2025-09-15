@@ -21,6 +21,8 @@ import loginAssetsRoutes from './routes/loginAssetsRoutes'
 import notificationRoutes from './routes/notificationRoutes'
 import usdMuhasebeRoutes from './routes/usdMuhasebeRoutes'
 import publicCatalogRoutes from './routes/publicCatalogRoutes'
+import contactFormRoutes from './routes/contactFormRoutes'
+import contactFormAdminRoutes from './admin/contact-form-routes'
 import path from 'path'
 import multer from 'multer'
 
@@ -86,6 +88,10 @@ app.use('/api/admin/usd-muhasebe', usdMuhasebeRoutes)
 
 // Public routes - TOKEN GEREKTİRMEZ
 app.use('/api/public/catalog', publicCatalogRoutes)
+app.use('/api/contact', contactFormRoutes)
+
+// Admin contact form routes
+app.use('/api/admin/contact-forms', contactFormAdminRoutes)
 
 // Kök rota - Railway proxy için basit yanıt
 app.get('/', (req, res) => {
