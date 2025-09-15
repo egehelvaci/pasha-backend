@@ -846,6 +846,52 @@ export class CartService {
     }
   }
 
+  // Admin sepetini yeniden aktif hale getir ve temizle
+  async resetAdminCart(targetUserId: string, adminUserId: string, storeId: string) {
+    try {
+      // Önce pasif admin sepeti bul
+      let adminCart = await prisma.admin_carts.findFirst({
+        where: {
+          target_user_id: targetUserId,
+          admin_user_id: adminUserId,
+          store_id: storeId
+        }
+      });
+
+      if (adminCart) {
+        // Mevcut sepeti temizle ve aktif hale getir
+        await prisma.admin_cart_items.deleteMany({
+          where: { admin_cart_id: adminCart.id }
+        });
+
+        await prisma.admin_carts.update({
+          where: { id: adminCart.id },
+          data: { 
+            is_active: true,
+            updated_at: new Date()
+          }
+        });
+
+        return { success: true, message: 'Admin sepet yenilendi ve aktif hale getirildi' };
+      } else {
+        // Sepet yoksa yeni bir tane oluştur
+        adminCart = await prisma.admin_carts.create({
+          data: {
+            target_user_id: targetUserId,
+            admin_user_id: adminUserId,
+            store_id: storeId,
+            is_active: true
+          }
+        });
+
+        return { success: true, message: 'Yeni admin sepet oluşturuldu' };
+      }
+    } catch (error) {
+      console.error('Admin sepet yenileme hatası:', error);
+      throw error;
+    }
+  }
+
   // Admin sepetinden ürün çıkar
   async removeFromAdminCart(adminCartItemId: number, targetUserId: string, adminUserId: string) {
     try {

@@ -11,6 +11,7 @@ export class AdminCartController {
     this.addToAdminCart = this.addToAdminCart.bind(this);
     this.getAdminCart = this.getAdminCart.bind(this);
     this.clearAdminCart = this.clearAdminCart.bind(this);
+    this.resetAdminCart = this.resetAdminCart.bind(this);
     this.removeFromAdminCart = this.removeFromAdminCart.bind(this);
     this.updateAdminCartItem = this.updateAdminCartItem.bind(this);
     this.createOrderFromAdminCart = this.createOrderFromAdminCart.bind(this);
@@ -240,6 +241,66 @@ export class AdminCartController {
       return res.status(400).json({
         success: false,
         message: error.message || 'Admin tarafından admin sepet temizlenirken hata oluştu'
+      });
+    }
+  }
+
+  /**
+   * Admin için kullanıcı admin sepetini yenileme (reset)
+   */
+  async resetAdminCart(req: Request, res: Response) {
+    try {
+      const adminUserId = (req as any).user?.userId;
+      
+      if (!adminUserId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Admin kimlik doğrulaması gerekli'
+        });
+      }
+
+      const { targetUserId, storeId } = req.params;
+
+      if (!targetUserId || !storeId) {
+        return res.status(400).json({
+          success: false,
+          message: 'targetUserId ve storeId parametreleri gerekli'
+        });
+      }
+
+      // Hedef kullanıcının varlığını kontrol et
+      const targetUser = await prisma.user.findUnique({
+        where: { userId: targetUserId },
+        include: { Store: true }
+      });
+
+      if (!targetUser) {
+        return res.status(404).json({
+          success: false,
+          message: 'Hedef kullanıcı bulunamadı'
+        });
+      }
+
+      const result = await cartService.resetAdminCart(targetUserId, adminUserId, storeId);
+
+      return res.status(200).json({
+        success: true,
+        message: `Admin ${adminUserId} tarafından ${targetUser.name} ${targetUser.surname} adlı kullanıcının admin sepeti yenilendi`,
+        data: {
+          ...result,
+          targetUser: {
+            userId: targetUser.userId,
+            name: targetUser.name,
+            surname: targetUser.surname,
+            email: targetUser.email
+          }
+        }
+      });
+    } catch (error: any) {
+      console.error('Admin sepet yenileme hatası:', error);
+      return res.status(400).json({
+        success: false,
+        message: error.message || 'Admin tarafından admin sepet yenilenirken hata oluştu'
       });
     }
   }
