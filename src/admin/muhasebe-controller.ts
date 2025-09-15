@@ -61,11 +61,14 @@ export class MuhasebeController {
       
       const adminStoreIds = adminStores.map(config => config.storeId)
       
-      // Muhasebe hareketlerini getir - USD mağazaları dahil, admin store'lar hariç
+      // Muhasebe hareketlerini getir - Sadece TRY mağazaları, admin store'lar hariç
       const hareketlerData = await prisma.muhasebeHareketleri.findMany({
         where: {
           storeId: {
             notIn: adminStoreIds
+          },
+          store: {
+            currency: 'TRY' // Sadece TRY mağazaları
           }
         },
         include: {
@@ -578,7 +581,10 @@ export class MuhasebeController {
       const skip = (Number(page) - 1) * Number(limit)
 
       const whereCondition: any = {
-        isManuelSatis: true
+        isManuelSatis: true,
+        store: {
+          currency: 'TRY' // Sadece TRY mağazaları
+        }
       }
 
       if (storeId) {
@@ -692,7 +698,10 @@ export class MuhasebeController {
 
       // Filtreleme koşulları
       const whereCondition: any = {
-        storeId: storeId
+        storeId: storeId,
+        store: {
+          currency: 'TRY' // Sadece TRY mağazaları
+        }
       }
 
       // Tarih filtreleri
