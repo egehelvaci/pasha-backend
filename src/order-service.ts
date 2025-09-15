@@ -470,8 +470,8 @@ export class OrderService {
       }
 
       // Bu admin sepet ID'si ile daha önce sipariş oluşturulmuş mu kontrol et
-      const existingOrder = await prisma.order.findUnique({
-        where: { cart_id: orderData.admin_cart_id }
+      const existingOrder = await prisma.order.findFirst({
+        where: { admin_cart_id: orderData.admin_cart_id }
       });
 
       if (existingOrder) {
@@ -515,7 +515,7 @@ export class OrderService {
       const order = await prisma.order.create({
         data: {
           user_id: orderData.user_id,
-          cart_id: orderData.admin_cart_id, // Admin sepet ID'sini kullan
+          admin_cart_id: orderData.admin_cart_id, // Admin sepet ID'sini admin_cart_id alanında kullan
           total_price: cartTotal,
           status: OrderStatus.PENDING,
           address_id: orderData.address_id || null,

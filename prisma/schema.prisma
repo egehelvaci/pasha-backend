@@ -296,7 +296,8 @@ model admin_cart_items {
 model Order {
   id                 String              @id @default(uuid())
   user_id            String
-  cart_id            Int                 @unique
+  cart_id            Int?                @unique  // Normal sepet için, admin sepetler için null
+  admin_cart_id      Int?                // Admin sepet için, normal sepetler için null
   total_price        Decimal             @db.Decimal(12, 2)
   status             OrderStatus         @default(PENDING)
   address_id         String?             // StoreAddress ID'si
@@ -318,7 +319,7 @@ model Order {
   converted_amount   Decimal?            @db.Decimal(12, 2) @map("converted_amount")
   created_at         DateTime            @default(now())
   updated_at         DateTime            @updatedAt
-  cart               carts               @relation(fields: [cart_id], references: [id])
+  cart               carts?              @relation(fields: [cart_id], references: [id])
   user               User                @relation(fields: [user_id], references: [userId])
   address            StoreAddress?       @relation("OrderAddress", fields: [address_id], references: [id])
   items              OrderItem[]

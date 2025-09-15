@@ -621,7 +621,11 @@ export class AdminCartController {
       });
 
     } catch (error: any) {
-      console.error('Admin sepetten sipariş oluşturma hatası:', error);
+      console.error('❌ Admin sepetten sipariş oluşturma hatası:', {
+        error: error.message,
+        stack: error.stack,
+        requestBody: req.body
+      });
       return res.status(500).json({
         success: false,
         message: error.message || 'Admin tarafından admin sepetten sipariş oluşturulurken hata oluştu'
