@@ -1,12 +1,11 @@
-import { PrismaClient, OrderStatus, Order, OrderItem } from '../generated/prisma';
+import { OrderStatus, Order, OrderItem } from '../generated/prisma';
 import { v4 as uuidv4 } from 'uuid';
 import { Decimal } from '@prisma/client/runtime/library';
 import { roundCurrency, addCurrency } from './utils/number-utils';
 import { $Enums } from '../generated/prisma';
 import { qrCodeService } from './services/qr-code-service';
 import { notificationService } from './services/notification-service';
-
-const prisma = new PrismaClient();
+import prisma from './utils/prisma';
 
 // Fiyat listesi minimum eşik değeri - bu değerin altında kaldığında varsayılan listeye geçilir
 const PRICE_LIST_MINIMUM_THRESHOLD = 1500;

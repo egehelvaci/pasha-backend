@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { PaymentService } from '../services/payment-service';
+import prisma from '../utils/prisma';
 
 export class PaymentController {
   private paymentService: PaymentService;
@@ -58,15 +59,10 @@ export class PaymentController {
         targetUserId = userId;
       } else {
         // Normal kullanıcı sadece kendi mağazası için ödeme başlatabilir
-        const { PrismaClient } = require('../../generated/prisma');
-        const prisma = new PrismaClient();
-        
         const user = await prisma.user.findUnique({
           where: { userId },
           include: { Store: true }
         });
-
-        await prisma.$disconnect();
 
         if (!user || !user.Store) {
           return res.status(404).json({

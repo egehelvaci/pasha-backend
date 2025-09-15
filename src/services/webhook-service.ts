@@ -1,9 +1,7 @@
-import { PrismaClient } from '../../generated/prisma';
 import crypto from 'crypto';
 import { notificationService } from './notification-service';
 import { balanceService } from './balance-service';
-
-const prisma = new PrismaClient();
+import prisma from '../utils/prisma';
 
 interface DbyeWebhookData {
   NotificationId: string;

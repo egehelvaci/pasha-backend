@@ -8,6 +8,11 @@ declare global {
 const prisma = globalThis.__prisma || new PrismaClient({
   log: ['error', 'warn'],
   errorFormat: 'pretty',
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL
+    }
+  }
 });
 
 // Development ortamında global değişkene ata (hot reload için)

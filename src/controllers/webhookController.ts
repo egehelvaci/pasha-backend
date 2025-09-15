@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { WebhookService } from '../services/webhook-service';
 import { notificationService } from '../services/notification-service';
+import prisma from '../utils/prisma';
 
 const webhookService = new WebhookService();
 
@@ -123,15 +124,11 @@ export class WebhookController {
       }
 
       // Token ile transaction'ı bul
-      const { PrismaClient } = require('../../generated/prisma');
-      const prisma = new PrismaClient();
-      
       const transaction = await prisma.paymentTransaction.findFirst({
         where: { webhookToken: token }
       });
       
       if (!transaction) {
-        await prisma.$disconnect();
         return res.status(404).send(`
           <!DOCTYPE html>
           <html>
@@ -153,10 +150,7 @@ export class WebhookController {
       const hashParameters = 'OrderNumber|PaymentAmount|TransactionState';
       
       // Hash hesapla
-      const { PrismaClient: PrismaClientType } = require('../../generated/prisma');
-      const tempPrisma = new PrismaClientType();
-      const dbyeConfig = await tempPrisma.dbyeConfig.findUnique({ where: { id: 1 } });
-      await tempPrisma.$disconnect();
+      const dbyeConfig = await prisma.dbyeConfig.findUnique({ where: { id: 1 } });
       
       let calculatedHash = 'test-hash'; // Fallback
       if (dbyeConfig && dbyeConfig.webhookSecret) {
@@ -179,8 +173,6 @@ export class WebhookController {
         HashParameters: hashParameters
       };
       
-      await prisma.$disconnect();
-
       const result = await webhookService.processWebhook(mockWebhookData);
       
       if (result.success) {
@@ -408,9 +400,6 @@ export class WebhookController {
       }
 
       // Token ile transaction'ı bul
-      const { PrismaClient } = require('../../generated/prisma');
-      const prisma = new PrismaClient();
-      
       const transaction = await prisma.paymentTransaction.findFirst({
         where: { webhookToken: token }
       });
@@ -438,10 +427,7 @@ export class WebhookController {
       const hashParameters = 'OrderNumber|PaymentAmount|TransactionState';
       
       // Hash hesapla
-      const { PrismaClient: PrismaClientType } = require('../../generated/prisma');
-      const tempPrisma = new PrismaClientType();
-      const dbyeConfig = await tempPrisma.dbyeConfig.findUnique({ where: { id: 1 } });
-      await tempPrisma.$disconnect();
+      const dbyeConfig = await prisma.dbyeConfig.findUnique({ where: { id: 1 } });
       
       let calculatedHash = 'test-hash'; // Fallback
       if (dbyeConfig && dbyeConfig.webhookSecret) {
@@ -464,8 +450,6 @@ export class WebhookController {
         HashParameters: hashParameters
       };
       
-      await prisma.$disconnect();
-
       const result = await webhookService.processWebhook(mockWebhookData);
       
       return res.send(`
@@ -582,9 +566,6 @@ export class WebhookController {
       }
 
       // Session'ı bul
-      const { PrismaClient } = require('../../generated/prisma');
-      const prisma = new PrismaClient();
-      
       const paymentSession = await prisma.paymentSession.findUnique({
         where: { id: session }
       });
@@ -651,9 +632,6 @@ export class WebhookController {
       }
 
       // Session'ı bul
-      const { PrismaClient } = require('../../generated/prisma');
-      const prisma = new PrismaClient();
-      
       const paymentSession = await prisma.paymentSession.findUnique({
         where: { id: session }
       });
@@ -722,9 +700,6 @@ export class WebhookController {
       }
 
       // Session'ı bul
-      const { PrismaClient } = require('../../generated/prisma');
-      const prisma = new PrismaClient();
-      
       const paymentSession = await prisma.paymentSession.findUnique({
         where: { id: session }
       });
@@ -834,9 +809,6 @@ export class WebhookController {
       }
 
       // Transaction'ı bul
-      const { PrismaClient } = require('../../generated/prisma');
-      const prisma = new PrismaClient();
-      
       const transaction = await prisma.paymentTransaction.findFirst({
         where: { sellerReference },
         include: {
