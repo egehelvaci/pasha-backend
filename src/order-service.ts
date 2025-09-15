@@ -469,6 +469,18 @@ export class OrderService {
         return { success: false, message: 'Admin sepet bulunamadı veya boş' };
       }
 
+      // Bu admin sepet ID'si ile daha önce sipariş oluşturulmuş mu kontrol et
+      const existingOrder = await prisma.order.findUnique({
+        where: { cart_id: orderData.admin_cart_id }
+      });
+
+      if (existingOrder) {
+        return { 
+          success: false, 
+          message: 'Bu admin sepeti ile daha önce sipariş oluşturulmuş. Lütfen sepeti yenileyin veya yeni bir sepet oluşturun.' 
+        };
+      }
+
       // Admin sepet tutarını hesapla
       const cartTotal = await this.calculateCartTotal(adminCart.admin_cart_items, user.Store.store_id);
       
