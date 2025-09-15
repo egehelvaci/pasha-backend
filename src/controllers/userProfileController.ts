@@ -526,10 +526,36 @@ export class UserProfileController {
         })
       }
 
-      // Muhasebe hareketlerini al
+      // Muhasebe hareketlerini al - sipariş detayları ile birlikte
       const muhasebeHareketleri = await prisma.muhasebeHareketleri.findMany({
         where: {
           storeId: user.store_id
+        },
+        include: {
+          // Sipariş detaylarını getir (eğer order_id varsa)
+          order: {
+            select: {
+              id: true,
+              total_price: true,
+              status: true,
+              created_at: true,
+              items: {
+                select: {
+                  product_id: true,
+                  quantity: true,
+                  unit_price: true,
+                  total_price: true,
+                  width: true,
+                  height: true,
+                  product: {
+                    select: {
+                      name: true
+                    }
+                  }
+                }
+              }
+            }
+          }
         },
         orderBy: {
           tarih: 'desc'
@@ -653,7 +679,7 @@ export class UserProfileController {
               kullaniciPerspektifiTutar = -Math.abs(kullaniciPerspektifiTutar);
             }
             
-            return {
+            const baseHareket = {
               id: hareket.id,
               islemTuru: hareket.islemTuru,
               tutar: kullaniciPerspektifiTutar,
@@ -662,6 +688,39 @@ export class UserProfileController {
               aciklama: hareket.aciklama,
               createdAt: hareket.createdAt
             };
+
+            // Sipariş detayları varsa ekle
+            if ((hareket as any).order && (hareket as any).order.items.length > 0) {
+              const orderDetails = {
+                orderId: (hareket as any).order.id,
+                orderStatus: (hareket as any).order.status,
+                orderDate: (hareket as any).order.created_at,
+                orderTotal: Number((hareket as any).order.total_price),
+                items: (hareket as any).order.items.map((item: any) => {
+                  const areaM2 = item.width && item.height 
+                    ? (Number(item.width) * Number(item.height)) / 10000 // cm² to m²
+                    : 0;
+                  
+                  return {
+                    productId: item.product_id,
+                    productName: item.product.name,
+                    quantity: item.quantity,
+                    width: item.width ? Number(item.width) : null,
+                    height: item.height ? Number(item.height) : null,
+                    areaM2: areaM2,
+                    unitPrice: Number(item.unit_price),
+                    totalPrice: Number(item.total_price)
+                  };
+                })
+              };
+              
+              return {
+                ...baseHareket,
+                orderDetails
+              };
+            }
+
+            return baseHareket;
           }),
           siparisler: orders.map(order => ({
             id: order.id,
