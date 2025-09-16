@@ -16,7 +16,8 @@ export class ContactFormController {
         authoritySurname, 
         email, 
         phone, 
-        address 
+        address,
+        notes 
       } = req.body;
 
       // Zorunlu alanları kontrol et
@@ -61,7 +62,8 @@ export class ContactFormController {
             authoritySurname: authoritySurname.trim(),
             email: email.trim().toLowerCase(),
             phone: phone.trim(),
-            address: address.trim()
+            address: address.trim(),
+            notes: notes ? notes.trim() : null
           }
         }),
         new Promise((_, reject) => 
@@ -75,7 +77,8 @@ export class ContactFormController {
         authorityName: `${authorityName} ${authoritySurname}`,
         email,
         phone,
-        address
+        address,
+        notes: notes || ''
       }).then(() => {
         console.log('✅ Onay e-postası gönderildi:', email);
       }).catch((emailError) => {
@@ -323,6 +326,7 @@ export class ContactFormController {
     email: string;
     phone: string;
     address: string;
+    notes: string;
   }) {
     // SMTP ayarları kontrol et
     console.log('🔍 SMTP Ayarları Kontrolü:');
@@ -350,40 +354,31 @@ export class ContactFormController {
       return;
     }
 
-    // E-posta konfigürasyonu (Gmail için optimize edilmiş)
+    // E-posta konfigürasyonu (Railway için optimize edilmiş)
     console.log('🔧 Gmail SMTP transporter oluşturuluyor...');
     const transporter = nodemailer.createTransport({
       service: 'gmail', // Gmail service kullan
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false, // TLS kullan
       auth: {
         user: process.env.SMTP_USER,
         pass: cleanedPassword // Boşluklardan temizlenmiş password kullan
       },
-      // Gmail için optimize edilmiş timeout ayarları
-      connectionTimeout: 60000, // 60 saniye
-      greetingTimeout: 30000,   // 30 saniye
-      socketTimeout: 60000,     // 60 saniye
-      // Gmail için ek ayarlar
+      // Railway için optimize edilmiş timeout ayarları
+      connectionTimeout: 20000, // 20 saniye
+      greetingTimeout: 10000,   // 10 saniye  
+      socketTimeout: 20000,     // 20 saniye
+      // TLS ayarları
       tls: {
-        rejectUnauthorized: false,
-        ciphers: 'SSLv3'
+        rejectUnauthorized: false
       },
-      // Debug modu
-      debug: true,
-      logger: true
+      // Pool kullanarak bağlantı yönetimi
+      pool: true,
+      maxConnections: 1,
+      maxMessages: 3
     });
 
-    // SMTP bağlantısını test et
-    console.log('🔍 Gmail SMTP bağlantısı test ediliyor...');
-    try {
-      await transporter.verify();
-      console.log('✅ Gmail SMTP bağlantısı başarılı!');
-    } catch (verifyError: any) {
-      console.error('❌ Gmail SMTP bağlantı hatası:', verifyError);
-      throw new Error(`Gmail SMTP bağlantı hatası: ${verifyError.message || verifyError}`);
-    }
+    // SMTP verify kaldırıldı - Railway'de timeout sorunu yaşatıyor
+    // Doğrudan e-posta gönderme işlemi denenir, hata olursa yakalanır
+    console.log('🔍 Gmail SMTP transporter hazır, verify atlandı');
 
     const mailOptions = {
       from: process.env.SMTP_FROM || process.env.SMTP_USER,
@@ -404,6 +399,7 @@ export class ContactFormController {
             <p><strong>E-posta:</strong> ${formData.email}</p>
             <p><strong>Telefon:</strong> ${formData.phone}</p>
             <p><strong>Adres:</strong> ${formData.address}</p>
+            ${formData.notes ? `<p><strong>Notlar:</strong> ${formData.notes}</p>` : ''}
           </div>
           
           <p>Teşekkür ederiz.</p>
@@ -464,7 +460,8 @@ export class ContactFormController {
         authorityName: 'Test Kullanıcı',
         email: process.env.SMTP_USER, // Kendi adresine gönder
         phone: '05551234567',
-        address: 'Test Adresi'
+        address: 'Test Adresi',
+        notes: 'Bu bir SMTP test mesajıdır.'
       });
 
       return res.status(200).json({
