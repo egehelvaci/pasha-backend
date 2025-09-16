@@ -64,20 +64,19 @@ export class ContactFormController {
         }
       });
 
-      // E-posta gönder
-      try {
-        await this.sendConfirmationEmail({
-          companyName,
-          authorityName: `${authorityName} ${authoritySurname}`,
-          email,
-          phone,
-          address
-        });
+      // E-posta gönder (asenkron - response'u bekletmesin)
+      this.sendConfirmationEmail({
+        companyName,
+        authorityName: `${authorityName} ${authoritySurname}`,
+        email,
+        phone,
+        address
+      }).then(() => {
         console.log('✅ Onay e-postası gönderildi:', email);
-      } catch (emailError) {
+      }).catch((emailError) => {
         console.error('❌ E-posta gönderme hatası:', emailError);
         // E-posta hatası ana işlemi etkilemesin
-      }
+      });
 
       return res.status(201).json({
         success: true,
@@ -320,6 +319,12 @@ export class ContactFormController {
     phone: string;
     address: string;
   }) {
+    // SMTP ayarları yoksa e-posta göndermeyi atla
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      console.log('⚠️ SMTP ayarları bulunamadı, e-posta gönderilmedi');
+      return;
+    }
+
     // E-posta konfigürasyonu (environment variables'dan alınmalı)
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
@@ -328,7 +333,11 @@ export class ContactFormController {
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS
-      }
+      },
+      // Timeout ayarları ekle
+      connectionTimeout: 10000, // 10 saniye
+      greetingTimeout: 5000,    // 5 saniye
+      socketTimeout: 10000      // 10 saniye
     });
 
     const mailOptions = {
@@ -361,6 +370,12 @@ export class ContactFormController {
       `
     };
 
-    await transporter.sendMail(mailOptions);
+    // Timeout ile e-posta gönder (maksimum 15 saniye)
+    await Promise.race([
+      transporter.sendMail(mailOptions),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('E-posta gönderme timeout')), 15000)
+      )
+    ]);
   }
 }
