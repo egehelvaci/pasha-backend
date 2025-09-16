@@ -329,8 +329,14 @@ export class ContactFormController {
     console.log('SMTP_HOST:', process.env.SMTP_HOST ? 'Mevcut' : 'YOK');
     console.log('SMTP_PORT:', process.env.SMTP_PORT ? 'Mevcut' : 'YOK');
     console.log('SMTP_USER:', process.env.SMTP_USER ? 'Mevcut' : 'YOK');
-    console.log('SMTP_PASS:', process.env.SMTP_PASS ? 'Mevcut' : 'YOK');
+    console.log('SMTP_PASS:', process.env.SMTP_PASS ? `Mevcut (${process.env.SMTP_PASS.length} karakter)` : 'YOK');
     console.log('SMTP_FROM:', process.env.SMTP_FROM ? 'Mevcut' : 'YOK');
+    
+    // Gmail App Password kontrolü
+    if (process.env.SMTP_PASS && process.env.SMTP_PASS.length !== 16) {
+      console.log('⚠️ UYARI: Gmail App Password genellikle 16 karakter olmalıdır!');
+      console.log('⚠️ Mevcut SMTP_PASS uzunluğu:', process.env.SMTP_PASS.length);
+    }
     
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
       console.log('⚠️ SMTP_USER veya SMTP_PASS bulunamadı, e-posta gönderilmedi');
@@ -338,6 +344,7 @@ export class ContactFormController {
     }
 
     // E-posta konfigürasyonu (Gmail için optimize edilmiş)
+    console.log('🔧 Gmail SMTP transporter oluşturuluyor...');
     const transporter = nodemailer.createTransport({
       service: 'gmail', // Gmail service kullan
       host: 'smtp.gmail.com',
@@ -348,14 +355,28 @@ export class ContactFormController {
         pass: process.env.SMTP_PASS
       },
       // Gmail için optimize edilmiş timeout ayarları
-      connectionTimeout: 30000, // 30 saniye
+      connectionTimeout: 60000, // 60 saniye
       greetingTimeout: 30000,   // 30 saniye
-      socketTimeout: 30000,     // 30 saniye
+      socketTimeout: 60000,     // 60 saniye
       // Gmail için ek ayarlar
       tls: {
-        rejectUnauthorized: false
-      }
+        rejectUnauthorized: false,
+        ciphers: 'SSLv3'
+      },
+      // Debug modu
+      debug: true,
+      logger: true
     });
+
+    // SMTP bağlantısını test et
+    console.log('🔍 Gmail SMTP bağlantısı test ediliyor...');
+    try {
+      await transporter.verify();
+      console.log('✅ Gmail SMTP bağlantısı başarılı!');
+    } catch (verifyError: any) {
+      console.error('❌ Gmail SMTP bağlantı hatası:', verifyError);
+      throw new Error(`Gmail SMTP bağlantı hatası: ${verifyError.message || verifyError}`);
+    }
 
     const mailOptions = {
       from: process.env.SMTP_FROM || process.env.SMTP_USER,
@@ -389,12 +410,12 @@ export class ContactFormController {
 
     console.log('📧 E-posta gönderiliyor:', formData.email);
     
-    // Timeout ile e-posta gönder (maksimum 15 saniye)
+    // Timeout ile e-posta gönder (maksimum 45 saniye - Gmail için)
     try {
       const result = await Promise.race([
         transporter.sendMail(mailOptions),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('E-posta gönderme timeout')), 15000)
+          setTimeout(() => reject(new Error('E-posta gönderme timeout')), 45000)
         )
       ]);
       console.log('✅ E-posta başarıyla gönderildi:', result);
