@@ -1,8 +1,47 @@
 import prisma from './utils/prisma';
 import { Currency } from '../generated/prisma';
-import { addCollectionToPurchasePriceList } from '../scripts/create-purchase-price-list';
 
 export class CollectionService {
+  /**
+   * Yeni koleksiyonu varsayılan alış fiyat listesine ekle
+   */
+  private async addCollectionToPurchasePriceList(collectionId: string) {
+    try {
+      // Varsayılan alış fiyat listesini bul
+      const purchasePriceList = await prisma.purchasePriceList.findFirst({
+        where: { name: 'Varsayılan Alış Fiyat Listesi' }
+      });
+
+      if (!purchasePriceList) {
+        console.log('Varsayılan alış fiyat listesi bulunamadı. Önce oluşturun.');
+        return;
+      }
+
+      // Bu koleksiyon için zaten bir detay var mı kontrol et
+      const existingDetail = await prisma.purchasePriceListDetail.findFirst({
+        where: {
+          purchase_price_list_id: purchasePriceList.id,
+          collection_id: collectionId
+        }
+      });
+
+      if (!existingDetail) {
+        await prisma.purchasePriceListDetail.create({
+          data: {
+            purchase_price_list_id: purchasePriceList.id,
+            collection_id: collectionId,
+            price_per_square_meter: 0.00 // Admin tarafından düzenlenecek
+          }
+        });
+        console.log(`Koleksiyon ${collectionId} varsayılan alış fiyat listesine eklendi`);
+      }
+
+    } catch (error) {
+      console.error('Koleksiyon alış fiyat listesine eklenirken hata:', error);
+      throw error;
+    }
+  }
+
   /**
    * Yeni bir koleksiyon oluştur
    */
@@ -22,7 +61,7 @@ export class CollectionService {
 
       // Yeni koleksiyonu varsayılan alış fiyat listesine ekle
       try {
-        await addCollectionToPurchasePriceList(collection.collectionId);
+        await this.addCollectionToPurchasePriceList(collection.collectionId);
         console.log(`Koleksiyon ${collection.name} alış fiyat listesine eklendi`);
       } catch (error) {
         console.error('Koleksiyon alış fiyat listesine eklenirken hata:', error);
