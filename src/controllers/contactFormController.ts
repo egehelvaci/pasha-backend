@@ -353,28 +353,59 @@ export class ContactFormController {
       console.log('⚠️ SMTP_USER veya SMTP_PASS bulunamadı, e-posta gönderilmedi');
       return;
     }
+    
+    // E-posta gönderimi devre dışı mı?
+    if (process.env.DISABLE_EMAIL === 'true') {
+      console.log('📧 E-posta gönderimi devre dışı (DISABLE_EMAIL=true)');
+      return;
+    }
 
     // E-posta konfigürasyonu (Railway için optimize edilmiş)
-    console.log('🔧 Gmail SMTP transporter oluşturuluyor...');
+    console.log('🔧 SMTP transporter oluşturuluyor...');
+    
+    // SMTP Provider seçimi - Railway için optimize edilmiş
+    let smtpConfig;
+    
+    if (process.env.SMTP_SERVICE === 'sendgrid') {
+      // SendGrid SMTP (Önerilen)
+      smtpConfig = {
+        host: 'smtp.sendgrid.net',
+        port: 587,
+        secure: false,
+        auth: {
+          user: 'apikey',
+          pass: process.env.SENDGRID_API_KEY
+        }
+      };
+    } else if (process.env.SMTP_SERVICE === 'mailgun') {
+      // Mailgun SMTP
+      smtpConfig = {
+        host: 'smtp.mailgun.org',
+        port: 587,
+        secure: false,
+        auth: {
+          user: process.env.MAILGUN_SMTP_USER,
+          pass: process.env.MAILGUN_SMTP_PASS
+        }
+      };
+    } else {
+      // Gmail (Fallback - timeout riski var)
+      smtpConfig = {
+        service: 'gmail',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: cleanedPassword
+        }
+      };
+    }
+    
     const transporter = nodemailer.createTransport({
-      service: 'gmail', // Gmail service kullan
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: cleanedPassword // Boşluklardan temizlenmiş password kullan
-      },
-      // Railway için optimize edilmiş timeout ayarları
-      connectionTimeout: 20000, // 20 saniye
-      greetingTimeout: 10000,   // 10 saniye  
-      socketTimeout: 20000,     // 20 saniye
+      ...smtpConfig,
       // TLS ayarları
       tls: {
         rejectUnauthorized: false
-      },
-      // Pool kullanarak bağlantı yönetimi
-      pool: true,
-      maxConnections: 1,
-      maxMessages: 3
-    });
+      }
+    } as any);
 
     // SMTP verify kaldırıldı - Railway'de timeout sorunu yaşatıyor
     // Doğrudan e-posta gönderme işlemi denenir, hata olursa yakalanır
