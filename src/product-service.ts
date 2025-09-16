@@ -183,7 +183,11 @@ export class ProductService {
    */
   private getPurchasePriceForCollection(purchasePriceList: any, collectionId: string) {
     if (!purchasePriceList || !purchasePriceList.details) {
-      return null;
+      return {
+        price_per_square_meter: 0,
+        currency: 'USD',
+        list_name: 'Alış fiyat listesi bulunamadı'
+      };
     }
 
     const detail = purchasePriceList.details.find((d: any) => d.collection_id === collectionId);
@@ -191,7 +195,11 @@ export class ProductService {
       price_per_square_meter: parseFloat(detail.price_per_square_meter.toString()),
       currency: purchasePriceList.currency || 'USD',
       list_name: purchasePriceList.name
-    } : null;
+    } : {
+      price_per_square_meter: 0,
+      currency: 'USD',
+      list_name: 'Bu koleksiyon için alış fiyat bulunamadı'
+    };
   }
 
   /**
@@ -401,15 +409,13 @@ export class ProductService {
         const endIndex = startIndex + limit;
         const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
         
-        // Kullanıcı yoksa da alış fiyat bilgilerini ekle
-        if (!userId) {
-          paginatedProducts.forEach((product: any) => {
-            if (purchasePriceList) {
-              const purchasePrice = this.getPurchasePriceForCollection(purchasePriceList, product.collectionId);
-              product.purchasePricing = purchasePrice;
-            }
-          });
-        }
+        // Her durumda alış fiyat bilgilerini ekle
+        paginatedProducts.forEach((product: any) => {
+          if (!product.purchasePricing) { // Daha önce eklenmemişse ekle
+            const purchasePrice = this.getPurchasePriceForCollection(purchasePriceList, product.collectionId);
+            product.purchasePricing = purchasePrice;
+          }
+        });
         
         return {
           products: paginatedProducts,
@@ -423,15 +429,13 @@ export class ProductService {
         };
       }
 
-      // Kullanıcı yoksa da alış fiyat bilgilerini ekle
-      if (!userId) {
-        filteredProducts.forEach((product: any) => {
-          if (purchasePriceList) {
-            const purchasePrice = this.getPurchasePriceForCollection(purchasePriceList, product.collectionId);
-            product.purchasePricing = purchasePrice;
-          }
-        });
-      }
+      // Her durumda alış fiyat bilgilerini ekle
+      filteredProducts.forEach((product: any) => {
+        if (!product.purchasePricing) { // Daha önce eklenmemişse ekle
+          const purchasePrice = this.getPurchasePriceForCollection(purchasePriceList, product.collectionId);
+          product.purchasePricing = purchasePrice;
+        }
+      });
 
       return {
         products: filteredProducts,
