@@ -337,19 +337,24 @@ export class ContactFormController {
       return;
     }
 
-    // E-posta konfigürasyonu (environment variables'dan alınmalı)
+    // E-posta konfigürasyonu (Gmail için optimize edilmiş)
     const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: false,
+      service: 'gmail', // Gmail service kullan
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false, // TLS kullan
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS
       },
-      // Timeout ayarları ekle
-      connectionTimeout: 10000, // 10 saniye
-      greetingTimeout: 5000,    // 5 saniye
-      socketTimeout: 10000      // 10 saniye
+      // Gmail için optimize edilmiş timeout ayarları
+      connectionTimeout: 30000, // 30 saniye
+      greetingTimeout: 30000,   // 30 saniye
+      socketTimeout: 30000,     // 30 saniye
+      // Gmail için ek ayarlar
+      tls: {
+        rejectUnauthorized: false
+      }
     });
 
     const mailOptions = {
@@ -396,6 +401,58 @@ export class ContactFormController {
     } catch (error) {
       console.error('❌ E-posta gönderme hatası detayı:', error);
       throw error; // Hatayı üst seviyeye ilet
+    }
+  }
+
+  /**
+   * SMTP bağlantısını test et (geliştirme amaçlı)
+   * GET /api/contact/test-smtp
+   */
+  async testSMTP(req: Request, res: Response) {
+    try {
+      console.log('🔧 SMTP Test başlatılıyor...');
+      
+      // SMTP ayarları kontrol et
+      console.log('🔍 SMTP Ayarları:');
+      console.log('SMTP_HOST:', process.env.SMTP_HOST || 'YOK');
+      console.log('SMTP_PORT:', process.env.SMTP_PORT || 'YOK');
+      console.log('SMTP_USER:', process.env.SMTP_USER || 'YOK');
+      console.log('SMTP_PASS:', process.env.SMTP_PASS ? 'Mevcut (gizli)' : 'YOK');
+      
+      if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+        return res.status(400).json({
+          success: false,
+          message: 'SMTP ayarları eksik',
+          details: {
+            SMTP_USER: process.env.SMTP_USER ? 'Mevcut' : 'YOK',
+            SMTP_PASS: process.env.SMTP_PASS ? 'Mevcut' : 'YOK'
+          }
+        });
+      }
+
+      // Test e-postası gönder
+      await this.sendConfirmationEmail({
+        companyName: 'SMTP Test Firması',
+        authorityName: 'Test Kullanıcı',
+        email: process.env.SMTP_USER, // Kendi adresine gönder
+        phone: '05551234567',
+        address: 'Test Adresi'
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: 'SMTP test e-postası başarıyla gönderildi',
+        testEmail: process.env.SMTP_USER
+      });
+
+    } catch (error: any) {
+      console.error('❌ SMTP Test hatası:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'SMTP test başarısız',
+        error: error.message,
+        details: error
+      });
     }
   }
 }
