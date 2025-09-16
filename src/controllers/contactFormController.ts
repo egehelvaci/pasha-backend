@@ -52,17 +52,22 @@ export class ContactFormController {
         phone
       });
 
-      // Veritabanına kaydet
-      const contactForm = await prisma.contactForm.create({
-        data: {
-          companyName: companyName.trim(),
-          authorityName: authorityName.trim(),
-          authoritySurname: authoritySurname.trim(),
-          email: email.trim().toLowerCase(),
-          phone: phone.trim(),
-          address: address.trim()
-        }
-      });
+      // Veritabanına kaydet (timeout koruması ile)
+      const contactForm = await Promise.race([
+        prisma.contactForm.create({
+          data: {
+            companyName: companyName.trim(),
+            authorityName: authorityName.trim(),
+            authoritySurname: authoritySurname.trim(),
+            email: email.trim().toLowerCase(),
+            phone: phone.trim(),
+            address: address.trim()
+          }
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Veritabanı işlemi timeout')), 10000)
+        )
+      ]) as any;
 
       // E-posta gönder (asenkron - response'u bekletmesin)
       this.sendConfirmationEmail({
