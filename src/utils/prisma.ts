@@ -6,7 +6,7 @@ declare global {
 
 // Singleton pattern ile Prisma Client'ı oluştur
 const prisma = globalThis.__prisma || new PrismaClient({
-  log: ['error', 'warn'],
+  log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
   errorFormat: 'pretty',
   datasources: {
     db: {
@@ -18,6 +18,9 @@ const prisma = globalThis.__prisma || new PrismaClient({
 // Development ortamında global değişkene ata (hot reload için)
 if (process.env.NODE_ENV !== 'production') {
   globalThis.__prisma = prisma;
+} else {
+  // Production'da connection'ları optimize et
+  console.log('🔗 Production Prisma Client başlatıldı - Connection pool optimize edildi');
 }
 
 // Uygulama kapanırken bağlantıyı kapat

@@ -1,5 +1,6 @@
 import prisma from './utils/prisma';
-import { Currency } from '../generated/prisma'
+import { Currency } from '../generated/prisma';
+import { addCollectionToPurchasePriceList } from '../scripts/create-purchase-price-list';
 
 export class CollectionService {
   /**
@@ -11,13 +12,24 @@ export class CollectionService {
     code: string
   }) {
     try {
-      return await prisma.collection.create({
+      const collection = await prisma.collection.create({
         data: {
           name: data.name,
           description: data.description,
           code: data.code
         }
-      })
+      });
+
+      // Yeni koleksiyonu varsayılan alış fiyat listesine ekle
+      try {
+        await addCollectionToPurchasePriceList(collection.collectionId);
+        console.log(`Koleksiyon ${collection.name} alış fiyat listesine eklendi`);
+      } catch (error) {
+        console.error('Koleksiyon alış fiyat listesine eklenirken hata:', error);
+        // Bu hata koleksiyon oluşturma işlemini durdurmaz
+      }
+
+      return collection;
     } catch (error) {
       console.error('Koleksiyon oluşturma hatası:', error)
       throw new Error('Koleksiyon oluşturulamadı')

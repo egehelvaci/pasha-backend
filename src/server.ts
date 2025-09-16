@@ -23,6 +23,7 @@ import usdMuhasebeRoutes from './routes/usdMuhasebeRoutes'
 import publicCatalogRoutes from './routes/publicCatalogRoutes'
 import contactFormRoutes from './routes/contactFormRoutes'
 import contactFormAdminRoutes from './admin/contact-form-routes'
+import purchasePriceListRoutes from './routes/purchasePriceListRoutes'
 import path from 'path'
 import multer from 'multer'
 
@@ -85,6 +86,7 @@ app.use('/api/employee-stats', employeeStatsRoutes)
 app.use('/api/login-assets', loginAssetsRoutes)
 app.use('/api/notifications', notificationRoutes)
 app.use('/api/admin/usd-muhasebe', usdMuhasebeRoutes)
+app.use('/api/admin/purchase-management', purchasePriceListRoutes)
 
 // Public routes - TOKEN GEREKTİRMEZ
 app.use('/api/public/catalog', publicCatalogRoutes)

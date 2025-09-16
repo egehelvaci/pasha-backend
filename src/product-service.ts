@@ -27,6 +27,11 @@ interface ExtendedProduct extends Prisma.ProductGetPayload<{include: {collection
     currency: string;
     userTypeId: number;
   };
+  purchasePricing?: {
+    price_per_square_meter: number;
+    currency: string;
+    list_name: string;
+  } | null;
   sizeOptions?: SizeOption[];
   cutTypes?: CutType[];
   hasFringe?: boolean;
@@ -144,6 +149,52 @@ export class ProductService {
   }
   
   /**
+   * Varsayılan alış fiyat listesini getir
+   */
+  private async getDefaultPurchasePriceList() {
+    try {
+      return await prisma.purchasePriceList.findFirst({
+        where: { 
+          name: 'Varsayılan Alış Fiyat Listesi',
+          is_active: true 
+        },
+        include: {
+          details: {
+            include: {
+              collection: {
+                select: {
+                  collectionId: true,
+                  name: true,
+                  code: true
+                }
+              }
+            }
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Varsayılan alış fiyat listesi getirme hatası:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Koleksiyon için alış fiyatını getir
+   */
+  private getPurchasePriceForCollection(purchasePriceList: any, collectionId: string) {
+    if (!purchasePriceList || !purchasePriceList.details) {
+      return null;
+    }
+
+    const detail = purchasePriceList.details.find((d: any) => d.collection_id === collectionId);
+    return detail ? {
+      price_per_square_meter: parseFloat(detail.price_per_square_meter.toString()),
+      currency: purchasePriceList.currency || 'USD',
+      list_name: purchasePriceList.name
+    } : null;
+  }
+
+  /**
    * Tüm ürünleri getir - OPTİMİZE EDİLMİŞ VERSİYON
    */
   async getAllProducts(userId?: string, options?: {
@@ -171,6 +222,9 @@ export class ProductService {
           { description: { contains: options.search, mode: 'insensitive' } }
         ];
       }
+
+      // Alış fiyat listesini getir
+      const purchasePriceList = await this.getDefaultPurchasePriceList();
 
       // Stok filtresi varsa, önce tüm ürünleri al
       let products;
@@ -347,6 +401,16 @@ export class ProductService {
         const endIndex = startIndex + limit;
         const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
         
+        // Kullanıcı yoksa da alış fiyat bilgilerini ekle
+        if (!userId) {
+          paginatedProducts.forEach((product: any) => {
+            if (purchasePriceList) {
+              const purchasePrice = this.getPurchasePriceForCollection(purchasePriceList, product.collectionId);
+              product.purchasePricing = purchasePrice;
+            }
+          });
+        }
+        
         return {
           products: paginatedProducts,
           pagination: {
@@ -357,6 +421,16 @@ export class ProductService {
             hasMore: endIndex < filteredProducts.length
           }
         };
+      }
+
+      // Kullanıcı yoksa da alış fiyat bilgilerini ekle
+      if (!userId) {
+        filteredProducts.forEach((product: any) => {
+          if (purchasePriceList) {
+            const purchasePrice = this.getPurchasePriceForCollection(purchasePriceList, product.collectionId);
+            product.purchasePricing = purchasePrice;
+          }
+        });
       }
 
       return {
@@ -380,6 +454,9 @@ export class ProductService {
    */
   async getProductById(productId: string, userId?: string) {
     try {
+      // Alış fiyat listesini getir
+      const purchasePriceList = await this.getDefaultPurchasePriceList();
+
       const product = await prisma.product.findUnique({
         where: { productId },
         include: {
@@ -454,6 +531,13 @@ export class ProductService {
                   userTypeId: userTypeId
                 };
               }
+
+              // Alış fiyat bilgisini ekle
+              if (purchasePriceList) {
+                const purchasePrice = this.getPurchasePriceForCollection(purchasePriceList, product.collectionId);
+                product.purchasePricing = purchasePrice;
+              }
+
             } catch (priceError) {
               console.error("Fiyat bilgisi alınırken hata:", priceError);
               // Hata durumunda minimum fiyat bilgisi ekle
@@ -462,6 +546,12 @@ export class ProductService {
                 currency: "TRY",
                 userTypeId: userTypeId
               };
+              
+              // Alış fiyat bilgisini ekle (hata durumunda da)
+              if (purchasePriceList) {
+                const purchasePrice = this.getPurchasePriceForCollection(purchasePriceList, product.collectionId);
+                product.purchasePricing = purchasePrice;
+              }
             }
           }
         } catch (userError) {
@@ -541,6 +631,12 @@ export class ProductService {
         } catch (ruleError) {
           console.error("Ürün kuralları alınırken hata:", ruleError);
         }
+      }
+      
+      // Alış fiyat bilgisini ekle
+      if (purchasePriceList) {
+        const purchasePrice = this.getPurchasePriceForCollection(purchasePriceList, product.collectionId);
+        product.purchasePricing = purchasePrice;
       }
       
       return product;
@@ -627,6 +723,7 @@ export class ProductService {
                     userTypeId: userTypeId
                   };
                 }
+
               } catch (priceError) {
                 console.error("Fiyat bilgisi alınırken hata:", priceError);
                 // Hata durumunda minimum fiyat bilgisi ekle

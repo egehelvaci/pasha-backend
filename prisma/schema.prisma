@@ -41,15 +41,16 @@ model User {
 }
 
 model Collection {
-  collectionId    String            @id @default(uuid()) @map("collection_id")
-  name            String
-  description     String?
-  code            String            @unique
-  isActive        Boolean           @default(true) @map("is_active")
-  createdAt       DateTime          @default(now()) @map("created_at")
-  updatedAt       DateTime          @updatedAt @map("updated_at")
-  PriceListDetail PriceListDetail[]
-  products        Product[]
+  collectionId              String                      @id @default(uuid()) @map("collection_id")
+  name                      String
+  description               String?
+  code                      String                      @unique
+  isActive                  Boolean                     @default(true) @map("is_active")
+  createdAt                 DateTime                    @default(now()) @map("created_at")
+  updatedAt                 DateTime                    @updatedAt @map("updated_at")
+  PriceListDetail           PriceListDetail[]
+  PurchasePriceListDetail   PurchasePriceListDetail[]
+  products                  Product[]
 }
 
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
@@ -723,4 +724,74 @@ model CurrencySummary {
   
   @@unique([store_id, currency, period_start, period_end])
   @@map("currency_summaries")
+}
+
+// Satıcılar tablosu
+model Supplier {
+  id                    String                      @id @default(uuid())
+  name                  String                      @db.VarChar(255)
+  company_name          String                      @map("company_name") @db.VarChar(255)
+  phone                 String?                     @db.VarChar(20)
+  address               String?
+  notes                 String?
+  balance               Decimal                     @default(0) @db.Decimal(15, 2) // Pozitif: Alacak, Negatif: Borç
+  currency              Currency                    @default(USD)
+  is_active             Boolean                     @default(true) @map("is_active")
+  created_at            DateTime                    @default(now()) @map("created_at")
+  updated_at            DateTime                    @updatedAt @map("updated_at")
+  purchasePriceLists    PurchasePriceList[]
+  balanceTransactions   SupplierBalanceTransaction[]
+
+  @@map("suppliers")
+}
+
+// Alış fiyat listesi tablosu
+model PurchasePriceList {
+  id              String                      @id @default(uuid())
+  name            String                      @db.VarChar(255)
+  description     String?
+  supplier_id     String?                     @map("supplier_id")
+  currency        Currency                    @default(USD)
+  is_active       Boolean                     @default(true) @map("is_active")
+  created_at      DateTime                    @default(now()) @map("created_at")
+  updated_at      DateTime                    @updatedAt @map("updated_at")
+  supplier        Supplier?                   @relation(fields: [supplier_id], references: [id], onDelete: SetNull)
+  details         PurchasePriceListDetail[]
+
+  @@map("purchase_price_lists")
+}
+
+// Alış fiyat listesi detayları
+model PurchasePriceListDetail {
+  id                      String            @id @default(uuid())
+  purchase_price_list_id  String            @map("purchase_price_list_id")
+  collection_id           String            @map("collection_id")
+  price_per_square_meter  Decimal           @db.Decimal(10, 2) @map("price_per_square_meter")
+  created_at              DateTime          @default(now()) @map("created_at")
+  updated_at              DateTime          @updatedAt @map("updated_at")
+  purchasePriceList       PurchasePriceList @relation(fields: [purchase_price_list_id], references: [id], onDelete: Cascade)
+  collection              Collection        @relation(fields: [collection_id], references: [collectionId], onDelete: Cascade)
+
+  @@unique([purchase_price_list_id, collection_id])
+  @@map("purchase_price_list_details")
+}
+
+// Satıcı bakiye işlemleri tablosu
+model SupplierBalanceTransaction {
+  id                String            @id @default(uuid())
+  supplier_id       String            @map("supplier_id")
+  transaction_type  String            @map("transaction_type") @db.VarChar(50) // PAYMENT, PURCHASE, ADJUSTMENT, etc.
+  amount            Decimal           @db.Decimal(15, 2) // USD cinsinden tutar (amount/exchange_rate)
+  original_amount   Decimal?          @map("original_amount") @db.Decimal(15, 2) // Orijinal TRY tutar
+  exchange_rate     Decimal?          @map("exchange_rate") @db.Decimal(10, 4) // Dolar kuru
+  original_currency String?           @map("original_currency") @db.VarChar(3) @default("TRY") // Orijinal para birimi
+  previous_balance  Decimal           @map("previous_balance") @db.Decimal(15, 2)
+  new_balance       Decimal           @map("new_balance") @db.Decimal(15, 2)
+  description       String?
+  reference_number  String?           @map("reference_number") @db.VarChar(100)
+  created_by        String            @map("created_by") @db.VarChar(36) // Admin user ID
+  created_at        DateTime          @default(now()) @map("created_at")
+  supplier          Supplier          @relation(fields: [supplier_id], references: [id], onDelete: Cascade)
+
+  @@map("supplier_balance_transactions")
 }
