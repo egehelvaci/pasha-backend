@@ -332,10 +332,17 @@ export class ContactFormController {
     console.log('SMTP_PASS:', process.env.SMTP_PASS ? `Mevcut (${process.env.SMTP_PASS.length} karakter)` : 'YOK');
     console.log('SMTP_FROM:', process.env.SMTP_FROM ? 'Mevcut' : 'YOK');
     
-    // Gmail App Password kontrolü
-    if (process.env.SMTP_PASS && process.env.SMTP_PASS.length !== 16) {
-      console.log('⚠️ UYARI: Gmail App Password genellikle 16 karakter olmalıdır!');
-      console.log('⚠️ Mevcut SMTP_PASS uzunluğu:', process.env.SMTP_PASS.length);
+    // Gmail App Password kontrolü ve temizleme
+    let cleanedPassword = process.env.SMTP_PASS;
+    if (cleanedPassword) {
+      // Boşlukları temizle
+      cleanedPassword = cleanedPassword.replace(/\s/g, '');
+      console.log('🔧 SMTP_PASS boşluklardan temizlendi:', cleanedPassword.length, 'karakter');
+      
+      if (cleanedPassword.length !== 16) {
+        console.log('⚠️ UYARI: Gmail App Password genellikle 16 karakter olmalıdır!');
+        console.log('⚠️ Temizlenmiş SMTP_PASS uzunluğu:', cleanedPassword.length);
+      }
     }
     
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
@@ -352,7 +359,7 @@ export class ContactFormController {
       secure: false, // TLS kullan
       auth: {
         user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
+        pass: cleanedPassword // Boşluklardan temizlenmiş password kullan
       },
       // Gmail için optimize edilmiş timeout ayarları
       connectionTimeout: 60000, // 60 saniye
