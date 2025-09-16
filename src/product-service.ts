@@ -184,7 +184,7 @@ export class ProductService {
   private getPurchasePriceForCollection(purchasePriceList: any, collectionId: string) {
     if (!purchasePriceList || !purchasePriceList.details) {
       return {
-        price_per_square_meter: 0,
+        price_per_square_meter: 0.00,
         currency: 'USD',
         list_name: 'Alış fiyat listesi bulunamadı'
       };
@@ -192,11 +192,11 @@ export class ProductService {
 
     const detail = purchasePriceList.details.find((d: any) => d.collection_id === collectionId);
     return detail ? {
-      price_per_square_meter: parseFloat(detail.price_per_square_meter.toString()),
+      price_per_square_meter: parseFloat(parseFloat(detail.price_per_square_meter.toString()).toFixed(2)),
       currency: purchasePriceList.currency || 'USD',
       list_name: purchasePriceList.name
     } : {
-      price_per_square_meter: 0,
+      price_per_square_meter: 0.00,
       currency: 'USD',
       list_name: 'Bu koleksiyon için alış fiyat bulunamadı'
     };
