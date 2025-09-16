@@ -225,170 +225,6 @@ export class UsdMuhasebeController {
     }
   }
 
-  /**
-   * Belirli bir USD mağazasının muhasebe hareketlerini getir
-   */
-  async getUsdMuhasebeHareketleriByStore(req: Request, res: Response) {
-    try {
-      const { storeId } = req.params
-      const { limit = 20, offset = 0, startDate, endDate } = req.query
-
-      // Store kontrolü - USD olmalı
-      const store = await prisma.store.findUnique({
-        where: { store_id: storeId },
-        select: {
-          store_id: true,
-          kurum_adi: true,
-          currency: true,
-          bakiye: true,
-          is_active: true
-        }
-      })
-
-      if (!store) {
-        return res.status(404).json({
-          success: false,
-          message: 'Mağaza bulunamadı'
-        })
-      }
-
-      if (store.currency !== 'USD') {
-        return res.status(403).json({
-          success: false,
-          message: 'Bu mağaza USD currency\'sine sahip değil. USD muhasebe sistemine erişim reddedildi.'
-        })
-      }
-
-      // Where koşulları
-      const where: any = {
-        storeId: storeId
-      }
-
-      // Tarih filtresi
-      if (startDate || endDate) {
-        where.tarih = {}
-        if (startDate) {
-          where.tarih.gte = new Date(startDate as string)
-        }
-        if (endDate) {
-          where.tarih.lte = new Date(endDate as string)
-        }
-      }
-
-      // Hareketleri getir - sipariş detayları ile birlikte
-      const hareketler = await prisma.muhasebeHareketleri.findMany({
-        where,
-        include: {
-          store: {
-            select: {
-              kurum_adi: true,
-              currency: true
-            }
-          },
-          // Sipariş detaylarını getir (eğer order_id varsa)
-          order: {
-            select: {
-              id: true,
-              total_price: true,
-              status: true,
-              created_at: true,
-              items: {
-                select: {
-                  product_id: true,
-                  quantity: true,
-                  unit_price: true,
-                  total_price: true,
-                  width: true,
-                  height: true,
-                  product: {
-                    select: {
-                      name: true
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        orderBy: {
-          tarih: 'desc'
-        },
-        take: Number(limit),
-        skip: Number(offset)
-      })
-
-      // Formatla - sipariş detayları ile birlikte
-      const formattedHareketler = hareketler.map(hareket => {
-        const baseHareket = {
-          ...hareket,
-          tutar: Number(hareket.tutar),
-          original_amount: hareket.original_amount ? Number(hareket.original_amount) : null,
-          exchange_rate: hareket.exchange_rate ? Number(hareket.exchange_rate) : null
-        };
-
-        // Sipariş detayları varsa ekle
-        if ((hareket as any).order && (hareket as any).order.items.length > 0) {
-          const orderDetails = {
-            orderId: (hareket as any).order.id,
-            orderStatus: (hareket as any).order.status,
-            orderDate: (hareket as any).order.created_at,
-            orderTotal: Number((hareket as any).order.total_price),
-            items: (hareket as any).order.items.map((item: any) => {
-              const areaM2 = item.width && item.height 
-                ? (Number(item.width) * Number(item.height)) / 10000 // cm² to m²
-                : 0;
-              
-              return {
-                productId: item.product_id,
-                productName: item.product.name,
-                quantity: item.quantity,
-                width: item.width ? Number(item.width) : null,
-                height: item.height ? Number(item.height) : null,
-                areaM2: areaM2,
-                unitPrice: Number(item.unit_price),
-                totalPrice: Number(item.total_price)
-              };
-            })
-          };
-          
-          return {
-            ...baseHareket,
-            orderDetails
-          };
-        }
-
-        return baseHareket;
-      })
-
-      // Bakiye durumu hesaplama
-      const bakiye = Number(store.bakiye || 0)
-      const bakiyeDurumu = {
-        bakiye: bakiye,
-        durum: bakiye === 0 ? 'DENGEDE' : bakiye < 0 ? 'BORCLU' : 'ALACAKLI',
-        tutar: Math.abs(bakiye),
-        acikHesapLimiti: 3000, // USD mağazaları için varsayılan limit
-        limitsizAcikHesap: false,
-        currency: store.currency
-      }
-
-      return res.status(200).json({
-        success: true,
-        data: {
-          store_id: store.store_id,
-          kurum_adi: store.kurum_adi,
-          bakiyeDurumu,
-          hareketler: formattedHareketler,
-          total: hareketler.length
-        }
-      })
-    } catch (error: any) {
-      console.error('USD Mağaza muhasebe hareketleri hatası:', error)
-      return res.status(500).json({
-        success: false,
-        message: error.message || 'USD Mağaza muhasebe hareketleri getirilemedi'
-      })
-    }
-  }
 
   /**
    * USD mağazası için yeni muhasebe hareketi oluştur
@@ -636,6 +472,226 @@ export class UsdMuhasebeController {
       success: true,
       data: usdExpenseTypes
     })
+  }
+
+  /**
+   * Belirli bir USD mağazasının muhasebe hareketlerini listele
+   */
+  async getUsdMuhasebeHareketleriByStore(req: Request, res: Response) {
+    try {
+      const { storeId } = req.params
+      const page = parseInt(req.query.page as string) || 1
+      const limit = parseInt(req.query.limit as string) || 20
+      const startDate = req.query.startDate as string
+      const endDate = req.query.endDate as string
+      const islemTuru = req.query.islemTuru as string
+      
+      // Mağaza var mı kontrolü
+      const store = await prisma.store.findUnique({
+        where: { store_id: storeId },
+        select: {
+          store_id: true,
+          kurum_adi: true,
+          bakiye: true,
+          currency: true,
+          acik_hesap_tutari: true,
+          limitsiz_acik_hesap: true
+        }
+      })
+
+      if (!store) {
+        return res.status(404).json({
+          success: false,
+          message: 'Mağaza bulunamadı'
+        })
+      }
+
+      // USD mağazası kontrolü
+      if (store.currency !== 'USD') {
+        return res.status(400).json({
+          success: false,
+          message: 'Bu endpoint sadece USD mağazaları için kullanılabilir'
+        })
+      }
+
+      // Filtreleme koşulları
+      const whereCondition: any = {
+        storeId: storeId,
+        store: {
+          currency: 'USD' // Sadece USD mağazaları
+        }
+      }
+
+      // Tarih filtreleri
+      if (startDate || endDate) {
+        whereCondition.tarih = {}
+        if (startDate) {
+          whereCondition.tarih.gte = new Date(startDate)
+        }
+        if (endDate) {
+          const endDateTime = new Date(endDate)
+          endDateTime.setHours(23, 59, 59, 999)
+          whereCondition.tarih.lte = endDateTime
+        }
+      }
+
+      // İşlem türü filtresi
+      if (islemTuru) {
+        whereCondition.islemTuru = islemTuru
+      }
+
+      // Sayfalama hesaplaması
+      const skip = (page - 1) * limit
+
+      // Muhasebe hareketlerini getir - sipariş detayları ile birlikte
+      const [hareketler, totalCount] = await Promise.all([
+        prisma.muhasebeHareketleri.findMany({
+          where: whereCondition,
+          include: {
+            store: {
+              select: {
+                store_id: true,
+                kurum_adi: true,
+                currency: true
+              }
+            },
+            // Sipariş detaylarını getir (eğer order_id varsa)
+            order: {
+              select: {
+                id: true,
+                total_price: true,
+                status: true,
+                created_at: true,
+                items: {
+                  select: {
+                    product_id: true,
+                    quantity: true,
+                    unit_price: true,
+                    total_price: true,
+                    width: true,
+                    height: true,
+                    product: {
+                      select: {
+                        name: true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          orderBy: {
+            tarih: 'desc'
+          },
+          skip,
+          take: limit
+        }),
+        prisma.muhasebeHareketleri.count({ where: whereCondition })
+      ])
+
+      // Toplam gelir ve gider hesapla
+      const toplamGelir = await prisma.muhasebeHareketleri.aggregate({
+        where: {
+          ...whereCondition,
+          harcama: false
+        },
+        _sum: {
+          tutar: true
+        }
+      })
+
+      const toplamGider = await prisma.muhasebeHareketleri.aggregate({
+        where: {
+          ...whereCondition,
+          harcama: true
+        },
+        _sum: {
+          tutar: true
+        }
+      })
+
+      // Hareketleri formatla - sipariş detayları ile birlikte
+      const formattedHareketler = hareketler.map(hareket => {
+        const baseHareket = {
+          ...hareket,
+          tutar: Number(hareket.tutar)
+        };
+
+        // Sipariş detayları varsa ekle
+        if ((hareket as any).order && (hareket as any).order.items.length > 0) {
+          const orderDetails = {
+            orderId: (hareket as any).order.id,
+            orderStatus: (hareket as any).order.status,
+            orderDate: (hareket as any).order.created_at,
+            orderTotal: Number((hareket as any).order.total_price),
+            items: (hareket as any).order.items.map((item: any) => {
+              const areaM2 = item.width && item.height 
+                ? (Number(item.width) * Number(item.height)) / 10000 // cm² to m²
+                : 0;
+              
+              return {
+                productId: item.product_id,
+                productName: item.product.name,
+                quantity: item.quantity,
+                width: item.width ? Number(item.width) : null,
+                height: item.height ? Number(item.height) : null,
+                areaM2: areaM2,
+                unitPrice: Number(item.unit_price),
+                totalPrice: Number(item.total_price)
+              };
+            })
+          };
+          
+          return {
+            ...baseHareket,
+            orderDetails
+          };
+        }
+
+        return baseHareket;
+      });
+
+      // Mağaza bakiye durumu
+      const bakiye = store.bakiye?.toNumber() || 0
+      const bakiyeDurumu = {
+        bakiye: bakiye,
+        durum: bakiye === 0 ? 'DENGEDE' : bakiye < 0 ? 'BORCLU' : 'ALACAKLI',
+        tutar: Math.abs(bakiye),
+        acikHesapLimiti: store.acik_hesap_tutari?.toNumber() || 0,
+        limitsizAcikHesap: store.limitsiz_acik_hesap,
+        currency: store.currency || 'USD',
+        isUSDStore: true
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          magaza: {
+            store_id: store.store_id,
+            kurum_adi: store.kurum_adi,
+            bakiyeDurumu
+          },
+          hareketler: formattedHareketler,
+          ozet: {
+            toplamGelir: toplamGelir._sum.tutar?.toNumber() || 0,
+            toplamGider: toplamGider._sum.tutar?.toNumber() || 0,
+            net: (toplamGelir._sum.tutar?.toNumber() || 0) - (toplamGider._sum.tutar?.toNumber() || 0)
+          },
+          pagination: {
+            page,
+            limit,
+            total: totalCount,
+            totalPages: Math.ceil(totalCount / limit)
+          }
+        }
+      })
+    } catch (error: any) {
+      console.error('USD Mağaza muhasebe hareketleri hatası:', error)
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'USD Mağaza muhasebe hareketleri getirilemedi'
+      })
+    }
   }
 }
 

@@ -1369,7 +1369,8 @@ export class OrderService {
             aciklama: `Sipariş #${orderId || 'N/A'} - ${store.kurum_adi} mağazası tarafından verilen sipariş`,
             currency: currency,
             original_currency: currency,
-            original_amount: orderTotal
+            original_amount: orderTotal,
+            order_id: orderId // SİPARİŞ ID'Sİ EKLENDİ!
           }
         });
         
@@ -1553,7 +1554,8 @@ export class OrderService {
           aciklama: `Admin Siparişi #${orderId || 'N/A'} - ${store.kurum_adi} mağazası için admin tarafından oluşturulan sipariş`,
           currency: currency,
           original_currency: currency,
-          original_amount: orderTotal
+          original_amount: orderTotal,
+          order_id: orderId // SİPARİŞ ID'Sİ EKLENDİ!
         }
       });
       
