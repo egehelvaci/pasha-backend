@@ -31,7 +31,7 @@ export class AuthService {
   constructor() {
     // .env dosyasından JWT yapılandırmaları
     this.jwtSecret = process.env.JWT_SECRET || 'c7fc1c9b27f84a9a9b74c78a5d3f9e72a3db1d19aef63bcb6bdf9f2c9e091d13'
-    this.jwtExpiresIn = process.env.JWT_EXPIRES_IN ? parseInt(process.env.JWT_EXPIRES_IN) : 60 * 60 * 24 // 1 gün (86400 saniye)
+    this.jwtExpiresIn = process.env.JWT_EXPIRES_IN ? parseInt(process.env.JWT_EXPIRES_IN) : 60 * 60 * 24 * 15 // 15 gün (1,296,000 saniye)
     this.tokenBlacklist = new Set<string>()
     
     console.log('AuthService başlatıldı, JWT süresi:', this.jwtExpiresIn, 'saniye')
