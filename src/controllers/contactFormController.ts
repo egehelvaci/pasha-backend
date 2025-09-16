@@ -324,9 +324,16 @@ export class ContactFormController {
     phone: string;
     address: string;
   }) {
-    // SMTP ayarları yoksa e-posta göndermeyi atla
+    // SMTP ayarları kontrol et
+    console.log('🔍 SMTP Ayarları Kontrolü:');
+    console.log('SMTP_HOST:', process.env.SMTP_HOST ? 'Mevcut' : 'YOK');
+    console.log('SMTP_PORT:', process.env.SMTP_PORT ? 'Mevcut' : 'YOK');
+    console.log('SMTP_USER:', process.env.SMTP_USER ? 'Mevcut' : 'YOK');
+    console.log('SMTP_PASS:', process.env.SMTP_PASS ? 'Mevcut' : 'YOK');
+    console.log('SMTP_FROM:', process.env.SMTP_FROM ? 'Mevcut' : 'YOK');
+    
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      console.log('⚠️ SMTP ayarları bulunamadı, e-posta gönderilmedi');
+      console.log('⚠️ SMTP_USER veya SMTP_PASS bulunamadı, e-posta gönderilmedi');
       return;
     }
 
@@ -375,12 +382,20 @@ export class ContactFormController {
       `
     };
 
+    console.log('📧 E-posta gönderiliyor:', formData.email);
+    
     // Timeout ile e-posta gönder (maksimum 15 saniye)
-    await Promise.race([
-      transporter.sendMail(mailOptions),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('E-posta gönderme timeout')), 15000)
-      )
-    ]);
+    try {
+      const result = await Promise.race([
+        transporter.sendMail(mailOptions),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('E-posta gönderme timeout')), 15000)
+        )
+      ]);
+      console.log('✅ E-posta başarıyla gönderildi:', result);
+    } catch (error) {
+      console.error('❌ E-posta gönderme hatası detayı:', error);
+      throw error; // Hatayı üst seviyeye ilet
+    }
   }
 }
