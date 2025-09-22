@@ -369,7 +369,19 @@ export class AdminStatisticsController {
             total_price: true
           },
           where: {
-            order: whereClause
+            order: {
+              created_at: {
+                gte: startDate
+              },
+              status: {
+                in: [OrderStatus.DELIVERED]
+              },
+              // Admin siparişleri (admin_cart_id dolu) VE normal siparişler (cart_id dolu) dahil
+              OR: [
+                { admin_cart_id: { not: null } }, // Admin siparişleri
+                { cart_id: { not: null } }        // Normal siparişler
+              ]
+            }
           }
         }),
 
@@ -379,14 +391,38 @@ export class AdminStatisticsController {
             quantity: true
           },
           where: {
-            order: whereClause
+            order: {
+              created_at: {
+                gte: startDate
+              },
+              status: {
+                in: [OrderStatus.DELIVERED]
+              },
+              // Admin siparişleri (admin_cart_id dolu) VE normal siparişler (cart_id dolu) dahil
+              OR: [
+                { admin_cart_id: { not: null } }, // Admin siparişleri
+                { cart_id: { not: null } }        // Normal siparişler
+              ]
+            }
           }
         }),
 
         // Metrekare hesaplama için OrderItem'lar
         prisma.orderItem.findMany({
           where: {
-            order: whereClause,
+            order: {
+              created_at: {
+                gte: startDate
+              },
+              status: {
+                in: [OrderStatus.DELIVERED]
+              },
+              // Admin siparişleri (admin_cart_id dolu) VE normal siparişler (cart_id dolu) dahil
+              OR: [
+                { admin_cart_id: { not: null } }, // Admin siparişleri
+                { cart_id: { not: null } }        // Normal siparişler
+              ]
+            },
             AND: [
               { width: { not: null } },
               { height: { not: null } }
