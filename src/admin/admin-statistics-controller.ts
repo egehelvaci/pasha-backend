@@ -11,7 +11,7 @@ export class AdminStatisticsController {
   }
 
   /**
-   * En çok sipariş veren mağazalar (TOP 5)
+   * En çok sipariş veren mağazalar (TOP 5) - ADMİN SİPARİŞLERİ VE NORMAL SİPARİŞLER DAHİL
    */
   async getTopStores(req: Request, res: Response) {
     try {
@@ -40,8 +40,13 @@ export class AdminStatisticsController {
             gte: startDate
           },
           status: {
-            in: [OrderStatus.DELIVERED] // Sadece teslim edilmiş siparişler
-          }
+            in: [OrderStatus.DELIVERED] // Teslim edilmiş siparişler
+          },
+          // Admin siparişleri (admin_cart_id dolu) VE normal siparişler (cart_id dolu) dahil
+          OR: [
+            { admin_cart_id: { not: null } }, // Admin siparişleri
+            { cart_id: { not: null } }        // Normal siparişler
+          ]
         },
         _count: {
           id: true
@@ -96,7 +101,7 @@ export class AdminStatisticsController {
   }
 
   /**
-   * En çok sipariş edilen ürünler (TOP 5)
+   * En çok sipariş edilen ürünler (TOP 5) - ADMİN SİPARİŞLERİ VE NORMAL SİPARİŞLER DAHİL
    */
   async getTopProducts(req: Request, res: Response) {
     try {
@@ -126,8 +131,13 @@ export class AdminStatisticsController {
               gte: startDate
             },
             status: {
-              in: [OrderStatus.DELIVERED] // Sadece teslim edilmiş siparişler
-            }
+              in: [OrderStatus.DELIVERED] // Teslim edilmiş siparişler
+            },
+            // Admin siparişleri (admin_cart_id dolu) VE normal siparişler (cart_id dolu) dahil
+            OR: [
+              { admin_cart_id: { not: null } }, // Admin siparişleri
+              { cart_id: { not: null } }        // Normal siparişler
+            ]
           }
         },
         _sum: {
@@ -182,7 +192,7 @@ export class AdminStatisticsController {
   }
 
   /**
-   * Zaman bazlı sipariş grafiği
+   * Zaman bazlı sipariş grafiği - ADMİN SİPARİŞLERİ VE NORMAL SİPARİŞLER DAHİL
    */
   async getOrdersOverTime(req: Request, res: Response) {
     try {
@@ -211,7 +221,12 @@ export class AdminStatisticsController {
           },
           status: {
             in: [OrderStatus.DELIVERED] // Sadece teslim edilmiş siparişler
-          }
+          },
+          // Admin siparişleri (admin_cart_id dolu) VE normal siparişler (cart_id dolu) dahil
+          OR: [
+            { admin_cart_id: { not: null } }, // Admin siparişleri
+            { cart_id: { not: null } }        // Normal siparişler
+          ]
         },
         include: {
           items: true
@@ -291,7 +306,7 @@ export class AdminStatisticsController {
   }
 
   /**
-   * Toplam istatistikler - SADECE ONAYLANMIŞ SİPARİŞLER
+   * Toplam istatistikler - ADMİN SİPARİŞLERİ VE NORMAL SİPARİŞLER DAHİL
    */
   async getTotalStatistics(req: Request, res: Response) {
     try {
@@ -313,14 +328,19 @@ export class AdminStatisticsController {
           break
       }
 
-      // Sadece teslim edilmiş siparişler
+      // Teslim edilmiş siparişler - Hem admin siparişleri hem normal siparişler dahil
       const whereClause = {
         created_at: {
           gte: startDate
         },
         status: {
           in: [OrderStatus.DELIVERED]
-        }
+        },
+        // Admin siparişleri (admin_cart_id dolu) VE normal siparişler (cart_id dolu) dahil
+        OR: [
+          { admin_cart_id: { not: null } }, // Admin siparişleri
+          { cart_id: { not: null } }        // Normal siparişler
+        ]
       }
 
       const [
@@ -392,10 +412,27 @@ export class AdminStatisticsController {
       const totalAmount = Number(totalAmountFromOrders._sum?.total_price || 0)
       const totalAmountFromItems = Number(totalAmountFromOrderItems._sum?.total_price || 0)
 
-      console.log('İstatistik Raporu (Sadece Teslim Edilmiş Siparişler):')
+      // Admin ve normal siparişlerin ayrı sayılarını hesapla
+      const adminOrdersCount = await prisma.order.count({
+        where: {
+          ...whereClause,
+          admin_cart_id: { not: null }
+        }
+      })
+
+      const normalOrdersCount = await prisma.order.count({
+        where: {
+          ...whereClause,
+          cart_id: { not: null }
+        }
+      })
+
+      console.log('İstatistik Raporu (Admin ve Normal Siparişler Dahil):')
       console.log('- Zaman aralığı:', startDate, 'dan', now, 'a kadar')
       console.log('- Dahil edilen durumlar: DELIVERED')
       console.log('- Toplam sipariş sayısı:', totalOrdersResult)
+      console.log('  * Admin siparişleri:', adminOrdersCount)
+      console.log('  * Normal siparişler:', normalOrdersCount)
       console.log('- Order tablosundan toplam tutar:', totalAmount)
       console.log('- OrderItem tablosundan toplam tutar:', totalAmountFromItems)
       console.log('- Hesaplanan toplam metrekare:', totalAreaM2)
@@ -404,6 +441,8 @@ export class AdminStatisticsController {
         success: true,
         data: {
           total_orders: totalOrdersResult,
+          admin_orders: adminOrdersCount,
+          normal_orders: normalOrdersCount,
           total_amount: totalAmount,
           total_amount_from_items: totalAmountFromItems,
           total_product_quantity: totalQuantityResult._sum?.quantity || 0,
@@ -412,6 +451,7 @@ export class AdminStatisticsController {
           start_date: startDate,
           end_date: now,
           included_statuses: ['DELIVERED'],
+          order_types_included: ['ADMIN_ORDERS', 'NORMAL_ORDERS'],
           debug: {
             area_calculated_items: orderItemsForArea.length,
             amount_difference: Math.abs(totalAmount - totalAmountFromItems)
