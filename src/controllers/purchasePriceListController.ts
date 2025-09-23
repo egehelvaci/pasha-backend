@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../utils/prisma';
+import { PurchaseCartService } from '../purchase-cart-service';
 
 // Tüm satıcıları getir
 export const getAllSuppliers = async (req: Request, res: Response) => {
@@ -970,6 +971,313 @@ export const purchaseProductFromSupplier = async (req: Request, res: Response) =
     res.status(500).json({
       success: false,
       message: 'Ürün alımı gerçekleştirilemedi',
+      error: error instanceof Error ? error.message : 'Bilinmeyen hata'
+    });
+  }
+};
+
+const purchaseCartService = new PurchaseCartService();
+
+// Satıcı alım sepetine ürün ekleme
+export const addToPurchaseCart = async (req: Request, res: Response) => {
+  try {
+    const { supplier_id } = req.params;
+    const userId = (req as any).user?.userId;
+    
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Kullanıcı kimlik doğrulaması gerekli'
+      });
+    }
+
+    const { productId, quantity, width, height, hasFringe, cutType, notes } = req.body;
+
+    // Zorunlu alanları kontrol et
+    if (!productId || !quantity || !width || !height || hasFringe === undefined || !cutType) {
+      return res.status(400).json({
+        success: false,
+        message: 'productId, quantity, width, height, hasFringe ve cutType zorunlu alanlarıdır'
+      });
+    }
+
+    // Sayısal değerleri kontrol et
+    if (quantity <= 0 || width <= 0 || height <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Miktar, genişlik ve yükseklik pozitif değerler olmalıdır'
+      });
+    }
+
+    const cartItem = await purchaseCartService.addToPurchaseCart({
+      supplierId: supplier_id,
+      userId,
+      productId,
+      quantity: Number(quantity),
+      width: Number(width),
+      height: Number(height),
+      hasFringe: Boolean(hasFringe),
+      cutType,
+      notes
+    });
+
+    res.status(201).json({
+      success: true,
+      data: cartItem,
+      message: 'Ürün alım sepetine eklendi'
+    });
+  } catch (error) {
+    console.error('Alım sepetine ekleme hatası:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Ürün alım sepetine eklenirken hata oluştu',
+      error: error instanceof Error ? error.message : 'Bilinmeyen hata'
+    });
+  }
+};
+
+// Satıcı alım sepetini getir
+export const getPurchaseCart = async (req: Request, res: Response) => {
+  try {
+    const { supplier_id } = req.params;
+    const userId = (req as any).user?.userId;
+    
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Kullanıcı kimlik doğrulaması gerekli'
+      });
+    }
+
+    const cart = await purchaseCartService.getPurchaseCart(supplier_id, userId);
+    const total = await purchaseCartService.calculatePurchaseCartTotal(supplier_id, userId);
+
+    res.json({
+      success: true,
+      data: {
+        cart,
+        total: {
+          amount: total,
+          currency: 'USD',
+          formatted: `$${total.toFixed(2)}`
+        }
+      },
+      message: 'Alım sepeti başarıyla getirildi'
+    });
+  } catch (error) {
+    console.error('Alım sepeti getirme hatası:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Alım sepeti getirilemedi',
+      error: error instanceof Error ? error.message : 'Bilinmeyen hata'
+    });
+  }
+};
+
+// Alım sepeti öğesini güncelle
+export const updatePurchaseCartItem = async (req: Request, res: Response) => {
+  try {
+    const { item_id } = req.params;
+    const { quantity, width, height, hasFringe, cutType, notes } = req.body;
+
+    const updatedItem = await purchaseCartService.updatePurchaseCartItem({
+      purchaseCartItemId: parseInt(item_id),
+      quantity: quantity ? Number(quantity) : undefined,
+      width: width ? Number(width) : undefined,
+      height: height ? Number(height) : undefined,
+      hasFringe: hasFringe !== undefined ? Boolean(hasFringe) : undefined,
+      cutType,
+      notes
+    });
+
+    res.json({
+      success: true,
+      data: updatedItem,
+      message: 'Alım sepeti öğesi başarıyla güncellendi'
+    });
+  } catch (error) {
+    console.error('Alım sepeti öğesi güncelleme hatası:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Alım sepeti öğesi güncellenemedi',
+      error: error instanceof Error ? error.message : 'Bilinmeyen hata'
+    });
+  }
+};
+
+// Alım sepeti öğesini sil
+export const removePurchaseCartItem = async (req: Request, res: Response) => {
+  try {
+    const { item_id } = req.params;
+
+    await purchaseCartService.removePurchaseCartItem(parseInt(item_id));
+
+    res.json({
+      success: true,
+      message: 'Alım sepeti öğesi başarıyla silindi'
+    });
+  } catch (error) {
+    console.error('Alım sepeti öğesi silme hatası:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Alım sepeti öğesi silinemedi',
+      error: error instanceof Error ? error.message : 'Bilinmeyen hata'
+    });
+  }
+};
+
+// Alım sepetinden satın alma işlemi - Ana API fonksiyonu
+export const purchaseFromCart = async (req: Request, res: Response) => {
+  try {
+    const { supplier_id } = req.params;
+    const userId = (req as any).user?.userId;
+    
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Kullanıcı kimlik doğrulaması gerekli'
+      });
+    }
+
+    // Kullanıcı bilgilerini kontrol et
+    const user = await prisma.user.findUnique({
+      where: { userId }
+    });
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Kullanıcı bulunamadı'
+      });
+    }
+
+    // Alım sepetini getir
+    const cart = await purchaseCartService.getPurchaseCart(supplier_id, userId);
+    
+    if (!cart || !cart.items.length) {
+      return res.status(400).json({
+        success: false,
+        message: 'Alım sepeti boş veya bulunamadı'
+      });
+    }
+
+    // Satıcıyı kontrol et
+    const supplier = await prisma.supplier.findUnique({
+      where: { id: supplier_id, is_active: true }
+    });
+
+    if (!supplier) {
+      return res.status(404).json({
+        success: false,
+        message: 'Satıcı bulunamadı veya aktif değil'
+      });
+    }
+
+    // Toplam tutarı hesapla
+    const totalAmount = await purchaseCartService.calculatePurchaseCartTotal(supplier_id, userId);
+
+    const result = await prisma.$transaction(async (tx) => {
+      // Satıcı bakiyesini güncelle (borç artışı - negatif)
+      const previousBalance = supplier.balance;
+      const newBalance = previousBalance.minus(totalAmount);
+
+      const updatedSupplier = await tx.supplier.update({
+        where: { id: supplier_id },
+        data: { balance: newBalance }
+      });
+
+      // Satıcı bakiye işlemi kaydı oluştur
+      const transaction = await tx.supplierBalanceTransaction.create({
+        data: {
+          supplier_id: supplier_id,
+          transaction_type: 'CART_PURCHASE',
+          amount: -totalAmount, // Negatif (borç artışı) - USD cinsinden
+          original_amount: null, // Orijinal tutar yok (direkt USD)
+          exchange_rate: null, // Dolar kuru yok
+          original_currency: null, // Orijinal para birimi yok
+          previous_balance: previousBalance,
+          new_balance: newBalance,
+          description: `Alım sepetinden toplu satın alma - ${cart.items.length} ürün`,
+          reference_number: `CART-${Date.now()}`,
+          created_by: userId
+        }
+      });
+
+      // Her sepet öğesi için stok güncelleme
+      const stockUpdates = [];
+      for (const item of cart.items) {
+        // Mevcut varyasyonları kontrol et
+        const existingVariations = await tx.productvariations.findMany({
+          where: { product_id: item.product_id }
+        });
+
+        if (existingVariations.length > 0) {
+          // Mevcut varyasyonlar varsa, ilk varyasyona stok ekle
+          const firstVariation = existingVariations[0];
+          const updatedVariation = await tx.productvariations.update({
+            where: { id: firstVariation.id },
+            data: {
+              stock_area_m2: {
+                increment: parseFloat(item.area_m2.toString()) * item.quantity
+              }
+            }
+          });
+          stockUpdates.push({
+            product_id: item.product_id,
+            variation_id: firstVariation.id,
+            added_m2: parseFloat(item.area_m2.toString()) * item.quantity
+          });
+        } else {
+          // Varyasyon yoksa yeni bir tane oluştur
+          const newVariation = await tx.productvariations.create({
+            data: {
+              product_id: item.product_id,
+              cut_type_id: 1, // Varsayılan kesim tipi
+              has_fringe: item.has_fringe || false,
+              width: parseFloat(item.width.toString()),
+              height: parseFloat(item.height.toString()),
+              stock_quantity: item.quantity,
+              stock_area_m2: parseFloat(item.area_m2.toString()) * item.quantity
+            }
+          });
+          stockUpdates.push({
+            product_id: item.product_id,
+            variation_id: newVariation.id,
+            added_m2: parseFloat(item.area_m2.toString()) * item.quantity
+          });
+        }
+      }
+
+      // Sepeti temizle
+      await tx.purchaseCartItems.deleteMany({
+        where: { purchase_cart_id: cart.id }
+      });
+
+      await tx.purchaseCarts.update({
+        where: { id: cart.id },
+        data: { is_active: false }
+      });
+
+      return {
+        supplier: updatedSupplier,
+        transaction,
+        stockUpdates,
+        purchasedItems: cart.items,
+        totalAmount
+      };
+    });
+
+    res.json({
+      success: true,
+      data: result,
+      message: `Alım sepetinden ${cart.items.length} ürün başarıyla satın alındı. Toplam: $${totalAmount.toFixed(2)} USD`
+    });
+
+  } catch (error) {
+    console.error('Alım sepetinden satın alma hatası:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Alım sepetinden satın alma işlemi gerçekleştirilemedi',
       error: error instanceof Error ? error.message : 'Bilinmeyen hata'
     });
   }

@@ -38,6 +38,7 @@ model User {
   inAppNotifications  InAppNotification[]
   notificationHistory NotificationHistory[]
   passwordResetTokens PasswordResetToken[]
+  purchaseCarts       PurchaseCarts[]
 }
 
 model Collection {
@@ -72,6 +73,7 @@ model Product {
   cart_items        cart_items[]
   productvariations productvariations[]
   manuelSatisDetay  ManuelSatisDetay[]
+  purchaseCartItems PurchaseCartItems[]
 }
 
 model PriceList {
@@ -741,6 +743,7 @@ model Supplier {
   updated_at            DateTime                    @updatedAt @map("updated_at")
   purchasePriceLists    PurchasePriceList[]
   balanceTransactions   SupplierBalanceTransaction[]
+  purchaseCarts         PurchaseCarts[]
 
   @@map("suppliers")
 }
@@ -794,4 +797,46 @@ model SupplierBalanceTransaction {
   supplier          Supplier          @relation(fields: [supplier_id], references: [id], onDelete: Cascade)
 
   @@map("supplier_balance_transactions")
+}
+
+// Satıcı alım sepeti tablosu - Normal sepetlerden ayrı olarak tutulur
+model PurchaseCarts {
+  id           Int                   @id @default(autoincrement())
+  supplier_id  String                @map("supplier_id")
+  user_id      String                @map("user_id") @db.VarChar(36) // Sepeti oluşturan admin kullanıcı
+  is_active    Boolean               @default(true) @map("is_active")
+  created_at   DateTime              @default(now()) @map("created_at") @db.Timestamp(6)
+  updated_at   DateTime              @updatedAt @map("updated_at") @db.Timestamp(6)
+  items        PurchaseCartItems[]
+  supplier     Supplier              @relation(fields: [supplier_id], references: [id], onDelete: Cascade)
+  user         User                  @relation(fields: [user_id], references: [userId], onDelete: Cascade)
+
+  @@index([supplier_id], map: "idx_purchase_carts_supplier")
+  @@index([user_id], map: "idx_purchase_carts_user")
+  @@index([supplier_id, is_active], map: "idx_purchase_carts_supplier_active")
+  @@map("purchase_carts")
+}
+
+// Satıcı alım sepeti öğeleri
+model PurchaseCartItems {
+  id               Int               @id @default(autoincrement())
+  purchase_cart_id Int               @map("purchase_cart_id")
+  product_id       String            @map("product_id") @db.VarChar(36)
+  quantity         Int               @default(1)
+  width            Decimal           @db.Decimal(8, 2)
+  height           Decimal           @db.Decimal(8, 2)
+  area_m2          Decimal           @db.Decimal(10, 2) @map("area_m2")
+  unit_price       Decimal           @db.Decimal(10, 2) @map("unit_price") // USD cinsinden alış fiyatı
+  total_price      Decimal           @db.Decimal(12, 2) @map("total_price") // USD cinsinden toplam
+  has_fringe       Boolean?          @default(false) @map("has_fringe")
+  cut_type         cut_type_enum?    @default(rectangle) @map("cut_type")
+  notes            String?
+  created_at       DateTime          @default(now()) @map("created_at") @db.Timestamp(6)
+  updated_at       DateTime          @updatedAt @map("updated_at") @db.Timestamp(6)
+  purchaseCart     PurchaseCarts     @relation(fields: [purchase_cart_id], references: [id], onDelete: Cascade)
+  product          Product           @relation(fields: [product_id], references: [productId], onDelete: Cascade)
+
+  @@index([purchase_cart_id], map: "idx_purchase_cart_items_cart_id")
+  @@index([product_id], map: "idx_purchase_cart_items_product_id")
+  @@map("purchase_cart_items")
 }

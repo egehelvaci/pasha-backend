@@ -14,7 +14,12 @@ import {
   updatePurchasePriceList,
   deactivatePurchasePriceList,
   updateCollectionPrice,
-  getDefaultPurchasePriceList
+  getDefaultPurchasePriceList,
+  addToPurchaseCart,
+  getPurchaseCart,
+  updatePurchaseCartItem,
+  removePurchaseCartItem,
+  purchaseFromCart
 } from '../controllers/purchasePriceListController';
 import { authMiddleware } from '../auth/auth-middleware';
 
@@ -43,5 +48,12 @@ router.delete('/purchase-price-lists/:id', deactivatePurchasePriceList);
 
 // Koleksiyon fiyat güncelleme
 router.put('/purchase-price-lists/:listId/collections/:collectionId', updateCollectionPrice);
+
+// Alım sepeti route'ları
+router.post('/suppliers/:supplier_id/purchase-cart/items', addToPurchaseCart); // Sepete ürün ekle
+router.get('/suppliers/:supplier_id/purchase-cart', getPurchaseCart); // Sepeti getir
+router.put('/suppliers/:supplier_id/purchase-cart/items/:item_id', updatePurchaseCartItem); // Sepet öğesini güncelle
+router.delete('/suppliers/:supplier_id/purchase-cart/items/:item_id', removePurchaseCartItem); // Sepet öğesini sil
+router.put('/suppliers/:supplier_id/balance', purchaseFromCart); // Sepetten satın alma işlemi
 
 export default router;
