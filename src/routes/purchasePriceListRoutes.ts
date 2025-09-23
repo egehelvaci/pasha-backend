@@ -58,7 +58,7 @@ router.post('/suppliers/:supplier_id/purchase-cart/items', addToPurchaseCart); /
 router.get('/suppliers/:supplier_id/purchase-cart', getPurchaseCart); // Sepeti getir
 router.put('/suppliers/:supplier_id/purchase-cart/items/:item_id', updatePurchaseCartItem); // Sepet öğesini güncelle
 router.delete('/suppliers/:supplier_id/purchase-cart/items/:item_id', removePurchaseCartItem); // Sepet öğesini sil
-router.put('/suppliers/:supplier_id/balance', purchaseFromCart); // Sepetten satın alma işlemi
+router.put('/suppliers/:supplier_id/purchase-from-cart', purchaseFromCart); // Sepetten satın alma işlemi
 
 // Satın alım geçmişi ve raporlama route'ları
 router.get('/purchases', getAllPurchases); // Tüm satın alımları listele (filtreleme ve pagination ile)

@@ -1203,48 +1203,185 @@ export const purchaseFromCart = async (req: Request, res: Response) => {
         }
       });
 
-      // Her sepet öğesi için stok güncelleme
+      // Her sepet öğesi için stok güncelleme (sipariş mantığının tersi - stok artırma)
       const stockUpdates = [];
       for (const item of cart.items) {
-        // Mevcut varyasyonları kontrol et
-        const existingVariations = await tx.productvariations.findMany({
-          where: { product_id: item.product_id }
-        });
+        console.log(`🔄 Stok artırma işlemi başlıyor: ${item.product_id}`);
+        console.log(`📦 Miktar: ${item.quantity}, Boyut: ${item.width}x${item.height}cm, Saçak: ${item.has_fringe}`);
 
-        if (existingVariations.length > 0) {
-          // Mevcut varyasyonlar varsa, ilk varyasyona stok ekle
-          const firstVariation = existingVariations[0];
-          const updatedVariation = await tx.productvariations.update({
-            where: { id: firstVariation.id },
-            data: {
-              stock_area_m2: {
-                increment: parseFloat(item.area_m2.toString()) * item.quantity
+        // Ürün bilgilerini ve kurallarını getir
+        const product = await tx.product.findUnique({
+          where: { productId: item.product_id },
+          include: {
+            productrules: {
+              include: {
+                productsizeoptions: true
               }
             }
-          });
-          stockUpdates.push({
+          }
+        });
+
+        if (!product) {
+          console.log(`❌ Ürün bulunamadı: ${item.product_id}`);
+          continue;
+        }
+
+        // Satın alınan ürünün gerçek ölçüleri
+        const itemWidth = parseFloat(item.width.toString());
+        const itemHeight = parseFloat(item.height.toString());
+        const itemHasFringe = item.has_fringe || false;
+
+        console.log(`📏 Alınan ürün ölçüleri: ${itemWidth}x${itemHeight}cm, Saçak: ${itemHasFringe}`);
+
+        // Cut type mapping
+        const cutTypeMapping: { [key: string]: number } = {
+          'rectangle': 1,
+          'round': 2,
+          'oval': 3,
+          'hexagon': 4,
+          'star': 5
+        };
+        const itemCutType = (item.cut_type as string) || 'rectangle';
+        const cutTypeId = cutTypeMapping[itemCutType] || 1;
+
+        // Size options varsa hedef boyutları belirle
+        let targetWidth = itemWidth;
+        let targetHeight = itemHeight;
+
+        if (product.productrules?.productsizeoptions) {
+          const sizeOptions = product.productrules.productsizeoptions;
+          
+          // En yakın size option'ı bul
+          const sizeOption = sizeOptions.find((so: any) => 
+            so.width === itemWidth && (so.height === itemHeight || so.is_optional_height)
+          );
+
+          if (sizeOption) {
+            targetWidth = sizeOption.width;
+            if (sizeOption.is_optional_height) {
+              // Opsiyonel yükseklik: hedef yükseklik size option'dan gelir
+              targetHeight = sizeOption.height;
+            } else {
+              // Sabit yükseklik: alınan ürün yüksekliği kullanılır
+              targetHeight = itemHeight;
+            }
+            console.log(`🎯 Size option bulundu: ${targetWidth}x${targetHeight}cm (optional_height: ${sizeOption.is_optional_height})`);
+          }
+        }
+
+        // En spesifik eşleşme: tam boyut + saçak durumu + kesim tipi
+        let variations = await tx.productvariations.findMany({
+          where: {
             product_id: item.product_id,
-            variation_id: firstVariation.id,
-            added_m2: parseFloat(item.area_m2.toString()) * item.quantity
-          });
-        } else {
-          // Varyasyon yoksa yeni bir tane oluştur
-          const newVariation = await tx.productvariations.create({
-            data: {
+            width: targetWidth,
+            height: targetHeight,
+            has_fringe: itemHasFringe,
+            cut_type_id: cutTypeId
+          }
+        });
+
+        console.log(`📊 Spesifik eşleşme (${targetWidth}x${targetHeight}, saçak:${itemHasFringe}, cut:${cutTypeId}): ${variations.length} varyasyon`);
+
+        // Kesim tipi esnek eşleşme
+        if (variations.length === 0) {
+          variations = await tx.productvariations.findMany({
+            where: {
               product_id: item.product_id,
-              cut_type_id: 1, // Varsayılan kesim tipi
-              has_fringe: item.has_fringe || false,
-              width: parseFloat(item.width.toString()),
-              height: parseFloat(item.height.toString()),
-              stock_quantity: item.quantity,
-              stock_area_m2: parseFloat(item.area_m2.toString()) * item.quantity
+              width: targetWidth,
+              height: targetHeight,
+              has_fringe: itemHasFringe
             }
           });
-          stockUpdates.push({
-            product_id: item.product_id,
-            variation_id: newVariation.id,
-            added_m2: parseFloat(item.area_m2.toString()) * item.quantity
+          console.log(`📊 Kesim tipi esnek eşleşme (${targetWidth}x${targetHeight}, saçak:${itemHasFringe}): ${variations.length} varyasyon`);
+        }
+
+        // Saçak durumu esnek eşleşme
+        if (variations.length === 0) {
+          variations = await tx.productvariations.findMany({
+            where: {
+              product_id: item.product_id,
+              width: targetWidth,
+              height: targetHeight
+            }
           });
+          console.log(`📊 Saçak esnek eşleşme (${targetWidth}x${targetHeight}): ${variations.length} varyasyon`);
+        }
+
+        // Stok artırma işlemi
+        if (variations.length > 0) {
+          const variation = variations[0];
+          
+          // Ürünün opsiyonel yükseklik olup olmadığını kontrol et
+          const sizeOptions = product.productrules?.productsizeoptions || [];
+          const isOptionalHeight = sizeOptions.some((so: any) => 
+            so.width === variation.width && so.is_optional_height
+          );
+          
+          let updateData: any = {};
+          
+          if (isOptionalHeight) {
+            // Opsiyonel yükseklik: Sadece m² artır
+            const actualPieceAreaM2 = (itemWidth * itemHeight) / 10000;
+            const addedAreaM2 = item.quantity * actualPieceAreaM2;
+            const currentAreaM2 = Number(variation.stock_area_m2 || 0);
+            const newAreaM2 = currentAreaM2 + addedAreaM2; // Artırıyoruz
+            
+            updateData.stock_area_m2 = newAreaM2;
+            console.log(`📦 Opsiyonel yükseklik stok artırıldı: ${currentAreaM2} + ${addedAreaM2} = ${newAreaM2} m²`);
+            
+            stockUpdates.push({
+              product_id: item.product_id,
+              variation_id: variation.id,
+              variation_match: 'optional_height',
+              size: `${targetWidth}x${targetHeight}cm`,
+              actual_size: `${itemWidth}x${itemHeight}cm`,
+              has_fringe: itemHasFringe,
+              cut_type: item.cut_type,
+              added_m2: addedAreaM2,
+              added_quantity: 0, // Opsiyonel yükseklikte adet artmaz
+              old_area_m2: currentAreaM2,
+              new_area_m2: newAreaM2
+            });
+          } else {
+            // Hazır kesim: Hem adet hem m² artır
+            const pieceAreaM2 = (targetWidth * targetHeight) / 10000;
+            const addedAreaM2 = item.quantity * pieceAreaM2;
+            const currentQuantity = Number(variation.stock_quantity || 0);
+            const currentAreaM2 = Number(variation.stock_area_m2 || 0);
+            const newQuantity = currentQuantity + item.quantity;
+            const newAreaM2 = currentAreaM2 + addedAreaM2;
+            
+            updateData.stock_quantity = newQuantity;
+            updateData.stock_area_m2 = newAreaM2;
+            console.log(`📦 Hazır kesim stok artırıldı: ${currentQuantity} + ${item.quantity} = ${newQuantity} adet, ${currentAreaM2} + ${addedAreaM2} = ${newAreaM2} m²`);
+            
+            stockUpdates.push({
+              product_id: item.product_id,
+              variation_id: variation.id,
+              variation_match: 'exact',
+              size: `${targetWidth}x${targetHeight}cm`,
+              has_fringe: itemHasFringe,
+              cut_type: item.cut_type,
+              added_m2: addedAreaM2,
+              added_quantity: item.quantity,
+              old_quantity: currentQuantity,
+              new_quantity: newQuantity,
+              old_area_m2: currentAreaM2,
+              new_area_m2: newAreaM2
+            });
+          }
+
+          // Varyasyonu güncelle
+          await tx.productvariations.update({
+            where: { id: variation.id },
+            data: updateData
+          });
+
+          console.log(`✅ Varyasyon ${variation.id} güncellendi`);
+        } else {
+          // Hiçbir varyasyon bulunamadı - hata at, yeni varyasyon oluşturma
+          console.log(`❌ ${itemWidth}x${itemHeight}cm boyutunda uygun varyasyon bulunamadı`);
+          throw new Error(`${product.name} ürünü için ${itemWidth}x${itemHeight}cm boyutunda uygun varyasyon bulunamadı. Lütfen önce bu boyutta stok ekleyin veya mevcut varyasyonları kullanın.`);
         }
       }
 
