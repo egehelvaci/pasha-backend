@@ -1343,17 +1343,15 @@ export const purchaseFromCart = async (req: Request, res: Response) => {
               new_area_m2: newAreaM2
             });
           } else {
-            // Hazır kesim: Hem adet hem m² artır
-            const pieceAreaM2 = (targetWidth * targetHeight) / 10000;
-            const addedAreaM2 = item.quantity * pieceAreaM2;
+            // Hazır kesim: Sadece adet artır, m² artırma
             const currentQuantity = Number(variation.stock_quantity || 0);
             const currentAreaM2 = Number(variation.stock_area_m2 || 0);
             const newQuantity = currentQuantity + item.quantity;
-            const newAreaM2 = currentAreaM2 + addedAreaM2;
+            // m² değeri değişmez (hazır ebat mantığı)
             
             updateData.stock_quantity = newQuantity;
-            updateData.stock_area_m2 = newAreaM2;
-            console.log(`📦 Hazır kesim stok artırıldı: ${currentQuantity} + ${item.quantity} = ${newQuantity} adet, ${currentAreaM2} + ${addedAreaM2} = ${newAreaM2} m²`);
+            // updateData.stock_area_m2 = currentAreaM2; // Değişmez, güncelleme yapma
+            console.log(`📦 Hazır kesim stok artırıldı: ${currentQuantity} + ${item.quantity} = ${newQuantity} adet, m² değişmedi: ${currentAreaM2} m²`);
             
             stockUpdates.push({
               product_id: item.product_id,
@@ -1362,12 +1360,12 @@ export const purchaseFromCart = async (req: Request, res: Response) => {
               size: `${targetWidth}x${targetHeight}cm`,
               has_fringe: itemHasFringe,
               cut_type: item.cut_type,
-              added_m2: addedAreaM2,
+              added_m2: 0, // Hazır ebatlarda m² artmaz
               added_quantity: item.quantity,
               old_quantity: currentQuantity,
               new_quantity: newQuantity,
               old_area_m2: currentAreaM2,
-              new_area_m2: newAreaM2
+              new_area_m2: currentAreaM2 // Değişmez
             });
           }
 
