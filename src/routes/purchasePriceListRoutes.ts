@@ -19,7 +19,11 @@ import {
   getPurchaseCart,
   updatePurchaseCartItem,
   removePurchaseCartItem,
-  purchaseFromCart
+  purchaseFromCart,
+  getAllPurchases,
+  getPurchaseDetail,
+  getSupplierPurchaseSummary,
+  getPurchaseStatistics
 } from '../controllers/purchasePriceListController';
 import { authMiddleware } from '../auth/auth-middleware';
 
@@ -55,5 +59,11 @@ router.get('/suppliers/:supplier_id/purchase-cart', getPurchaseCart); // Sepeti 
 router.put('/suppliers/:supplier_id/purchase-cart/items/:item_id', updatePurchaseCartItem); // Sepet öğesini güncelle
 router.delete('/suppliers/:supplier_id/purchase-cart/items/:item_id', removePurchaseCartItem); // Sepet öğesini sil
 router.put('/suppliers/:supplier_id/balance', purchaseFromCart); // Sepetten satın alma işlemi
+
+// Satın alım geçmişi ve raporlama route'ları
+router.get('/purchases', getAllPurchases); // Tüm satın alımları listele (filtreleme ve pagination ile)
+router.get('/purchases/:transaction_id', getPurchaseDetail); // Belirli bir satın alımın detayını getir
+router.get('/suppliers/:supplier_id/purchase-summary', getSupplierPurchaseSummary); // Satıcı bazında satın alım özeti
+router.get('/statistics/purchases', getPurchaseStatistics); // Dashboard için satın alım istatistikleri
 
 export default router;

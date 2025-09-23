@@ -33,8 +33,7 @@ Authorization: Bearer <token>
   "width": 200.0,               // Zorunlu - Genişlik (cm)
   "height": 300.0,              // Zorunlu - Yükseklik (cm)
   "hasFringe": true,            // Zorunlu - Saçaklı mı?
-  "cutType": "rectangle",       // Zorunlu - Kesim türü (rectangle, round, oval, hexagon, star)
-  "notes": "Özel not"           // Opsiyonel - Notlar
+  "cutType": "rectangle"       // Zorunlu - Kesim türü (rectangle, round, oval, hexagon, star)        // Opsiyonel - Notlar
 }
 ```
 
@@ -324,3 +323,328 @@ Satıcı bakiye işlemlerinde kullanılan yeni tip:
 - `CART_PURCHASE` - Alım sepetinden toplu satın alma
 
 Bu API sayesinde artık satıcılardan ürün alımını sepet sistemi ile kolayca yönetebilir, toplu alımlar yapabilir ve stok güncellemelerini otomatik olarak gerçekleştirebilirsiniz.
+
+---
+
+## Satın Alım Geçmişi ve Raporlama API'leri
+
+### 6. Tüm Satın Alımları Listele
+**GET** `/purchases`
+
+**Açıklama:** Tüm satın alım işlemlerini filtreleme ve pagination ile getirir. Detaylı raporlama için kullanılır.
+
+**Query Parameters:**
+- `page` (number): Sayfa numarası (varsayılan: 1)
+- `limit` (number): Sayfa başına kayıt (varsayılan: 20)
+- `supplier_id` (string): Belirli satıcıya göre filtrele
+- `transaction_type` (string): İşlem türüne göre filtrele (CART_PURCHASE, PRODUCT_PURCHASE, PAYMENT, vb.)
+- `start_date` (string): Başlangıç tarihi (ISO format)
+- `end_date` (string): Bitiş tarihi (ISO format)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "transactions": [
+      {
+        "id": "uuid",
+        "supplier_id": "uuid",
+        "transaction_type": "CART_PURCHASE",
+        "transaction_type_description": "Sepetten Toplu Alım",
+        "amount": -500.00,
+        "amount_formatted": "$500.00",
+        "balance_change": "increase_debt",
+        "original_amount": null,
+        "exchange_rate": null,
+        "original_currency": null,
+        "previous_balance": "-1500.00",
+        "new_balance": "-2000.00",
+        "description": "Alım sepetinden toplu satın alma - 3 ürün",
+        "reference_number": "CART-1705320123456",
+        "created_by": "admin-user-id",
+        "created_at": "2024-01-15T11:00:00Z",
+        "supplier": {
+          "id": "uuid",
+          "name": "ABC Halı Tedarik",
+          "company_name": "ABC Halı Tedarik Ltd. Şti.",
+          "currency": "USD"
+        }
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 20,
+      "total": 150,
+      "totalPages": 8
+    },
+    "stats": {
+      "totalTransactions": 150,
+      "totalAmount": -25000.00,
+      "totalAmountFormatted": "$25000.00"
+    }
+  },
+  "message": "Satın alım geçmişi başarıyla getirildi"
+}
+```
+
+### 7. Satın Alım Detayını Getir
+**GET** `/purchases/{transaction-id}`
+
+**Açıklama:** Belirli bir satın alım işleminin detaylı bilgilerini getirir.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "transaction": {
+      "id": "uuid",
+      "supplier_id": "uuid",
+      "transaction_type": "CART_PURCHASE",
+      "transaction_type_description": "Sepetten Toplu Alım",
+      "amount": -500.00,
+      "amount_formatted": "$500.00",
+      "balance_change_type": "debt_increase",
+      "balance_change_description": "Borç Artışı",
+      "original_amount": null,
+      "exchange_rate": null,
+      "original_currency": null,
+      "previous_balance": "-1500.00",
+      "previous_balance_formatted": "$-1500.00",
+      "new_balance": "-2000.00",
+      "new_balance_formatted": "$-2000.00",
+      "description": "Alım sepetinden toplu satın alma - 3 ürün",
+      "reference_number": "CART-1705320123456",
+      "created_by": "admin-user-id",
+      "created_at": "2024-01-15T11:00:00Z",
+      "created_at_formatted": "15.01.2024 14:00:00",
+      "purchase_details": {
+        "type": "cart_purchase",
+        "description": "Alım sepetinden toplu satın alma",
+        "note": "Detaylı ürün bilgileri transaction sırasında sepet temizlendiği için mevcut değil"
+      },
+      "supplier": {
+        "id": "uuid",
+        "name": "ABC Halı Tedarik",
+        "company_name": "ABC Halı Tedarik Ltd. Şti.",
+        "phone": "+90 212 555 0001",
+        "address": "Merkez Mah. Sanayi Cad. No:15",
+        "currency": "USD",
+        "balance": "-2000.00"
+      }
+    }
+  },
+  "message": "Satın alım detayı başarıyla getirildi"
+}
+```
+
+### 8. Satıcı Bazında Satın Alım Özeti
+**GET** `/suppliers/{supplier-id}/purchase-summary`
+
+**Açıklama:** Belirli bir satıcı için detaylı satın alım özeti ve istatistikleri getirir.
+
+**Query Parameters:**
+- `start_date` (string): Başlangıç tarihi (ISO format)
+- `end_date` (string): Bitiş tarihi (ISO format)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "supplier": {
+      "id": "uuid",
+      "name": "ABC Halı Tedarik",
+      "company_name": "ABC Halı Tedarik Ltd. Şti.",
+      "phone": "+90 212 555 0001",
+      "address": "Merkez Mah. Sanayi Cad. No:15",
+      "balance": "-2000.00",
+      "currency": "USD"
+    },
+    "summary": {
+      "period": {
+        "start_date": "2024-01-01",
+        "end_date": "2024-01-31"
+      },
+      "totals": {
+        "transaction_count": 25,
+        "total_amount": -3000.00,
+        "total_amount_formatted": "$3000.00"
+      },
+      "purchases": {
+        "count": 20,
+        "amount": 3500.00,
+        "amount_formatted": "$3500.00"
+      },
+      "payments": {
+        "count": 5,
+        "amount": 500.00,
+        "amount_formatted": "$500.00"
+      },
+      "cart_purchases": {
+        "count": 8,
+        "amount": 2000.00,
+        "amount_formatted": "$2000.00"
+      },
+      "by_transaction_type": [
+        {
+          "transaction_type": "CART_PURCHASE",
+          "count": 8,
+          "amount": -2000.00,
+          "amount_formatted": "$2000.00"
+        },
+        {
+          "transaction_type": "PRODUCT_PURCHASE",
+          "count": 12,
+          "amount": -1500.00,
+          "amount_formatted": "$1500.00"
+        },
+        {
+          "transaction_type": "PAYMENT",
+          "count": 5,
+          "amount": 500.00,
+          "amount_formatted": "$500.00"
+        }
+      ]
+    },
+    "recent_transactions": [
+      {
+        "id": "uuid",
+        "transaction_type": "CART_PURCHASE",
+        "amount": "-500.00",
+        "amount_formatted": "$500.00",
+        "balance_change": "debt_increase",
+        "description": "Alım sepetinden toplu satın alma - 3 ürün",
+        "created_at": "2024-01-15T11:00:00Z",
+        "reference_number": "CART-1705320123456"
+      }
+    ]
+  },
+  "message": "Satıcı satın alım özeti başarıyla getirildi"
+}
+```
+
+### 9. Satın Alım İstatistikleri (Dashboard)
+**GET** `/statistics/purchases`
+
+**Açıklama:** Dashboard için genel satın alım istatistikleri, günlük veriler ve en çok alım yapılan satıcıları getirir.
+
+**Query Parameters:**
+- `period` (number): İstatistik periyodu (gün olarak, varsayılan: 30)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "period": {
+      "days": 30,
+      "start_date": "2023-12-16T00:00:00Z",
+      "end_date": "2024-01-15T00:00:00Z"
+    },
+    "overview": {
+      "total_purchases": {
+        "count": 85,
+        "amount": 25000.00,
+        "amount_formatted": "$25000.00"
+      },
+      "total_payments": {
+        "count": 15,
+        "amount": 5000.00,
+        "amount_formatted": "$5000.00"
+      },
+      "cart_purchases": {
+        "count": 30,
+        "amount": 15000.00,
+        "amount_formatted": "$15000.00"
+      },
+      "active_suppliers": 12
+    },
+    "daily_stats": [
+      {
+        "date": "2024-01-15",
+        "transaction_count": 5,
+        "purchase_amount": 1500.00,
+        "payment_amount": 200.00
+      },
+      {
+        "date": "2024-01-14",
+        "transaction_count": 3,
+        "purchase_amount": 800.00,
+        "payment_amount": 0.00
+      }
+    ],
+    "top_suppliers": [
+      {
+        "supplier_id": "uuid",
+        "supplier_name": "ABC Halı Tedarik",
+        "company_name": "ABC Halı Tedarik Ltd. Şti.",
+        "transaction_count": 15,
+        "purchase_amount": 8500.00,
+        "purchase_amount_formatted": "$8500.00"
+      },
+      {
+        "supplier_id": "uuid2",
+        "supplier_name": "DEF Tekstil",
+        "company_name": "DEF Tekstil San. Tic. A.Ş.",
+        "transaction_count": 12,
+        "purchase_amount": 6200.00,
+        "purchase_amount_formatted": "$6200.00"
+      }
+    ]
+  },
+  "message": "Satın alım istatistikleri başarıyla getirildi"
+}
+```
+
+---
+
+## Gelişmiş Kullanım Örnekleri
+
+### Detaylı Raporlama Senaryoları
+
+#### 1. Belirli Tarih Aralığında Satın Alımları Listele
+```bash
+GET /api/admin/purchase-management/purchases?start_date=2024-01-01&end_date=2024-01-31&page=1&limit=50
+```
+
+#### 2. Sadece Sepet Alımlarını Filtrele
+```bash
+GET /api/admin/purchase-management/purchases?transaction_type=CART_PURCHASE&page=1&limit=20
+```
+
+#### 3. Belirli Satıcının Son 3 Aylık Özeti
+```bash
+GET /api/admin/purchase-management/suppliers/abc-123/purchase-summary?start_date=2023-10-01&end_date=2024-01-01
+```
+
+#### 4. Dashboard İstatistikleri (Son 7 Gün)
+```bash
+GET /api/admin/purchase-management/statistics/purchases?period=7
+```
+
+### İşlem Türleri ve Açıklamaları
+
+| Transaction Type | Açıklama | Bakiye Etkisi |
+|-----------------|----------|---------------|
+| `INITIAL_BALANCE` | Başlangıç Bakiyesi | Pozitif/Negatif |
+| `PAYMENT` | Ödeme | Pozitif (Borç Azalır) |
+| `PURCHASE` | Tek Ürün Alımı | Negatif (Borç Artar) |
+| `CART_PURCHASE` | Sepetten Toplu Alım | Negatif (Borç Artar) |
+| `PRODUCT_PURCHASE` | Ürün Alımı | Negatif (Borç Artar) |
+| `ADJUSTMENT` | Düzeltme | Pozitif/Negatif |
+| `REFUND` | İade | Pozitif (Borç Azalır) |
+| `DISCOUNT` | İndirim | Pozitif (Borç Azalır) |
+
+### Bakiye Değişim Türleri
+
+- `debt_increase`: Borç artışı (negatif tutar)
+- `debt_decrease`: Borç azalması (pozitif tutar)
+
+Bu gelişmiş raporlama API'leri sayesinde artık:
+- ✅ Tüm satın alım işlemlerini detaylı olarak takip edebilir
+- ✅ Satıcı bazında performans analizi yapabilir  
+- ✅ Tarih bazlı filtreleme ile dönemsel raporlar oluşturabilir
+- ✅ Dashboard için gerçek zamanlı istatistikler alabilir
+- ✅ İşlem detaylarını tek tek inceleyebilirsiniz

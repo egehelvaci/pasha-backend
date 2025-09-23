@@ -1282,3 +1282,522 @@ export const purchaseFromCart = async (req: Request, res: Response) => {
     });
   }
 };
+
+// Tüm satın alımları getir (pagination ile)
+export const getAllPurchases = async (req: Request, res: Response) => {
+  try {
+    const { 
+      page = 1, 
+      limit = 20, 
+      supplier_id, 
+      transaction_type, 
+      start_date, 
+      end_date 
+    } = req.query;
+
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Filtreleme koşulları
+    const whereCondition: any = {};
+    
+    if (supplier_id) {
+      whereCondition.supplier_id = supplier_id as string;
+    }
+    
+    if (transaction_type) {
+      whereCondition.transaction_type = transaction_type as string;
+    }
+    
+    if (start_date || end_date) {
+      whereCondition.created_at = {};
+      if (start_date) {
+        whereCondition.created_at.gte = new Date(start_date as string);
+      }
+      if (end_date) {
+        whereCondition.created_at.lte = new Date(end_date as string);
+      }
+    }
+
+    const [transactions, total] = await Promise.all([
+      prisma.supplierBalanceTransaction.findMany({
+        where: whereCondition,
+        orderBy: { created_at: 'desc' },
+        skip,
+        take: limitNum,
+        include: {
+          supplier: {
+            select: {
+              id: true,
+              name: true,
+              company_name: true,
+              currency: true
+            }
+          }
+        }
+      }),
+      prisma.supplierBalanceTransaction.count({
+        where: whereCondition
+      })
+    ]);
+
+    // İşlem türü açıklamaları
+    const getTransactionTypeDescription = (type: string) => {
+      const descriptions: { [key: string]: string } = {
+        'INITIAL_BALANCE': 'Başlangıç Bakiyesi',
+        'PAYMENT': 'Ödeme',
+        'PURCHASE': 'Tek Ürün Alımı',
+        'CART_PURCHASE': 'Sepetten Toplu Alım',
+        'PRODUCT_PURCHASE': 'Ürün Alımı',
+        'ADJUSTMENT': 'Düzeltme',
+        'REFUND': 'İade',
+        'DISCOUNT': 'İndirim'
+      };
+      return descriptions[type] || type;
+    };
+
+    // Satın alım istatistikleri
+    const stats = await prisma.supplierBalanceTransaction.aggregate({
+      where: whereCondition,
+      _sum: {
+        amount: true
+      },
+      _count: {
+        id: true
+      }
+    });
+
+    res.json({
+      success: true,
+      data: {
+        transactions: transactions.map(transaction => ({
+          ...transaction,
+          transaction_type_description: getTransactionTypeDescription(transaction.transaction_type),
+          amount_formatted: `$${Math.abs(parseFloat(transaction.amount.toString())).toFixed(2)}`,
+          balance_change: parseFloat(transaction.amount.toString()) < 0 ? 'increase_debt' : 'decrease_debt'
+        })),
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          totalPages: Math.ceil(total / limitNum)
+        },
+        stats: {
+          totalTransactions: stats._count.id || 0,
+          totalAmount: parseFloat(stats._sum.amount?.toString() || '0'),
+          totalAmountFormatted: `$${Math.abs(parseFloat(stats._sum.amount?.toString() || '0')).toFixed(2)}`
+        }
+      },
+      message: 'Satın alım geçmişi başarıyla getirildi'
+    });
+  } catch (error) {
+    console.error('Satın alım geçmişi getirme hatası:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Satın alım geçmişi getirilemedi',
+      error: error instanceof Error ? error.message : 'Bilinmeyen hata'
+    });
+  }
+};
+
+// Belirli bir satın alımın detayını getir
+export const getPurchaseDetail = async (req: Request, res: Response) => {
+  try {
+    const { transaction_id } = req.params;
+
+    const transaction = await prisma.supplierBalanceTransaction.findUnique({
+      where: { id: transaction_id },
+      include: {
+        supplier: {
+          select: {
+            id: true,
+            name: true,
+            company_name: true,
+            phone: true,
+            address: true,
+            currency: true,
+            balance: true
+          }
+        }
+      }
+    });
+
+    if (!transaction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Satın alım işlemi bulunamadı'
+      });
+    }
+
+    // Eğer bu bir sepet alımıysa, ilgili ürün detaylarını bulmaya çalış
+    let purchaseDetails = null;
+    if (transaction.transaction_type === 'CART_PURCHASE') {
+      // Referans numarasından sepet ID'sini çıkar
+      const cartReference = transaction.reference_number;
+      if (cartReference && cartReference.startsWith('CART-')) {
+        // Bu durumda detaylı bilgi transaction description'da olacak
+        purchaseDetails = {
+          type: 'cart_purchase',
+          description: 'Alım sepetinden toplu satın alma',
+          note: 'Detaylı ürün bilgileri transaction sırasında sepet temizlendiği için mevcut değil'
+        };
+      }
+    } else if (transaction.transaction_type === 'PRODUCT_PURCHASE') {
+      // Açıklamadan ürün bilgisini çıkarmaya çalış
+      purchaseDetails = {
+        type: 'single_product',
+        description: transaction.description
+      };
+    }
+
+    // İşlem türü açıklaması
+    const getTransactionTypeDescription = (type: string) => {
+      const descriptions: { [key: string]: string } = {
+        'INITIAL_BALANCE': 'Başlangıç Bakiyesi',
+        'PAYMENT': 'Ödeme',
+        'PURCHASE': 'Tek Ürün Alımı',
+        'CART_PURCHASE': 'Sepetten Toplu Alım',
+        'PRODUCT_PURCHASE': 'Ürün Alımı',
+        'ADJUSTMENT': 'Düzeltme',
+        'REFUND': 'İade',
+        'DISCOUNT': 'İndirim'
+      };
+      return descriptions[type] || type;
+    };
+
+    // Bakiye değişimi
+    const balanceChange = parseFloat(transaction.amount.toString());
+    const isDebtIncrease = balanceChange < 0;
+
+    res.json({
+      success: true,
+      data: {
+        transaction: {
+          ...transaction,
+          transaction_type_description: getTransactionTypeDescription(transaction.transaction_type),
+          amount_formatted: `$${Math.abs(balanceChange).toFixed(2)}`,
+          balance_change_type: isDebtIncrease ? 'debt_increase' : 'debt_decrease',
+          balance_change_description: isDebtIncrease ? 'Borç Artışı' : 'Borç Azalması',
+          previous_balance_formatted: `$${parseFloat(transaction.previous_balance.toString()).toFixed(2)}`,
+          new_balance_formatted: `$${parseFloat(transaction.new_balance.toString()).toFixed(2)}`,
+          created_at_formatted: new Date(transaction.created_at).toLocaleString('tr-TR'),
+          purchase_details: purchaseDetails
+        }
+      },
+      message: 'Satın alım detayı başarıyla getirildi'
+    });
+  } catch (error) {
+    console.error('Satın alım detayı getirme hatası:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Satın alım detayı getirilemedi',
+      error: error instanceof Error ? error.message : 'Bilinmeyen hata'
+    });
+  }
+};
+
+// Satıcı bazında satın alım özeti
+export const getSupplierPurchaseSummary = async (req: Request, res: Response) => {
+  try {
+    const { supplier_id } = req.params;
+    const { start_date, end_date } = req.query;
+
+    // Tarih filtreleri
+    const whereCondition: any = {
+      supplier_id: supplier_id
+    };
+
+    if (start_date || end_date) {
+      whereCondition.created_at = {};
+      if (start_date) {
+        whereCondition.created_at.gte = new Date(start_date as string);
+      }
+      if (end_date) {
+        whereCondition.created_at.lte = new Date(end_date as string);
+      }
+    }
+
+    // Satıcı bilgilerini getir
+    const supplier = await prisma.supplier.findUnique({
+      where: { id: supplier_id },
+      select: {
+        id: true,
+        name: true,
+        company_name: true,
+        phone: true,
+        address: true,
+        balance: true,
+        currency: true
+      }
+    });
+
+    if (!supplier) {
+      return res.status(404).json({
+        success: false,
+        message: 'Satıcı bulunamadı'
+      });
+    }
+
+    // İşlem istatistikleri
+    const [
+      totalStats,
+      purchaseStats,
+      paymentStats,
+      cartPurchaseStats,
+      recentTransactions
+    ] = await Promise.all([
+      // Toplam işlemler
+      prisma.supplierBalanceTransaction.aggregate({
+        where: whereCondition,
+        _sum: { amount: true },
+        _count: { id: true }
+      }),
+      // Sadece alım işlemleri (negatif)
+      prisma.supplierBalanceTransaction.aggregate({
+        where: {
+          ...whereCondition,
+          amount: { lt: 0 }
+        },
+        _sum: { amount: true },
+        _count: { id: true }
+      }),
+      // Sadece ödeme işlemleri (pozitif)
+      prisma.supplierBalanceTransaction.aggregate({
+        where: {
+          ...whereCondition,
+          amount: { gt: 0 }
+        },
+        _sum: { amount: true },
+        _count: { id: true }
+      }),
+      // Sepet alımları
+      prisma.supplierBalanceTransaction.aggregate({
+        where: {
+          ...whereCondition,
+          transaction_type: 'CART_PURCHASE'
+        },
+        _sum: { amount: true },
+        _count: { id: true }
+      }),
+      // Son 10 işlem
+      prisma.supplierBalanceTransaction.findMany({
+        where: whereCondition,
+        orderBy: { created_at: 'desc' },
+        take: 10,
+        select: {
+          id: true,
+          transaction_type: true,
+          amount: true,
+          description: true,
+          created_at: true,
+          reference_number: true
+        }
+      })
+    ]);
+
+    // İşlem türlerine göre grupla
+    const transactionsByType = await prisma.supplierBalanceTransaction.groupBy({
+      by: ['transaction_type'],
+      where: whereCondition,
+      _sum: { amount: true },
+      _count: { id: true }
+    });
+
+    res.json({
+      success: true,
+      data: {
+        supplier,
+        summary: {
+          period: {
+            start_date: start_date as string || 'Başlangıç',
+            end_date: end_date as string || 'Bugün'
+          },
+          totals: {
+            transaction_count: totalStats._count.id || 0,
+            total_amount: parseFloat(totalStats._sum.amount?.toString() || '0'),
+            total_amount_formatted: `$${Math.abs(parseFloat(totalStats._sum.amount?.toString() || '0')).toFixed(2)}`
+          },
+          purchases: {
+            count: purchaseStats._count.id || 0,
+            amount: Math.abs(parseFloat(purchaseStats._sum.amount?.toString() || '0')),
+            amount_formatted: `$${Math.abs(parseFloat(purchaseStats._sum.amount?.toString() || '0')).toFixed(2)}`
+          },
+          payments: {
+            count: paymentStats._count.id || 0,
+            amount: parseFloat(paymentStats._sum.amount?.toString() || '0'),
+            amount_formatted: `$${parseFloat(paymentStats._sum.amount?.toString() || '0').toFixed(2)}`
+          },
+          cart_purchases: {
+            count: cartPurchaseStats._count.id || 0,
+            amount: Math.abs(parseFloat(cartPurchaseStats._sum.amount?.toString() || '0')),
+            amount_formatted: `$${Math.abs(parseFloat(cartPurchaseStats._sum.amount?.toString() || '0')).toFixed(2)}`
+          },
+          by_transaction_type: transactionsByType.map(group => ({
+            transaction_type: group.transaction_type,
+            count: group._count.id,
+            amount: parseFloat(group._sum.amount?.toString() || '0'),
+            amount_formatted: `$${Math.abs(parseFloat(group._sum.amount?.toString() || '0')).toFixed(2)}`
+          }))
+        },
+        recent_transactions: recentTransactions.map(tx => ({
+          ...tx,
+          amount_formatted: `$${Math.abs(parseFloat(tx.amount.toString())).toFixed(2)}`,
+          balance_change: parseFloat(tx.amount.toString()) < 0 ? 'debt_increase' : 'debt_decrease'
+        }))
+      },
+      message: 'Satıcı satın alım özeti başarıyla getirildi'
+    });
+  } catch (error) {
+    console.error('Satıcı satın alım özeti getirme hatası:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Satıcı satın alım özeti getirilemedi',
+      error: error instanceof Error ? error.message : 'Bilinmeyen hata'
+    });
+  }
+};
+
+// Satın alım istatistikleri (dashboard için)
+export const getPurchaseStatistics = async (req: Request, res: Response) => {
+  try {
+    const { period = '30' } = req.query; // Son X gün
+    const days = parseInt(period as string);
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    const whereCondition = {
+      created_at: {
+        gte: startDate
+      }
+    };
+
+    const [
+      totalPurchases,
+      totalPayments,
+      cartPurchases,
+      supplierCount,
+      dailyStats
+    ] = await Promise.all([
+      // Toplam alımlar (negatif işlemler)
+      prisma.supplierBalanceTransaction.aggregate({
+        where: {
+          ...whereCondition,
+          amount: { lt: 0 }
+        },
+        _sum: { amount: true },
+        _count: { id: true }
+      }),
+      // Toplam ödemeler (pozitif işlemler)
+      prisma.supplierBalanceTransaction.aggregate({
+        where: {
+          ...whereCondition,
+          amount: { gt: 0 }
+        },
+        _sum: { amount: true },
+        _count: { id: true }
+      }),
+      // Sepet alımları
+      prisma.supplierBalanceTransaction.aggregate({
+        where: {
+          ...whereCondition,
+          transaction_type: 'CART_PURCHASE'
+        },
+        _sum: { amount: true },
+        _count: { id: true }
+      }),
+      // Aktif satıcı sayısı
+      prisma.supplier.count({
+        where: { is_active: true }
+      }),
+      // Günlük istatistikler (son 7 gün)
+      prisma.$queryRaw`
+        SELECT 
+          DATE(created_at) as date,
+          COUNT(*) as transaction_count,
+          SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END) as purchase_amount,
+          SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END) as payment_amount
+        FROM supplier_balance_transactions 
+        WHERE created_at >= ${new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)}
+        GROUP BY DATE(created_at)
+        ORDER BY date DESC
+        LIMIT 7
+      `
+    ]);
+
+    // En çok alım yapılan satıcılar
+    const topSuppliers = await prisma.supplierBalanceTransaction.groupBy({
+      by: ['supplier_id'],
+      where: {
+        ...whereCondition,
+        amount: { lt: 0 }
+      },
+      _sum: { amount: true },
+      _count: { id: true },
+      orderBy: {
+        _sum: {
+          amount: 'asc' // En negatif değer (en çok alım)
+        }
+      },
+      take: 5
+    });
+
+    // Satıcı isimlerini getir
+    const supplierIds = topSuppliers.map(s => s.supplier_id);
+    const suppliers = await prisma.supplier.findMany({
+      where: { id: { in: supplierIds } },
+      select: { id: true, name: true, company_name: true }
+    });
+
+    const topSuppliersWithNames = topSuppliers.map(stat => {
+      const supplier = suppliers.find(s => s.id === stat.supplier_id);
+      return {
+        supplier_id: stat.supplier_id,
+        supplier_name: supplier?.name || 'Bilinmeyen',
+        company_name: supplier?.company_name || '',
+        transaction_count: stat._count.id,
+        purchase_amount: Math.abs(parseFloat(stat._sum.amount?.toString() || '0')),
+        purchase_amount_formatted: `$${Math.abs(parseFloat(stat._sum.amount?.toString() || '0')).toFixed(2)}`
+      };
+    });
+
+    res.json({
+      success: true,
+      data: {
+        period: {
+          days: days,
+          start_date: startDate.toISOString(),
+          end_date: new Date().toISOString()
+        },
+        overview: {
+          total_purchases: {
+            count: totalPurchases._count.id || 0,
+            amount: Math.abs(parseFloat(totalPurchases._sum.amount?.toString() || '0')),
+            amount_formatted: `$${Math.abs(parseFloat(totalPurchases._sum.amount?.toString() || '0')).toFixed(2)}`
+          },
+          total_payments: {
+            count: totalPayments._count.id || 0,
+            amount: parseFloat(totalPayments._sum.amount?.toString() || '0'),
+            amount_formatted: `$${parseFloat(totalPayments._sum.amount?.toString() || '0').toFixed(2)}`
+          },
+          cart_purchases: {
+            count: cartPurchases._count.id || 0,
+            amount: Math.abs(parseFloat(cartPurchases._sum.amount?.toString() || '0')),
+            amount_formatted: `$${Math.abs(parseFloat(cartPurchases._sum.amount?.toString() || '0')).toFixed(2)}`
+          },
+          active_suppliers: supplierCount
+        },
+        daily_stats: dailyStats,
+        top_suppliers: topSuppliersWithNames
+      },
+      message: 'Satın alım istatistikleri başarıyla getirildi'
+    });
+  } catch (error) {
+    console.error('Satın alım istatistikleri getirme hatası:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Satın alım istatistikleri getirilemedi',
+      error: error instanceof Error ? error.message : 'Bilinmeyen hata'
+    });
+  }
+};
