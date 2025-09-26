@@ -1418,21 +1418,15 @@ export const purchaseFromCart = async (req: Request, res: Response) => {
   }
 };
 
-// Tüm satın alımları getir (pagination ile)
+// Tüm satın alımları getir (pagination olmadan)
 export const getAllPurchases = async (req: Request, res: Response) => {
   try {
     const { 
-      page = 1, 
-      limit = 20, 
       supplier_id, 
       transaction_type, 
       start_date, 
       end_date 
     } = req.query;
-
-    const pageNum = parseInt(page as string);
-    const limitNum = parseInt(limit as string);
-    const skip = (pageNum - 1) * limitNum;
 
     // Filtreleme koşulları
     const whereCondition: any = {};
@@ -1455,25 +1449,35 @@ export const getAllPurchases = async (req: Request, res: Response) => {
       }
     }
 
-    const [transactions, total] = await Promise.all([
+    const [transactions, allSuppliers] = await Promise.all([
       prisma.supplierBalanceTransaction.findMany({
         where: whereCondition,
         orderBy: { created_at: 'desc' },
-        skip,
-        take: limitNum,
         include: {
           supplier: {
             select: {
               id: true,
               name: true,
               company_name: true,
-              currency: true
+              currency: true,
+              balance: true
             }
           }
         }
       }),
-      prisma.supplierBalanceTransaction.count({
-        where: whereCondition
+      // Tüm aktif satıcıların bakiye bilgilerini getir
+      prisma.supplier.findMany({
+        where: { is_active: true },
+        select: {
+          id: true,
+          name: true,
+          company_name: true,
+          currency: true,
+          balance: true,
+          created_at: true,
+          updated_at: true
+        },
+        orderBy: { name: 'asc' }
       })
     ]);
 
@@ -1503,6 +1507,19 @@ export const getAllPurchases = async (req: Request, res: Response) => {
       }
     });
 
+    // Satıcı bakiyelerini formatla
+    const suppliersWithBalances = allSuppliers.map(supplier => ({
+      id: supplier.id,
+      name: supplier.name,
+      company_name: supplier.company_name,
+      currency: supplier.currency,
+      balance: parseFloat(supplier.balance.toString()),
+      balance_formatted: `$${parseFloat(supplier.balance.toString()).toFixed(2)}`,
+      balance_status: parseFloat(supplier.balance.toString()) < 0 ? 'debt' : 'credit',
+      created_at: supplier.created_at,
+      updated_at: supplier.updated_at
+    }));
+
     res.json({
       success: true,
       data: {
@@ -1512,19 +1529,23 @@ export const getAllPurchases = async (req: Request, res: Response) => {
           amount_formatted: `$${Math.abs(parseFloat(transaction.amount.toString())).toFixed(2)}`,
           balance_change: parseFloat(transaction.amount.toString()) < 0 ? 'increase_debt' : 'decrease_debt'
         })),
-        pagination: {
-          page: pageNum,
-          limit: limitNum,
-          total,
-          totalPages: Math.ceil(total / limitNum)
-        },
+        suppliers: suppliersWithBalances,
         stats: {
           totalTransactions: stats._count.id || 0,
           totalAmount: parseFloat(stats._sum.amount?.toString() || '0'),
-          totalAmountFormatted: `$${Math.abs(parseFloat(stats._sum.amount?.toString() || '0')).toFixed(2)}`
+          totalAmountFormatted: `$${Math.abs(parseFloat(stats._sum.amount?.toString() || '0')).toFixed(2)}`,
+          totalSuppliers: allSuppliers.length,
+          totalSupplierDebt: allSuppliers.reduce((sum, supplier) => {
+            const balance = parseFloat(supplier.balance.toString());
+            return balance < 0 ? sum + Math.abs(balance) : sum;
+          }, 0),
+          totalSupplierCredit: allSuppliers.reduce((sum, supplier) => {
+            const balance = parseFloat(supplier.balance.toString());
+            return balance > 0 ? sum + balance : sum;
+          }, 0)
         }
       },
-      message: 'Satın alım geçmişi başarıyla getirildi'
+      message: 'Satın alım geçmişi ve satıcı bakiyeleri başarıyla getirildi'
     });
   } catch (error) {
     console.error('Satın alım geçmişi getirme hatası:', error);
@@ -1715,11 +1736,10 @@ export const getSupplierPurchaseSummary = async (req: Request, res: Response) =>
         _sum: { amount: true },
         _count: { id: true }
       }),
-      // Son 10 işlem
+      // Tüm işlemler
       prisma.supplierBalanceTransaction.findMany({
         where: whereCondition,
         orderBy: { created_at: 'desc' },
-        take: 10,
         select: {
           id: true,
           transaction_type: true,
@@ -1738,6 +1758,104 @@ export const getSupplierPurchaseSummary = async (req: Request, res: Response) =>
       _sum: { amount: true },
       _count: { id: true }
     });
+
+    // CART_PURCHASE tipindeki işlemler için ürün detaylarını getir
+    const cartPurchaseTransactions = await prisma.supplierBalanceTransaction.findMany({
+      where: {
+        ...whereCondition,
+        transaction_type: 'CART_PURCHASE'
+      },
+      orderBy: { created_at: 'desc' }
+    });
+
+    // Her sepet alımı için ürün detaylarını bul
+    const cartPurchasesWithProducts = await Promise.all(
+      cartPurchaseTransactions.map(async (transaction) => {
+        // Reference number'dan timestamp'i çıkar (CART-1704895470123 formatında)
+        const timestamp = transaction.reference_number?.replace('CART-', '');
+        if (!timestamp) {
+          return {
+            transaction,
+            products: []
+          };
+        }
+
+        // O zamana yakın oluşturulan ve sonra temizlenen purchase cart'ları bul
+        // Timestamp'den 1 dakika öncesi ve sonrası aralığında ara
+        const searchDate = new Date(parseInt(timestamp));
+        const beforeDate = new Date(searchDate.getTime() - 60000); // 1 dakika önce
+        const afterDate = new Date(searchDate.getTime() + 60000);  // 1 dakika sonra
+
+        const purchaseCarts = await prisma.purchaseCarts.findMany({
+          where: {
+            supplier_id: supplier_id,
+            is_active: false, // Satın alma tamamlandıktan sonra false yapılır
+            updated_at: {
+              gte: beforeDate,
+              lte: afterDate
+            }
+          },
+          include: {
+            items: {
+              include: {
+                product: {
+                  include: {
+                    collection: {
+                      select: {
+                        name: true,
+                        code: true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          orderBy: { updated_at: 'desc' },
+          take: 1
+        });
+
+        const purchaseCart = purchaseCarts[0];
+        if (!purchaseCart) {
+          return {
+            transaction,
+            products: []
+          };
+        }
+
+        // Ürün detaylarını formatla
+        const products = purchaseCart.items.map(item => ({
+          product_id: item.product_id,
+          product_name: item.product?.name || 'Bilinmeyen Ürün',
+          collection_name: item.product?.collection?.name || 'Koleksiyon Yok',
+          collection_code: item.product?.collection?.code || '',
+          quantity: item.quantity,
+          width: parseFloat(item.width.toString()),
+          height: parseFloat(item.height.toString()),
+          area_m2: parseFloat(item.area_m2.toString()),
+          unit_price: parseFloat(item.unit_price.toString()),
+          total_price: parseFloat(item.total_price.toString()),
+          unit_price_formatted: `$${parseFloat(item.unit_price.toString()).toFixed(2)}`,
+          total_price_formatted: `$${parseFloat(item.total_price.toString()).toFixed(2)}`,
+          has_fringe: item.has_fringe,
+          cut_type: item.cut_type,
+          notes: item.notes,
+          size_info: `${parseFloat(item.width.toString())}x${parseFloat(item.height.toString())}cm`,
+          price_per_m2: item.area_m2.gt(0) ? 
+            parseFloat((item.unit_price.div(item.area_m2)).toString()).toFixed(2) : '0.00',
+          price_per_m2_formatted: item.area_m2.gt(0) ? 
+            `$${parseFloat((item.unit_price.div(item.area_m2)).toString()).toFixed(2)}/m²` : '$0.00/m²'
+        }));
+
+        return {
+          transaction,
+          products,
+          total_items: purchaseCart.items.length,
+          total_quantity: purchaseCart.items.reduce((sum, item) => sum + item.quantity, 0),
+          total_area_m2: purchaseCart.items.reduce((sum, item) => sum + parseFloat(item.area_m2.toString()), 0)
+        };
+      })
+    );
 
     res.json({
       success: true,
@@ -1775,13 +1893,26 @@ export const getSupplierPurchaseSummary = async (req: Request, res: Response) =>
             amount_formatted: `$${Math.abs(parseFloat(group._sum.amount?.toString() || '0')).toFixed(2)}`
           }))
         },
-        recent_transactions: recentTransactions.map(tx => ({
+        all_transactions: recentTransactions.map(tx => ({
           ...tx,
           amount_formatted: `$${Math.abs(parseFloat(tx.amount.toString())).toFixed(2)}`,
           balance_change: parseFloat(tx.amount.toString()) < 0 ? 'debt_increase' : 'debt_decrease'
+        })),
+        cart_purchases_with_products: cartPurchasesWithProducts.map(cp => ({
+          transaction_id: cp.transaction.id,
+          transaction_date: cp.transaction.created_at,
+          transaction_amount: parseFloat(cp.transaction.amount.toString()),
+          transaction_amount_formatted: `$${Math.abs(parseFloat(cp.transaction.amount.toString())).toFixed(2)}`,
+          reference_number: cp.transaction.reference_number,
+          description: cp.transaction.description,
+          products: cp.products,
+          total_items: cp.total_items || 0,
+          total_quantity: cp.total_quantity || 0,
+          total_area_m2: cp.total_area_m2 || 0,
+          total_area_m2_formatted: `${(cp.total_area_m2 || 0).toFixed(2)} m²`
         }))
       },
-      message: 'Satıcı satın alım özeti başarıyla getirildi'
+      message: 'Satıcı satın alım özeti ve ürün detayları başarıyla getirildi'
     });
   } catch (error) {
     console.error('Satıcı satın alım özeti getirme hatası:', error);
