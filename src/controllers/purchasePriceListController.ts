@@ -1824,35 +1824,44 @@ export const getSupplierPurchaseSummary = async (req: Request, res: Response) =>
         }
 
         // Ürün detaylarını formatla
-        const products = purchaseCart.items.map(item => ({
-          product_id: item.product_id,
-          product_name: item.product?.name || 'Bilinmeyen Ürün',
-          collection_name: item.product?.collection?.name || 'Koleksiyon Yok',
-          collection_code: item.product?.collection?.code || '',
-          quantity: item.quantity,
-          width: parseFloat(item.width.toString()),
-          height: parseFloat(item.height.toString()),
-          area_m2: parseFloat(item.area_m2.toString()),
-          unit_price: parseFloat(item.unit_price.toString()),
-          total_price: parseFloat(item.total_price.toString()),
-          unit_price_formatted: `$${parseFloat(item.unit_price.toString()).toFixed(2)}`,
-          total_price_formatted: `$${parseFloat(item.total_price.toString()).toFixed(2)}`,
-          has_fringe: item.has_fringe,
-          cut_type: item.cut_type,
-          notes: item.notes,
-          size_info: `${parseFloat(item.width.toString())}x${parseFloat(item.height.toString())}cm`,
-          price_per_m2: item.area_m2.gt(0) ? 
-            parseFloat((item.unit_price.div(item.area_m2)).toString()).toFixed(2) : '0.00',
-          price_per_m2_formatted: item.area_m2.gt(0) ? 
-            `$${parseFloat((item.unit_price.div(item.area_m2)).toString()).toFixed(2)}/m²` : '$0.00/m²'
-        }));
+        const products = purchaseCart.items.map(item => {
+          const singlePieceAreaM2 = parseFloat(item.area_m2.toString()); // Tek parça m²
+          const totalAreaM2 = singlePieceAreaM2 * item.quantity; // Toplam m²
+          const unitPrice = parseFloat(item.unit_price.toString());
+          const totalPrice = parseFloat(item.total_price.toString());
+          
+          return {
+            product_id: item.product_id,
+            product_name: item.product?.name || 'Bilinmeyen Ürün',
+            collection_name: item.product?.collection?.name || 'Koleksiyon Yok',
+            collection_code: item.product?.collection?.code || '',
+            quantity: item.quantity,
+            width: parseFloat(item.width.toString()),
+            height: parseFloat(item.height.toString()),
+            area_m2_per_piece: singlePieceAreaM2, // Tek parça m²
+            total_area_m2: totalAreaM2, // Toplam m²
+            unit_price: unitPrice,
+            total_price: totalPrice,
+            unit_price_formatted: `$${unitPrice.toFixed(2)}`,
+            total_price_formatted: `$${totalPrice.toFixed(2)}`,
+            has_fringe: item.has_fringe,
+            cut_type: item.cut_type,
+            notes: item.notes,
+            size_info: `${parseFloat(item.width.toString())}x${parseFloat(item.height.toString())}cm`,
+            price_per_m2: singlePieceAreaM2 > 0 ? 
+              (unitPrice / singlePieceAreaM2).toFixed(2) : '0.00',
+            price_per_m2_formatted: singlePieceAreaM2 > 0 ? 
+              `$${(unitPrice / singlePieceAreaM2).toFixed(2)}/m²` : '$0.00/m²'
+          };
+        });
 
         return {
           transaction,
           products,
           total_items: purchaseCart.items.length,
           total_quantity: purchaseCart.items.reduce((sum, item) => sum + item.quantity, 0),
-          total_area_m2: purchaseCart.items.reduce((sum, item) => sum + parseFloat(item.area_m2.toString()), 0)
+          total_area_m2: purchaseCart.items.reduce((sum, item) => 
+            sum + (parseFloat(item.area_m2.toString()) * item.quantity), 0) // Tek parça m² × quantity
         };
       })
     );
