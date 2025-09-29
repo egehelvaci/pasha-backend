@@ -64,6 +64,6 @@ router.put('/suppliers/:supplier_id/purchase-from-cart', purchaseFromCart); // S
 router.get('/purchases', getAllPurchases); // Tüm satın alımları listele (filtreleme ve pagination ile)
 router.get('/purchases/:transaction_id', getPurchaseDetail); // Belirli bir satın alımın detayını getir
 router.get('/suppliers/:supplier_id/purchase-summary', getSupplierPurchaseSummary); // Satıcı bazında satın alım özeti
-router.get('/statistics/purchases', getPurchaseStatistics); // Dashboard için satın alım istatistikleri
+router.get('/statistics/purchases', getPurchaseStatistics); // Dashboard için satın alım istatistiklerii
 
 export default router;
