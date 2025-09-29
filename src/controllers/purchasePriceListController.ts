@@ -1736,18 +1736,10 @@ export const getSupplierPurchaseSummary = async (req: Request, res: Response) =>
         _sum: { amount: true },
         _count: { id: true }
       }),
-      // Tüm işlemler
+      // Tüm işlemler (detaylı)
       prisma.supplierBalanceTransaction.findMany({
         where: whereCondition,
-        orderBy: { created_at: 'desc' },
-        select: {
-          id: true,
-          transaction_type: true,
-          amount: true,
-          description: true,
-          created_at: true,
-          reference_number: true
-        }
+        orderBy: { created_at: 'desc' }
       })
     ]);
 
@@ -1900,16 +1892,21 @@ export const getSupplierPurchaseSummary = async (req: Request, res: Response) =>
       })
     );
 
-    // Tüm satın alınan ürünleri topla
-    const allPurchasedItems = cartPurchasesWithProducts.reduce((acc, cp) => {
-      return acc.concat(cp.products.map(product => ({
-        ...product,
-        transaction_id: cp.transaction.id,
-        transaction_date: cp.transaction.created_at,
-        transaction_reference: cp.transaction.reference_number,
-        transaction_description: cp.transaction.description
-      })));
-    }, [] as any[]);
+    // Tüm satın alınan ürünleri topla (CART_PURCHASE işlemlerinden)
+    const allPurchasedItems: any[] = [];
+    
+    for (const cp of cartPurchasesWithProducts) {
+      if (cp.products && cp.products.length > 0) {
+        const itemsWithTransactionInfo = cp.products.map(product => ({
+          ...product,
+          transaction_id: cp.transaction.id,
+          transaction_date: cp.transaction.created_at,
+          transaction_reference: cp.transaction.reference_number,
+          transaction_description: cp.transaction.description
+        }));
+        allPurchasedItems.push(...itemsWithTransactionInfo);
+      }
+    }
 
     res.json({
       success: true,
@@ -1986,24 +1983,104 @@ export const getSupplierPurchaseSummary = async (req: Request, res: Response) =>
             return acc;
           }, {} as any)
         },
-        all_transactions: recentTransactions.map(tx => ({
-          ...tx,
-          amount_formatted: `$${Math.abs(parseFloat(tx.amount.toString())).toFixed(2)}`,
-          balance_change: parseFloat(tx.amount.toString()) < 0 ? 'debt_increase' : 'debt_decrease'
+        all_transactions: await Promise.all(recentTransactions.map(async (tx) => {
+          const baseTransaction = {
+            ...tx,
+            amount_formatted: `$${Math.abs(parseFloat(tx.amount.toString())).toFixed(2)}`,
+            balance_change: parseFloat(tx.amount.toString()) < 0 ? 'debt_increase' : 'debt_decrease'
+          };
+
+          // Eğer CART_PURCHASE ise ürün detaylarını ekle
+          if (tx.transaction_type === 'CART_PURCHASE' && tx.reference_number) {
+            const timestamp = tx.reference_number.replace('CART-', '');
+            if (timestamp) {
+              const searchDate = new Date(parseInt(timestamp));
+              const beforeDate = new Date(searchDate.getTime() - 60000);
+              const afterDate = new Date(searchDate.getTime() + 60000);
+
+              const purchaseCart = await prisma.purchaseCarts.findFirst({
+                where: {
+                  supplier_id: supplier_id,
+                  is_active: false,
+                  updated_at: {
+                    gte: beforeDate,
+                    lte: afterDate
+                  }
+                },
+                include: {
+                  items: {
+                    include: {
+                      product: {
+                        include: {
+                          collection: {
+                            select: {
+                              name: true,
+                              code: true
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                orderBy: { updated_at: 'desc' }
+              });
+
+              if (purchaseCart && purchaseCart.items.length > 0) {
+                const products = purchaseCart.items.map(item => {
+                  const singlePieceAreaM2 = parseFloat(item.area_m2.toString());
+                  const totalAreaM2 = singlePieceAreaM2 * item.quantity;
+                  const unitPrice = parseFloat(item.unit_price.toString());
+                  const totalPrice = parseFloat(item.total_price.toString());
+                  
+                  return {
+                    product_id: item.product_id,
+                    product_name: item.product?.name || 'Bilinmeyen Ürün',
+                    product_description: item.product?.description || '',
+                    collection_name: item.product?.collection?.name || 'Koleksiyon Yok',
+                    collection_code: item.product?.collection?.code || '',
+                    quantity: item.quantity,
+                    width_cm: parseFloat(item.width.toString()),
+                    height_cm: parseFloat(item.height.toString()),
+                    size_info: `${parseFloat(item.width.toString())}x${parseFloat(item.height.toString())}cm`,
+                    area_m2_per_piece: singlePieceAreaM2,
+                    total_area_m2: totalAreaM2,
+                    area_m2_per_piece_formatted: `${singlePieceAreaM2.toFixed(2)} m²`,
+                    total_area_m2_formatted: `${totalAreaM2.toFixed(2)} m²`,
+                    unit_price: unitPrice,
+                    total_price: totalPrice,
+                    unit_price_formatted: `$${unitPrice.toFixed(2)}`,
+                    total_price_formatted: `$${totalPrice.toFixed(2)}`,
+                    price_per_m2: singlePieceAreaM2 > 0 ? 
+                      parseFloat((unitPrice / singlePieceAreaM2).toFixed(2)) : 0,
+                    price_per_m2_formatted: singlePieceAreaM2 > 0 ? 
+                      `$${(unitPrice / singlePieceAreaM2).toFixed(2)}/m²` : '$0.00/m²',
+                    has_fringe: item.has_fringe,
+                    fringe_status: item.has_fringe ? 'Saçaklı' : 'Saçaksız',
+                    cut_type: item.cut_type,
+                    cut_type_turkish: item.cut_type === 'rectangle' ? 'Dikdörtgen' : 
+                                     item.cut_type === 'round' ? 'Yuvarlak' :
+                                     item.cut_type === 'oval' ? 'Oval' :
+                                     item.cut_type === 'custom' ? 'Özel' : 
+                                     (item.cut_type || 'Bilinmeyen'),
+                    currency: 'USD'
+                  };
+                });
+
+                return {
+                  ...baseTransaction,
+                  items: products,
+                  items_count: products.length,
+                  total_quantity: products.reduce((sum, p) => sum + p.quantity, 0),
+                  total_area_m2: products.reduce((sum, p) => sum + p.total_area_m2, 0),
+                  total_value: products.reduce((sum, p) => sum + p.total_price, 0)
+                };
+              }
+            }
+          }
+
+          return baseTransaction;
         })),
-        cart_purchases_with_products: cartPurchasesWithProducts.map(cp => ({
-          transaction_id: cp.transaction.id,
-          transaction_date: cp.transaction.created_at,
-          transaction_amount: parseFloat(cp.transaction.amount.toString()),
-          transaction_amount_formatted: `$${Math.abs(parseFloat(cp.transaction.amount.toString())).toFixed(2)}`,
-          reference_number: cp.transaction.reference_number,
-          description: cp.transaction.description,
-          products: cp.products,
-          total_items: cp.total_items || 0,
-          total_quantity: cp.total_quantity || 0,
-          total_area_m2: cp.total_area_m2 || 0,
-          total_area_m2_formatted: `${(cp.total_area_m2 || 0).toFixed(2)} m²`
-        }))
       },
       message: 'Satıcı satın alım özeti ve ürün detayları başarıyla getirildi'
     });
