@@ -73,7 +73,9 @@ export const createSupplier = async (req: Request, res: Response) => {
     let usedExchangeRate: number | null = null;
 
     if (balance !== 0 && exchange_rate && exchange_rate > 0) {
+      console.log(`💱 Satıcı oluşturma kur hesaplaması: ${balance} TRY ÷ ${exchange_rate} kur = ${balance / exchange_rate} USD`);
       usdBalance = parseFloat((balance / exchange_rate).toFixed(2));
+      console.log(`💰 Satıcı yuvarlanmış USD tutar: ${usdBalance}`);
       originalAmount = balance;
       originalCurrency = 'TRY';
       usedExchangeRate = exchange_rate;
@@ -629,7 +631,9 @@ export const updateSupplierBalance = async (req: Request, res: Response) => {
     }
 
     // USD cinsinden tutarı hesapla (TRY amount / dolar kuru)
+    console.log(`💱 Kur hesaplaması: ${amount} TRY ÷ ${exchange_rate} kur = ${amount / exchange_rate} USD`);
     const usdAmount = parseFloat((amount / exchange_rate).toFixed(2));
+    console.log(`💰 Yuvarlanmış USD tutar: ${usdAmount}`);
 
     // Transaction ile bakiye güncelle
     const result = await prisma.$transaction(async (tx) => {
@@ -643,7 +647,9 @@ export const updateSupplierBalance = async (req: Request, res: Response) => {
       }
 
       const previousBalance = supplier.balance;
+      console.log(`💰 Önceki bakiye: ${previousBalance}, Ödeme tutarı: +${usdAmount}`);
       const newBalance = previousBalance.plus(usdAmount);
+      console.log(`💰 Yeni bakiye: ${newBalance}`);
 
       // Satıcı bakiyesini güncelle (USD cinsinden)
       const updatedSupplier = await tx.supplier.update({
