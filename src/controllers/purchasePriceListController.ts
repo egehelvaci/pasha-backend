@@ -1831,27 +1831,61 @@ export const getSupplierPurchaseSummary = async (req: Request, res: Response) =>
           const totalPrice = parseFloat(item.total_price.toString());
           
           return {
+            // Temel ürün bilgileri
             product_id: item.product_id,
             product_name: item.product?.name || 'Bilinmeyen Ürün',
+            product_description: item.product?.description || '',
             collection_name: item.product?.collection?.name || 'Koleksiyon Yok',
             collection_code: item.product?.collection?.code || '',
+            
+            // Miktar ve boyut bilgileri
             quantity: item.quantity,
             width: parseFloat(item.width.toString()),
             height: parseFloat(item.height.toString()),
+            width_cm: parseFloat(item.width.toString()),
+            height_cm: parseFloat(item.height.toString()),
+            size_info: `${parseFloat(item.width.toString())}x${parseFloat(item.height.toString())}cm`,
+            
+            // Alan bilgileri
             area_m2_per_piece: singlePieceAreaM2, // Tek parça m²
             total_area_m2: totalAreaM2, // Toplam m²
-            unit_price: unitPrice,
-            total_price: totalPrice,
+            area_m2_per_piece_formatted: `${singlePieceAreaM2.toFixed(2)} m²`,
+            total_area_m2_formatted: `${totalAreaM2.toFixed(2)} m²`,
+            
+            // Fiyat bilgileri
+            unit_price: unitPrice, // Birim fiyat (USD)
+            total_price: totalPrice, // Toplam fiyat (USD)
             unit_price_formatted: `$${unitPrice.toFixed(2)}`,
             total_price_formatted: `$${totalPrice.toFixed(2)}`,
-            has_fringe: item.has_fringe,
-            cut_type: item.cut_type,
-            notes: item.notes,
-            size_info: `${parseFloat(item.width.toString())}x${parseFloat(item.height.toString())}cm`,
+            
+            // M² başına fiyat
             price_per_m2: singlePieceAreaM2 > 0 ? 
-              (unitPrice / singlePieceAreaM2).toFixed(2) : '0.00',
+              parseFloat((unitPrice / singlePieceAreaM2).toFixed(2)) : 0,
             price_per_m2_formatted: singlePieceAreaM2 > 0 ? 
-              `$${(unitPrice / singlePieceAreaM2).toFixed(2)}/m²` : '$0.00/m²'
+              `$${(unitPrice / singlePieceAreaM2).toFixed(2)}/m²` : '$0.00/m²',
+            
+            // Adet başına fiyat
+            price_per_piece: unitPrice,
+            price_per_piece_formatted: `$${unitPrice.toFixed(2)}/adet`,
+            
+            // Ürün özellikleri
+            has_fringe: item.has_fringe,
+            fringe_status: item.has_fringe ? 'Saçaklı' : 'Saçaksız',
+            cut_type: item.cut_type,
+            cut_type_turkish: item.cut_type === 'rectangle' ? 'Dikdörtgen' : 
+                             item.cut_type === 'round' ? 'Yuvarlak' :
+                             item.cut_type === 'oval' ? 'Oval' :
+                             item.cut_type === 'hexagon' ? 'Altıgen' :
+                             item.cut_type === 'star' ? 'Yıldız' : item.cut_type,
+            notes: item.notes || '',
+            
+            // Para birimi bilgisi
+            currency: 'USD',
+            
+            // Hesaplanan değerler
+            total_items_count: item.quantity,
+            average_price_per_m2: singlePieceAreaM2 > 0 ? 
+              parseFloat((totalPrice / totalAreaM2).toFixed(2)) : 0
           };
         });
 
@@ -1920,8 +1954,37 @@ export const getSupplierPurchaseSummary = async (req: Request, res: Response) =>
           total_unique_products: allPurchasedItems.length,
           total_quantity: allPurchasedItems.reduce((sum, item) => sum + item.quantity, 0),
           total_area_m2: allPurchasedItems.reduce((sum, item) => sum + item.total_area_m2, 0),
+          total_area_m2_formatted: `${allPurchasedItems.reduce((sum, item) => sum + item.total_area_m2, 0).toFixed(2)} m²`,
           total_value: allPurchasedItems.reduce((sum, item) => sum + item.total_price, 0),
-          total_value_formatted: `$${allPurchasedItems.reduce((sum, item) => sum + item.total_price, 0).toFixed(2)}`
+          total_value_formatted: `$${allPurchasedItems.reduce((sum, item) => sum + item.total_price, 0).toFixed(2)}`,
+          average_price_per_m2: allPurchasedItems.length > 0 ? 
+            (allPurchasedItems.reduce((sum, item) => sum + item.total_price, 0) / 
+             allPurchasedItems.reduce((sum, item) => sum + item.total_area_m2, 0)).toFixed(2) : '0.00',
+          average_price_per_m2_formatted: allPurchasedItems.length > 0 ? 
+            `$${(allPurchasedItems.reduce((sum, item) => sum + item.total_price, 0) / 
+                 allPurchasedItems.reduce((sum, item) => sum + item.total_area_m2, 0)).toFixed(2)}/m²` : '$0.00/m²',
+          average_quantity_per_product: allPurchasedItems.length > 0 ? 
+            (allPurchasedItems.reduce((sum, item) => sum + item.quantity, 0) / allPurchasedItems.length).toFixed(1) : '0.0',
+          currency: 'USD',
+          // Koleksiyon bazında gruplandırma
+          by_collection: allPurchasedItems.reduce((acc, item) => {
+            const collectionName = item.collection_name || 'Tanımsız Koleksiyon';
+            if (!acc[collectionName]) {
+              acc[collectionName] = {
+                collection_name: collectionName,
+                collection_code: item.collection_code || '',
+                product_count: 0,
+                total_quantity: 0,
+                total_area_m2: 0,
+                total_value: 0
+              };
+            }
+            acc[collectionName].product_count += 1;
+            acc[collectionName].total_quantity += item.quantity;
+            acc[collectionName].total_area_m2 += item.total_area_m2;
+            acc[collectionName].total_value += item.total_price;
+            return acc;
+          }, {} as any)
         },
         all_transactions: recentTransactions.map(tx => ({
           ...tx,
