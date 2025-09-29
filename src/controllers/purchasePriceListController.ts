@@ -1875,8 +1875,8 @@ export const getSupplierPurchaseSummary = async (req: Request, res: Response) =>
             cut_type_turkish: item.cut_type === 'rectangle' ? 'Dikdörtgen' : 
                              item.cut_type === 'round' ? 'Yuvarlak' :
                              item.cut_type === 'oval' ? 'Oval' :
-                             item.cut_type === 'hexagon' ? 'Altıgen' :
-                             item.cut_type === 'star' ? 'Yıldız' : item.cut_type,
+                             item.cut_type === 'custom' ? 'Özel' : 
+                             (item.cut_type || 'Bilinmeyen'),
             notes: item.notes || '',
             
             // Para birimi bilgisi
