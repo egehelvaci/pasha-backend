@@ -1866,6 +1866,17 @@ export const getSupplierPurchaseSummary = async (req: Request, res: Response) =>
       })
     );
 
+    // Tüm satın alınan ürünleri topla
+    const allPurchasedItems = cartPurchasesWithProducts.reduce((acc, cp) => {
+      return acc.concat(cp.products.map(product => ({
+        ...product,
+        transaction_id: cp.transaction.id,
+        transaction_date: cp.transaction.created_at,
+        transaction_reference: cp.transaction.reference_number,
+        transaction_description: cp.transaction.description
+      })));
+    }, [] as any[]);
+
     res.json({
       success: true,
       data: {
@@ -1901,6 +1912,16 @@ export const getSupplierPurchaseSummary = async (req: Request, res: Response) =>
             amount: parseFloat(group._sum.amount?.toString() || '0'),
             amount_formatted: `$${Math.abs(parseFloat(group._sum.amount?.toString() || '0')).toFixed(2)}`
           }))
+        },
+        // Tüm satın alınan ürünleri items altında topla
+        items: allPurchasedItems,
+        // Ürün istatistikleri
+        items_summary: {
+          total_unique_products: allPurchasedItems.length,
+          total_quantity: allPurchasedItems.reduce((sum, item) => sum + item.quantity, 0),
+          total_area_m2: allPurchasedItems.reduce((sum, item) => sum + item.total_area_m2, 0),
+          total_value: allPurchasedItems.reduce((sum, item) => sum + item.total_price, 0),
+          total_value_formatted: `$${allPurchasedItems.reduce((sum, item) => sum + item.total_price, 0).toFixed(2)}`
         },
         all_transactions: recentTransactions.map(tx => ({
           ...tx,
