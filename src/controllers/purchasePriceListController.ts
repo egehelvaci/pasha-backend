@@ -1757,15 +1757,18 @@ export const getSupplierPurchaseSummary = async (req: Request, res: Response) =>
       _count: { id: true }
     });
 
-    // CART_PURCHASE tipindeki işlemler için ürün detaylarını getir
-    const cartPurchaseTransactions = await prisma.supplierBalanceTransaction.findMany({
+    // Tüm satın alma türlerindeki işlemler için ürün detaylarını getir
+    const purchaseTransactions = await prisma.supplierBalanceTransaction.findMany({
       where: {
         ...whereCondition,
-        transaction_type: 'CART_PURCHASE'
+        transaction_type: { in: ['CART_PURCHASE', 'PRODUCT_PURCHASE', 'BULK_PRODUCT_PURCHASE'] }
       },
       orderBy: { created_at: 'desc' }
     });
 
+    // Önce CART_PURCHASE işlemlerini işle
+    const cartPurchaseTransactions = purchaseTransactions.filter(t => t.transaction_type === 'CART_PURCHASE');
+    
     // Her sepet alımı için ürün detaylarını bul
     const cartPurchasesWithProducts = await Promise.all(
       cartPurchaseTransactions.map(async (transaction) => {
@@ -1898,17 +1901,135 @@ export const getSupplierPurchaseSummary = async (req: Request, res: Response) =>
       })
     );
 
-    // Tüm satın alınan ürünleri topla (CART_PURCHASE işlemlerinden)
+    // PRODUCT_PURCHASE ve BULK_PRODUCT_PURCHASE işlemlerini işle
+    const productPurchaseTransactions = purchaseTransactions.filter(t => 
+      t.transaction_type === 'PRODUCT_PURCHASE' || t.transaction_type === 'BULK_PRODUCT_PURCHASE'
+    );
+
+    // Her ürün alımı için ürün detaylarını description'dan çıkarmaya çalış
+    const productPurchasesWithProducts = productPurchaseTransactions.map(transaction => {
+      const products: any[] = [];
+      
+      try {
+        // Description'dan ürün bilgilerini parse etmeye çalış
+        const description = transaction.description || '';
+        
+        // Çeşitli formatları kontrol et
+        if (description.includes(' - ') && description.includes(' adet ')) {
+          // Örnek: "PİRAMİT LOOP VİZON - 4 adet (80x100cm) - PİRAMİT LOOP - PİRAMİT LOOP VİZON (0.8 m² x $5/m²)"
+          const parts = description.split(' - ');
+          
+          if (parts.length >= 2) {
+            const productName = parts[0].trim();
+            const quantityPart = parts[1].trim();
+            
+            // Adet bilgisini çıkar
+            const quantityMatch = quantityPart.match(/(\d+)\s+adet/);
+            const quantity = quantityMatch ? parseInt(quantityMatch[1]) : 1;
+            
+            // Boyut bilgisini çıkar (80x100cm formatında)
+            const sizeMatch = description.match(/\((\d+)x(\d+)cm\)/);
+            const width = sizeMatch ? parseFloat(sizeMatch[1]) : 0;
+            const height = sizeMatch ? parseFloat(sizeMatch[2]) : 0;
+            
+            // Alan bilgisini çıkar (0.8 m² formatında)
+            const areaMatch = description.match(/\(([0-9.]+)\s*m²/);
+            const areaPerPiece = areaMatch ? parseFloat(areaMatch[1]) : (width * height / 10000);
+            
+            // Fiyat bilgisini çıkar ($5/m² formatında)
+            const priceMatch = description.match(/\$([0-9.]+)\/m²\)/);
+            const pricePerM2 = priceMatch ? parseFloat(priceMatch[1]) : 0;
+            
+            // Koleksiyon bilgisini çıkar
+            const collectionMatch = description.match(/ - ([^-]+?) - /);
+            const collectionName = collectionMatch ? collectionMatch[1].trim() : '';
+            
+            const totalPrice = Math.abs(parseFloat(transaction.amount.toString()));
+            const unitPrice = quantity > 0 ? totalPrice / quantity : totalPrice;
+            const totalArea = areaPerPiece * quantity;
+            
+            products.push({
+              // Temel ürün bilgileri (mock)
+              product_id: `mock-${transaction.id}`,
+              product_name: productName,
+              product_description: description,
+              collection_name: collectionName || 'Bilinmeyen Koleksiyon',
+              collection_code: '',
+              
+              // Miktar ve boyut bilgileri
+              quantity: quantity,
+              width: width,
+              height: height,
+              width_cm: width,
+              height_cm: height,
+              size_info: width && height ? `${width}x${height}cm` : 'Bilinmeyen',
+              
+              // Alan bilgileri
+              area_m2_per_piece: areaPerPiece,
+              total_area_m2: totalArea,
+              area_m2_per_piece_formatted: `${areaPerPiece.toFixed(2)} m²`,
+              total_area_m2_formatted: `${totalArea.toFixed(2)} m²`,
+              
+              // Fiyat bilgileri
+              unit_price: unitPrice,
+              total_price: totalPrice,
+              unit_price_formatted: `$${unitPrice.toFixed(2)}`,
+              total_price_formatted: `$${totalPrice.toFixed(2)}`,
+              
+              // M² başına fiyat
+              price_per_m2: pricePerM2 || (areaPerPiece > 0 ? unitPrice / areaPerPiece : 0),
+              price_per_m2_formatted: pricePerM2 ? 
+                `$${pricePerM2.toFixed(2)}/m²` : 
+                (areaPerPiece > 0 ? `$${(unitPrice / areaPerPiece).toFixed(2)}/m²` : '$0.00/m²'),
+              
+              // Adet başına fiyat
+              price_per_piece: unitPrice,
+              price_per_piece_formatted: `$${unitPrice.toFixed(2)}/adet`,
+              
+              // Varsayılan özellikler
+              has_fringe: false,
+              fringe_status: 'Bilinmeyen',
+              cut_type: 'rectangle',
+              cut_type_turkish: 'Dikdörtgen',
+              notes: '',
+              
+              // Para birimi bilgisi
+              currency: 'USD',
+              
+              // Hesaplanan değerler
+              total_items_count: quantity,
+              average_price_per_m2: areaPerPiece > 0 ? totalPrice / totalArea : 0
+            });
+          }
+        }
+      } catch (error) {
+        console.error('PRODUCT_PURCHASE description parse hatası:', error);
+      }
+      
+      return {
+        transaction,
+        products,
+        total_items: products.length,
+        total_quantity: products.reduce((sum, p) => sum + p.quantity, 0),
+        total_area_m2: products.reduce((sum, p) => sum + p.total_area_m2, 0)
+      };
+    });
+
+    // Tüm satın alımları birleştir
+    const allPurchasesWithProducts = [...cartPurchasesWithProducts, ...productPurchasesWithProducts];
+
+    // Tüm satın alınan ürünleri topla (tüm satın alma türlerinden)
     const allPurchasedItems: any[] = [];
     
-    for (const cp of cartPurchasesWithProducts) {
-      if (cp.products && cp.products.length > 0) {
-        const itemsWithTransactionInfo = cp.products.map(product => ({
+    for (const purchaseWithProducts of allPurchasesWithProducts) {
+      if (purchaseWithProducts.products && purchaseWithProducts.products.length > 0) {
+        const itemsWithTransactionInfo = purchaseWithProducts.products.map(product => ({
           ...product,
-          transaction_id: cp.transaction.id,
-          transaction_date: cp.transaction.created_at,
-          transaction_reference: cp.transaction.reference_number,
-          transaction_description: cp.transaction.description
+          transaction_id: purchaseWithProducts.transaction.id,
+          transaction_date: purchaseWithProducts.transaction.created_at,
+          transaction_reference: purchaseWithProducts.transaction.reference_number,
+          transaction_description: purchaseWithProducts.transaction.description,
+          transaction_type: purchaseWithProducts.transaction.transaction_type
         }));
         allPurchasedItems.push(...itemsWithTransactionInfo);
       }
