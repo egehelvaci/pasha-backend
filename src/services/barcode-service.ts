@@ -358,7 +358,7 @@ export class BarcodeService {
   }
 
   /**
-   * Sipariş için barkod görsellerini oluştur ve Tebi'ye yükle
+   * Sipariş için barkod görsellerini oluştur ve Bunny.net'e yükle
    */
   async generateBarcodeImagesForOrder(orderId: string) {
     const uploadService = new UploadService()
@@ -420,7 +420,7 @@ export class BarcodeService {
           const svgContent = this.generateBarcodeSVG(barcodeRecord.barcode, barcodeType)
           const svgBuffer = Buffer.from(svgContent, 'utf-8')
 
-          // Dosyayı Tebi'ye yükle
+          // Dosyayı Bunny.net'e yükle
           const fileName = `${barcodeRecord.barcode}.svg`
           const imageUrl = await uploadService.uploadFile(
             svgBuffer,

@@ -41,9 +41,9 @@ console.log(`PORT: ${process.env.PORT}`)
 console.log(`DATABASE_URL: ${process.env.DATABASE_URL ? 'Mevcut' : 'Tanımlı değil'}`)
 console.log(`PUBLIC_URL: ${process.env.PUBLIC_URL || 'Tanımlı değil'}`)
 console.log(`NODE_ENV: ${process.env.NODE_ENV || 'Tanımlı değil'}`)
-console.log(`TEBI_ACCESS_KEY: ${process.env.TEBI_ACCESS_KEY ? 'Mevcut' : 'Tanımlı değil'}`)
-console.log(`TEBI_SECRET_KEY: ${process.env.TEBI_SECRET_KEY ? 'Mevcut' : 'Tanımlı değil'}`)
-console.log(`TEBI_BUCKET_NAME: ${process.env.TEBI_BUCKET_NAME || 'pashahome'}`)
+console.log(`BUNNY_STORAGE_ZONE: ${process.env.BUNNY_STORAGE_ZONE ? 'Mevcut' : 'Tanımlı değil'}`)
+console.log(`BUNNY_STORAGE_PASSWORD: ${process.env.BUNNY_STORAGE_PASSWORD ? 'Mevcut' : 'Tanımlı değil'}`)
+console.log(`BUNNY_CDN_HOSTNAME: ${process.env.BUNNY_CDN_HOSTNAME || 'Tanımlı değil'}`)
 
 // Middleware'ler
 app.use(cors())

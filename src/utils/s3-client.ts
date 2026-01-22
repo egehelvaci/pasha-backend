@@ -1,18 +1,17 @@
-import { S3Client } from '@aws-sdk/client-s3';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Tebi.io için S3 istemcisi yapılandırması
-const s3Client = new S3Client({
-  endpoint: 'https://s3.tebi.io',
-  region: 'global',
-  credentials: {
-    accessKeyId: process.env.TEBI_ACCESS_KEY!,
-    secretAccessKey: process.env.TEBI_SECRET_KEY!,
-  },
-});
+// Bunny.net Storage yapılandırması
+export const BUNNY_STORAGE_ZONE = process.env.BUNNY_STORAGE_ZONE!;
+export const BUNNY_STORAGE_PASSWORD = process.env.BUNNY_STORAGE_PASSWORD!;
+export const BUNNY_CDN_HOSTNAME = process.env.BUNNY_CDN_HOSTNAME!;
+export const BUNNY_STORAGE_URL = 'https://storage.bunnycdn.com';
 
-const BUCKET_NAME = process.env.TEBI_BUCKET_NAME!;
+// Geriye uyumluluk için eski isimler
+export const BUCKET_NAME = BUNNY_STORAGE_ZONE;
 
-export { s3Client, BUCKET_NAME }; 
+// Eski Tebi bilgileri (migrasyon için gerekli)
+export const TEBI_ACCESS_KEY = process.env.TEBI_ACCESS_KEY;
+export const TEBI_SECRET_KEY = process.env.TEBI_SECRET_KEY;
+export const TEBI_BUCKET_NAME = process.env.TEBI_BUCKET_NAME; 

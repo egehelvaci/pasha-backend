@@ -228,7 +228,7 @@ export const createProduct = async (req: Request, res: Response) => {
     
     let productImageUrl = undefined;
     
-    // Eğer resim yüklendiyse, Tebi.io'ya yükle
+    // Eğer resim yüklendiyse, Bunny.net'e yükle
     if (req.file) {
       // Disk storage kullanıldığı için dosyayı okuyup buffer'a çevir
       const fileBuffer = fs.readFileSync(req.file.path);
@@ -357,7 +357,7 @@ export const updateProduct = async (req: Request, res: Response) => {
       }
     }
     
-    // Eğer resim yüklendiyse, Tebi.io'ya yükle
+    // Eğer resim yüklendiyse, Bunny.net'e yükle
     if (req.file) {
       // Disk storage kullanıldığı için dosyayı okuyup buffer'a çevir
       const fileBuffer = fs.readFileSync(req.file.path);

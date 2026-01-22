@@ -26,7 +26,7 @@ export class QRCodeService {
 
 
   /**
-   * Sipariş için QR kod görselleri oluşturur, Tebi'ye yükler ve DB'yi günceller (asıl işlem)
+   * Sipariş için QR kod görselleri oluşturur, Bunny.net'e yükler ve DB'yi günceller (asıl işlem)
    * Item bazlı sistem için güncellendi
    */
   async generateQRCodeImagesForOrder(orderId: string) {
@@ -88,7 +88,7 @@ export class QRCodeService {
           errorCorrectionLevel: 'H'
         })
 
-        // Dosyayı Tebi'ye yükle
+        // Dosyayı Bunny.net'e yükle
         const fileName = `${qrRecord.qr_code}.png`
         const imageUrl = await uploadService.uploadFile(
           qrImageBuffer,

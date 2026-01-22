@@ -1,10 +1,9 @@
-import { PutObjectCommand } from '@aws-sdk/client-s3';
-import { s3Client, BUCKET_NAME } from './s3-client';
 import { randomUUID } from 'crypto';
+import { BUNNY_STORAGE_ZONE, BUNNY_STORAGE_PASSWORD, BUNNY_STORAGE_URL, BUNNY_CDN_HOSTNAME } from './s3-client';
 
 export class UploadService {
   /**
-   * Tebi.io'ya dosya yükle
+   * Bunny.net'e dosya yükle
    * @param file Yüklenecek dosya Buffer'ı
    * @param mimetype Dosya MIME tipi
    * @param originalname Orijinal dosya adı
@@ -17,19 +16,26 @@ export class UploadService {
       const randomName = `${randomUUID()}.${fileExtension}`;
       const key = `${folder}/${randomName}`;
 
-      // S3'e yükleme işlemi
-      const uploadParams = {
-        Bucket: BUCKET_NAME,
-        Key: key,
-        Body: file,
-        ContentType: mimetype
-      };
+      // Bunny.net Storage API'sine yükle
+      const uploadUrl = `${BUNNY_STORAGE_URL}/${BUNNY_STORAGE_ZONE}/${key}`;
+      
+      const response = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'AccessKey': BUNNY_STORAGE_PASSWORD,
+          'Content-Type': mimetype,
+        },
+        body: file,
+      });
 
-      // Yükleme komutunu çalıştır
-      await s3Client.send(new PutObjectCommand(uploadParams));
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Bunny.net yükleme hatası:', response.status, errorText);
+        throw new Error(`Bunny.net yükleme hatası: ${response.status}`);
+      }
 
-      // Dosya URL'sini oluştur - Doğru formatı kullan (s3.tebi.io/bucketname/key)
-      return `https://s3.tebi.io/${BUCKET_NAME}/${key}`;
+      // CDN URL'sini döndür
+      return `https://${BUNNY_CDN_HOSTNAME}/${key}`;
     } catch (error) {
       console.error('Dosya yükleme hatası:', error);
       throw new Error('Dosya yüklenirken bir hata oluştu');
