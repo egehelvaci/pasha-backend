@@ -31,13 +31,56 @@ export class OctetLoginService {
   }
 
   /**
+   * DB'deki token hâlâ geçerliyse döndürür, değilse null
+   */
+  private async getTokenFromDb(): Promise<string | null> {
+    try {
+      const record = await prisma.dbyeOdemeLogin.findFirst({
+        where: { id: 1 },
+        select: { token: true, tokenExpiry: true }
+      });
+      if (record?.token && record.tokenExpiry && new Date() < record.tokenExpiry) {
+        return record.token;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Token'ı DB'ye kaydeder
+   */
+  private async saveTokenToDb(token: string, expiry: Date): Promise<void> {
+    try {
+      await prisma.dbyeOdemeLogin.updateMany({
+        where: { id: 1 },
+        data: { token, tokenExpiry: expiry }
+      });
+    } catch (error) {
+      console.error('Token DB\'ye kaydedilemedi:', error);
+    }
+  }
+
+  /**
    * Octet API'ye login olur ve token alır
    */
   async getAuthToken(forceRefresh: boolean = false): Promise<string> {
     try {
-      // Eğer geçerli token varsa ve zorla yenileme istenmiyorsa, onu döndür
+      // Önce bellek cache'ini kontrol et
       if (!forceRefresh && this.token && this.tokenExpiry && new Date() < this.tokenExpiry) {
         return this.token;
+      }
+
+      // Bellek cache'i boşsa (restart sonrası) DB'den kontrol et
+      if (!forceRefresh) {
+        const dbToken = await this.getTokenFromDb();
+        if (dbToken) {
+          console.log('Token DB cache\'inden alındı');
+          this.token = dbToken;
+          this.tokenExpiry = new Date(Date.now() + 50 * 60 * 1000);
+          return dbToken;
+        }
       }
 
       console.log(forceRefresh ? 'Token zorla yenileniyor...' : 'Token expire olmuş, yenileniyor...');
@@ -65,11 +108,14 @@ export class OctetLoginService {
       // Token'ı al ve sakla
       if (response.data && response.data.token) {
         const token = response.data.token;
+        const expiry = new Date(Date.now() + 50 * 60 * 1000); // 50 dakika
         this.token = token;
-        // Token'ın 1 saat geçerli olduğunu varsayıyoruz
-        this.tokenExpiry = new Date(Date.now() + 60 * 60 * 1000);
+        this.tokenExpiry = expiry;
+
+        // DB'ye de kaydet (restart'larda kullanmak için)
+        await this.saveTokenToDb(token, expiry);
         
-        console.log('Octet login başarılı, token alındı');
+        console.log('Octet login başarılı, token alındı ve DB\'ye kaydedildi');
         return token;
       } else {
         throw new Error('Login response\'unda token bulunamadı');
