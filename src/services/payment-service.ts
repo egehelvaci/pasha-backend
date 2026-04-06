@@ -404,9 +404,19 @@ export class PaymentService {
         }
       }
 
+      const fallbackMessage = error instanceof Error 
+        ? error.message 
+        : 'Payment request gönderilirken beklenmeyen hata';
+      
+      console.error('Payment request beklenmeyen hata detayı:', {
+        errorType: error instanceof Error ? error.constructor.name : typeof error,
+        message: fallbackMessage,
+        stack: error instanceof Error ? error.stack : undefined
+      });
+
       return {
         success: false,
-        message: 'Payment request gönderilirken beklenmeyen hata'
+        message: fallbackMessage
       };
     }
   }

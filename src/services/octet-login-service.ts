@@ -52,7 +52,12 @@ export class OctetLoginService {
       }, {
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': '*/*',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+          'User-Agent': 'PostmanRuntime/7.43.0',
+          'Connection': 'keep-alive',
+          'Cache-Control': 'no-cache'
         },
         timeout: 30000 // 30 saniye timeout
       });
@@ -81,6 +86,10 @@ export class OctetLoginService {
         }
       }
       
+      // Orijinal hata mesajını koru (örn. DB bağlantı hatası, eksik credentials)
+      if (error instanceof Error) {
+        throw error;
+      }
       throw new Error('Login işlemi sırasında beklenmeyen hata');
     }
   }
