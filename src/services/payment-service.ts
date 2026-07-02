@@ -545,6 +545,17 @@ export class PaymentService {
         aciklama: input.aciklama
       });
 
+      // PaymentTransaction kaydı oluştur (processPayment ile aynı akış):
+      // DBYE webhook'u sellerReference ile PENDING transaction arar; kayıt olmazsa
+      // ödeme tamamlansa bile bakiye güncellenmez
+      await this.createPaymentTransaction(paymentRequest, input.storeId, {
+        storeCurrency,
+        paymentCurrency,
+        exchangeRate,
+        originalAmount,
+        convertedAmount
+      });
+
       // Redirect URL'lerini kanala göre oluştur
       const backendUrl = process.env.PUBLIC_URL || 'https://pasha-backend-production.up.railway.app';
       const { successUrl, failUrl } = this.buildUrls(channel, sessionId, backendUrl);

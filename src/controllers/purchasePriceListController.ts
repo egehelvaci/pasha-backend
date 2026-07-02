@@ -137,7 +137,17 @@ export const createSupplier = async (req: Request, res: Response) => {
 export const updateSupplier = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
+
+    // Sadece izin verilen alanlar güncellenebilir (balance/id gibi alanlar
+    // bu endpoint üzerinden değiştirilemez - mass assignment koruması)
+    const { name, company_name, phone, address, notes, is_active } = req.body;
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (company_name !== undefined) updateData.company_name = company_name;
+    if (phone !== undefined) updateData.phone = phone;
+    if (address !== undefined) updateData.address = address;
+    if (notes !== undefined) updateData.notes = notes;
+    if (is_active !== undefined) updateData.is_active = Boolean(is_active);
 
     const supplier = await prisma.supplier.update({
       where: { id },

@@ -911,13 +911,14 @@ export class ProductService {
             v.width === sizeOption.width && v.height === sizeOption.height
           );
 
-          // Varyasyon oluştur
+          // Varyasyon oluştur (stock_area_m2 de korunmalı, aksi halde m² stok verisi kaybolur)
           await prisma.productvariations.create({
             data: {
               product_id: productId,
               width: sizeOption.width,
               height: sizeOption.height,
               stock_quantity: existingStock ? existingStock.stock_quantity : 0,
+              stock_area_m2: existingStock ? existingStock.stock_area_m2 : 0,
               has_fringe: false,
               cut_type_id: null
             }
@@ -935,6 +936,7 @@ export class ProductService {
             width: 100,
             height: 100,
             stock_quantity: existingStock ? existingStock.stock_quantity : 0,
+            stock_area_m2: existingStock ? existingStock.stock_area_m2 : 0,
             has_fringe: false,
             cut_type_id: null
           }

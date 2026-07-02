@@ -33,14 +33,14 @@ export class OctetLoginService {
   /**
    * DB'deki token hâlâ geçerliyse döndürür, değilse null
    */
-  private async getTokenFromDb(): Promise<string | null> {
+  private async getTokenFromDb(): Promise<{ token: string; tokenExpiry: Date } | null> {
     try {
       const record = await prisma.dbyeOdemeLogin.findFirst({
         where: { id: 1 },
         select: { token: true, tokenExpiry: true }
       });
       if (record?.token && record.tokenExpiry && new Date() < record.tokenExpiry) {
-        return record.token;
+        return { token: record.token, tokenExpiry: record.tokenExpiry };
       }
       return null;
     } catch {
@@ -77,9 +77,11 @@ export class OctetLoginService {
         const dbToken = await this.getTokenFromDb();
         if (dbToken) {
           console.log('Token DB cache\'inden alındı');
-          this.token = dbToken;
-          this.tokenExpiry = new Date(Date.now() + 50 * 60 * 1000);
-          return dbToken;
+          this.token = dbToken.token;
+          // DB'deki gerçek son kullanma tarihini kullan; sabit 50 dk vermek
+          // süresi dolmuş token'ın kullanılmasına yol açıyordu
+          this.tokenExpiry = dbToken.tokenExpiry;
+          return dbToken.token;
         }
       }
 

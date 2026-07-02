@@ -201,4 +201,8 @@ export class AuthService {
   private isTokenBlacklisted(token: string): boolean {
     return this.tokenBlacklist.has(token)
   }
-} 
+}
+
+// Tek bir paylaşılan instance: logout ile eklenen blacklist kayıtlarının
+// middleware tarafındaki doğrulamada da görünmesi için zorunlu
+export const authService = new AuthService()

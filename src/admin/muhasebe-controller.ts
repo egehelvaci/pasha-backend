@@ -697,6 +697,15 @@ export class MuhasebeController {
       // USD mağazası için özel bilgi mesajı
       const isUSDStore = store.currency === 'USD';
 
+      // USD mağazalar için bu endpoint yanlış sonuç (her zaman boş liste) veriyordu;
+      // doğru endpoint'e yönlendir
+      if (isUSDStore) {
+        return res.status(400).json({
+          success: false,
+          message: 'Bu mağaza USD para birimi kullanıyor. Lütfen /api/admin/usd-muhasebe/store/:storeId endpoint\'ini kullanın.'
+        })
+      }
+
       // Filtreleme koşulları
       const whereCondition: any = {
         storeId: storeId,

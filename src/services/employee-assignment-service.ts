@@ -93,9 +93,9 @@ export class EmployeeAssignmentService {
         totalAmount += Number(item.total_price)
         totalItems += item.quantity
         
-        // M2 hesapla (width * height * quantity)
+        // M2 hesapla (width ve height cm cinsinden; cm² -> m² için 10000'e bölünür)
         if (item.width && item.height) {
-          const itemArea = Number(item.width) * Number(item.height) * item.quantity
+          const itemArea = (Number(item.width) * Number(item.height) / 10000) * item.quantity
           totalAreaM2 += itemArea
         }
       }

@@ -39,6 +39,8 @@ model User {
   notificationHistory NotificationHistory[]
   passwordResetTokens PasswordResetToken[]
   purchaseCarts       PurchaseCarts[]
+
+  @@index([store_id], map: "idx_user_store_id")
 }
 
 model Collection {
@@ -331,6 +333,11 @@ model Order {
   barcodes           Barcode[]
   employeeOrderStats EmployeeOrderStats? @relation("OrderEmployeeStats")
   muhasebeHareketleri MuhasebeHareketleri[]
+
+  @@index([user_id, created_at], map: "idx_order_user_created")
+  @@index([status, created_at], map: "idx_order_status_created")
+  @@index([created_at], map: "idx_order_created_at")
+  @@index([address_id], map: "idx_order_address_id")
 }
 
 model OrderItem {
@@ -349,6 +356,9 @@ model OrderItem {
   product     Product  @relation(fields: [product_id], references: [productId])
   qr_codes    QRCode[]
   barcodes    Barcode[]
+
+  @@index([order_id], map: "idx_order_item_order_id")
+  @@index([product_id], map: "idx_order_item_product_id")
 }
 
 model QRCode {
@@ -451,6 +461,8 @@ model MuhasebeHareketleri {
   order             Order?               @relation(fields: [order_id], references: [id])
   manuelSatisDetay  ManuelSatisDetay[]
 
+  @@index([storeId, tarih], map: "idx_muhasebe_store_tarih")
+  @@index([order_id], map: "idx_muhasebe_order_id")
   @@map("muhasebe_hareketleri")
 }
 
@@ -572,6 +584,8 @@ model PaymentTransaction {
   
   store              Store         @relation(fields: [storeId], references: [store_id])
 
+  @@index([storeId, createdAt], map: "idx_payment_tx_store_created")
+  @@index([status], map: "idx_payment_tx_status")
   @@map("payment_transactions")
 }
 
@@ -624,6 +638,8 @@ model InAppNotification {
   createdAt DateTime @default(now()) @map("created_at")
   user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
+  @@index([userId, isRead], map: "idx_notification_user_read")
+  @@index([userId, createdAt], map: "idx_notification_user_created")
   @@map("in_app_notifications")
 }
 

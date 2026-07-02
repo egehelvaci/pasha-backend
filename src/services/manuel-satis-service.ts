@@ -456,16 +456,17 @@ export class ManuelSatisService {
           }
         });
 
-        // 4. Admin kasasını güncelle
+        // 4. Admin kasasını güncelle (TRY için ID 1, USD mağazalar için ID 2)
+        const adminKasaId = store.currency === 'USD' ? 2 : 1;
         await tx.adminVarliklari.upsert({
-          where: { id: 1 },
+          where: { id: adminKasaId },
           update: {
             kasaBakiyesi: {
               increment: new Decimal(totalAmount)
             }
           },
           create: {
-            id: 1,
+            id: adminKasaId,
             kasaBakiyesi: new Decimal(totalAmount)
           }
         });

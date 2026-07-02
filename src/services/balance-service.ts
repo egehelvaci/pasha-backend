@@ -95,8 +95,9 @@ export class BalanceService {
           currency: storeCurrency as any,
           original_currency: input.currencyCode as any,
           original_amount: new Decimal(input.amount), // Orijinal tutar
+          // exchange_rate her zaman "dolar kuru" (1 USD = X TRY) olarak kaydedilir
           exchange_rate: input.currencyCode !== storeCurrency ? 
-            (input.currencyCode === 'USD' ? new Decimal(1 / effectiveAmount * input.amount) : new Decimal(effectiveAmount / input.amount)) 
+            (input.currencyCode === 'USD' ? new Decimal(effectiveAmount / input.amount) : new Decimal(input.amount / effectiveAmount)) 
             : null
         }
       });

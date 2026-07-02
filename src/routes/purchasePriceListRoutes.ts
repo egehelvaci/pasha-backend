@@ -25,12 +25,14 @@ import {
   getSupplierPurchaseSummary,
   getPurchaseStatistics
 } from '../controllers/purchasePriceListController';
-import { authMiddleware } from '../auth/auth-middleware';
+import { authMiddleware, authorizeRoles } from '../auth/auth-middleware';
 
 const router = Router();
 
 // Tüm route'lar auth middleware ile korunmuş
+// /api/admin/purchase-management altında olduğundan admin/editor yetkisi gerektirir
 router.use(authMiddleware);
+router.use(authorizeRoles('admin', 'editor'));
 
 // Satıcı route'ları
 router.get('/suppliers', getAllSuppliers);

@@ -19,6 +19,7 @@ export interface AddToCartRequest {
 
 export interface UpdateCartItemRequest {
   cartItemId: number;
+  userId?: string; // Sahiplik doğrulaması için (verilirse sepet sahibi kontrol edilir)
   quantity: number;
   width?: number;
   height?: number;
@@ -436,6 +437,11 @@ export class CartService {
 
       if (!cartItem) {
         throw new Error('Sepet öğesi bulunamadı');
+      }
+
+      // Sahiplik kontrolü: başka kullanıcının sepet öğesi güncellenemez
+      if (data.userId && cartItem.carts.user_id !== data.userId) {
+        throw new Error('Bu sepet öğesi üzerinde işlem yapma yetkiniz yok');
       }
 
       // Güncellenecek boyutlar

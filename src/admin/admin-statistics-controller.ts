@@ -33,8 +33,9 @@ export class AdminStatisticsController {
           break
       }
 
-      const topStores = await prisma.order.groupBy({
-        by: ['user_id'],
+      // Siparişleri mağaza bazında topla (aynı mağazanın birden fazla kullanıcısı
+      // olabileceği için user_id yerine store_id üzerinden gruplanır)
+      const orders = await prisma.order.findMany({
         where: {
           created_at: {
             gte: startDate
@@ -48,39 +49,55 @@ export class AdminStatisticsController {
             { cart_id: { not: null } }        // Normal siparişler
           ]
         },
-        _count: {
-          id: true
-        },
-        _sum: {
-          total_price: true
-        },
-        orderBy: {
-          _count: {
-            id: 'desc'
+        select: {
+          total_price: true,
+          user: {
+            select: {
+              name: true,
+              surname: true,
+              Store: {
+                select: {
+                  store_id: true,
+                  kurum_adi: true
+                }
+              }
+            }
           }
-        },
-        take: 5
+        }
       })
 
-      const storeData = await Promise.all(
-        topStores.map(async (store) => {
-          const user = await prisma.user.findUnique({
-            where: { userId: store.user_id },
-            include: {
-              Store: true
-            }
-          })
+      // Mağaza bazında grupla
+      const storeMap = new Map<string, {
+        store_id: string | null,
+        store_name: string,
+        user_name: string,
+        order_count: number,
+        total_amount: number
+      }>()
 
-          return {
-            store_id: user?.Store?.store_id || null,
-            store_name: user?.Store?.kurum_adi || 'Bilinmeyen Mağaza',
-            user_name: `${user?.name || ''} ${user?.surname || ''}`.trim(),
-            order_count: store._count.id,
-            total_amount: Number(store._sum.total_price || 0),
-            period
-          }
-        })
-      )
+      for (const order of orders) {
+        const storeId = order.user?.Store?.store_id || null
+        const key = storeId || `no-store:${order.user?.name || ''} ${order.user?.surname || ''}`
+        const existing = storeMap.get(key)
+
+        if (existing) {
+          existing.order_count += 1
+          existing.total_amount += Number(order.total_price || 0)
+        } else {
+          storeMap.set(key, {
+            store_id: storeId,
+            store_name: order.user?.Store?.kurum_adi || 'Bilinmeyen Mağaza',
+            user_name: `${order.user?.name || ''} ${order.user?.surname || ''}`.trim(),
+            order_count: 1,
+            total_amount: Number(order.total_price || 0)
+          })
+        }
+      }
+
+      const storeData = Array.from(storeMap.values())
+        .sort((a, b) => b.order_count - a.order_count)
+        .slice(0, 5)
+        .map(store => ({ ...store, period }))
 
       return res.status(200).json({
         success: true,

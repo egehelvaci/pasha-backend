@@ -1,7 +1,5 @@
 import { Request, Response } from 'express'
-import { AuthService } from './auth-service'
-
-const authService = new AuthService()
+import { authService } from './auth-service'
 
 export class AuthController {
   constructor() {

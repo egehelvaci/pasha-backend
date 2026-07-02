@@ -9,8 +9,8 @@ export class PasswordResetService {
    */
   async requestPasswordReset(email: string) {
     try {
-      // Kullanıcıyı email ile bul
-      const user = await prisma.user.findUnique({
+      // Kullanıcıyı email ile bul (isActive unique olmadığı için findFirst kullanılıyor)
+      const user = await prisma.user.findFirst({
         where: {
           email: email,
           isActive: true

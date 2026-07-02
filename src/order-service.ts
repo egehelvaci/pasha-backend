@@ -1070,17 +1070,10 @@ export class OrderService {
       let whereCondition: any = {};
 
       // Eğer kullanıcı bir mağazaya bağlıysa, o mağazadaki tüm siparişleri getir
+      // (ayrı kullanıcı listesi sorgusu yerine ilişki üzerinden tek sorguda filtrelenir)
       if (user.store_id) {
-        // Mağazadaki tüm kullanıcıları bul
-        const storeUsers = await prisma.user.findMany({
-          where: { store_id: user.store_id },
-          select: { userId: true }
-        });
-
-        const storeUserIds = storeUsers.map(u => u.userId);
-
-        whereCondition.user_id = {
-          in: storeUserIds
+        whereCondition.user = {
+          store_id: user.store_id
         };
       } else {
         // Kullanıcı mağazaya bağlı değilse sadece kendi siparişlerini getir
@@ -1098,36 +1091,38 @@ export class OrderService {
         whereCondition.receipt_printed = filters.receiptPrinted;
       }
       
-      const orders = await prisma.order.findMany({
-        where: whereCondition,
-        include: {
-          items: {
-            include: {
-              product: {
-                include: {
-                  collection: true
+      // Liste ve toplam sayıyı paralel çek
+      const [orders, totalCount] = await Promise.all([
+        prisma.order.findMany({
+          where: whereCondition,
+          include: {
+            items: {
+              include: {
+                product: {
+                  include: {
+                    collection: true
+                  }
                 }
               }
-            }
+            },
+            user: {
+              select: {
+                name: true,
+                surname: true,
+                email: true,
+                username: true
+              }
+            },
+            address: true
           },
-          user: {
-            select: {
-              name: true,
-              surname: true,
-              email: true,
-              username: true
-            }
-          },
-          address: true
-        },
-        orderBy: { created_at: 'desc' },
-        skip,
-        take: limit
-      });
-
-      const totalCount = await prisma.order.count({
-        where: whereCondition
-      });
+          orderBy: { created_at: 'desc' },
+          skip,
+          take: limit
+        }),
+        prisma.order.count({
+          where: whereCondition
+        })
+      ]);
 
       return {
         orders,
@@ -1151,35 +1146,36 @@ export class OrderService {
       
       const where = status ? { status } : {};
       
-      const orders = await prisma.order.findMany({
-        where,
-        include: {
-          user: {
-            select: {
-              name: true,
-              surname: true,
-              email: true
-            }
-          },
-          items: {
-            include: {
-              product: {
-                select: {
-                  name: true,
-                  productImage: true
+      const [orders, total] = await Promise.all([
+        prisma.order.findMany({
+          where,
+          include: {
+            user: {
+              select: {
+                name: true,
+                surname: true,
+                email: true
+              }
+            },
+            items: {
+              include: {
+                product: {
+                  select: {
+                    name: true,
+                    productImage: true
+                  }
                 }
               }
             }
-          }
-        },
-        orderBy: {
-          created_at: 'desc'
-        },
-        skip,
-        take: limit
-      });
-
-      const total = await prisma.order.count({ where });
+          },
+          orderBy: {
+            created_at: 'desc'
+          },
+          skip,
+          take: limit
+        }),
+        prisma.order.count({ where })
+      ]);
 
       return {
         success: true,
@@ -1203,28 +1199,29 @@ export class OrderService {
     try {
       const skip = (page - 1) * limit;
       
-      const orders = await prisma.order.findMany({
-        where: { user_id: userId },
-        include: {
-          items: {
-            include: {
-              product: {
-                select: {
-                  name: true,
-                  productImage: true
+      const [orders, total] = await Promise.all([
+        prisma.order.findMany({
+          where: { user_id: userId },
+          include: {
+            items: {
+              include: {
+                product: {
+                  select: {
+                    name: true,
+                    productImage: true
+                  }
                 }
               }
             }
-          }
-        },
-        orderBy: {
-          created_at: 'desc'
-        },
-        skip,
-        take: limit
-      });
-
-      const total = await prisma.order.count({ where: { user_id: userId } });
+          },
+          orderBy: {
+            created_at: 'desc'
+          },
+          skip,
+          take: limit
+        }),
+        prisma.order.count({ where: { user_id: userId } })
+      ]);
 
       return {
         success: true,
@@ -1801,20 +1798,22 @@ export class OrderService {
           console.log(`  - Yeni bakiye: ${newBalance} TL`);
           
           // Admin kasa bakiyesini güncelle (sipariş iptal edildiği için kasadan düşülür)
+          // Sipariş oluşturmayla aynı mantık: TRY kasası ID 1, USD kasası ID 2
+          const adminKasaId = (store.currency === 'USD') ? 2 : 1;
           const adminVarliklar = await tx.adminVarliklari.findFirst({
-            where: { id: 1 }
+            where: { id: adminKasaId }
           });
           
           if (adminVarliklar) {
             await tx.adminVarliklari.update({
-              where: { id: 1 },
+              where: { id: adminKasaId },
               data: {
                 kasaBakiyesi: {
                   decrement: orderTotal
                 }
               }
             });
-            console.log(`💰 Admin kasa bakiyesi güncellendi: -${orderTotal} TL`);
+            console.log(`💰 Admin kasa bakiyesi güncellendi: -${orderTotal} ${store.currency || 'TRY'}`);
           }
 
           // 4. Fiyat listesi limitini geri yükle (eğer varsa)
@@ -1852,16 +1851,20 @@ export class OrderService {
           console.log(`📋 Muhasebe hareketi oluşturuldu: Sipariş İptali #${orderId}`);
         }
 
-        // 6. Bildirim oluştur
+        return canceledOrder;
+      });
+
+      // 6. Bildirim oluştur (transaction dışında: bildirim hatası iptali geri almasın)
+      try {
         await notificationService.notifyOrderCanceled(
           orderId,
           userId,
           orderId.substring(0, 8),
           reason
         );
-
-        return canceledOrder;
-      });
+      } catch (notificationError) {
+        console.error('Sipariş iptal bildirimi oluşturulamadı:', notificationError);
+      }
 
       return {
         success: true,

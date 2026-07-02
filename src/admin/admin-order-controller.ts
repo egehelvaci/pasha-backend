@@ -65,14 +65,11 @@ export class AdminOrderController {
       orderBy[sortBy as string] = sortOrder
 
       // İstatistik sayılarını hesapla
+      // (6 ayrı count yerine tek groupBy ile tüm durum sayıları alınır)
       const [
         orders, 
         totalCount,
-        totalOrders,
-        cancelledOrders,
-        completedOrders,
-        inDeliveryOrders,
-        readyOrders
+        statusCounts
       ] = await Promise.all([
         prisma.order.findMany({
           where,
@@ -118,25 +115,21 @@ export class AdminOrderController {
           take: Number(limit)
         }),
         prisma.order.count({ where }),
-        // Toplam sipariş sayısı
-        prisma.order.count(),
-        // İptal edilen sipariş sayısı
-        prisma.order.count({
-          where: { status: 'CANCELED' }
-        }),
-        // Tamamlanan sipariş sayısı
-        prisma.order.count({
-          where: { status: 'DELIVERED' }
-        }),
-        // Teslimatta olan sipariş sayısı
-        prisma.order.count({
-          where: { status: 'SHIPPED' }
-        }),
-        // Hazır durumundaki sipariş sayısı
-        prisma.order.count({
-          where: { status: 'READY' }
+        // Durum bazlı sipariş sayıları (tek sorgu)
+        prisma.order.groupBy({
+          by: ['status'],
+          _count: { id: true }
         })
       ])
+
+      // Durum sayılarını eski response yapısına dönüştür
+      const countByStatus = (status: string) =>
+        statusCounts.find(s => s.status === status)?._count.id || 0
+      const totalOrders = statusCounts.reduce((sum, s) => sum + s._count.id, 0)
+      const cancelledOrders = countByStatus('CANCELED')
+      const completedOrders = countByStatus('DELIVERED')
+      const inDeliveryOrders = countByStatus('SHIPPED')
+      const readyOrders = countByStatus('READY')
 
       const totalPages = Math.ceil(totalCount / Number(limit))
 
@@ -314,6 +307,14 @@ export class AdminOrderController {
         })
       }
 
+      // Tekrar onaylamayı engelle (çift QR/stok işlemi olmaması için)
+      if (order.status !== 'PENDING') {
+        return res.status(400).json({
+          success: false,
+          message: `Sadece PENDING durumundaki siparişler onaylanabilir. Bu sipariş durumu: ${order.status}`
+        })
+      }
+
       // QR kodlar oluştur ve siparişi onayla
       const qrResult = await qrCodeService.generateQRCodesForOrder(orderId)
       
@@ -326,14 +327,8 @@ export class AdminOrderController {
         console.error('❌ Barkod oluşturma hatası:', barcodeError)
       }
       
-      // YENİ MANTIK: Stokları düşür (negatif stok izinli)
-      try {
-        await qrCodeService.reduceStockForOrder(orderId)
-        console.log(`✅ Sipariş onaylandı ve stok düşürüldü: ${orderId}`);
-      } catch (stockError) {
-        console.warn('⚠️ Stok düşürme sırasında uyarı:', stockError);
-        console.log(`✅ Sipariş onaylandı (stok durumu: negatif/sıfır): ${orderId}`);
-      }
+      // NOT: Stok, sipariş oluşturulurken zaten düşürülüyor (order-service).
+      // Burada tekrar düşürmek çift stok düşümüne yol açıyordu; kaldırıldı.
 
       // Güncellenmiş sipariş bilgilerini al
       const updatedOrder = await prisma.order.findUnique({
@@ -1141,14 +1136,8 @@ export class AdminOrderController {
             console.error('❌ Barkod oluşturma hatası:', barcodeError)
           }
           
-          // YENİ MANTIK: Stok düşür (negatif stok izinli)
-          try {
-            await qrCodeService.reduceStockForOrder(orderId)
-            console.log(`✅ Sipariş CONFIRMED durumuna geçti ve stok düşürüldü: ${orderId}`);
-          } catch (stockError) {
-            console.warn('⚠️ CONFIRMED durumunda stok düşürme uyarısı:', stockError);
-            console.log(`✅ Sipariş CONFIRMED durumuna geçti (stok durumu: negatif/sıfır): ${orderId}`);
-          }
+          // NOT: Stok, sipariş oluşturulurken zaten düşürülüyor (order-service).
+          // Burada tekrar düşürmek çift stok düşümüne yol açıyordu; kaldırıldı.
           console.log(`✅ Sipariş ${orderId} CONFIRMED olarak güncellendi - QR kod ve barkodlar oluşturuldu`)
         } catch (qrError) {
           console.error('QR kod oluşturma hatası:', qrError)
@@ -1176,7 +1165,7 @@ export class AdminOrderController {
           
           // Admin siparişleri için: Doğrudan bakiyeye iade et (açık hesap kontrolü yok)
           // Normal siparişler için: Sadece sınırsız olmayan mağazalar için iade et
-          const isAdminOrder = existingOrder.cart_id && existingOrder.cart_id > 0 // Admin sepet ID'si varsa admin siparişi
+          const isAdminOrder = existingOrder.admin_cart_id != null && existingOrder.admin_cart_id > 0 // Admin sepet ID'si varsa admin siparişi
           
           if (isAdminOrder || !store.limitsiz_acik_hesap) {
             await prisma.store.update({
@@ -1255,7 +1244,7 @@ export class AdminOrderController {
       } else if (status === 'CANCELED' && existingOrder.status !== 'CANCELED') {
         const store = existingOrder.user.Store
         const orderTotal = Number(existingOrder.total_price)
-        const isAdminOrder = existingOrder.cart_id && existingOrder.cart_id > 0 // Admin sepet ID'si varsa admin siparişi
+        const isAdminOrder = existingOrder.admin_cart_id != null && existingOrder.admin_cart_id > 0 // Admin sepet ID'si varsa admin siparişi
         
         if (isAdminOrder) {
           message = `Admin siparişi iptal edildi. ${orderTotal} TL mağaza bakiyesi iade edildi. Fiyat listesi limiti ve stoklar geri eklendi.`

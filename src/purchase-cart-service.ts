@@ -87,13 +87,13 @@ export class PurchaseCartService {
         throw new Error(`${product.collection.name} koleksiyonu için alış fiyat bilgisi bulunamadı`);
       }
 
-      // Kesim türü kontrolü
+      // Kesim türü kontrolü (cut_type_enum: rectangle | round | oval | custom)
       const cutTypeMapping: { [key: string]: string } = {
         'rectangle': 'rectangle',
+        'standart': 'rectangle',
         'round': 'round',
         'oval': 'oval',
-        'hexagon': 'hexagon',
-        'star': 'star'
+        'custom': 'custom'
       };
 
       const mappedCutType = cutTypeMapping[data.cutType?.toLowerCase()];
@@ -224,12 +224,13 @@ export class PurchaseCartService {
       }
       
       if (data.cutType !== undefined) {
+        // cut_type_enum: rectangle | round | oval | custom
         const cutTypeMapping: { [key: string]: string } = {
           'rectangle': 'rectangle',
+          'standart': 'rectangle',
           'round': 'round',
           'oval': 'oval',
-          'hexagon': 'hexagon',
-          'star': 'star'
+          'custom': 'custom'
         };
         
         const mappedCutType = cutTypeMapping[data.cutType?.toLowerCase()];

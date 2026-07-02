@@ -49,8 +49,8 @@ export class FinanceController {
         }
       });
 
-      // Currency separation opsiyonu kontrolü
-      if (separateCurrencies === 'true' || separateCurrencies) {
+      // Currency separation opsiyonu kontrolü ('false' string'i truthy olduğu için açık karşılaştırma yapılır)
+      if (separateCurrencies === 'true') {
         return this.getTransactionsWithCurrencySeparation(transactions, store, res);
       }
 

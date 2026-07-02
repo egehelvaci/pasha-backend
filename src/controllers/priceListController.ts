@@ -149,15 +149,12 @@ export const createPriceList = async (req: Request, res: Response) => {
     
     // Oluşturma işlemini transaction ile yap
     const result = await prisma.$transaction(async (tx) => {
-      // Fiyat listesini oluştur
-      const priceList = await tx.$executeRaw`
+      // Fiyat listesini oluştur (RETURNING sonucu doğrudan kullanılır;
+      // isimle tekrar aramak eşzamanlı isteklerde yanlış kaydı bulabiliyordu)
+      const createdPriceList = await tx.$queryRaw<PriceList[]>`
         INSERT INTO "PriceList"(name, description, valid_from, valid_to, limit_amount, currency, is_default)
         VALUES (${name}, ${description}, ${validFrom ? new Date(validFrom) : null}, ${validTo ? new Date(validTo) : null}, ${limitAmount}, ${currency}, ${isDefault || false})
         RETURNING *
-      `;
-      
-      const createdPriceList = await tx.$queryRaw<PriceList[]>`
-        SELECT * FROM "PriceList" WHERE name = ${name} ORDER BY created_at DESC LIMIT 1
       `;
       
       const priceListId = createdPriceList[0].price_list_id;

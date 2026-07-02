@@ -405,7 +405,6 @@ export class WebhookController {
       });
       
       if (!transaction) {
-        await prisma.$disconnect();
         return res.status(404).send(`
           <!DOCTYPE html>
           <html>
@@ -571,7 +570,6 @@ export class WebhookController {
       });
       
       if (!paymentSession) {
-        await prisma.$disconnect();
         return res.status(404).send(this.generateMobileCallbackHtml('fail', '', 'Session bulunamadı'));
       }
 
@@ -581,7 +579,6 @@ export class WebhookController {
           where: { id: session },
           data: { status: 'EXPIRED' }
         });
-        await prisma.$disconnect();
         return res.status(410).send(this.generateMobileCallbackHtml('fail', paymentSession.orderId || '', 'Session süresi dolmuş'));
       }
 
@@ -598,8 +595,6 @@ export class WebhookController {
           updatedAt: new Date()
         }
       });
-
-      await prisma.$disconnect();
 
       // Cache-control header'ları ekle
       res.set({
@@ -637,7 +632,6 @@ export class WebhookController {
       });
       
       if (!paymentSession) {
-        await prisma.$disconnect();
         return res.status(404).json({
           success: false,
           message: 'Session bulunamadı'
@@ -650,7 +644,6 @@ export class WebhookController {
           where: { id: session },
           data: { status: 'EXPIRED' }
         });
-        await prisma.$disconnect();
         return res.status(410).json({
           success: false,
           message: 'Session süresi dolmuş'
@@ -669,8 +662,6 @@ export class WebhookController {
           updatedAt: new Date()
         }
       });
-
-      await prisma.$disconnect();
 
       // Web için JSON response döndür veya redirect yap
       const frontendUrl = process.env.PRODUCTION_FRONTEND_URL || 'http://localhost:3000';
@@ -703,8 +694,6 @@ export class WebhookController {
       const paymentSession = await prisma.paymentSession.findUnique({
         where: { id: session }
       });
-      
-      await prisma.$disconnect();
 
       if (!paymentSession) {
         return res.status(404).json({
@@ -820,8 +809,6 @@ export class WebhookController {
           }
         }
       });
-
-      await prisma.$disconnect();
 
       if (!transaction) {
         return res.status(404).json({

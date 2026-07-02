@@ -844,13 +844,13 @@ export class StoreStatisticsController {
             break
           case 'CONFIRMED':
             confirmedOrders = stat._count.id
-            confirmedOrdersAmount += Number(stat._sum.total_price || 0)
             break
           case 'SHIPPED':
             shippedOrders = stat._count.id
-            confirmedOrdersAmount += Number(stat._sum.total_price || 0)
             break
           case 'DELIVERED':
+            // total_amount yalnızca teslim edilmiş (DELIVERED) siparişlerden hesaplanır
+            // (endpoint'in diğer metrikleri ve debug notu ile tutarlı)
             deliveredOrders = stat._count.id
             confirmedOrdersAmount += Number(stat._sum.total_price || 0)
             break

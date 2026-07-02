@@ -119,6 +119,7 @@ export const updateCartItem = async (req: Request, res: Response) => {
 
     const updateData: UpdateCartItemRequest = {
       cartItemId,
+      userId, // Sahiplik doğrulaması için
       quantity: Number(quantity),
       width: width ? Number(width) : undefined,
       height: height ? Number(height) : undefined,

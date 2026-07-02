@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { passwordResetController } from './password-reset-controller'
-import { authMiddleware } from './auth-middleware'
+import { authMiddleware, authorizeRoles } from './auth-middleware'
 
 const router = Router()
 
@@ -29,6 +29,6 @@ router.post('/reset-password', passwordResetController.resetPassword)
  * DELETE /api/auth/cleanup-tokens
  * Requires authentication
  */
-router.delete('/cleanup-tokens', authMiddleware, passwordResetController.cleanupExpiredTokens)
+router.delete('/cleanup-tokens', authMiddleware, authorizeRoles('admin'), passwordResetController.cleanupExpiredTokens)
 
 export default router 

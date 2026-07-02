@@ -1,38 +1,22 @@
 import { Router } from 'express'
-import { authMiddleware } from '../auth/auth-middleware'
+import { authMiddleware, authorizeRoles } from '../auth/auth-middleware'
 import { usdMuhasebeController } from '../admin/usd-muhasebe-controller'
 
 const router = Router()
 
+// Tüm USD muhasebe rotaları admin/editor yetkisi gerektirir
+router.use(authMiddleware)
+router.use(authorizeRoles('admin', 'editor'))
+
 // USD Muhasebe hareketleri routes
-router.get(
-  '/hareketler',
-  authMiddleware,
-  usdMuhasebeController.getAllUsdMuhasebeHareketleri
-)
+router.get('/hareketler', usdMuhasebeController.getAllUsdMuhasebeHareketleri)
 
-router.get(
-  '/store/:storeId',
-  authMiddleware,
-  usdMuhasebeController.getUsdMuhasebeHareketleriByStore
-)
+router.get('/store/:storeId', usdMuhasebeController.getUsdMuhasebeHareketleriByStore)
 
-router.post(
-  '/hareketler',
-  authMiddleware,
-  usdMuhasebeController.createUsdMuhasebeHareketi
-)
+router.post('/hareketler', usdMuhasebeController.createUsdMuhasebeHareketi)
 
-router.get(
-  '/income-types',
-  authMiddleware,
-  usdMuhasebeController.getUsdIncomeTypes
-)
+router.get('/income-types', usdMuhasebeController.getUsdIncomeTypes)
 
-router.get(
-  '/expense-types',
-  authMiddleware,
-  usdMuhasebeController.getUsdExpenseTypes
-)
+router.get('/expense-types', usdMuhasebeController.getUsdExpenseTypes)
 
 export default router

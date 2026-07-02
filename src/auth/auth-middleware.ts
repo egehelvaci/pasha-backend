@@ -1,7 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
-import { AuthService } from './auth-service'
-
-const authService = new AuthService()
+import { authService } from './auth-service'
 
 // JWT token bilgisini req objesine eklemek için Request tipini genişletiyoruz
 declare global {

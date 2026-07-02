@@ -4,6 +4,16 @@ import prisma from '../utils/prisma';
 
 export class NotificationController {
   /**
+   * İstek yapan kullanıcının hedef userId üzerinde işlem yapmaya yetkili olup olmadığını kontrol eder
+   * (kendi kaydı veya admin/editor)
+   */
+  private canAccessUser(req: Request, targetUserId: string): boolean {
+    if (!req.user) return false;
+    if (req.user.userId === targetUserId) return true;
+    return req.user.userType === 'admin' || req.user.userType === 'editor';
+  }
+
+  /**
    * Tek bildirim API - tüm bildirimler buradan gönderilir
    */
   async sendNotification(req: Request, res: Response) {
@@ -56,6 +66,14 @@ export class NotificationController {
   async getUserNotifications(req: Request, res: Response) {
     try {
       const { userId } = req.params;
+
+      if (!this.canAccessUser(req, userId)) {
+        return res.status(403).json({
+          success: false,
+          message: 'Bu kullanıcının bildirimlerine erişim yetkiniz yok'
+        });
+      }
+
       const { 
         page = 1, 
         limit = 20, 
@@ -154,6 +172,26 @@ export class NotificationController {
     try {
       const { notificationId } = req.params;
 
+      // Sahiplik kontrolü: sadece bildirimin sahibi veya admin/editor işaretleyebilir
+      const existing = await prisma.inAppNotification.findUnique({
+        where: { id: notificationId },
+        select: { userId: true }
+      });
+
+      if (!existing) {
+        return res.status(404).json({
+          success: false,
+          message: 'Bildirim bulunamadı'
+        });
+      }
+
+      if (existing.userId && !this.canAccessUser(req, existing.userId)) {
+        return res.status(403).json({
+          success: false,
+          message: 'Bu bildirimi işaretleme yetkiniz yok'
+        });
+      }
+
       const notification = await prisma.inAppNotification.update({
         where: { id: notificationId },
         data: { isRead: true }
@@ -180,6 +218,13 @@ export class NotificationController {
   async markAllAsRead(req: Request, res: Response) {
     try {
       const { userId } = req.params;
+
+      if (!this.canAccessUser(req, userId)) {
+        return res.status(403).json({
+          success: false,
+          message: 'Bu kullanıcının bildirimlerini işaretleme yetkiniz yok'
+        });
+      }
 
       const result = await prisma.inAppNotification.updateMany({
         where: {
@@ -209,6 +254,13 @@ export class NotificationController {
   async getUnreadCount(req: Request, res: Response) {
     try {
       const { userId } = req.params;
+
+      if (!this.canAccessUser(req, userId)) {
+        return res.status(403).json({
+          success: false,
+          message: 'Bu kullanıcının bildirim sayısına erişim yetkiniz yok'
+        });
+      }
 
       const count = await prisma.inAppNotification.count({
         where: {

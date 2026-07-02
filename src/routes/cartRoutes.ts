@@ -8,7 +8,7 @@ import {
   deleteCart,
   cleanOldCarts
 } from '../controllers/cartController';
-import { authMiddleware } from '../auth/auth-middleware';
+import { authMiddleware, authorizeRoles } from '../auth/auth-middleware';
 
 const router = Router();
 
@@ -34,6 +34,6 @@ router.delete('/clear', clearCart);
 router.delete('/', deleteCart);
 
 // POST /cart/admin/clean - Eski sepetleri temizle (admin endpoint)
-router.post('/admin/clean', cleanOldCarts);
+router.post('/admin/clean', authorizeRoles('admin', 'editor'), cleanOldCarts);
 
 export default router; 

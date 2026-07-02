@@ -1,5 +1,6 @@
 import express from 'express'
 import cors from 'cors'
+import compression from 'compression'
 import dotenv from 'dotenv'
 
 import productRoutes from './routes/productRoutes'
@@ -47,6 +48,9 @@ console.log(`BUNNY_CDN_HOSTNAME: ${process.env.BUNNY_CDN_HOSTNAME || 'Tanımlı 
 
 // Middleware'ler
 app.use(cors())
+// Büyük JSON yanıtlarını (özellikle sipariş listeleri) gzip ile sıkıştır;
+// istemci tarafında değişiklik gerektirmez (Accept-Encoding otomatik)
+app.use(compression())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 

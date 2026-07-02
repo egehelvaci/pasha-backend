@@ -297,10 +297,15 @@ export class EmployeeStatsController {
           }
 
           // QRCode tablosundan bu çalışanın hazırladığı siparişleri bul
+          // NOT: QRCode modelinde completedAt alanı yok; tarih filtresi first_scan_at üzerinden uygulanır
+          const qrDateFilter: any = {}
+          if (dateFilter.completedAt) {
+            qrDateFilter.first_scan_at = { ...dateFilter.completedAt }
+          }
           const preparedOrdersFromQR = await prisma.qRCode.findMany({
             where: {
               first_scan_employee_id: stat.employeeId,
-              ...dateFilter
+              ...qrDateFilter
             },
             include: {
               order: {
