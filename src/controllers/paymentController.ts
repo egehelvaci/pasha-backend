@@ -172,14 +172,27 @@ export class PaymentController {
         targetUserId = userId; // Admin/Editor kendi adına ödeme alıyor
       } else {
         // Normal kullanıcı - sadece kendi mağazası için ödeme alabilir
-        const userStoreId = (req as any).user?.store_id;
-        if (userStoreId !== storeId) {
+        // NOT: JWT'deki store_id login anında donduğu için güncel değer DB'den okunur
+        // (checkout endpoint'i ile aynı davranış; eski token'larda 403'e yol açıyordu)
+        const user = await prisma.user.findUnique({
+          where: { userId },
+          select: { store_id: true }
+        });
+
+        if (!user || !user.store_id) {
+          return res.status(404).json({
+            success: false,
+            message: 'Kullanıcı veya mağaza bulunamadı'
+          });
+        }
+
+        if (user.store_id !== storeId) {
           return res.status(403).json({
             success: false,
             message: 'Sadece kendi mağazanız için ödeme alabilirsiniz'
           });
         }
-        targetStoreId = userStoreId;
+        targetStoreId = user.store_id;
         targetUserId = userId;
       }
 
@@ -266,14 +279,27 @@ export class PaymentController {
         targetUserId = userId; // Admin/Editor kendi adına ödeme alıyor
       } else {
         // Normal kullanıcı - sadece kendi mağazası için ödeme alabilir
-        const userStoreId = (req as any).user?.store_id;
-        if (userStoreId !== storeId) {
+        // NOT: JWT'deki store_id login anında donduğu için güncel değer DB'den okunur
+        // (checkout endpoint'i ile aynı davranış; eski token'larda 403'e yol açıyordu)
+        const user = await prisma.user.findUnique({
+          where: { userId },
+          select: { store_id: true }
+        });
+
+        if (!user || !user.store_id) {
+          return res.status(404).json({
+            success: false,
+            message: 'Kullanıcı veya mağaza bulunamadı'
+          });
+        }
+
+        if (user.store_id !== storeId) {
           return res.status(403).json({
             success: false,
             message: 'Sadece kendi mağazanız için ödeme alabilirsiniz'
           });
         }
-        targetStoreId = userStoreId;
+        targetStoreId = user.store_id;
         targetUserId = userId;
       }
 
