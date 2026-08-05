@@ -350,13 +350,21 @@ export class PaymentService {
       console.log(`Octet API'ye payment request gönderiliyor... (Attempt: ${retryCount + 1})`);
 
       // Octet API'ye istek gönder
+      // NOT: Octet'in önündeki Cloudflare, varsayılan axios User-Agent'ını bot sanıp
+      // "Just a moment..." challenge sayfası ile 403 dönüyor. Login servisinde işe
+      // yarayan tarayıcı benzeri header'lar burada da gönderiliyor.
       const response = await axios.post(
         'https://portalapi.octet.com.tr/payments/common',
         paymentRequest,
         {
           headers: {
             'Content-Type': 'application/json',
-            'Accept': 'application/json',
+            'Accept': '*/*',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+            'User-Agent': 'PostmanRuntime/7.43.0',
+            'Connection': 'keep-alive',
+            'Cache-Control': 'no-cache',
             'Token': token
           },
           timeout: 30000 // 30 saniye timeout
@@ -384,6 +392,19 @@ export class PaymentService {
             console.log('401 hatası alındı, token yenileniyor ve tekrar deneniyor...');
             this.octetLoginService.clearToken(); // Mevcut token'ı temizle
             return this.sendPaymentRequestToOctet(paymentRequest, retryCount + 1);
+          }
+
+          // Cloudflare bot challenge tespiti: yanıt JSON değil HTML challenge sayfası
+          const responseData = error.response.data;
+          const isCloudflareChallenge = typeof responseData === 'string' &&
+            (responseData.includes('challenges.cloudflare.com') || responseData.includes('Just a moment'));
+
+          if (isCloudflareChallenge) {
+            console.error('❌ Octet isteği Cloudflare bot koruması tarafından engellendi (challenge sayfası döndü)');
+            return {
+              success: false,
+              message: 'Ödeme sağlayıcısına erişim güvenlik duvarı tarafından engellendi. Lütfen tekrar deneyin; sorun devam ederse sistem yöneticisine bildirin.'
+            };
           }
 
           const errorMessage = error.response.data?.message || 
