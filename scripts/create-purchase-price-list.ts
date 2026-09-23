@@ -51,7 +51,7 @@ export async function createDefaultPurchasePriceList() {
           data: {
             purchase_price_list_id: purchasePriceList.id,
             collection_id: collection.collectionId,
-            price_per_square_meter: 0.00 // Admin tarafından düzenlenecek
+            price_per_square_meter: 1.00 // Admin tarafından düzenlenecek
           }
         });
         console.log(`${collection.name} koleksiyonu için alış fiyat detayı eklendi`);
@@ -94,7 +94,7 @@ export async function addCollectionToPurchasePriceList(collectionId: string) {
         data: {
           purchase_price_list_id: purchasePriceList.id,
           collection_id: collectionId,
-          price_per_square_meter: 0.00 // Admin tarafından düzenlenecek
+          price_per_square_meter: 1.00 // Admin tarafından düzenlenecek
         }
       });
       console.log(`Koleksiyon ${collectionId} varsayılan alış fiyat listesine eklendi`);

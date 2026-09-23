@@ -3,46 +3,6 @@ import { Currency } from '../generated/prisma';
 
 export class CollectionService {
   /**
-   * Yeni koleksiyonu varsayılan alış fiyat listesine ekle
-   */
-  private async addCollectionToPurchasePriceList(collectionId: string) {
-    try {
-      // Varsayılan alış fiyat listesini bul
-      const purchasePriceList = await prisma.purchasePriceList.findFirst({
-        where: { name: 'Varsayılan Alış Fiyat Listesi' }
-      });
-
-      if (!purchasePriceList) {
-        console.log('Varsayılan alış fiyat listesi bulunamadı. Önce oluşturun.');
-        return;
-      }
-
-      // Bu koleksiyon için zaten bir detay var mı kontrol et
-      const existingDetail = await prisma.purchasePriceListDetail.findFirst({
-        where: {
-          purchase_price_list_id: purchasePriceList.id,
-          collection_id: collectionId
-        }
-      });
-
-      if (!existingDetail) {
-        await prisma.purchasePriceListDetail.create({
-          data: {
-            purchase_price_list_id: purchasePriceList.id,
-            collection_id: collectionId,
-            price_per_square_meter: 0.00 // Admin tarafından düzenlenecek
-          }
-        });
-        console.log(`Koleksiyon ${collectionId} varsayılan alış fiyat listesine eklendi`);
-      }
-
-    } catch (error) {
-      console.error('Koleksiyon alış fiyat listesine eklenirken hata:', error);
-      throw error;
-    }
-  }
-
-  /**
    * Yeni bir koleksiyon oluştur
    */
   async createCollection(data: {
@@ -51,22 +11,24 @@ export class CollectionService {
     code: string
   }) {
     try {
-      const collection = await prisma.collection.create({
-        data: {
-          name: data.name,
-          description: data.description,
-          code: data.code
+      const collection = await prisma.$transaction(async tx => {
+        const created = await tx.collection.create({ data });
+        const lists = await tx.purchasePriceList.findMany({
+          where: { name: 'Varsayılan Alış Fiyat Listesi', is_active: true },
+          select: { id: true }
+        });
+        if (lists.length) {
+          await tx.purchasePriceListDetail.createMany({
+            data: lists.map(list => ({
+              purchase_price_list_id: list.id,
+              collection_id: created.collectionId,
+              price_per_square_meter: 1
+            })),
+            skipDuplicates: true
+          });
         }
+        return created;
       });
-
-      // Yeni koleksiyonu varsayılan alış fiyat listesine ekle
-      try {
-        await this.addCollectionToPurchasePriceList(collection.collectionId);
-        console.log(`Koleksiyon ${collection.name} alış fiyat listesine eklendi`);
-      } catch (error) {
-        console.error('Koleksiyon alış fiyat listesine eklenirken hata:', error);
-        // Bu hata koleksiyon oluşturma işlemini durdurmaz
-      }
 
       return collection;
     } catch (error) {

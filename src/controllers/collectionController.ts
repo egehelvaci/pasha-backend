@@ -61,13 +61,7 @@ export const createCollection = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Bu kod zaten kullanımda' });
     }
     
-    const newCollection = await prisma.collection.create({
-      data: {
-        name,
-        description: description || null,
-        code,
-      },
-    });
+    const newCollection = await new CollectionService().createCollection({ name, description, code });
     
     return res.status(201).json({ success: true, data: newCollection });
   } catch (error) {

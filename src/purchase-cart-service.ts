@@ -1,5 +1,6 @@
 import { Decimal } from '@prisma/client/runtime/library';
 import prisma from './utils/prisma';
+import { MissingPurchasePriceError } from './purchase-price-service';
 
 export interface AddToPurchaseCartRequest {
   supplierId: string;
@@ -83,8 +84,8 @@ export class PurchaseCartService {
         }
       });
 
-      if (!purchasePriceDetail) {
-        throw new Error(`${product.collection.name} koleksiyonu için alış fiyat bilgisi bulunamadı`);
+      if (!purchasePriceDetail || purchasePriceDetail.price_per_square_meter.lte(0)) {
+        throw new MissingPurchasePriceError(product.collection.name);
       }
 
       // Kesim türü kontrolü (cut_type_enum: rectangle | round | oval | custom)
@@ -130,6 +131,7 @@ export class PurchaseCartService {
           where: { id: existingItem.id },
           data: {
             quantity: newQuantity,
+            unit_price: unitPrice,
             total_price: newTotalPrice
           },
           include: {
@@ -200,8 +202,8 @@ export class PurchaseCartService {
         }
       });
 
-      if (!purchasePriceDetail) {
-        throw new Error(`${existingItem.product.collection.name} koleksiyonu için alış fiyat bilgisi bulunamadı`);
+      if (!purchasePriceDetail || purchasePriceDetail.price_per_square_meter.lte(0)) {
+        throw new MissingPurchasePriceError(existingItem.product.collection.name);
       }
 
       // Güncellenecek alanları belirle

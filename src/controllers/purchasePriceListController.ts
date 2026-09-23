@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../utils/prisma';
 import { PurchaseCartService } from '../purchase-cart-service';
+import { includeMissingPurchaseCollections, MissingPurchasePriceError } from '../purchase-price-service';
 
 // Tüm satıcıları getir
 export const getAllSuppliers = async (req: Request, res: Response) => {
@@ -224,7 +225,7 @@ export const getAllPurchasePriceLists = async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      data: purchasePriceLists,
+      data: await includeMissingPurchaseCollections(purchasePriceLists),
       message: 'Alış fiyat listeleri başarıyla getirildi'
     });
   } catch (error) {
@@ -280,7 +281,7 @@ export const getPurchasePriceListById = async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      data: purchasePriceList,
+      data: (await includeMissingPurchaseCollections([purchasePriceList]))[0],
       message: 'Alış fiyat listesi başarıyla getirildi'
     });
   } catch (error) {
@@ -370,7 +371,7 @@ export const createPurchasePriceList = async (req: Request, res: Response) => {
 
     res.status(201).json({
       success: true,
-      data: createdPriceList,
+      data: createdPriceList ? (await includeMissingPurchaseCollections([createdPriceList]))[0] : null,
       message: 'Alış fiyat listesi başarıyla oluşturuldu'
     });
   } catch (error) {
@@ -463,7 +464,7 @@ export const updatePurchasePriceList = async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      data: updatedPriceList,
+      data: updatedPriceList ? (await includeMissingPurchaseCollections([updatedPriceList]))[0] : null,
       message: 'Alış fiyat listesi başarıyla güncellendi'
     });
   } catch (error) {
@@ -592,7 +593,7 @@ export const getDefaultPurchasePriceList = async (req: Request, res: Response) =
 
     res.json({
       success: true,
-      data: defaultPriceList,
+      data: (await includeMissingPurchaseCollections([defaultPriceList]))[0],
       message: 'Varsayılan alış fiyat listesi başarıyla getirildi'
     });
   } catch (error) {
@@ -898,8 +899,8 @@ export const purchaseProductFromSupplier = async (req: Request, res: Response) =
         }
       });
 
-      if (!purchasePriceDetail) {
-        throw new Error(`${product.collection.name} koleksiyonu için alış fiyat bilgisi bulunamadı`);
+      if (!purchasePriceDetail || purchasePriceDetail.price_per_square_meter.lte(0)) {
+        throw new MissingPurchasePriceError(product.collection.name);
       }
 
       // Toplam alış tutarını hesapla (USD cinsinden)
@@ -984,6 +985,9 @@ export const purchaseProductFromSupplier = async (req: Request, res: Response) =
 
   } catch (error) {
     console.error('Satıcıdan ürün alımı hatası:', error);
+    if (error instanceof MissingPurchasePriceError) {
+      return res.status(400).json({ success: false, code: 'PURCHASE_PRICE_REQUIRED', message: error.message });
+    }
     res.status(500).json({
       success: false,
       message: 'Ürün alımı gerçekleştirilemedi',
@@ -1044,6 +1048,9 @@ export const addToPurchaseCart = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Alım sepetine ekleme hatası:', error);
+    if (error instanceof MissingPurchasePriceError) {
+      return res.status(400).json({ success: false, code: 'PURCHASE_PRICE_REQUIRED', message: error.message });
+    }
     res.status(500).json({
       success: false,
       message: 'Ürün alım sepetine eklenirken hata oluştu',
@@ -1113,6 +1120,9 @@ export const updatePurchaseCartItem = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Alım sepeti öğesi güncelleme hatası:', error);
+    if (error instanceof MissingPurchasePriceError) {
+      return res.status(400).json({ success: false, code: 'PURCHASE_PRICE_REQUIRED', message: error.message });
+    }
     res.status(500).json({
       success: false,
       message: 'Alım sepeti öğesi güncellenemedi',
