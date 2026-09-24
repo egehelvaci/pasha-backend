@@ -41,7 +41,19 @@ async function test() {
       const sql = fs.readFileSync(path.join(__dirname, '../prisma/migrations/20260924000000_site_settings/migration.sql'), 'utf8');
       for (const statement of sql.split(';').filter(s => s.trim())) await tx.$executeRawUnsafe(statement);
       prismaModule.default = new Proxy(tx, { get(target, key) {
-        return key === '$transaction' ? queries => Promise.all(queries) : target[key];
+        if (key !== '$transaction') return target[key];
+        return async queries => {
+          await tx.$executeRawUnsafe('SAVEPOINT api_transaction');
+          const results = await Promise.allSettled(queries);
+          const failure = results.find(result => result.status === 'rejected');
+          if (failure) {
+            await tx.$executeRawUnsafe('ROLLBACK TO SAVEPOINT api_transaction');
+            await tx.$executeRawUnsafe('RELEASE SAVEPOINT api_transaction');
+            throw failure.reason;
+          }
+          await tx.$executeRawUnsafe('RELEASE SAVEPOINT api_transaction');
+          return results.map(result => result.value);
+        };
       } });
       const app = express();
       app.use(express.json());
@@ -109,6 +121,45 @@ async function test() {
       const good = new FormData(); good.append('image', new Blob([Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aAuoAAAAASUVORK5CYII=', 'base64')]), 'untrusted.html');
       await request(admin + '/banner-image', 'POST', good, 201);
       assert.equal(uploads, 1); checks++;
+      const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aAuoAAAAASUVORK5CYII=', 'base64');
+      const multiple = new FormData();
+      multiple.append('images', new Blob([png]), 'one.png');
+      multiple.append('images', new Blob([png]), 'two.png');
+      const uploaded = (await request(admin + '/banner-images', 'POST', multiple, 201)).data.images;
+      assert.deepEqual(uploaded.map(image => image.sortOrder), [0, 1]); checks++;
+      assert.equal(uploads, 3); checks++;
+      const invalidBatch = new FormData();
+      invalidBatch.append('images', new Blob([png]), 'ok.png');
+      invalidBatch.append('images', new Blob(['invalid']), 'bad.png');
+      await request(admin + '/banner-images', 'POST', invalidBatch, 400);
+      assert.equal(uploads, 3); checks++;
+      await request(admin + '/banner-images', 'POST', undefined, 400);
+      const tooMany = new FormData();
+      for (let i = 0; i < 21; i++) tooMany.append('images', new Blob([png]), `${i}.png`);
+      await request(admin + '/banner-images', 'POST', tooMany, 400);
+      const beforeBulk = await tx.siteBanner.count();
+      await request(admin + '/banners/bulk', 'POST', { banners: [
+        { title: 'Valid', imageUrl: 'https://example.invalid/ok.png' }, { title: 'Missing image' }
+      ] }, 400);
+      assert.equal(await tx.siteBanner.count(), beforeBulk); checks++;
+      const slides = (await request(admin + '/banners/bulk', 'POST', { banners: uploaded.map((image, index) => ({ ...image, title: `Slide ${index}`, sortOrder: index + 10 })) }, 201)).data;
+      assert.equal(slides.length, 2); checks++;
+      await request(admin + '/banners/reorder', 'PATCH', { items: [
+        { id: slides[0].id, sortOrder: 12 }, { id: slides[1].id, sortOrder: 11 }
+      ] });
+      const ordered = (await request('/site-settings')).data.banners.filter(banner => slides.some(slide => slide.id === banner.id));
+      assert.deepEqual(ordered.map(slide => slide.id), [slides[1].id, slides[0].id]); checks++;
+      await request(admin + '/banners/reorder', 'PATCH', { items: [
+        { id: slides[0].id, sortOrder: 50 }, { id: 'nonexistent-slide', sortOrder: 51 }
+      ] }, 404);
+      assert.equal((await tx.siteBanner.findUniqueOrThrow({ where: { id: slides[0].id } })).sortOrder, 12); checks++;
+      for (const items of [[], [{ id: slides[0].id, sortOrder: -1 }],
+        [{ id: slides[0].id, sortOrder: 1 }, { id: slides[0].id, sortOrder: 2 }],
+        [{ id: slides[0].id, sortOrder: 1 }, { id: slides[1].id, sortOrder: 1 }]]) {
+        await request(admin + '/banners/reorder', 'PATCH', { items }, 400);
+      }
+      await request(admin + '/banners/bulk', 'POST', { banners: [] }, 400);
+      await request(admin + '/banners/bulk', 'POST', { banners: [{ title: 'No', imageUrl: 'https://example.invalid/no.png' }] }, 403, 'editor');
       throw rollback;
     }, { timeout: 120000, maxWait: 10000 });
   } catch (error) { if (error !== rollback) throw error; }

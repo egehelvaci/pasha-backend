@@ -64,6 +64,82 @@ Alanlar isteğe bağlıdır; en az biri gönderilmelidir. Gönderilmeyen alan ko
 
 ## Banner yönetimi
 
+### Slider yapısı ve çoklu görsel
+
+`banners` dizisindeki **her kayıt slider'ın bir slaytıdır**. Aynı slider için birden fazla banner kaydı oluşturun. Tek kayda iç içe `images` alanı eklenmez. Her slaytın görseli, mobil görseli, bağlantısı, aktifliği ve sırası bağımsızdır. Public endpoint aktif slaytları sıralı döndürür; frontend bu diziyi carousel/slider bileşenine verir. Tek görselli eski endpoint'ler de çalışmaya devam eder.
+
+#### 1. Birden fazla görsel yükle
+
+`POST /api/admin/site-settings/banner-images`
+
+`multipart/form-data` içinde tekrarlanan **images** alanları gönderin. İstek başına 1–20 görsel, dosya başına en fazla 5 MB; PNG, JPEG ve WebP desteklenir. Dosyaların tamamı CDN yüklemesi başlamadan doğrulanır. Yanıt sırası, gönderim sırasıdır.
+
+```javascript
+const form = new FormData();
+for (const file of selectedFiles) form.append('images', file);
+const response = await fetch(`${apiBase}/api/admin/site-settings/banner-images`, {
+  method: 'POST',
+  headers: { Authorization: `Bearer ${token}` },
+  body: form
+});
+const result = await response.json();
+if (!response.ok) throw new Error(result.message);
+const images = result.data.images;
+```
+
+HTTP 201 örneği:
+
+```json
+{
+  "success": true,
+  "data": {
+    "images": [
+      { "imageUrl": "https://cdn.example.com/slide-1.png", "sortOrder": 0 },
+      { "imageUrl": "https://cdn.example.com/slide-2.png", "sortOrder": 1 }
+    ]
+  }
+}
+```
+
+Bu aşama veritabanı kaydı oluşturmaz. `sortOrder`, yeni seçimin içindeki sıra önerisidir. Mevcut slider'a ekleme yapılıyorsa sıraları mevcut kayıtları da dikkate alarak belirleyin. CDN hatasında HTTP 500 döner; o ana kadar yüklenen dosyalar CDN'de kalabilir, banner kayıtları oluşmaz.
+
+#### 2. Slaytları tek istekte kaydet
+
+`POST /api/admin/site-settings/banners/bulk`
+
+```json
+{
+  "banners": [
+    { "title": "İlk slayt", "imageUrl": "https://cdn.example.com/slide-1.png", "sortOrder": 0, "isActive": true },
+    { "title": "İkinci slayt", "imageUrl": "https://cdn.example.com/slide-2.png", "sortOrder": 1, "linkUrl": "/collections", "isActive": true }
+  ]
+}
+```
+
+1–20 slayt gönderilebilir. Her kayıt tekil oluşturma ile aynı alan kurallarını kullanır. Tüm kayıtlar tek transaction'da oluşturulur; bir kayıt geçersizse hiçbiri eklenmez. HTTP 201 yanıtı `{ "success": true, "data": [ ...oluşturulanSlaytlar ] }` biçimindedir. Oluşturma tekrar çağrılırsa yeni kayıtlar ekler; otomatik tekrar göndermeyin.
+
+#### 3. Sürükle-bırak sırasını kaydet
+
+`PATCH /api/admin/site-settings/banners/reorder`
+
+```json
+{
+  "items": [
+    { "id": "ikinci-slaytin-id-degeri", "sortOrder": 0 },
+    { "id": "ilk-slaytin-id-degeri", "sortOrder": 1 }
+  ]
+}
+```
+
+1–200 kayıt gönderilebilir. İstek içinde ID'ler ve sıra değerleri benzersiz olmalıdır. Sıralar negatif olmayan tam sayıdır. Güncelleme atomiktir: herhangi bir ID bulunamazsa HTTP 404 döner ve hiçbir sıra değişmez. Gönderilmeyen slaytlar korunur. Diğer slaytlarla sıra çakışmaması için mevcut listenin tamamını yeni sırayla gönderin. Eşit sıraların bağlayıcı sıralaması `createdAt DESC, id ASC` olur.
+
+```javascript
+const items = reorderedSlides.map((slide, sortOrder) => ({ id: slide.id, sortOrder }));
+// PATCH body: JSON.stringify({ items })
+```
+
+HTTP 200: `{ "success": true, "data": [ ...güncellenenSlaytlar ] }`; yanıt `sortOrder` artan sıradadır. Kayıttan sonra admin listesini ve public site ayarlarını yenileyin. Çoklu slider desteği mevcut banner tablosunu kullanır; ek migration gerektirmez.
+
 ### Listeleme
 
 `GET /api/admin/site-settings/banners`
