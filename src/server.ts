@@ -19,6 +19,7 @@ import paymentRoutes from './routes/paymentRoutes'
 import employeeAssignmentRoutes from './routes/employeeAssignmentRoutes'
 import employeeStatsRoutes from './routes/employeeStatsRoutes'
 import loginAssetsRoutes from './routes/loginAssetsRoutes'
+import { publicSiteSettingsRouter, adminSiteSettingsRouter } from './routes/siteSettingsRoutes'
 import notificationRoutes from './routes/notificationRoutes'
 import usdMuhasebeRoutes from './routes/usdMuhasebeRoutes'
 import publicCatalogRoutes from './routes/publicCatalogRoutes'
@@ -88,6 +89,8 @@ app.use('/api/payments', paymentRoutes)
 app.use('/api/employee-assignment', employeeAssignmentRoutes)
 app.use('/api/employee-stats', employeeStatsRoutes)
 app.use('/api/login-assets', loginAssetsRoutes)
+app.use('/api/site-settings', publicSiteSettingsRouter)
+app.use('/api/admin/site-settings', adminSiteSettingsRouter)
 app.use('/api/notifications', notificationRoutes)
 app.use('/api/admin/usd-muhasebe', usdMuhasebeRoutes)
 app.use('/api/admin/purchase-management', purchasePriceListRoutes)

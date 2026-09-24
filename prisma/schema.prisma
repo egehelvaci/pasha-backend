@@ -9,6 +9,31 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model SiteSettings {
+  id          Int      @id @default(1)
+  hideBalance Boolean  @default(false) @map("hide_balance")
+  hideStock   Boolean  @default(false) @map("hide_stock")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("site_settings")
+}
+
+model SiteBanner {
+  id          String   @id @default(uuid())
+  title       String   @db.VarChar(200)
+  imageUrl    String   @map("image_url")
+  mobileImageUrl String? @map("mobile_image_url")
+  linkUrl     String?  @map("link_url")
+  altText     String   @default("") @map("alt_text") @db.VarChar(300)
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive, sortOrder], map: "idx_site_banner_active_sort")
+  @@map("site_banners")
+}
+
 model UserType {
   id    Int    @id @default(autoincrement())
   name  String @unique
