@@ -71,6 +71,7 @@ $RECYCLE.BIN/
 !prisma/migrations/20260924000000_site_settings/migration.sql
 !prisma/migrations/20260924010000_order_fulfillment/migration.sql
 !prisma/migrations/20260924020000_common_product_stock/migration.sql
+!prisma/migrations/20260924030000_migrate_legacy_product_stock/migration.sql
 *.sqlite
 *.sqlite3
 

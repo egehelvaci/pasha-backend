@@ -468,15 +468,15 @@ Bu endpoint ortak üründe seçilen ebat için ayrı stok açmaz; ürünün topl
 }
 ```
 
-Ortak ürünlerde `areaM2`, ürünün toplam ortak stok alanıdır. Mevcut ürünler legacy stok mantığını koruduğu için admin ekranı backend cevabındaki `stock.enabled` alanını kontrol etmelidir.
+Ortak ürünlerde `areaM2`, ürünün toplam ortak stok alanıdır. Mevcut ürünler de migration ile ortak stok modeline aktarıldığı için ürün detayındaki `stock.enabled` alanı ortak stok kaynağını gösterir.
 
 ## 12. Legacy ürünlerle uyumluluk
 
-Mevcut ürünlerde:
+Migration tamamlandıktan sonra mevcut ürünlerde de:
 
-- `stock.enabled` bulunmayabilir veya `false` olabilir.
-- `productvariations` stok alanları eski davranışla çalışır.
-- Hazır ebat ve opsiyonel yükseklik stokları eski kurallara göre döner.
+- `stock.enabled` ortak stok kaynağının aktif olduğunu gösterir.
+- `stock.availableAreaM2`, `stock.reservedAreaM2` ve `stock.consumableAreaM2` ürün seviyesinde döner.
+- `productvariations` ölçü, fiyat ve eski istemci uyumluluğu için cevapta kalır; stok kaynağı değildir.
 
 Yeni ürünlerde:
 

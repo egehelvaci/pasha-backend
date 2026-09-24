@@ -30,10 +30,16 @@ async function main() {
   let optedIn = 0;
 
   const rows = products.map(product => {
-    const legacyArea = product.productvariations.reduce(
-      (sum, variation) => sum + legacyAreaM2(product, variation),
-      0
-    );
+    // Cut/fringe variations with the same physical size share one stock pool.
+    // Use the largest value for a size so duplicated compatibility rows do not
+    // inflate the migration total.
+    const areaBySize = new Map<string, number>();
+    for (const variation of product.productvariations) {
+      const key = `${variation.width}x${variation.height}`;
+      const area = legacyAreaM2(product, variation);
+      areaBySize.set(key, Math.max(areaBySize.get(key) || 0, area));
+    }
+    const legacyArea = [...areaBySize.values()].reduce((sum, area) => sum + area, 0);
     const commonArea = product.productStock ? Number(product.productStock.availableAreaM2 || 0) : null;
     legacyTotal += legacyArea;
     if (commonArea !== null) {

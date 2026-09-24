@@ -4,9 +4,9 @@ Bu branch'te yeni oluşturulan ürünler tek ürün seviyesinde ortak m² stok k
 
 ## Geçiş davranışı
 
-`20260924020000_common_product_stock` migration'ı yalnızca yeni tabloları oluşturur. Mevcut ürünlere otomatik stok aktarımı yapmaz. Mevcut ürünler `productvariations` üzerindeki legacy stok mantığıyla çalışmaya devam eder. Yeni ürün oluşturulduğunda `product_stocks` kaydı otomatik açılır.
+`20260924020000_common_product_stock` migration'ı ortak stok tablolarını oluşturur. `20260924030000_migrate_legacy_product_stock` migration'ı mevcut ürünlerin legacy varyasyon stoklarını ürün seviyesinde m² stoğuna aktarır. Varyasyon satırları silinmez; ortak stok kaydı oluşturulduktan sonra stok kaynağı `product_stocks` olur. Aynı fiziksel genişlik/yükseklik birden fazla kesim veya saçak varyasyonunda bulunuyorsa yalnızca en yüksek değer aktarılır.
 
-Mevcut ürünleri ileride aktarmadan önce aşağıdaki salt-okunur audit çalıştırılmalıdır:
+Migration öncesi veya sonrasında aktarım toplamını kontrol etmek için aşağıdaki salt-okunur audit çalıştırılabilir:
 
 ```bash
 npm run stock:audit
