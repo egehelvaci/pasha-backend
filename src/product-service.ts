@@ -364,6 +364,7 @@ export class ProductService {
             consumableAreaM2: availableAreaM2 - reservedAreaM2
           };
           extendedProduct.availableAreaM2 = availableAreaM2;
+          delete extendedProduct.productStock;
         }
         
         // Fiyat bilgisini ekle
@@ -516,6 +517,7 @@ export class ProductService {
           consumableAreaM2: availableAreaM2 - reservedAreaM2
         };
         (product as any).availableAreaM2 = availableAreaM2;
+        delete (product as any).productStock;
       }
 
       // Eğer kullanıcı ID'si belirtilmişse fiyat bilgisini ekle
@@ -727,6 +729,7 @@ export class ProductService {
             consumableAreaM2: availableAreaM2 - reservedAreaM2
           };
           (product as any).availableAreaM2 = availableAreaM2;
+          delete (product as any).productStock;
         }
         // Eğer kullanıcı ID'si belirtilmişse fiyat bilgisini ekle
         if (userId) {
