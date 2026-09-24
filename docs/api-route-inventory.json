@@ -1,0 +1,1430 @@
+[
+  {
+    "method": "get",
+    "path": "/api/products",
+    "source": "src/routes/productRoutes.ts",
+    "handler": "getAllProducts"
+  },
+  {
+    "method": "get",
+    "path": "/api/products/all",
+    "source": "src/routes/productRoutes.ts",
+    "handler": "getAllProductsWithoutPagination"
+  },
+  {
+    "method": "get",
+    "path": "/api/products/rules",
+    "source": "src/routes/productRoutes.ts",
+    "handler": "getAllProductRules"
+  },
+  {
+    "method": "get",
+    "path": "/api/products/by-collection/{collectionId}",
+    "source": "src/routes/productRoutes.ts",
+    "handler": "getProductsByCollection"
+  },
+  {
+    "method": "get",
+    "path": "/api/products/{id}/variations",
+    "source": "src/routes/productRoutes.ts",
+    "handler": "getProductVariationOptions"
+  },
+  {
+    "method": "post",
+    "path": "/api/products/{id}/regenerate-variations",
+    "source": "src/routes/productRoutes.ts",
+    "handler": "regenerateProductVariations"
+  },
+  {
+    "method": "post",
+    "path": "/api/products/regenerate-variations/rule/{ruleId}",
+    "source": "src/routes/productRoutes.ts",
+    "handler": "regenerateVariationsForRule"
+  },
+  {
+    "method": "post",
+    "path": "/api/products/regenerate-variations/all",
+    "source": "src/routes/productRoutes.ts",
+    "handler": "regenerateAllVariations"
+  },
+  {
+    "method": "get",
+    "path": "/api/products/{id}",
+    "source": "src/routes/productRoutes.ts",
+    "handler": "getProductById"
+  },
+  {
+    "method": "post",
+    "path": "/api/products/test-create",
+    "source": "src/routes/productRoutes.ts",
+    "handler": "createProductSimple"
+  },
+  {
+    "method": "post",
+    "path": "/api/products",
+    "source": "src/routes/productRoutes.ts",
+    "handler": "createProduct"
+  },
+  {
+    "method": "put",
+    "path": "/api/products/{id}",
+    "source": "src/routes/productRoutes.ts",
+    "handler": "updateProduct"
+  },
+  {
+    "method": "delete",
+    "path": "/api/products/{id}",
+    "source": "src/routes/productRoutes.ts",
+    "handler": "deleteProduct"
+  },
+  {
+    "method": "patch",
+    "path": "/api/products/{id}/stock",
+    "source": "src/routes/productRoutes.ts",
+    "handler": "updateProductStock"
+  },
+  {
+    "method": "patch",
+    "path": "/api/products/{id}/stock-area",
+    "source": "src/routes/productRoutes.ts",
+    "handler": "updateProductStockAreaM2"
+  },
+  {
+    "method": "patch",
+    "path": "/api/products/{id}/stock-hybrid",
+    "source": "src/routes/productRoutes.ts",
+    "handler": "updateProductStockHybrid"
+  },
+  {
+    "method": "get",
+    "path": "/api/collections",
+    "source": "src/routes/collectionRoutes.ts",
+    "handler": "getAllCollections"
+  },
+  {
+    "method": "get",
+    "path": "/api/collections/{id}",
+    "source": "src/routes/collectionRoutes.ts",
+    "handler": "getCollectionById"
+  },
+  {
+    "method": "post",
+    "path": "/api/collections",
+    "source": "src/routes/collectionRoutes.ts",
+    "handler": "createCollection"
+  },
+  {
+    "method": "put",
+    "path": "/api/collections/{id}",
+    "source": "src/routes/collectionRoutes.ts",
+    "handler": "updateCollection"
+  },
+  {
+    "method": "delete",
+    "path": "/api/collections/{id}",
+    "source": "src/routes/collectionRoutes.ts",
+    "handler": "deleteCollection"
+  },
+  {
+    "method": "get",
+    "path": "/api/price-lists",
+    "source": "src/routes/priceListRoutes.ts",
+    "handler": "getAllPriceLists"
+  },
+  {
+    "method": "get",
+    "path": "/api/price-lists/collections/list",
+    "source": "src/routes/priceListRoutes.ts",
+    "handler": "getCollectionsForPriceList"
+  },
+  {
+    "method": "get",
+    "path": "/api/price-lists/{id}",
+    "source": "src/routes/priceListRoutes.ts",
+    "handler": "getPriceList"
+  },
+  {
+    "method": "get",
+    "path": "/api/price-lists/my-store/price-list",
+    "source": "src/routes/priceListRoutes.ts",
+    "handler": "getUserStorePriceLists"
+  },
+  {
+    "method": "get",
+    "path": "/api/price-lists/store-assignments/{storeId}",
+    "source": "src/routes/priceListRoutes.ts",
+    "handler": "getStorePriceLists"
+  },
+  {
+    "method": "post",
+    "path": "/api/price-lists",
+    "source": "src/routes/priceListRoutes.ts",
+    "handler": "createPriceList"
+  },
+  {
+    "method": "put",
+    "path": "/api/price-lists/{id}",
+    "source": "src/routes/priceListRoutes.ts",
+    "handler": "updatePriceList"
+  },
+  {
+    "method": "delete",
+    "path": "/api/price-lists/{id}",
+    "source": "src/routes/priceListRoutes.ts",
+    "handler": "deletePriceList"
+  },
+  {
+    "method": "post",
+    "path": "/api/price-lists/store-assignments",
+    "source": "src/routes/priceListRoutes.ts",
+    "handler": "assignPriceListToStore"
+  },
+  {
+    "method": "delete",
+    "path": "/api/price-lists/store-assignments/{id}",
+    "source": "src/routes/priceListRoutes.ts",
+    "handler": "removeStorePriceList"
+  },
+  {
+    "method": "get",
+    "path": "/api/cart",
+    "source": "src/routes/cartRoutes.ts",
+    "handler": "getCart"
+  },
+  {
+    "method": "post",
+    "path": "/api/cart/add",
+    "source": "src/routes/cartRoutes.ts",
+    "handler": "addToCart"
+  },
+  {
+    "method": "put",
+    "path": "/api/cart/items/{cartItemId}",
+    "source": "src/routes/cartRoutes.ts",
+    "handler": "updateCartItem"
+  },
+  {
+    "method": "delete",
+    "path": "/api/cart/items/{cartItemId}",
+    "source": "src/routes/cartRoutes.ts",
+    "handler": "removeFromCart"
+  },
+  {
+    "method": "delete",
+    "path": "/api/cart/clear",
+    "source": "src/routes/cartRoutes.ts",
+    "handler": "clearCart"
+  },
+  {
+    "method": "delete",
+    "path": "/api/cart",
+    "source": "src/routes/cartRoutes.ts",
+    "handler": "deleteCart"
+  },
+  {
+    "method": "post",
+    "path": "/api/cart/admin/clean",
+    "source": "src/routes/cartRoutes.ts",
+    "handler": "cleanOldCarts"
+  },
+  {
+    "method": "get",
+    "path": "/api/orders/check-limits",
+    "source": "src/routes/orderRoutes.ts",
+    "handler": "checkCartLimits"
+  },
+  {
+    "method": "post",
+    "path": "/api/orders/create-from-cart",
+    "source": "src/routes/orderRoutes.ts",
+    "handler": "createOrderFromCart"
+  },
+  {
+    "method": "get",
+    "path": "/api/orders/my-orders",
+    "source": "src/routes/orderRoutes.ts",
+    "handler": "getUserOrders"
+  },
+  {
+    "method": "get",
+    "path": "/api/orders/{orderId}",
+    "source": "src/routes/orderRoutes.ts",
+    "handler": "getOrderById"
+  },
+  {
+    "method": "put",
+    "path": "/api/orders/{orderId}/cancel",
+    "source": "src/routes/orderRoutes.ts",
+    "handler": "cancelOrder"
+  },
+  {
+    "method": "get",
+    "path": "/api/orders/{orderId}/receipt",
+    "source": "src/routes/orderRoutes.ts",
+    "handler": "getOrderReceipt"
+  },
+  {
+    "method": "put",
+    "path": "/api/orders/{orderId}/mark-printed",
+    "source": "src/routes/orderRoutes.ts",
+    "handler": "markReceiptPrinted"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/scan-qr",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminOrderController.scanQRCode"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/scan-qr",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminOrderController.scanQRCode"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/orders/{orderId}/assign-employee",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminOrderController.assignEmployeeToOrder"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/orders-v2/statuses",
+    "source": "src/admin/order-list-v2-routes.ts",
+    "handler": "async (_req, res) => {"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/orders-v2",
+    "source": "src/admin/order-list-v2-routes.ts",
+    "handler": "async (req, res) => {"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/stores",
+    "source": "src/admin/store-routes.ts",
+    "handler": "storeController.getAllStores"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/stores/{storeId}",
+    "source": "src/admin/store-routes.ts",
+    "handler": "storeController.getStoreById"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/stores",
+    "source": "src/admin/store-routes.ts",
+    "handler": "storeController.createStore"
+  },
+  {
+    "method": "put",
+    "path": "/api/admin/stores/{storeId}",
+    "source": "src/admin/store-routes.ts",
+    "handler": "storeController.updateStore"
+  },
+  {
+    "method": "delete",
+    "path": "/api/admin/stores/{storeId}",
+    "source": "src/admin/store-routes.ts",
+    "handler": "storeController.deleteStore"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/stores/{storeId}/price-lists",
+    "source": "src/admin/store-routes.ts",
+    "handler": "storeController.getStorePriceLists"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/stores/{storeId}/price-lists",
+    "source": "src/admin/store-routes.ts",
+    "handler": "storeController.assignPriceListToStore"
+  },
+  {
+    "method": "delete",
+    "path": "/api/admin/stores/{storeId}/price-lists/{priceListId}",
+    "source": "src/admin/store-routes.ts",
+    "handler": "storeController.removePriceListFromStore"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/stores/{storeId}/users",
+    "source": "src/admin/store-routes.ts",
+    "handler": "storeController.getStoreUsers"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/product-rules",
+    "source": "src/admin/product-rules-routes.ts",
+    "handler": "productRulesController.getAllProductRules"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/product-rules/{ruleId}",
+    "source": "src/admin/product-rules-routes.ts",
+    "handler": "productRulesController.getProductRuleById"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/product-rules",
+    "source": "src/admin/product-rules-routes.ts",
+    "handler": "productRulesController.createProductRule"
+  },
+  {
+    "method": "put",
+    "path": "/api/admin/product-rules/{ruleId}",
+    "source": "src/admin/product-rules-routes.ts",
+    "handler": "productRulesController.updateProductRule"
+  },
+  {
+    "method": "delete",
+    "path": "/api/admin/product-rules/{ruleId}",
+    "source": "src/admin/product-rules-routes.ts",
+    "handler": "productRulesController.deleteProductRule"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/product-rules/{ruleId}/size-options",
+    "source": "src/admin/product-rules-routes.ts",
+    "handler": "productRulesController.addSizeOption"
+  },
+  {
+    "method": "put",
+    "path": "/api/admin/product-rules/{ruleId}/size-options/{sizeId}",
+    "source": "src/admin/product-rules-routes.ts",
+    "handler": "productRulesController.updateSizeOption"
+  },
+  {
+    "method": "delete",
+    "path": "/api/admin/product-rules/{ruleId}/size-options/{sizeId}",
+    "source": "src/admin/product-rules-routes.ts",
+    "handler": "productRulesController.deleteSizeOption"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/product-rules/{ruleId}/cut-types",
+    "source": "src/admin/product-rules-routes.ts",
+    "handler": "productRulesController.assignCutTypes"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/product-rules/{ruleId}/regenerate-variations",
+    "source": "src/admin/product-rules-routes.ts",
+    "handler": "productRulesController.regenerateVariationsForRule"
+  },
+  {
+    "method": "delete",
+    "path": "/api/admin/product-rules/{ruleId}/cut-types/{cutTypeId}",
+    "source": "src/admin/product-rules-routes.ts",
+    "handler": "productRulesController.removeCutType"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/cut-types",
+    "source": "src/admin/cut-types-routes.ts",
+    "handler": "cutTypesController.getAllCutTypes"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/cut-types/{cutTypeId}",
+    "source": "src/admin/cut-types-routes.ts",
+    "handler": "cutTypesController.getCutTypeById"
+  },
+  {
+    "method": "put",
+    "path": "/api/admin/cut-types/{cutTypeId}",
+    "source": "src/admin/cut-types-routes.ts",
+    "handler": "cutTypesController.updateCutType"
+  },
+  {
+    "method": "delete",
+    "path": "/api/admin/cut-types/{cutTypeId}",
+    "source": "src/admin/cut-types-routes.ts",
+    "handler": "cutTypesController.deleteCutType"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/muhasebe-hareketleri",
+    "source": "src/admin/muhasebe-routes.ts",
+    "handler": "muhasebeController.getAllMuhasebeHareketleri"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/muhasebe-hareketleri",
+    "source": "src/admin/muhasebe-routes.ts",
+    "handler": "muhasebeController.createMuhasebeHareketi"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/muhasebe/income-types",
+    "source": "src/admin/muhasebe-routes.ts",
+    "handler": "muhasebeController.getIncomeTypes"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/muhasebe/expense-types",
+    "source": "src/admin/muhasebe-routes.ts",
+    "handler": "muhasebeController.getExpenseTypes"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/muhasebe/admin-toplam",
+    "source": "src/admin/muhasebe-routes.ts",
+    "handler": "muhasebeController.getAdminToplam"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/muhasebe/manuel-satislar",
+    "source": "src/admin/muhasebe-routes.ts",
+    "handler": "muhasebeController.getManuelSatislar"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/muhasebe/store/{storeId}",
+    "source": "src/admin/muhasebe-routes.ts",
+    "handler": "muhasebeController.getMuhasebeHareketleriByStore"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/cart/add-to-admin-cart",
+    "source": "src/admin/admin-cart-routes.ts",
+    "handler": "adminCartController.addToAdminCart"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/cart/{targetUserId}/{storeId}",
+    "source": "src/admin/admin-cart-routes.ts",
+    "handler": "adminCartController.getAdminCart"
+  },
+  {
+    "method": "delete",
+    "path": "/api/admin/cart/{targetUserId}/{storeId}/clear",
+    "source": "src/admin/admin-cart-routes.ts",
+    "handler": "adminCartController.clearAdminCart"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/cart/{targetUserId}/{storeId}/reset",
+    "source": "src/admin/admin-cart-routes.ts",
+    "handler": "adminCartController.resetAdminCart"
+  },
+  {
+    "method": "delete",
+    "path": "/api/admin/cart/{targetUserId}/{storeId}/item/{adminCartItemId}",
+    "source": "src/admin/admin-cart-routes.ts",
+    "handler": "adminCartController.removeFromAdminCart"
+  },
+  {
+    "method": "put",
+    "path": "/api/admin/cart/{targetUserId}/{storeId}/item/{adminCartItemId}",
+    "source": "src/admin/admin-cart-routes.ts",
+    "handler": "adminCartController.updateAdminCartItem"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/cart/create-order-from-admin-cart",
+    "source": "src/admin/admin-cart-routes.ts",
+    "handler": "adminCartController.createOrderFromAdminCart"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/orders",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminOrderController.getAllOrders"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/orders/stats",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminOrderController.getOrderStats"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/orders/{orderId}",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminOrderController.getOrderById"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/orders/{orderId}/receipt",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "getOrderReceipt"
+  },
+  {
+    "method": "put",
+    "path": "/api/admin/orders/{orderId}/cancel",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "cancelOrder"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/orders/{orderId}/confirm",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminOrderController.confirmOrder"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/orders/bulk-confirm",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminOrderController.bulkConfirmOrders"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/orders/create-for-store",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminOrderController.createOrderForStore"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/orders/process-admin-order",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminOrderController.processAdminOrder"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/orders/{orderId}/generate-qr",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminOrderController.generateQRCodes"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/orders/{orderId}/generate-qr-images",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminOrderController.generateQRCodeImages"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/orders/{orderId}/qrcodes",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminOrderController.getOrderQRCodes"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/barcode/scan",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminOrderController.scanBarcode"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/barcode/scan-multiple",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminOrderController.scanMultipleBarcodes"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/orders/{orderId}/barcodes",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminOrderController.getOrderBarcodes"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/orders/{orderId}/generate-barcode-images",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminOrderController.generateBarcodeImages"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/barcode/stats",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminOrderController.getBarcodeStats"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/orders/ready/with-barcodes",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminOrderController.getReadyOrdersWithBarcodes"
+  },
+  {
+    "method": "put",
+    "path": "/api/admin/orders/{orderId}/status",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminOrderController.updateOrderStatus"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/orders/{orderId}/advance",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "advanceOrder"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/statistics/top-stores",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminStatisticsController.getTopStores"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/statistics/top-products",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminStatisticsController.getTopProducts"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/statistics/orders-over-time",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminStatisticsController.getOrdersOverTime"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/statistics/totals",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminStatisticsController.getTotalStatistics"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/employees/stats",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "employeeStatsController.getAllEmployeeStats"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/employees/{employeeId}/stats",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "employeeStatsController.getEmployeeStats"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/user-types",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminController.getUserTypes"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/users",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminController.getAllUsers"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/users/{userId}",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminController.getUserById"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/users",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminController.createUser"
+  },
+  {
+    "method": "put",
+    "path": "/api/admin/users/{userId}",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminController.updateUser"
+  },
+  {
+    "method": "delete",
+    "path": "/api/admin/users/{userId}",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminController.deleteUser"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/users/{userId}/assign-store",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminController.assignUserToStore"
+  },
+  {
+    "method": "delete",
+    "path": "/api/admin/users/{userId}/remove-store",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminController.removeUserFromStore"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/export/orders",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "excelExportController.exportOrders"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/payments",
+    "source": "src/admin/admin-routes.ts",
+    "handler": "adminPaymentController.getAllPayments"
+  },
+  {
+    "method": "post",
+    "path": "/api/auth/login",
+    "source": "src/auth/auth-routes.ts",
+    "handler": "function(req, res) {"
+  },
+  {
+    "method": "post",
+    "path": "/api/auth/logout",
+    "source": "src/auth/auth-routes.ts",
+    "handler": "function(req, res) {"
+  },
+  {
+    "method": "post",
+    "path": "/api/auth/forgot-password",
+    "source": "src/auth/password-reset-routes.ts",
+    "handler": "passwordResetController.requestPasswordReset"
+  },
+  {
+    "method": "get",
+    "path": "/api/auth/validate-reset-token/{token}",
+    "source": "src/auth/password-reset-routes.ts",
+    "handler": "passwordResetController.validateResetToken"
+  },
+  {
+    "method": "post",
+    "path": "/api/auth/reset-password",
+    "source": "src/auth/password-reset-routes.ts",
+    "handler": "passwordResetController.resetPassword"
+  },
+  {
+    "method": "delete",
+    "path": "/api/auth/cleanup-tokens",
+    "source": "src/auth/password-reset-routes.ts",
+    "handler": "passwordResetController.cleanupExpiredTokens"
+  },
+  {
+    "method": "get",
+    "path": "/api/stores",
+    "source": "src/admin/store-routes.ts",
+    "handler": "storeController.getAllStores"
+  },
+  {
+    "method": "get",
+    "path": "/api/stores/{storeId}",
+    "source": "src/admin/store-routes.ts",
+    "handler": "storeController.getStoreById"
+  },
+  {
+    "method": "post",
+    "path": "/api/stores",
+    "source": "src/admin/store-routes.ts",
+    "handler": "storeController.createStore"
+  },
+  {
+    "method": "put",
+    "path": "/api/stores/{storeId}",
+    "source": "src/admin/store-routes.ts",
+    "handler": "storeController.updateStore"
+  },
+  {
+    "method": "delete",
+    "path": "/api/stores/{storeId}",
+    "source": "src/admin/store-routes.ts",
+    "handler": "storeController.deleteStore"
+  },
+  {
+    "method": "get",
+    "path": "/api/stores/{storeId}/price-lists",
+    "source": "src/admin/store-routes.ts",
+    "handler": "storeController.getStorePriceLists"
+  },
+  {
+    "method": "post",
+    "path": "/api/stores/{storeId}/price-lists",
+    "source": "src/admin/store-routes.ts",
+    "handler": "storeController.assignPriceListToStore"
+  },
+  {
+    "method": "delete",
+    "path": "/api/stores/{storeId}/price-lists/{priceListId}",
+    "source": "src/admin/store-routes.ts",
+    "handler": "storeController.removePriceListFromStore"
+  },
+  {
+    "method": "get",
+    "path": "/api/stores/{storeId}/users",
+    "source": "src/admin/store-routes.ts",
+    "handler": "storeController.getStoreUsers"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/manuel-satis/search-products",
+    "source": "src/admin/manuel-satis-routes.ts",
+    "handler": "manuelSatisController.searchProducts"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/manuel-satis/create",
+    "source": "src/admin/manuel-satis-routes.ts",
+    "handler": "manuelSatisController.createManuelSatis"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/manuel-satis/calculate-price",
+    "source": "src/admin/manuel-satis-routes.ts",
+    "handler": "manuelSatisController.calculateProductPrice"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/manuel-satis/list",
+    "source": "src/admin/manuel-satis-routes.ts",
+    "handler": "manuelSatisController.getManuelSatisList"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/manuel-satis/receipt/{fisNumarasi}",
+    "source": "src/admin/manuel-satis-routes.ts",
+    "handler": "manuelSatisController.getManuelSatisReceipt"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/manuel-satis/{fisNumarasi}",
+    "source": "src/admin/manuel-satis-routes.ts",
+    "handler": "manuelSatisController.getManuelSatisById"
+  },
+  {
+    "method": "delete",
+    "path": "/api/admin/manuel-satis/{fisNumarasi}",
+    "source": "src/admin/manuel-satis-routes.ts",
+    "handler": "manuelSatisController.cancelManuelSatis"
+  },
+  {
+    "method": "get",
+    "path": "/api/profile/me",
+    "source": "src/routes/userProfileRoutes.ts",
+    "handler": "userProfileController.getMyProfile"
+  },
+  {
+    "method": "put",
+    "path": "/api/profile/store",
+    "source": "src/routes/userProfileRoutes.ts",
+    "handler": "userProfileController.updateStoreProfile"
+  },
+  {
+    "method": "put",
+    "path": "/api/profile/me",
+    "source": "src/routes/userProfileRoutes.ts",
+    "handler": "userProfileController.updateMyProfile"
+  },
+  {
+    "method": "put",
+    "path": "/api/profile/change-password",
+    "source": "src/routes/userProfileRoutes.ts",
+    "handler": "userProfileController.changePassword"
+  },
+  {
+    "method": "get",
+    "path": "/api/profile/accounting",
+    "source": "src/routes/userProfileRoutes.ts",
+    "handler": "userProfileController.getAccountingDetails"
+  },
+  {
+    "method": "get",
+    "path": "/api/store-addresses",
+    "source": "src/routes/storeAddressRoutes.ts",
+    "handler": "storeAddressController.getStoreAddresses"
+  },
+  {
+    "method": "post",
+    "path": "/api/store-addresses",
+    "source": "src/routes/storeAddressRoutes.ts",
+    "handler": "storeAddressController.createStoreAddress"
+  },
+  {
+    "method": "put",
+    "path": "/api/store-addresses/{addressId}",
+    "source": "src/routes/storeAddressRoutes.ts",
+    "handler": "storeAddressController.updateStoreAddress"
+  },
+  {
+    "method": "put",
+    "path": "/api/store-addresses/{addressId}/set-default",
+    "source": "src/routes/storeAddressRoutes.ts",
+    "handler": "storeAddressController.setDefaultAddress"
+  },
+  {
+    "method": "delete",
+    "path": "/api/store-addresses/{addressId}",
+    "source": "src/routes/storeAddressRoutes.ts",
+    "handler": "storeAddressController.deleteStoreAddress"
+  },
+  {
+    "method": "get",
+    "path": "/api/my-statistics/balance",
+    "source": "src/routes/storeStatisticsRoutes.ts",
+    "handler": "storeStatisticsController.getMyStoreBalance"
+  },
+  {
+    "method": "get",
+    "path": "/api/my-statistics/user-stats",
+    "source": "src/routes/storeStatisticsRoutes.ts",
+    "handler": "storeStatisticsController.getMyUserStatistics"
+  },
+  {
+    "method": "get",
+    "path": "/api/my-statistics/dashboard",
+    "source": "src/routes/storeStatisticsRoutes.ts",
+    "handler": "storeStatisticsController.getMyStoreStats"
+  },
+  {
+    "method": "get",
+    "path": "/api/my-statistics/orders-over-time",
+    "source": "src/routes/storeStatisticsRoutes.ts",
+    "handler": "storeStatisticsController.getMyOrdersOverTime"
+  },
+  {
+    "method": "get",
+    "path": "/api/my-statistics/top-products",
+    "source": "src/routes/storeStatisticsRoutes.ts",
+    "handler": "storeStatisticsController.getMyTopProducts"
+  },
+  {
+    "method": "get",
+    "path": "/api/my-statistics/totals",
+    "source": "src/routes/storeStatisticsRoutes.ts",
+    "handler": "storeStatisticsController.getMyTotalStats"
+  },
+  {
+    "method": "post",
+    "path": "/api/payments/checkout",
+    "source": "src/routes/paymentRoutes.ts",
+    "handler": "paymentController.checkout.bind(paymentController)"
+  },
+  {
+    "method": "post",
+    "path": "/api/payments/process",
+    "source": "src/routes/paymentRoutes.ts",
+    "handler": "paymentController.processPayment.bind(paymentController)"
+  },
+  {
+    "method": "post",
+    "path": "/api/payments/create-request",
+    "source": "src/routes/paymentRoutes.ts",
+    "handler": "paymentController.createPaymentRequest.bind(paymentController)"
+  },
+  {
+    "method": "post",
+    "path": "/api/payments/webhook/dbye",
+    "source": "src/routes/paymentRoutes.ts",
+    "handler": "webhookController.handleDbyeWebhook.bind(webhookController)"
+  },
+  {
+    "method": "get",
+    "path": "/api/payments/mobile/3ds/callback",
+    "source": "src/routes/paymentRoutes.ts",
+    "handler": "webhookController.handleMobile3dsCallback.bind(webhookController)"
+  },
+  {
+    "method": "post",
+    "path": "/api/payments/mobile/3ds/callback",
+    "source": "src/routes/paymentRoutes.ts",
+    "handler": "webhookController.handleMobile3dsCallback.bind(webhookController)"
+  },
+  {
+    "method": "get",
+    "path": "/api/payments/web/callback",
+    "source": "src/routes/paymentRoutes.ts",
+    "handler": "webhookController.handleWebCallback.bind(webhookController)"
+  },
+  {
+    "method": "post",
+    "path": "/api/payments/web/callback",
+    "source": "src/routes/paymentRoutes.ts",
+    "handler": "webhookController.handleWebCallback.bind(webhookController)"
+  },
+  {
+    "method": "get",
+    "path": "/api/payments/result",
+    "source": "src/routes/paymentRoutes.ts",
+    "handler": "webhookController.getPaymentResult.bind(webhookController)"
+  },
+  {
+    "method": "get",
+    "path": "/api/payments/webhook/success",
+    "source": "src/routes/paymentRoutes.ts",
+    "handler": "webhookController.handleSuccessWebhookLegacy.bind(webhookController)"
+  },
+  {
+    "method": "post",
+    "path": "/api/payments/webhook/success",
+    "source": "src/routes/paymentRoutes.ts",
+    "handler": "webhookController.handleSuccessWebhookLegacy.bind(webhookController)"
+  },
+  {
+    "method": "get",
+    "path": "/api/payments/webhook/failure",
+    "source": "src/routes/paymentRoutes.ts",
+    "handler": "webhookController.handleFailureWebhookLegacy.bind(webhookController)"
+  },
+  {
+    "method": "post",
+    "path": "/api/payments/webhook/failure",
+    "source": "src/routes/paymentRoutes.ts",
+    "handler": "webhookController.handleFailureWebhookLegacy.bind(webhookController)"
+  },
+  {
+    "method": "get",
+    "path": "/api/payments/status/{sellerReference}",
+    "source": "src/routes/paymentRoutes.ts",
+    "handler": "webhookController.getTransactionStatus.bind(webhookController)"
+  },
+  {
+    "method": "get",
+    "path": "/api/payments/my-store-payments",
+    "source": "src/routes/paymentRoutes.ts",
+    "handler": "adminPaymentController.getStorePayments.bind(adminPaymentController)"
+  },
+  {
+    "method": "get",
+    "path": "/api/employee-assignment/form",
+    "source": "src/routes/employeeAssignmentRoutes.ts",
+    "handler": "(req, res) => {"
+  },
+  {
+    "method": "get",
+    "path": "/api/employee-assignment/employees",
+    "source": "src/routes/employeeAssignmentRoutes.ts",
+    "handler": "employeeAssignmentController.getAllEmployees"
+  },
+  {
+    "method": "post",
+    "path": "/api/employee-assignment/assign",
+    "source": "src/routes/employeeAssignmentRoutes.ts",
+    "handler": "employeeAssignmentController.assignEmployeeToOrder"
+  },
+  {
+    "method": "get",
+    "path": "/api/employee-assignment/stats",
+    "source": "src/routes/employeeAssignmentRoutes.ts",
+    "handler": "employeeAssignmentController.getEmployeeStats"
+  },
+  {
+    "method": "get",
+    "path": "/api/employee-assignment/stats/{employeeId}",
+    "source": "src/routes/employeeAssignmentRoutes.ts",
+    "handler": "employeeAssignmentController.getEmployeeStats"
+  },
+  {
+    "method": "get",
+    "path": "/api/employee-assignment/order/{orderId}",
+    "source": "src/routes/employeeAssignmentRoutes.ts",
+    "handler": "employeeAssignmentController.getAssignedEmployeeForOrder"
+  },
+  {
+    "method": "get",
+    "path": "/api/employee-stats/{employeeId}",
+    "source": "src/routes/employeeStatsRoutes.ts",
+    "handler": "employeeStatsController.getEmployeeStats"
+  },
+  {
+    "method": "get",
+    "path": "/api/login-assets/random",
+    "source": "src/routes/loginAssetsRoutes.ts",
+    "handler": "loginAssetsController.getRandomCarpetStoreImage.bind(loginAssetsController)"
+  },
+  {
+    "method": "get",
+    "path": "/api/site-settings",
+    "source": "src/routes/siteSettingsRoutes.ts",
+    "handler": "wrap(async (_req, res) => {"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/site-settings",
+    "source": "src/routes/siteSettingsRoutes.ts",
+    "handler": "wrap(async (_req, res) => {"
+  },
+  {
+    "method": "patch",
+    "path": "/api/admin/site-settings",
+    "source": "src/routes/siteSettingsRoutes.ts",
+    "handler": "wrap(async (req, res) => {"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/site-settings/banners",
+    "source": "src/routes/siteSettingsRoutes.ts",
+    "handler": "wrap(async (_req, res) => {"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/site-settings/banners",
+    "source": "src/routes/siteSettingsRoutes.ts",
+    "handler": "wrap(async (req, res) => {"
+  },
+  {
+    "method": "patch",
+    "path": "/api/admin/site-settings/banners/{id}",
+    "source": "src/routes/siteSettingsRoutes.ts",
+    "handler": "wrap(async (req, res) => {"
+  },
+  {
+    "method": "delete",
+    "path": "/api/admin/site-settings/banners/{id}",
+    "source": "src/routes/siteSettingsRoutes.ts",
+    "handler": "wrap(async (req, res) => {"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/site-settings/banner-image",
+    "source": "src/routes/siteSettingsRoutes.ts",
+    "handler": "(req, res) => {"
+  },
+  {
+    "method": "post",
+    "path": "/api/notifications/send",
+    "source": "src/routes/notificationRoutes.ts",
+    "handler": "notificationController.sendNotification.bind(notificationController)"
+  },
+  {
+    "method": "get",
+    "path": "/api/notifications/user/{userId}",
+    "source": "src/routes/notificationRoutes.ts",
+    "handler": "notificationController.getUserNotifications.bind(notificationController)"
+  },
+  {
+    "method": "get",
+    "path": "/api/notifications/user/{userId}/unread-count",
+    "source": "src/routes/notificationRoutes.ts",
+    "handler": "notificationController.getUnreadCount.bind(notificationController)"
+  },
+  {
+    "method": "put",
+    "path": "/api/notifications/read/{notificationId}",
+    "source": "src/routes/notificationRoutes.ts",
+    "handler": "notificationController.markAsRead.bind(notificationController)"
+  },
+  {
+    "method": "put",
+    "path": "/api/notifications/read-all/{userId}",
+    "source": "src/routes/notificationRoutes.ts",
+    "handler": "notificationController.markAllAsRead.bind(notificationController)"
+  },
+  {
+    "method": "get",
+    "path": "/api/notifications/all",
+    "source": "src/routes/notificationRoutes.ts",
+    "handler": "notificationController.getAllNotifications.bind(notificationController)"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/usd-muhasebe/hareketler",
+    "source": "src/routes/usdMuhasebeRoutes.ts",
+    "handler": "usdMuhasebeController.getAllUsdMuhasebeHareketleri"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/usd-muhasebe/store/{storeId}",
+    "source": "src/routes/usdMuhasebeRoutes.ts",
+    "handler": "usdMuhasebeController.getUsdMuhasebeHareketleriByStore"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/usd-muhasebe/hareketler",
+    "source": "src/routes/usdMuhasebeRoutes.ts",
+    "handler": "usdMuhasebeController.createUsdMuhasebeHareketi"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/usd-muhasebe/income-types",
+    "source": "src/routes/usdMuhasebeRoutes.ts",
+    "handler": "usdMuhasebeController.getUsdIncomeTypes"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/usd-muhasebe/expense-types",
+    "source": "src/routes/usdMuhasebeRoutes.ts",
+    "handler": "usdMuhasebeController.getUsdExpenseTypes"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/purchase-management/suppliers",
+    "source": "src/routes/purchasePriceListRoutes.ts",
+    "handler": "getAllSuppliers"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/purchase-management/suppliers/balance-summary",
+    "source": "src/routes/purchasePriceListRoutes.ts",
+    "handler": "getSupplierBalanceSummary"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/purchase-management/suppliers",
+    "source": "src/routes/purchasePriceListRoutes.ts",
+    "handler": "createSupplier"
+  },
+  {
+    "method": "put",
+    "path": "/api/admin/purchase-management/suppliers/{id}",
+    "source": "src/routes/purchasePriceListRoutes.ts",
+    "handler": "updateSupplier"
+  },
+  {
+    "method": "put",
+    "path": "/api/admin/purchase-management/suppliers/{id}/balance",
+    "source": "src/routes/purchasePriceListRoutes.ts",
+    "handler": "updateSupplierBalance"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/purchase-management/suppliers/{supplier_id}/purchase-product",
+    "source": "src/routes/purchasePriceListRoutes.ts",
+    "handler": "purchaseProductFromSupplier"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/purchase-management/suppliers/{id}/balance-history",
+    "source": "src/routes/purchasePriceListRoutes.ts",
+    "handler": "getSupplierBalanceHistory"
+  },
+  {
+    "method": "delete",
+    "path": "/api/admin/purchase-management/suppliers/{id}",
+    "source": "src/routes/purchasePriceListRoutes.ts",
+    "handler": "deactivateSupplier"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/purchase-management/purchase-price-lists",
+    "source": "src/routes/purchasePriceListRoutes.ts",
+    "handler": "getAllPurchasePriceLists"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/purchase-management/purchase-price-lists/default",
+    "source": "src/routes/purchasePriceListRoutes.ts",
+    "handler": "getDefaultPurchasePriceList"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/purchase-management/purchase-price-lists/{id}",
+    "source": "src/routes/purchasePriceListRoutes.ts",
+    "handler": "getPurchasePriceListById"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/purchase-management/purchase-price-lists",
+    "source": "src/routes/purchasePriceListRoutes.ts",
+    "handler": "createPurchasePriceList"
+  },
+  {
+    "method": "put",
+    "path": "/api/admin/purchase-management/purchase-price-lists/{id}",
+    "source": "src/routes/purchasePriceListRoutes.ts",
+    "handler": "updatePurchasePriceList"
+  },
+  {
+    "method": "delete",
+    "path": "/api/admin/purchase-management/purchase-price-lists/{id}",
+    "source": "src/routes/purchasePriceListRoutes.ts",
+    "handler": "deactivatePurchasePriceList"
+  },
+  {
+    "method": "put",
+    "path": "/api/admin/purchase-management/purchase-price-lists/{listId}/collections/{collectionId}",
+    "source": "src/routes/purchasePriceListRoutes.ts",
+    "handler": "updateCollectionPrice"
+  },
+  {
+    "method": "post",
+    "path": "/api/admin/purchase-management/suppliers/{supplier_id}/purchase-cart/items",
+    "source": "src/routes/purchasePriceListRoutes.ts",
+    "handler": "addToPurchaseCart"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/purchase-management/suppliers/{supplier_id}/purchase-cart",
+    "source": "src/routes/purchasePriceListRoutes.ts",
+    "handler": "getPurchaseCart"
+  },
+  {
+    "method": "put",
+    "path": "/api/admin/purchase-management/suppliers/{supplier_id}/purchase-cart/items/{item_id}",
+    "source": "src/routes/purchasePriceListRoutes.ts",
+    "handler": "updatePurchaseCartItem"
+  },
+  {
+    "method": "delete",
+    "path": "/api/admin/purchase-management/suppliers/{supplier_id}/purchase-cart/items/{item_id}",
+    "source": "src/routes/purchasePriceListRoutes.ts",
+    "handler": "removePurchaseCartItem"
+  },
+  {
+    "method": "put",
+    "path": "/api/admin/purchase-management/suppliers/{supplier_id}/purchase-from-cart",
+    "source": "src/routes/purchasePriceListRoutes.ts",
+    "handler": "purchaseFromCart"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/purchase-management/purchases",
+    "source": "src/routes/purchasePriceListRoutes.ts",
+    "handler": "getAllPurchases"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/purchase-management/purchases/{transaction_id}",
+    "source": "src/routes/purchasePriceListRoutes.ts",
+    "handler": "getPurchaseDetail"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/purchase-management/suppliers/{supplier_id}/purchase-summary",
+    "source": "src/routes/purchasePriceListRoutes.ts",
+    "handler": "getSupplierPurchaseSummary"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/purchase-management/statistics/purchases",
+    "source": "src/routes/purchasePriceListRoutes.ts",
+    "handler": "getPurchaseStatistics"
+  },
+  {
+    "method": "get",
+    "path": "/api/public/catalog/collections",
+    "source": "src/routes/publicCatalogRoutes.ts",
+    "handler": "publicCatalogController.getPublicCollections.bind(publicCatalogController)"
+  },
+  {
+    "method": "get",
+    "path": "/api/public/catalog/collections/{collectionId}",
+    "source": "src/routes/publicCatalogRoutes.ts",
+    "handler": "publicCatalogController.getPublicCollectionById.bind(publicCatalogController)"
+  },
+  {
+    "method": "post",
+    "path": "/api/contact/submit",
+    "source": "src/routes/contactFormRoutes.ts",
+    "handler": "contactFormController.submitContactForm.bind(contactFormController)"
+  },
+  {
+    "method": "get",
+    "path": "/api/contact/test-smtp",
+    "source": "src/routes/contactFormRoutes.ts",
+    "handler": "contactFormController.testSMTP.bind(contactFormController)"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin/contact-forms",
+    "source": "src/admin/contact-form-routes.ts",
+    "handler": "contactFormController.getContactForms.bind(contactFormController)"
+  },
+  {
+    "method": "put",
+    "path": "/api/admin/contact-forms/{id}",
+    "source": "src/admin/contact-form-routes.ts",
+    "handler": "contactFormController.updateContactForm.bind(contactFormController)"
+  },
+  {
+    "method": "delete",
+    "path": "/api/admin/contact-forms/{id}",
+    "source": "src/admin/contact-form-routes.ts",
+    "handler": "contactFormController.deleteContactForm.bind(contactFormController)"
+  },
+  {
+    "method": "get",
+    "path": "/",
+    "source": "src/server.ts",
+    "handler": "(req, res) => {"
+  },
+  {
+    "method": "get",
+    "path": "/healthz",
+    "source": "src/server.ts",
+    "handler": "(req, res) => {"
+  },
+  {
+    "method": "get",
+    "path": "/api",
+    "source": "src/server.ts",
+    "handler": "(req, res) => {"
+  }
+]

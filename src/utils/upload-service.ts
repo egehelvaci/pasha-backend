@@ -10,7 +10,7 @@ export class UploadService {
    * @param folder Yüklenecek klasör (varsayılan: 'products')
    * @returns Yüklenen dosyanın URL'si
    */
-  async uploadFile(file: Buffer, mimetype: string, originalname: string, folder: string = 'products'): Promise<string> {
+  async uploadFile(file: Buffer, mimetype: string, originalname: string, folder: string = 'products', signal?: AbortSignal): Promise<string> {
     try {
       const fileExtension = originalname.split('.').pop() || '';
       const randomName = `${randomUUID()}.${fileExtension}`;
@@ -20,6 +20,7 @@ export class UploadService {
       const uploadUrl = `${BUNNY_STORAGE_URL}/${BUNNY_STORAGE_ZONE}/${key}`;
       
       const response = await fetch(uploadUrl, {
+        signal,
         method: 'PUT',
         headers: {
           'AccessKey': BUNNY_STORAGE_PASSWORD,

@@ -1,4 +1,4 @@
-import { OrderStatus, Order, OrderItem } from '../generated/prisma';
+import { OrderStatus, Order, OrderItem, Prisma } from '../generated/prisma';
 import { v4 as uuidv4 } from 'uuid';
 import { Decimal } from '@prisma/client/runtime/library';
 import { roundCurrency, addCurrency } from './utils/number-utils';
@@ -1883,7 +1883,7 @@ export class OrderService {
   }
 
   // Sipariş fişi al (onaylanan ve teslim edilenler için)
-  async getOrderReceipt(orderId: string, userId: string, isAdmin?: boolean): Promise<{
+  async getOrderReceipt(orderId: string, userId: string, isAdmin?: boolean, db: Prisma.TransactionClient = prisma): Promise<{
     success: boolean;
     message: string;
     statusCode?: number;
@@ -1891,7 +1891,7 @@ export class OrderService {
   }> {
     try {
       // Siparişi detaylı bilgilerle al
-      const order = await prisma.order.findUnique({
+      const order = await db.order.findUnique({
         where: { id: orderId },
         include: {
           user: {
@@ -1946,7 +1946,7 @@ export class OrderService {
       const previousBalance = currentBalance + orderTotal;
 
       // Muhasebe hareketlerinden sipariş tarihindeki bakiye bilgilerini al
-      const muhasebeHareketi = await prisma.muhasebeHareketleri.findFirst({
+      const muhasebeHareketi = await db.muhasebeHareketleri.findFirst({
         where: {
           storeId: store?.store_id,
           aciklama: {

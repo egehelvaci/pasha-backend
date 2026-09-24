@@ -357,12 +357,28 @@ model Order {
   qr_codes           QRCode[]
   barcodes           Barcode[]
   employeeOrderStats EmployeeOrderStats? @relation("OrderEmployeeStats")
+  fulfillmentActions OrderFulfillmentAction[]
   muhasebeHareketleri MuhasebeHareketleri[]
 
   @@index([user_id, created_at], map: "idx_order_user_created")
   @@index([status, created_at], map: "idx_order_status_created")
   @@index([created_at], map: "idx_order_created_at")
   @@index([address_id], map: "idx_order_address_id")
+}
+
+model OrderFulfillmentAction {
+  id             String      @id
+  orderId        String      @map("order_id")
+  actorId        String      @map("actor_id")
+  fromStatus     OrderStatus @map("from_status")
+  targetStatus   OrderStatus @map("target_status")
+  reason         String?     @db.VarChar(500)
+  result         Json
+  createdAt      DateTime    @default(now()) @map("created_at")
+  order          Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, createdAt], map: "idx_order_fulfillment_order_created")
+  @@map("order_fulfillment_actions")
 }
 
 model OrderItem {

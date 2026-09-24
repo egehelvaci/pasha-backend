@@ -8,7 +8,9 @@
     "api:build": "tsc -p tsconfig.json",
     "api:start": "node dist/server.js",
     "create-admin": "ts-node src/tools/create-admin-user.ts",
-    "migrate:bunny": "ts-node src/scripts/migrate-to-bunny.ts"
+    "migrate:bunny": "ts-node src/scripts/migrate-to-bunny.ts",
+    "docs:generate": "node scripts/generate-openapi.cjs",
+    "docs:check": "node scripts/generate-openapi.cjs --check && node scripts/test-openapi.cjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.496.0",
@@ -43,9 +45,11 @@
     "pg": "^8.15.6",
     "puppeteer": "^24.8.1",
     "qrcode": "^1.5.4",
+    "swagger-ui-express": "^5.0.1",
     "uuid": "^11.1.0"
   },
   "devDependencies": {
+    "@apidevtools/swagger-parser": "^10.1.1",
     "@types/bcrypt": "^5.0.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/compression": "^1.8.1",
@@ -53,6 +57,7 @@
     "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^20",
     "@types/pdfkit": "^0.13.9",
+    "@types/swagger-ui-express": "^4.1.8",
     "@types/uuid": "^10.0.0",
     "nodemon": "^3.1.10",
     "prisma": "^6.7.0",

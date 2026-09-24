@@ -12,6 +12,7 @@ import cutTypesRoutes from './cut-types-routes'
 import muhasebeRoutes from './muhasebe-routes'
 import adminCartRoutes from './admin-cart-routes'
 import orderListV2Routes from './order-list-v2-routes'
+import { advanceOrder } from './order-fulfillment-controller'
 
 import { excelExportController } from './excel-export-controller'
 
@@ -73,6 +74,7 @@ router.get('/orders/ready/with-barcodes', authorizeRoles('admin', 'editor'), adm
 
 // Sipariş durumu güncelleme - Editör ve Admin erişimi
 router.put('/orders/:orderId/status', authorizeRoles('admin', 'editor'), adminOrderController.updateOrderStatus)
+router.post('/orders/:orderId/advance', authorizeRoles('admin'), advanceOrder)
 
 // İstatistik API'leri - Editör ve Admin erişimi
 router.get('/statistics/top-stores', authorizeRoles('admin', 'editor'), adminStatisticsController.getTopStores)

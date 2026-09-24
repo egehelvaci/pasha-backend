@@ -28,6 +28,7 @@ import contactFormAdminRoutes from './admin/contact-form-routes'
 import purchasePriceListRoutes from './routes/purchasePriceListRoutes'
 import path from 'path'
 import multer from 'multer'
+import { installSwagger } from './docs/swagger'
 
 
 // .env dosyasını ana dizinden yükle
@@ -54,6 +55,7 @@ app.use(cors())
 app.use(compression())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+installSwagger(app)
 
 // Statik dosyalar için klasör tanımı
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
@@ -194,4 +196,4 @@ try {
   console.error('Sunucu başlatılamadı:', error)
 }
 
-export default app 
+export default app

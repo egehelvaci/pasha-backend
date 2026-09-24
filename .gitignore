@@ -69,6 +69,7 @@ $RECYCLE.BIN/
 *.log
 *.sql
 !prisma/migrations/20260924000000_site_settings/migration.sql
+!prisma/migrations/20260924010000_order_fulfillment/migration.sql
 *.sqlite
 *.sqlite3
 
