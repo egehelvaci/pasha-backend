@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { CollectionService } from '../collection-service';
-import { Prisma } from '../../generated/prisma';
 import prisma from '../utils/prisma';
 
 // Tüm koleksiyonları getir
@@ -66,59 +65,6 @@ export const createCollection = async (req: Request, res: Response) => {
     return res.status(201).json({ success: true, data: newCollection });
   } catch (error) {
     console.error('Koleksiyon oluştururken hata oluştu:', error);
-    return res.status(500).json({ success: false, message: 'Sunucu hatası' });
-  }
-};
-
-// Koleksiyon güncelle
-export const updateCollection = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { name, description, code, isActive } = req.body;
-
-    // En az bir güncelleme alanı olmalı
-    if (!name && !description && !code && isActive === undefined) {
-      return res.status(400).json({
-        success: false,
-        message: 'En az bir alan güncellenmelidir'
-      });
-    }
-    
-    // Koleksiyonun var olup olmadığını kontrol et
-    const existingCollection = await prisma.collection.findUnique({
-      where: { collectionId: id },
-    });
-    
-    if (!existingCollection) {
-      return res.status(404).json({ success: false, message: 'Koleksiyon bulunamadı' });
-    }
-    
-    // Kod değişmişse ve yeni kod zaten kullanımdaysa kontrol et
-    if (code && code !== existingCollection.code) {
-      const codeExists = await prisma.collection.findUnique({
-        where: { code },
-      });
-      
-      if (codeExists) {
-        return res.status(400).json({ success: false, message: 'Bu kod zaten kullanımda' });
-      }
-    }
-    
-    const updateData: Prisma.CollectionUpdateInput = {};
-    
-    if (name !== undefined) updateData.name = name;
-    if (description !== undefined) updateData.description = description;
-    if (code !== undefined) updateData.code = code;
-    if (isActive !== undefined) updateData.isActive = isActive;
-    
-    const updatedCollection = await prisma.collection.update({
-      where: { collectionId: id },
-      data: updateData,
-    });
-    
-    return res.status(200).json({ success: true, data: updatedCollection });
-  } catch (error) {
-    console.error('Koleksiyon güncellenirken hata oluştu:', error);
     return res.status(500).json({ success: false, message: 'Sunucu hatası' });
   }
 };

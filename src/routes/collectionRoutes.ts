@@ -1,12 +1,11 @@
 import express from 'express';
-import {
-  getAllCollections,
-  getCollectionById,
-  createCollection,
-  updateCollection,
-  deleteCollection
-} from '../controllers/collectionController';
 import { authMiddleware, authorizeRoles } from '../auth/auth-middleware';
+import {
+  createCollection,
+  deleteCollection,
+  getAllCollections,
+  getCollectionById
+} from '../controllers/collectionController';
 
 const router = express.Router();
 
@@ -18,9 +17,6 @@ router.get('/:id', getCollectionById);
 
 // Admin ve editör erişebilir - Yeni koleksiyon oluştur
 router.post('/', authMiddleware, authorizeRoles('admin', 'editor'), createCollection);
-
-// Admin ve editör erişebilir - Koleksiyon güncelle
-router.put('/:id', authMiddleware, authorizeRoles('admin', 'editor'), updateCollection);
 
 // Admin ve editör erişebilir - Koleksiyon sil
 router.delete('/:id', authMiddleware, authorizeRoles('admin', 'editor'), deleteCollection);

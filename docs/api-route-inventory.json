@@ -13,51 +13,15 @@
   },
   {
     "method": "get",
-    "path": "/api/products/rules",
-    "source": "src/routes/productRoutes.ts",
-    "handler": "getAllProductRules"
-  },
-  {
-    "method": "get",
-    "path": "/api/products/by-collection/{collectionId}",
-    "source": "src/routes/productRoutes.ts",
-    "handler": "getProductsByCollection"
-  },
-  {
-    "method": "get",
     "path": "/api/products/{id}/variations",
     "source": "src/routes/productRoutes.ts",
     "handler": "getProductVariationOptions"
-  },
-  {
-    "method": "post",
-    "path": "/api/products/{id}/regenerate-variations",
-    "source": "src/routes/productRoutes.ts",
-    "handler": "regenerateProductVariations"
-  },
-  {
-    "method": "post",
-    "path": "/api/products/regenerate-variations/rule/{ruleId}",
-    "source": "src/routes/productRoutes.ts",
-    "handler": "regenerateVariationsForRule"
-  },
-  {
-    "method": "post",
-    "path": "/api/products/regenerate-variations/all",
-    "source": "src/routes/productRoutes.ts",
-    "handler": "regenerateAllVariations"
   },
   {
     "method": "get",
     "path": "/api/products/{id}",
     "source": "src/routes/productRoutes.ts",
     "handler": "getProductById"
-  },
-  {
-    "method": "post",
-    "path": "/api/products/test-create",
-    "source": "src/routes/productRoutes.ts",
-    "handler": "createProductSimple"
   },
   {
     "method": "post",
@@ -90,12 +54,6 @@
     "handler": "updateProductStockAreaM2"
   },
   {
-    "method": "patch",
-    "path": "/api/products/{id}/stock-hybrid",
-    "source": "src/routes/productRoutes.ts",
-    "handler": "updateProductStockHybrid"
-  },
-  {
     "method": "get",
     "path": "/api/collections",
     "source": "src/routes/collectionRoutes.ts",
@@ -114,12 +72,6 @@
     "handler": "createCollection"
   },
   {
-    "method": "put",
-    "path": "/api/collections/{id}",
-    "source": "src/routes/collectionRoutes.ts",
-    "handler": "updateCollection"
-  },
-  {
     "method": "delete",
     "path": "/api/collections/{id}",
     "source": "src/routes/collectionRoutes.ts",
@@ -130,12 +82,6 @@
     "path": "/api/price-lists",
     "source": "src/routes/priceListRoutes.ts",
     "handler": "getAllPriceLists"
-  },
-  {
-    "method": "get",
-    "path": "/api/price-lists/collections/list",
-    "source": "src/routes/priceListRoutes.ts",
-    "handler": "getCollectionsForPriceList"
   },
   {
     "method": "get",
@@ -180,12 +126,6 @@
     "handler": "assignPriceListToStore"
   },
   {
-    "method": "delete",
-    "path": "/api/price-lists/store-assignments/{id}",
-    "source": "src/routes/priceListRoutes.ts",
-    "handler": "removeStorePriceList"
-  },
-  {
     "method": "get",
     "path": "/api/cart",
     "source": "src/routes/cartRoutes.ts",
@@ -214,18 +154,6 @@
     "path": "/api/cart/clear",
     "source": "src/routes/cartRoutes.ts",
     "handler": "clearCart"
-  },
-  {
-    "method": "delete",
-    "path": "/api/cart",
-    "source": "src/routes/cartRoutes.ts",
-    "handler": "deleteCart"
-  },
-  {
-    "method": "post",
-    "path": "/api/cart/admin/clean",
-    "source": "src/routes/cartRoutes.ts",
-    "handler": "cleanOldCarts"
   },
   {
     "method": "get",
@@ -306,12 +234,6 @@
     "handler": "storeController.getAllStores"
   },
   {
-    "method": "get",
-    "path": "/api/admin/stores/{storeId}",
-    "source": "src/admin/store-routes.ts",
-    "handler": "storeController.getStoreById"
-  },
-  {
     "method": "post",
     "path": "/api/admin/stores",
     "source": "src/admin/store-routes.ts",
@@ -328,24 +250,6 @@
     "path": "/api/admin/stores/{storeId}",
     "source": "src/admin/store-routes.ts",
     "handler": "storeController.deleteStore"
-  },
-  {
-    "method": "get",
-    "path": "/api/admin/stores/{storeId}/price-lists",
-    "source": "src/admin/store-routes.ts",
-    "handler": "storeController.getStorePriceLists"
-  },
-  {
-    "method": "post",
-    "path": "/api/admin/stores/{storeId}/price-lists",
-    "source": "src/admin/store-routes.ts",
-    "handler": "storeController.assignPriceListToStore"
-  },
-  {
-    "method": "delete",
-    "path": "/api/admin/stores/{storeId}/price-lists/{priceListId}",
-    "source": "src/admin/store-routes.ts",
-    "handler": "storeController.removePriceListFromStore"
   },
   {
     "method": "get",
@@ -408,12 +312,6 @@
     "handler": "productRulesController.assignCutTypes"
   },
   {
-    "method": "post",
-    "path": "/api/admin/product-rules/{ruleId}/regenerate-variations",
-    "source": "src/admin/product-rules-routes.ts",
-    "handler": "productRulesController.regenerateVariationsForRule"
-  },
-  {
     "method": "delete",
     "path": "/api/admin/product-rules/{ruleId}/cut-types/{cutTypeId}",
     "source": "src/admin/product-rules-routes.ts",
@@ -469,18 +367,6 @@
   },
   {
     "method": "get",
-    "path": "/api/admin/muhasebe/admin-toplam",
-    "source": "src/admin/muhasebe-routes.ts",
-    "handler": "muhasebeController.getAdminToplam"
-  },
-  {
-    "method": "get",
-    "path": "/api/admin/muhasebe/manuel-satislar",
-    "source": "src/admin/muhasebe-routes.ts",
-    "handler": "muhasebeController.getManuelSatislar"
-  },
-  {
-    "method": "get",
     "path": "/api/admin/muhasebe/store/{storeId}",
     "source": "src/admin/muhasebe-routes.ts",
     "handler": "muhasebeController.getMuhasebeHareketleriByStore"
@@ -502,12 +388,6 @@
     "path": "/api/admin/cart/{targetUserId}/{storeId}/clear",
     "source": "src/admin/admin-cart-routes.ts",
     "handler": "adminCartController.clearAdminCart"
-  },
-  {
-    "method": "post",
-    "path": "/api/admin/cart/{targetUserId}/{storeId}/reset",
-    "source": "src/admin/admin-cart-routes.ts",
-    "handler": "adminCartController.resetAdminCart"
   },
   {
     "method": "delete",
@@ -535,33 +415,15 @@
   },
   {
     "method": "get",
-    "path": "/api/admin/orders/stats",
-    "source": "src/admin/admin-routes.ts",
-    "handler": "adminOrderController.getOrderStats"
-  },
-  {
-    "method": "get",
     "path": "/api/admin/orders/{orderId}",
     "source": "src/admin/admin-routes.ts",
     "handler": "adminOrderController.getOrderById"
-  },
-  {
-    "method": "get",
-    "path": "/api/admin/orders/{orderId}/receipt",
-    "source": "src/admin/admin-routes.ts",
-    "handler": "getOrderReceipt"
   },
   {
     "method": "put",
     "path": "/api/admin/orders/{orderId}/cancel",
     "source": "src/admin/admin-routes.ts",
     "handler": "cancelOrder"
-  },
-  {
-    "method": "post",
-    "path": "/api/admin/orders/{orderId}/confirm",
-    "source": "src/admin/admin-routes.ts",
-    "handler": "adminOrderController.confirmOrder"
   },
   {
     "method": "post",
@@ -577,27 +439,9 @@
   },
   {
     "method": "post",
-    "path": "/api/admin/orders/process-admin-order",
-    "source": "src/admin/admin-routes.ts",
-    "handler": "adminOrderController.processAdminOrder"
-  },
-  {
-    "method": "post",
-    "path": "/api/admin/orders/{orderId}/generate-qr",
-    "source": "src/admin/admin-routes.ts",
-    "handler": "adminOrderController.generateQRCodes"
-  },
-  {
-    "method": "post",
     "path": "/api/admin/orders/{orderId}/generate-qr-images",
     "source": "src/admin/admin-routes.ts",
     "handler": "adminOrderController.generateQRCodeImages"
-  },
-  {
-    "method": "get",
-    "path": "/api/admin/orders/{orderId}/qrcodes",
-    "source": "src/admin/admin-routes.ts",
-    "handler": "adminOrderController.getOrderQRCodes"
   },
   {
     "method": "post",
@@ -610,30 +454,6 @@
     "path": "/api/admin/barcode/scan-multiple",
     "source": "src/admin/admin-routes.ts",
     "handler": "adminOrderController.scanMultipleBarcodes"
-  },
-  {
-    "method": "get",
-    "path": "/api/admin/orders/{orderId}/barcodes",
-    "source": "src/admin/admin-routes.ts",
-    "handler": "adminOrderController.getOrderBarcodes"
-  },
-  {
-    "method": "post",
-    "path": "/api/admin/orders/{orderId}/generate-barcode-images",
-    "source": "src/admin/admin-routes.ts",
-    "handler": "adminOrderController.generateBarcodeImages"
-  },
-  {
-    "method": "get",
-    "path": "/api/admin/barcode/stats",
-    "source": "src/admin/admin-routes.ts",
-    "handler": "adminOrderController.getBarcodeStats"
-  },
-  {
-    "method": "get",
-    "path": "/api/admin/orders/ready/with-barcodes",
-    "source": "src/admin/admin-routes.ts",
-    "handler": "adminOrderController.getReadyOrdersWithBarcodes"
   },
   {
     "method": "put",
@@ -670,24 +490,6 @@
     "path": "/api/admin/statistics/totals",
     "source": "src/admin/admin-routes.ts",
     "handler": "adminStatisticsController.getTotalStatistics"
-  },
-  {
-    "method": "get",
-    "path": "/api/admin/employees/stats",
-    "source": "src/admin/admin-routes.ts",
-    "handler": "employeeStatsController.getAllEmployeeStats"
-  },
-  {
-    "method": "get",
-    "path": "/api/admin/employees/{employeeId}/stats",
-    "source": "src/admin/admin-routes.ts",
-    "handler": "employeeStatsController.getEmployeeStats"
-  },
-  {
-    "method": "get",
-    "path": "/api/admin/user-types",
-    "source": "src/admin/admin-routes.ts",
-    "handler": "adminController.getUserTypes"
   },
   {
     "method": "get",
@@ -733,12 +535,6 @@
   },
   {
     "method": "get",
-    "path": "/api/admin/export/orders",
-    "source": "src/admin/admin-routes.ts",
-    "handler": "excelExportController.exportOrders"
-  },
-  {
-    "method": "get",
     "path": "/api/admin/payments",
     "source": "src/admin/admin-routes.ts",
     "handler": "adminPaymentController.getAllPayments"
@@ -774,22 +570,10 @@
     "handler": "passwordResetController.resetPassword"
   },
   {
-    "method": "delete",
-    "path": "/api/auth/cleanup-tokens",
-    "source": "src/auth/password-reset-routes.ts",
-    "handler": "passwordResetController.cleanupExpiredTokens"
-  },
-  {
     "method": "get",
     "path": "/api/stores",
     "source": "src/admin/store-routes.ts",
     "handler": "storeController.getAllStores"
-  },
-  {
-    "method": "get",
-    "path": "/api/stores/{storeId}",
-    "source": "src/admin/store-routes.ts",
-    "handler": "storeController.getStoreById"
   },
   {
     "method": "post",
@@ -811,69 +595,9 @@
   },
   {
     "method": "get",
-    "path": "/api/stores/{storeId}/price-lists",
-    "source": "src/admin/store-routes.ts",
-    "handler": "storeController.getStorePriceLists"
-  },
-  {
-    "method": "post",
-    "path": "/api/stores/{storeId}/price-lists",
-    "source": "src/admin/store-routes.ts",
-    "handler": "storeController.assignPriceListToStore"
-  },
-  {
-    "method": "delete",
-    "path": "/api/stores/{storeId}/price-lists/{priceListId}",
-    "source": "src/admin/store-routes.ts",
-    "handler": "storeController.removePriceListFromStore"
-  },
-  {
-    "method": "get",
     "path": "/api/stores/{storeId}/users",
     "source": "src/admin/store-routes.ts",
     "handler": "storeController.getStoreUsers"
-  },
-  {
-    "method": "get",
-    "path": "/api/admin/manuel-satis/search-products",
-    "source": "src/admin/manuel-satis-routes.ts",
-    "handler": "manuelSatisController.searchProducts"
-  },
-  {
-    "method": "post",
-    "path": "/api/admin/manuel-satis/create",
-    "source": "src/admin/manuel-satis-routes.ts",
-    "handler": "manuelSatisController.createManuelSatis"
-  },
-  {
-    "method": "post",
-    "path": "/api/admin/manuel-satis/calculate-price",
-    "source": "src/admin/manuel-satis-routes.ts",
-    "handler": "manuelSatisController.calculateProductPrice"
-  },
-  {
-    "method": "get",
-    "path": "/api/admin/manuel-satis/list",
-    "source": "src/admin/manuel-satis-routes.ts",
-    "handler": "manuelSatisController.getManuelSatisList"
-  },
-  {
-    "method": "get",
-    "path": "/api/admin/manuel-satis/receipt/{fisNumarasi}",
-    "source": "src/admin/manuel-satis-routes.ts",
-    "handler": "manuelSatisController.getManuelSatisReceipt"
-  },
-  {
-    "method": "get",
-    "path": "/api/admin/manuel-satis/{fisNumarasi}",
-    "source": "src/admin/manuel-satis-routes.ts",
-    "handler": "manuelSatisController.getManuelSatisById"
-  },
-  {
-    "method": "delete",
-    "path": "/api/admin/manuel-satis/{fisNumarasi}",
-    "source": "src/admin/manuel-satis-routes.ts",
-    "handler": "manuelSatisController.cancelManuelSatis"
   },
   {
     "method": "get",
@@ -948,46 +672,10 @@
     "handler": "storeStatisticsController.getMyUserStatistics"
   },
   {
-    "method": "get",
-    "path": "/api/my-statistics/dashboard",
-    "source": "src/routes/storeStatisticsRoutes.ts",
-    "handler": "storeStatisticsController.getMyStoreStats"
-  },
-  {
-    "method": "get",
-    "path": "/api/my-statistics/orders-over-time",
-    "source": "src/routes/storeStatisticsRoutes.ts",
-    "handler": "storeStatisticsController.getMyOrdersOverTime"
-  },
-  {
-    "method": "get",
-    "path": "/api/my-statistics/top-products",
-    "source": "src/routes/storeStatisticsRoutes.ts",
-    "handler": "storeStatisticsController.getMyTopProducts"
-  },
-  {
-    "method": "get",
-    "path": "/api/my-statistics/totals",
-    "source": "src/routes/storeStatisticsRoutes.ts",
-    "handler": "storeStatisticsController.getMyTotalStats"
-  },
-  {
-    "method": "post",
-    "path": "/api/payments/checkout",
-    "source": "src/routes/paymentRoutes.ts",
-    "handler": "paymentController.checkout.bind(paymentController)"
-  },
-  {
     "method": "post",
     "path": "/api/payments/process",
     "source": "src/routes/paymentRoutes.ts",
     "handler": "paymentController.processPayment.bind(paymentController)"
-  },
-  {
-    "method": "post",
-    "path": "/api/payments/create-request",
-    "source": "src/routes/paymentRoutes.ts",
-    "handler": "paymentController.createPaymentRequest.bind(paymentController)"
   },
   {
     "method": "post",
@@ -1021,12 +709,6 @@
   },
   {
     "method": "get",
-    "path": "/api/payments/result",
-    "source": "src/routes/paymentRoutes.ts",
-    "handler": "webhookController.getPaymentResult.bind(webhookController)"
-  },
-  {
-    "method": "get",
     "path": "/api/payments/webhook/success",
     "source": "src/routes/paymentRoutes.ts",
     "handler": "webhookController.handleSuccessWebhookLegacy.bind(webhookController)"
@@ -1048,12 +730,6 @@
     "path": "/api/payments/webhook/failure",
     "source": "src/routes/paymentRoutes.ts",
     "handler": "webhookController.handleFailureWebhookLegacy.bind(webhookController)"
-  },
-  {
-    "method": "get",
-    "path": "/api/payments/status/{sellerReference}",
-    "source": "src/routes/paymentRoutes.ts",
-    "handler": "webhookController.getTransactionStatus.bind(webhookController)"
   },
   {
     "method": "get",
@@ -1068,34 +744,10 @@
     "handler": "(req, res) => {"
   },
   {
-    "method": "get",
-    "path": "/api/employee-assignment/employees",
-    "source": "src/routes/employeeAssignmentRoutes.ts",
-    "handler": "employeeAssignmentController.getAllEmployees"
-  },
-  {
     "method": "post",
     "path": "/api/employee-assignment/assign",
     "source": "src/routes/employeeAssignmentRoutes.ts",
     "handler": "employeeAssignmentController.assignEmployeeToOrder"
-  },
-  {
-    "method": "get",
-    "path": "/api/employee-assignment/stats",
-    "source": "src/routes/employeeAssignmentRoutes.ts",
-    "handler": "employeeAssignmentController.getEmployeeStats"
-  },
-  {
-    "method": "get",
-    "path": "/api/employee-assignment/stats/{employeeId}",
-    "source": "src/routes/employeeAssignmentRoutes.ts",
-    "handler": "employeeAssignmentController.getEmployeeStats"
-  },
-  {
-    "method": "get",
-    "path": "/api/employee-assignment/order/{orderId}",
-    "source": "src/routes/employeeAssignmentRoutes.ts",
-    "handler": "employeeAssignmentController.getAssignedEmployeeForOrder"
   },
   {
     "method": "get",
@@ -1158,12 +810,6 @@
     "handler": "(req, res) => {"
   },
   {
-    "method": "post",
-    "path": "/api/notifications/send",
-    "source": "src/routes/notificationRoutes.ts",
-    "handler": "notificationController.sendNotification.bind(notificationController)"
-  },
-  {
     "method": "get",
     "path": "/api/notifications/user/{userId}",
     "source": "src/routes/notificationRoutes.ts",
@@ -1186,12 +832,6 @@
     "path": "/api/notifications/read-all/{userId}",
     "source": "src/routes/notificationRoutes.ts",
     "handler": "notificationController.markAllAsRead.bind(notificationController)"
-  },
-  {
-    "method": "get",
-    "path": "/api/notifications/all",
-    "source": "src/routes/notificationRoutes.ts",
-    "handler": "notificationController.getAllNotifications.bind(notificationController)"
   },
   {
     "method": "get",
@@ -1302,12 +942,6 @@
     "handler": "updatePurchasePriceList"
   },
   {
-    "method": "delete",
-    "path": "/api/admin/purchase-management/purchase-price-lists/{id}",
-    "source": "src/routes/purchasePriceListRoutes.ts",
-    "handler": "deactivatePurchasePriceList"
-  },
-  {
     "method": "put",
     "path": "/api/admin/purchase-management/purchase-price-lists/{listId}/collections/{collectionId}",
     "source": "src/routes/purchasePriceListRoutes.ts",
@@ -1351,21 +985,9 @@
   },
   {
     "method": "get",
-    "path": "/api/admin/purchase-management/purchases/{transaction_id}",
-    "source": "src/routes/purchasePriceListRoutes.ts",
-    "handler": "getPurchaseDetail"
-  },
-  {
-    "method": "get",
     "path": "/api/admin/purchase-management/suppliers/{supplier_id}/purchase-summary",
     "source": "src/routes/purchasePriceListRoutes.ts",
     "handler": "getSupplierPurchaseSummary"
-  },
-  {
-    "method": "get",
-    "path": "/api/admin/purchase-management/statistics/purchases",
-    "source": "src/routes/purchasePriceListRoutes.ts",
-    "handler": "getPurchaseStatistics"
   },
   {
     "method": "get",
@@ -1374,22 +996,10 @@
     "handler": "publicCatalogController.getPublicCollections.bind(publicCatalogController)"
   },
   {
-    "method": "get",
-    "path": "/api/public/catalog/collections/{collectionId}",
-    "source": "src/routes/publicCatalogRoutes.ts",
-    "handler": "publicCatalogController.getPublicCollectionById.bind(publicCatalogController)"
-  },
-  {
     "method": "post",
     "path": "/api/contact/submit",
     "source": "src/routes/contactFormRoutes.ts",
     "handler": "contactFormController.submitContactForm.bind(contactFormController)"
-  },
-  {
-    "method": "get",
-    "path": "/api/contact/test-smtp",
-    "source": "src/routes/contactFormRoutes.ts",
-    "handler": "contactFormController.testSMTP.bind(contactFormController)"
   },
   {
     "method": "get",

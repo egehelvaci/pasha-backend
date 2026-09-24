@@ -10,8 +10,4 @@ const publicCatalogController = new PublicCatalogController();
 // GET /public/catalog/collections
 router.get('/collections', publicCatalogController.getPublicCollections.bind(publicCatalogController));
 
-// Belirli bir koleksiyonun detaylarını getir
-// GET /public/catalog/collections/:collectionId
-router.get('/collections/:collectionId', publicCatalogController.getPublicCollectionById.bind(publicCatalogController));
-
 export default router;

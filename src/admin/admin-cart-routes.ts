@@ -1,6 +1,6 @@
 import express from 'express';
-import { AdminCartController } from './admin-cart-controller';
 import { authMiddleware, authorizeRoles } from '../auth/auth-middleware';
+import { AdminCartController } from './admin-cart-controller';
 
 const router = express.Router();
 const adminCartController = new AdminCartController();
@@ -20,10 +20,6 @@ router.get('/:targetUserId/:storeId', adminCartController.getAdminCart);
 // Admin için kullanıcı admin sepetini temizleme
 // DELETE /admin/cart/:targetUserId/:storeId/clear
 router.delete('/:targetUserId/:storeId/clear', adminCartController.clearAdminCart);
-
-// Admin için kullanıcı admin sepetini yenileme (reset)
-// POST /admin/cart/:targetUserId/:storeId/reset
-router.post('/:targetUserId/:storeId/reset', adminCartController.resetAdminCart);
 
 // Admin için kullanıcı admin sepetinden ürün çıkarma
 // DELETE /admin/cart/:targetUserId/:storeId/item/:adminCartItemId

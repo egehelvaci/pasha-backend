@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { WebhookService } from '../services/webhook-service';
-import { notificationService } from '../services/notification-service';
 import prisma from '../utils/prisma';
 
 const webhookService = new WebhookService();
@@ -677,63 +676,6 @@ export class WebhookController {
   }
 
   /**
-   * Polling endpoint'i - Payment durumu sorgulaması
-   */
-  async getPaymentResult(req: Request, res: Response) {
-    try {
-      const { session } = req.query;
-      
-      if (!session || typeof session !== 'string') {
-        return res.status(400).json({
-          success: false,
-          message: 'Geçersiz session ID'
-        });
-      }
-
-      // Session'ı bul
-      const paymentSession = await prisma.paymentSession.findUnique({
-        where: { id: session }
-      });
-
-      if (!paymentSession) {
-        return res.status(404).json({
-          success: false,
-          message: 'Session bulunamadı'
-        });
-      }
-
-      // Session süresi kontrol
-      if (new Date() > paymentSession.expiresAt) {
-        return res.status(410).json({
-          success: false,
-          message: 'Session süresi dolmuş',
-          status: 'EXPIRED'
-        });
-      }
-
-      return res.json({
-        success: true,
-        data: {
-          sessionId: paymentSession.id,
-          orderId: paymentSession.orderId,
-          status: paymentSession.status,
-          amount: Number(paymentSession.amount),
-          channel: paymentSession.channel,
-          createdAt: paymentSession.createdAt,
-          expiresAt: paymentSession.expiresAt
-        }
-      });
-
-    } catch (error) {
-      console.error('❌ Payment result sorgulama hatası:', error);
-      return res.status(500).json({
-        success: false,
-        message: 'Sunucu hatası'
-      });
-    }
-  }
-
-  /**
    * Mobile callback için HTML generator
    */
   private generateMobileCallbackHtml(status: string, orderId: string, errorMessage?: string): string {
@@ -781,65 +723,5 @@ export class WebhookController {
   <p style="color: #666;">Lütfen bekleyiniz, uygulamaya yönlendiriliyorsunuz.</p>
   ${errorMessage ? `<p style="color: #d32f2f; font-size: 14px;">${errorMessage}</p>` : ''}
 </body>`;
-  }
-
-  /**
-   * Transaction durumunu sorgular
-   */
-  async getTransactionStatus(req: Request, res: Response) {
-    try {
-      const { sellerReference } = req.params;
-      
-      if (!sellerReference) {
-        return res.status(400).json({
-          success: false,
-          message: 'sellerReference gerekli'
-        });
-      }
-
-      // Transaction'ı bul
-      const transaction = await prisma.paymentTransaction.findFirst({
-        where: { sellerReference },
-        include: {
-          store: {
-            select: {
-              kurum_adi: true,
-              store_id: true
-            }
-          }
-        }
-      });
-
-      if (!transaction) {
-        return res.status(404).json({
-          success: false,
-          message: 'Transaction bulunamadı'
-        });
-      }
-
-      return res.json({
-        success: true,
-        data: {
-          id: transaction.id,
-          sellerReference: transaction.sellerReference,
-          apiReferenceNumber: transaction.apiReferenceNumber,
-          amount: Number(transaction.amount),
-          status: transaction.status,
-          description: transaction.description,
-          paymentDate: transaction.paymentDate,
-          octetPaymentId: transaction.octetPaymentId,
-          store: transaction.store,
-          createdAt: transaction.createdAt,
-          updatedAt: transaction.updatedAt
-        }
-      });
-
-    } catch (error) {
-      console.error('❌ Transaction sorgulama hatası:', error);
-      return res.status(500).json({
-        success: false,
-        message: 'Transaction sorgulanırken hata'
-      });
-    }
   }
 } 

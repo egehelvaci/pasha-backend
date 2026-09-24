@@ -54,12 +54,7 @@ module.exports = function applyOverrides(spec) {
     schema.properties.productImage = { type: 'string', format: 'binary' };
     op.requestBody = { required: true, content: { 'multipart/form-data': { schema } } };
   }
-  const simple = get('/api/products/test-create', 'post');
-  const simpleSchema = simple.requestBody?.content?.['application/json']?.schema || object({});
-  simpleSchema.properties.productImage = { type: 'string', format: 'binary' };
-  simple.requestBody = { required: true, content: { 'multipart/form-data': { schema: simpleSchema } } };
   get('/healthz', 'get').responses = { 200: { description: 'Sunucu ayakta', content: { 'text/plain': { schema: { type: 'string', example: 'OK' } } } } };
-  get('/api/admin/export/orders', 'get').responses[200] = { description: 'Excel dosyası', content: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': { schema: { type: 'string', format: 'binary' } } } };
   for (const [path, entry] of Object.entries(spec.paths)) {
     for (const [method, op] of Object.entries(entry)) {
       if (path.startsWith('/api/payments/') && /webhook|callback/.test(path)) {

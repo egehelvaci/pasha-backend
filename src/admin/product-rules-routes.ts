@@ -1,6 +1,6 @@
 import express from 'express'
-import { ProductRulesController } from './product-rules-controller'
 import { authMiddleware, authorizeRoles } from '../auth/auth-middleware'
+import { ProductRulesController } from './product-rules-controller'
 
 const router = express.Router()
 const productRulesController = new ProductRulesController()
@@ -41,9 +41,6 @@ router.delete('/:ruleId/size-options/:sizeId', productRulesController.deleteSize
 
 // Kesim türlerini ata
 router.post('/:ruleId/cut-types', productRulesController.assignCutTypes)
-
-// Kural bazlı varyasyon güncelleme
-router.post('/:ruleId/regenerate-variations', productRulesController.regenerateVariationsForRule)
 
 // Kesim türü atamasını kaldır
 router.delete('/:ruleId/cut-types/:cutTypeId', productRulesController.removeCutType)

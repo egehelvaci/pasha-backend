@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { CartService, AddToCartRequest, UpdateCartItemRequest } from '../cart-service';
+import { AddToCartRequest, CartService, UpdateCartItemRequest } from '../cart-service';
 
 const cartService = new CartService();
 
@@ -197,46 +197,6 @@ export const clearCart = async (req: Request, res: Response) => {
     return res.status(400).json({
       success: false,
       message: error.message || 'Sepet temizlenirken hata oluştu'
-    });
-  }
-};
-
-// Sepeti sil
-export const deleteCart = async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).user?.userId;
-    
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: 'Kullanıcı kimlik doğrulaması gerekli'
-      });
-    }
-
-    const result = await cartService.deleteCart(userId);
-
-    return res.status(200).json(result);
-  } catch (error: any) {
-    console.error('Sepet silme hatası:', error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || 'Sepet silinirken hata oluştu'
-    });
-  }
-};
-
-// Admin: Eski sepetleri temizle
-export const cleanOldCarts = async (req: Request, res: Response) => {
-  try {
-    // Bu endpoint sadece admin için olabilir
-    const result = await cartService.cleanOldCarts();
-
-    return res.status(200).json(result);
-  } catch (error: any) {
-    console.error('Eski sepetleri temizleme hatası:', error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || 'Eski sepetler temizlenirken hata oluştu'
     });
   }
 }; 

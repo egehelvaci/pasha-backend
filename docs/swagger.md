@@ -2,7 +2,7 @@
 
 Backend adresinin sonuna `/api/docs/` ekleyerek Swagger UI açılır. OpenAPI JSON: `/api/openapi.json`. Aynı JSON dosyası repoda `src/docs/openapi.json` konumundadır; Postman veya başka OpenAPI araçlarına aktarılabilir.
 
-Doküman, sunucuda kayıtlı 238 HTTP işlemini (188 yol) kapsar. Eski API'ler, yeni statü filtreli sipariş listeleme, site ayarları/banner ve admin sipariş ilerletme API'si birlikte listelenir. Sunucuya bağlanmamış route dosyaları kapsam dışındadır. Swagger'ın kendi dosya servisleri envantere dahil değildir.
+Doküman, temizlik sonrasında sunucuda kayıtlı 173 HTTP işlemini (131 yol) kapsar. Mevcut API'ler, yeni statü filtreli sipariş listeleme, site ayarları/banner ve admin sipariş ilerletme API'si birlikte listelenir. Sunucuya bağlanmamış route dosyaları kapsam dışındadır. Swagger'ın kendi dosya servisleri envantere dahil değildir. Kaldırılan API'ler ve korunan bağımlılıklar [api-cleanup.md](api-cleanup.md) dosyasında listelenir.
 
 ## Frontend kullanımı
 

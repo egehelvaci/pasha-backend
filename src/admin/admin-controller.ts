@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
+import { EmployeeAssignmentService } from '../services/employee-assignment-service'
 import { userService } from '../user-service'
 import prisma from '../utils/prisma'
-import { EmployeeAssignmentService } from '../services/employee-assignment-service'
 
 const employeeAssignmentService = new EmployeeAssignmentService()
 
@@ -18,7 +18,6 @@ export class AdminController {
     this.assignEmployeeToOrder = this.assignEmployeeToOrder.bind(this)
     this.getEmployeeStats = this.getEmployeeStats.bind(this)
     this.getAssignedEmployeeForOrder = this.getAssignedEmployeeForOrder.bind(this)
-    this.getUserTypes = this.getUserTypes.bind(this)
   }
 
   /**
@@ -485,29 +484,6 @@ export class AdminController {
       return res.status(400).json({
         success: false,
         message: error.message
-      })
-    }
-  }
-
-  /**
-   * Tüm kullanıcı tiplerini getir
-   */
-  async getUserTypes(req: Request, res: Response) {
-    try {
-      const userTypes = await prisma.userType.findMany({
-        orderBy: {
-          id: 'asc'
-        }
-      })
-
-      return res.status(200).json({
-        success: true,
-        data: userTypes
-      })
-    } catch (error: any) {
-      return res.status(500).json({
-        success: false,
-        message: error.message || 'Kullanıcı tipleri getirilemedi'
       })
     }
   }

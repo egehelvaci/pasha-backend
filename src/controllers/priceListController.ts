@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { Prisma } from '../../generated/prisma';
 import prisma from '../utils/prisma';
 
 // Tip tanımlamaları
@@ -428,20 +427,6 @@ export const deletePriceList = async (req: Request, res: Response) => {
   }
 };
 
-// Fiyat listesi oluştururken kullanılacak koleksiyonları getir
-export const getCollectionsForPriceList = async (req: Request, res: Response) => {
-  try {
-    const collections = await prisma.$queryRaw`
-      SELECT "collection_id" as "collectionId", name, code FROM "Collection" WHERE "is_active" = true ORDER BY name ASC
-    `;
-    
-    return res.status(200).json({ success: true, data: collections });
-  } catch (error) {
-    console.error('Koleksiyonlar getirilirken hata oluştu:', error);
-    return res.status(500).json({ success: false, message: 'Sunucu hatası' });
-  }
-};
-
 // Mağazaya fiyat listesi ata
 export const assignPriceListToStore = async (req: Request, res: Response) => {
   try {
@@ -838,48 +823,6 @@ export const getStorePriceLists = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Mağaza fiyat listeleri getirilirken hata oluştu:', error);
-    return res.status(500).json({
-      success: false,
-      message: error instanceof Error ? error.message : 'Sunucu hatası'
-    });
-  }
-};
-
-// Mağaza fiyat listesi atamasını kaldır
-export const removeStorePriceList = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-
-    if (!id) {
-      return res.status(400).json({
-        success: false,
-        message: 'Atama ID parametresi zorunludur'
-      });
-    }
-
-    // Atamanın varlığını kontrol et
-    const assignment = await prisma.storePriceList.findUnique({
-      where: { store_price_list_id: id }
-    });
-
-    if (!assignment) {
-      return res.status(404).json({
-        success: false,
-        message: 'Mağaza fiyat listesi ataması bulunamadı'
-      });
-    }
-
-    // Atamayı sil
-    await prisma.storePriceList.delete({
-      where: { store_price_list_id: id }
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: 'Mağaza fiyat listesi ataması başarıyla kaldırıldı'
-    });
-  } catch (error) {
-    console.error('Mağaza fiyat listesi ataması kaldırılırken hata oluştu:', error);
     return res.status(500).json({
       success: false,
       message: error instanceof Error ? error.message : 'Sunucu hatası'

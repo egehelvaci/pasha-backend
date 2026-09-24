@@ -1,14 +1,12 @@
 import { Router } from 'express';
+import { authMiddleware } from '../auth/auth-middleware';
 import {
   addToCart,
-  getCart,
-  updateCartItem,
-  removeFromCart,
   clearCart,
-  deleteCart,
-  cleanOldCarts
+  getCart,
+  removeFromCart,
+  updateCartItem
 } from '../controllers/cartController';
-import { authMiddleware, authorizeRoles } from '../auth/auth-middleware';
 
 const router = Router();
 
@@ -29,11 +27,5 @@ router.delete('/items/:cartItemId', removeFromCart);
 
 // DELETE /cart/clear - Sepeti temizle (öğeleri sil ama sepeti koru)
 router.delete('/clear', clearCart);
-
-// DELETE /cart - Sepeti tamamen sil
-router.delete('/', deleteCart);
-
-// POST /cart/admin/clean - Eski sepetleri temizle (admin endpoint)
-router.post('/admin/clean', authorizeRoles('admin', 'editor'), cleanOldCarts);
 
 export default router; 

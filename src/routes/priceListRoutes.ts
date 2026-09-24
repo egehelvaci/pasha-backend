@@ -1,17 +1,15 @@
 import express from 'express';
+import { authMiddleware, authorizeRoles } from '../auth/auth-middleware';
 import {
+  assignPriceListToStore,
+  createPriceList,
+  deletePriceList,
   getAllPriceLists,
   getPriceList,
-  createPriceList,
-  updatePriceList,
-  deletePriceList,
-  getCollectionsForPriceList,
-  assignPriceListToStore,
   getStorePriceLists,
   getUserStorePriceLists,
-  removeStorePriceList
+  updatePriceList
 } from '../controllers/priceListController';
-import { authMiddleware, authorizeRoles } from '../auth/auth-middleware';
 
 const router = express.Router();
 
@@ -20,9 +18,6 @@ router.use(authMiddleware);
 
 // Fiyat listelerini getir - admin ve editör erişebilir
 router.get('/', authorizeRoles('admin', 'editor'), getAllPriceLists);
-
-// Koleksiyonları getir - fiyat listesi oluşturma formu için
-router.get('/collections/list', getCollectionsForPriceList);
 
 // Belirli bir fiyat listesini getir - tüm kullanıcılar erişebilir (giriş yapmış olması yeterli)
 router.get('/:id', getPriceList);
@@ -44,6 +39,5 @@ router.delete('/:id', authorizeRoles('admin', 'editor'), deletePriceList);
 
 // Mağaza-fiyat listesi ilişkileri rotaları (oluşturma ve silme) - admin ve editör erişebilir
 router.post('/store-assignments', authorizeRoles('admin', 'editor'), assignPriceListToStore);
-router.delete('/store-assignments/:id', authorizeRoles('admin', 'editor'), removeStorePriceList);
 
 export default router; 

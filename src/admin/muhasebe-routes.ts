@@ -1,6 +1,6 @@
 import express from 'express'
-import { muhasebeController } from './muhasebe-controller'
 import { authMiddleware, authorizeRoles } from '../auth/auth-middleware'
+import { muhasebeController } from './muhasebe-controller'
 
 const router = express.Router()
 
@@ -15,10 +15,6 @@ router.post('/muhasebe-hareketleri', muhasebeController.createMuhasebeHareketi)
 // Yardımcı endpoint'ler
 router.get('/muhasebe/income-types', muhasebeController.getIncomeTypes)
 router.get('/muhasebe/expense-types', muhasebeController.getExpenseTypes)
-router.get('/muhasebe/admin-toplam', muhasebeController.getAdminToplam)
-
-// Manuel satış endpoint'leri
-router.get('/muhasebe/manuel-satislar', muhasebeController.getManuelSatislar)
 
 // Mağaza bazlı muhasebe hareketleri
 router.get('/muhasebe/store/:storeId', muhasebeController.getMuhasebeHareketleriByStore)

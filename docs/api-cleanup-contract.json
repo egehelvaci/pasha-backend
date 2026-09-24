@@ -1,0 +1,1607 @@
+{
+  "removed": [
+    {
+      "method": "get",
+      "path": "/api/products/rules",
+      "source": "src/routes/productRoutes.ts",
+      "handler": "getAllProductRules"
+    },
+    {
+      "method": "get",
+      "path": "/api/products/by-collection/{collectionId}",
+      "source": "src/routes/productRoutes.ts",
+      "handler": "getProductsByCollection"
+    },
+    {
+      "method": "post",
+      "path": "/api/products/{id}/regenerate-variations",
+      "source": "src/routes/productRoutes.ts",
+      "handler": "regenerateProductVariations"
+    },
+    {
+      "method": "post",
+      "path": "/api/products/regenerate-variations/rule/{ruleId}",
+      "source": "src/routes/productRoutes.ts",
+      "handler": "regenerateVariationsForRule"
+    },
+    {
+      "method": "post",
+      "path": "/api/products/regenerate-variations/all",
+      "source": "src/routes/productRoutes.ts",
+      "handler": "regenerateAllVariations"
+    },
+    {
+      "method": "post",
+      "path": "/api/products/test-create",
+      "source": "src/routes/productRoutes.ts",
+      "handler": "createProductSimple"
+    },
+    {
+      "method": "patch",
+      "path": "/api/products/{id}/stock-hybrid",
+      "source": "src/routes/productRoutes.ts",
+      "handler": "updateProductStockHybrid"
+    },
+    {
+      "method": "put",
+      "path": "/api/collections/{id}",
+      "source": "src/routes/collectionRoutes.ts",
+      "handler": "updateCollection"
+    },
+    {
+      "method": "get",
+      "path": "/api/price-lists/collections/list",
+      "source": "src/routes/priceListRoutes.ts",
+      "handler": "getCollectionsForPriceList"
+    },
+    {
+      "method": "delete",
+      "path": "/api/price-lists/store-assignments/{id}",
+      "source": "src/routes/priceListRoutes.ts",
+      "handler": "removeStorePriceList"
+    },
+    {
+      "method": "delete",
+      "path": "/api/cart",
+      "source": "src/routes/cartRoutes.ts",
+      "handler": "deleteCart"
+    },
+    {
+      "method": "post",
+      "path": "/api/cart/admin/clean",
+      "source": "src/routes/cartRoutes.ts",
+      "handler": "cleanOldCarts"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/orders/stats",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminOrderController.getOrderStats"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/orders/{orderId}/receipt",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "getOrderReceipt"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/orders/{orderId}/confirm",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminOrderController.confirmOrder"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/orders/process-admin-order",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminOrderController.processAdminOrder"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/orders/{orderId}/generate-qr",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminOrderController.generateQRCodes"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/orders/{orderId}/qrcodes",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminOrderController.getOrderQRCodes"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/orders/{orderId}/barcodes",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminOrderController.getOrderBarcodes"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/orders/{orderId}/generate-barcode-images",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminOrderController.generateBarcodeImages"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/barcode/stats",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminOrderController.getBarcodeStats"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/orders/ready/with-barcodes",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminOrderController.getReadyOrdersWithBarcodes"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/employees/stats",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "employeeStatsController.getAllEmployeeStats"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/employees/{employeeId}/stats",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "employeeStatsController.getEmployeeStats"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/user-types",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminController.getUserTypes"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/export/orders",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "excelExportController.exportOrders"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/stores/{storeId}",
+      "source": "src/admin/store-routes.ts",
+      "handler": "storeController.getStoreById"
+    },
+    {
+      "method": "get",
+      "path": "/api/stores/{storeId}",
+      "source": "src/admin/store-routes.ts",
+      "handler": "storeController.getStoreById"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/stores/{storeId}/price-lists",
+      "source": "src/admin/store-routes.ts",
+      "handler": "storeController.getStorePriceLists"
+    },
+    {
+      "method": "get",
+      "path": "/api/stores/{storeId}/price-lists",
+      "source": "src/admin/store-routes.ts",
+      "handler": "storeController.getStorePriceLists"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/stores/{storeId}/price-lists",
+      "source": "src/admin/store-routes.ts",
+      "handler": "storeController.assignPriceListToStore"
+    },
+    {
+      "method": "post",
+      "path": "/api/stores/{storeId}/price-lists",
+      "source": "src/admin/store-routes.ts",
+      "handler": "storeController.assignPriceListToStore"
+    },
+    {
+      "method": "delete",
+      "path": "/api/admin/stores/{storeId}/price-lists/{priceListId}",
+      "source": "src/admin/store-routes.ts",
+      "handler": "storeController.removePriceListFromStore"
+    },
+    {
+      "method": "delete",
+      "path": "/api/stores/{storeId}/price-lists/{priceListId}",
+      "source": "src/admin/store-routes.ts",
+      "handler": "storeController.removePriceListFromStore"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/product-rules/{ruleId}/regenerate-variations",
+      "source": "src/admin/product-rules-routes.ts",
+      "handler": "productRulesController.regenerateVariationsForRule"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/muhasebe/admin-toplam",
+      "source": "src/admin/muhasebe-routes.ts",
+      "handler": "muhasebeController.getAdminToplam"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/muhasebe/manuel-satislar",
+      "source": "src/admin/muhasebe-routes.ts",
+      "handler": "muhasebeController.getManuelSatislar"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/cart/{targetUserId}/{storeId}/reset",
+      "source": "src/admin/admin-cart-routes.ts",
+      "handler": "adminCartController.resetAdminCart"
+    },
+    {
+      "method": "delete",
+      "path": "/api/auth/cleanup-tokens",
+      "source": "src/auth/password-reset-routes.ts",
+      "handler": "passwordResetController.cleanupExpiredTokens"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/manuel-satis/search-products",
+      "source": "src/admin/manuel-satis-routes.ts",
+      "handler": "manuelSatisController.searchProducts"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/manuel-satis/create",
+      "source": "src/admin/manuel-satis-routes.ts",
+      "handler": "manuelSatisController.createManuelSatis"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/manuel-satis/calculate-price",
+      "source": "src/admin/manuel-satis-routes.ts",
+      "handler": "manuelSatisController.calculateProductPrice"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/manuel-satis/list",
+      "source": "src/admin/manuel-satis-routes.ts",
+      "handler": "manuelSatisController.getManuelSatisList"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/manuel-satis/receipt/{fisNumarasi}",
+      "source": "src/admin/manuel-satis-routes.ts",
+      "handler": "manuelSatisController.getManuelSatisReceipt"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/manuel-satis/{fisNumarasi}",
+      "source": "src/admin/manuel-satis-routes.ts",
+      "handler": "manuelSatisController.getManuelSatisById"
+    },
+    {
+      "method": "delete",
+      "path": "/api/admin/manuel-satis/{fisNumarasi}",
+      "source": "src/admin/manuel-satis-routes.ts",
+      "handler": "manuelSatisController.cancelManuelSatis"
+    },
+    {
+      "method": "get",
+      "path": "/api/my-statistics/dashboard",
+      "source": "src/routes/storeStatisticsRoutes.ts",
+      "handler": "storeStatisticsController.getMyStoreStats"
+    },
+    {
+      "method": "get",
+      "path": "/api/my-statistics/orders-over-time",
+      "source": "src/routes/storeStatisticsRoutes.ts",
+      "handler": "storeStatisticsController.getMyOrdersOverTime"
+    },
+    {
+      "method": "get",
+      "path": "/api/my-statistics/top-products",
+      "source": "src/routes/storeStatisticsRoutes.ts",
+      "handler": "storeStatisticsController.getMyTopProducts"
+    },
+    {
+      "method": "get",
+      "path": "/api/my-statistics/totals",
+      "source": "src/routes/storeStatisticsRoutes.ts",
+      "handler": "storeStatisticsController.getMyTotalStats"
+    },
+    {
+      "method": "post",
+      "path": "/api/payments/checkout",
+      "source": "src/routes/paymentRoutes.ts",
+      "handler": "paymentController.checkout.bind(paymentController)"
+    },
+    {
+      "method": "post",
+      "path": "/api/payments/create-request",
+      "source": "src/routes/paymentRoutes.ts",
+      "handler": "paymentController.createPaymentRequest.bind(paymentController)"
+    },
+    {
+      "method": "get",
+      "path": "/api/payments/result",
+      "source": "src/routes/paymentRoutes.ts",
+      "handler": "webhookController.getPaymentResult.bind(webhookController)"
+    },
+    {
+      "method": "get",
+      "path": "/api/payments/status/{sellerReference}",
+      "source": "src/routes/paymentRoutes.ts",
+      "handler": "webhookController.getTransactionStatus.bind(webhookController)"
+    },
+    {
+      "method": "get",
+      "path": "/api/employee-assignment/employees",
+      "source": "src/routes/employeeAssignmentRoutes.ts",
+      "handler": "employeeAssignmentController.getAllEmployees"
+    },
+    {
+      "method": "get",
+      "path": "/api/employee-assignment/stats",
+      "source": "src/routes/employeeAssignmentRoutes.ts",
+      "handler": "employeeAssignmentController.getEmployeeStats"
+    },
+    {
+      "method": "get",
+      "path": "/api/employee-assignment/stats/{employeeId}",
+      "source": "src/routes/employeeAssignmentRoutes.ts",
+      "handler": "employeeAssignmentController.getEmployeeStats"
+    },
+    {
+      "method": "get",
+      "path": "/api/employee-assignment/order/{orderId}",
+      "source": "src/routes/employeeAssignmentRoutes.ts",
+      "handler": "employeeAssignmentController.getAssignedEmployeeForOrder"
+    },
+    {
+      "method": "post",
+      "path": "/api/notifications/send",
+      "source": "src/routes/notificationRoutes.ts",
+      "handler": "notificationController.sendNotification.bind(notificationController)"
+    },
+    {
+      "method": "get",
+      "path": "/api/notifications/all",
+      "source": "src/routes/notificationRoutes.ts",
+      "handler": "notificationController.getAllNotifications.bind(notificationController)"
+    },
+    {
+      "method": "delete",
+      "path": "/api/admin/purchase-management/purchase-price-lists/{id}",
+      "source": "src/routes/purchasePriceListRoutes.ts",
+      "handler": "deactivatePurchasePriceList"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/purchase-management/purchases/{transaction_id}",
+      "source": "src/routes/purchasePriceListRoutes.ts",
+      "handler": "getPurchaseDetail"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/purchase-management/statistics/purchases",
+      "source": "src/routes/purchasePriceListRoutes.ts",
+      "handler": "getPurchaseStatistics"
+    },
+    {
+      "method": "get",
+      "path": "/api/public/catalog/collections/{collectionId}",
+      "source": "src/routes/publicCatalogRoutes.ts",
+      "handler": "publicCatalogController.getPublicCollectionById.bind(publicCatalogController)"
+    },
+    {
+      "method": "get",
+      "path": "/api/contact/test-smtp",
+      "source": "src/routes/contactFormRoutes.ts",
+      "handler": "contactFormController.testSMTP.bind(contactFormController)"
+    }
+  ],
+  "retained": [
+    {
+      "method": "get",
+      "path": "/api/products",
+      "source": "src/routes/productRoutes.ts",
+      "handler": "getAllProducts",
+      "contractHash": "fc84cd82051df80960a3e9065d86c5a2c34b3005ac06c70c8c5f27794b9ed0f3"
+    },
+    {
+      "method": "get",
+      "path": "/api/products/all",
+      "source": "src/routes/productRoutes.ts",
+      "handler": "getAllProductsWithoutPagination",
+      "contractHash": "b52761eb9977cacd7cacbf464c7cb28370a1354ecf65cd4a49ac01de80c83a7d"
+    },
+    {
+      "method": "get",
+      "path": "/api/products/{id}/variations",
+      "source": "src/routes/productRoutes.ts",
+      "handler": "getProductVariationOptions",
+      "contractHash": "839b8daa771b3df052127030df402c6f0eb380ce0766208c0f470cadd95be901"
+    },
+    {
+      "method": "get",
+      "path": "/api/products/{id}",
+      "source": "src/routes/productRoutes.ts",
+      "handler": "getProductById",
+      "contractHash": "f3aa82be80bf22bc0eab85ecf9904892635723ced7cc94ada6add6537262f354"
+    },
+    {
+      "method": "post",
+      "path": "/api/products",
+      "source": "src/routes/productRoutes.ts",
+      "handler": "createProduct",
+      "contractHash": "1f7f7593f16f8a92c73bd0f89d26e10c6594fcc4a43eb2731d1f816c2b57d06a"
+    },
+    {
+      "method": "put",
+      "path": "/api/products/{id}",
+      "source": "src/routes/productRoutes.ts",
+      "handler": "updateProduct",
+      "contractHash": "e71d24c5dddf2e5a0a448795c08a5d16501ced443872507b47c7befa050d18e7"
+    },
+    {
+      "method": "delete",
+      "path": "/api/products/{id}",
+      "source": "src/routes/productRoutes.ts",
+      "handler": "deleteProduct",
+      "contractHash": "a3d15b9c6944f3a041bf9659785e96ffa818278371cba8e995417e08888613c3"
+    },
+    {
+      "method": "patch",
+      "path": "/api/products/{id}/stock",
+      "source": "src/routes/productRoutes.ts",
+      "handler": "updateProductStock",
+      "contractHash": "d10f59ea98cca1e5cf1f165fa869797e41f98ed6fa26742088f772b4960c6540"
+    },
+    {
+      "method": "patch",
+      "path": "/api/products/{id}/stock-area",
+      "source": "src/routes/productRoutes.ts",
+      "handler": "updateProductStockAreaM2",
+      "contractHash": "3d0504275c54e29d550d307a8adc595b3df67b1bdce58f5bb6374df8a529e0d1"
+    },
+    {
+      "method": "get",
+      "path": "/api/collections",
+      "source": "src/routes/collectionRoutes.ts",
+      "handler": "getAllCollections",
+      "contractHash": "fe5f956f09e62a370fb6d81475b27e8b48a1c5fa50eda6e103c3e5e7cccc5453"
+    },
+    {
+      "method": "get",
+      "path": "/api/collections/{id}",
+      "source": "src/routes/collectionRoutes.ts",
+      "handler": "getCollectionById",
+      "contractHash": "fe61a215477631ab77d14ac74d320f2c0a4148907db9152bb98bfe55568aeed6"
+    },
+    {
+      "method": "post",
+      "path": "/api/collections",
+      "source": "src/routes/collectionRoutes.ts",
+      "handler": "createCollection",
+      "contractHash": "c31ebd2cceb2c118f229f0e469862c4a64c4b15bd117266f6131938708740dc0"
+    },
+    {
+      "method": "delete",
+      "path": "/api/collections/{id}",
+      "source": "src/routes/collectionRoutes.ts",
+      "handler": "deleteCollection",
+      "contractHash": "a013db7acc4ffd40c714031af7643e915bd1d1406117ebc67006e5732b2d4d9d"
+    },
+    {
+      "method": "get",
+      "path": "/api/price-lists",
+      "source": "src/routes/priceListRoutes.ts",
+      "handler": "getAllPriceLists",
+      "contractHash": "a9725d68b8af91685de3e26d479aee7abda9cfea281de3ca2d7685ef4a47398e"
+    },
+    {
+      "method": "get",
+      "path": "/api/price-lists/{id}",
+      "source": "src/routes/priceListRoutes.ts",
+      "handler": "getPriceList",
+      "contractHash": "5c30ff9814de9a64d73dc35d9196cbbc992c5f613a904ab34ab05899c828fcd1"
+    },
+    {
+      "method": "get",
+      "path": "/api/price-lists/my-store/price-list",
+      "source": "src/routes/priceListRoutes.ts",
+      "handler": "getUserStorePriceLists",
+      "contractHash": "c03812a5a7439394c2109a0f3b6cc667dcfa3a58a471097ebf3d9a8f28209f54"
+    },
+    {
+      "method": "get",
+      "path": "/api/price-lists/store-assignments/{storeId}",
+      "source": "src/routes/priceListRoutes.ts",
+      "handler": "getStorePriceLists",
+      "contractHash": "81fb60727ce2ab8e5f426ff41f58b1fc18925fafb9870b62e00ef057c4f8fc90"
+    },
+    {
+      "method": "post",
+      "path": "/api/price-lists",
+      "source": "src/routes/priceListRoutes.ts",
+      "handler": "createPriceList",
+      "contractHash": "229e73eb6f8e74c6bc37f627994ae43e7b9ec57b163a5986cf68d0e9b2f0525f"
+    },
+    {
+      "method": "put",
+      "path": "/api/price-lists/{id}",
+      "source": "src/routes/priceListRoutes.ts",
+      "handler": "updatePriceList",
+      "contractHash": "ff40e1ee20e8f811fd34da9c596f6ae07c4e0fa05a526db2c2c5ce6d1b3a6e93"
+    },
+    {
+      "method": "delete",
+      "path": "/api/price-lists/{id}",
+      "source": "src/routes/priceListRoutes.ts",
+      "handler": "deletePriceList",
+      "contractHash": "4d10abafefd18cd6b2ac2da8013efb94285734a20edad72e0472844cfff4a20f"
+    },
+    {
+      "method": "post",
+      "path": "/api/price-lists/store-assignments",
+      "source": "src/routes/priceListRoutes.ts",
+      "handler": "assignPriceListToStore",
+      "contractHash": "517163642c222c274996afd9bf9c2eb53d68b0e7d1c823037490eeb2ae1436a6"
+    },
+    {
+      "method": "get",
+      "path": "/api/cart",
+      "source": "src/routes/cartRoutes.ts",
+      "handler": "getCart",
+      "contractHash": "4fe0225863661cd215c4feb560420b4f9d1da364e555ce51f4ecf74f96f21370"
+    },
+    {
+      "method": "post",
+      "path": "/api/cart/add",
+      "source": "src/routes/cartRoutes.ts",
+      "handler": "addToCart",
+      "contractHash": "f792971a70acb86b4f20b993ece784be5728f50f40f958f152d415acd18e24b9"
+    },
+    {
+      "method": "put",
+      "path": "/api/cart/items/{cartItemId}",
+      "source": "src/routes/cartRoutes.ts",
+      "handler": "updateCartItem",
+      "contractHash": "2ff6f75743746b3462c6a8e63f0f5100af822b2c2286b21c1778ced879ca3828"
+    },
+    {
+      "method": "delete",
+      "path": "/api/cart/items/{cartItemId}",
+      "source": "src/routes/cartRoutes.ts",
+      "handler": "removeFromCart",
+      "contractHash": "706cd17ff3c7e14132b83f3a71154c0845697a8ab3176a6d0345bc548b051494"
+    },
+    {
+      "method": "delete",
+      "path": "/api/cart/clear",
+      "source": "src/routes/cartRoutes.ts",
+      "handler": "clearCart",
+      "contractHash": "1c34088985774aeaf17e5b8a7ad93c96016d851fcec4cf6ffcb55442ead188f4"
+    },
+    {
+      "method": "get",
+      "path": "/api/orders/check-limits",
+      "source": "src/routes/orderRoutes.ts",
+      "handler": "checkCartLimits",
+      "contractHash": "8e038fc7b304cf4f2053862bc43d09582229b14172751565772fa1fbc73e2dca"
+    },
+    {
+      "method": "post",
+      "path": "/api/orders/create-from-cart",
+      "source": "src/routes/orderRoutes.ts",
+      "handler": "createOrderFromCart",
+      "contractHash": "e0ec938e10461d03d69e34a40516405c8bb1f4425795bdc194ffc8c08b928e08"
+    },
+    {
+      "method": "get",
+      "path": "/api/orders/my-orders",
+      "source": "src/routes/orderRoutes.ts",
+      "handler": "getUserOrders",
+      "contractHash": "e95e3929e20515b39172f9c934165b27d0feb69e1a67c16d9f4359be7a1afc1b"
+    },
+    {
+      "method": "get",
+      "path": "/api/orders/{orderId}",
+      "source": "src/routes/orderRoutes.ts",
+      "handler": "getOrderById",
+      "contractHash": "88072f7588ec2029a0c0723d62140c5698b2a8d59807773c6285ef4290c4b650"
+    },
+    {
+      "method": "put",
+      "path": "/api/orders/{orderId}/cancel",
+      "source": "src/routes/orderRoutes.ts",
+      "handler": "cancelOrder",
+      "contractHash": "c052bb04b0871900a091a52df5c5055d6f1894aa2fef99289c413f4af5e85dd5"
+    },
+    {
+      "method": "get",
+      "path": "/api/orders/{orderId}/receipt",
+      "source": "src/routes/orderRoutes.ts",
+      "handler": "getOrderReceipt",
+      "contractHash": "d5f1dd816d72b1d528b53b1b72f923f3be58aadeb3c1c43fcbf16eafe4b41235"
+    },
+    {
+      "method": "put",
+      "path": "/api/orders/{orderId}/mark-printed",
+      "source": "src/routes/orderRoutes.ts",
+      "handler": "markReceiptPrinted",
+      "contractHash": "247bdc6af56f63a0bea62b0a9c26778d5fb1a4c860bcd0d6ba06a0c06c456594"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/scan-qr",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminOrderController.scanQRCode",
+      "contractHash": "1a264298f4a790ffbef2938ced4bac20dddae1a1c5f6e3261ef40e4ec2d7e842"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/scan-qr",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminOrderController.scanQRCode",
+      "contractHash": "1a9d1fe517b64740a27121564e8c2c4c9449e9d1d34c937f7dec8efb178b1904"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/orders/{orderId}/assign-employee",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminOrderController.assignEmployeeToOrder",
+      "contractHash": "5634fb1931e88d55a520d04e79859ebbd74e250e0da89d67aa976eec6f524cd6"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/orders-v2/statuses",
+      "source": "src/admin/order-list-v2-routes.ts",
+      "handler": "async (_req, res) => {",
+      "contractHash": "6040c568457fbcfd39ee78010c99873f61a019d8c14ec607013b1d7e73c1d4f9"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/orders-v2",
+      "source": "src/admin/order-list-v2-routes.ts",
+      "handler": "async (req, res) => {",
+      "contractHash": "1bbbda0174dd95676e02829bdb842bf42acf4b52d29a166933882146dce418b8"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/stores",
+      "source": "src/admin/store-routes.ts",
+      "handler": "storeController.getAllStores",
+      "contractHash": "779ac22e7dd5319d25023bb0f38aa83ab6974ec9971b5e9c3ef97a55c6bd7943"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/stores",
+      "source": "src/admin/store-routes.ts",
+      "handler": "storeController.createStore",
+      "contractHash": "7de38b4c1f1b6bfb9055ef87a3a7dd2e334341e3dd8eefddf5055d20e9de57bd"
+    },
+    {
+      "method": "put",
+      "path": "/api/admin/stores/{storeId}",
+      "source": "src/admin/store-routes.ts",
+      "handler": "storeController.updateStore",
+      "contractHash": "dc0d7721a8f604611e0f4fb9fd06684dfd7160176f8b9c480df8d20f0e429d26"
+    },
+    {
+      "method": "delete",
+      "path": "/api/admin/stores/{storeId}",
+      "source": "src/admin/store-routes.ts",
+      "handler": "storeController.deleteStore",
+      "contractHash": "727e24f9b46740233fcbe9365d377bff3bed1ff9c2f5d3aac9ba77d319d79e5a"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/stores/{storeId}/users",
+      "source": "src/admin/store-routes.ts",
+      "handler": "storeController.getStoreUsers",
+      "contractHash": "6e9d17aa7af78e74a20e060d58f0d476e68a0f52b285905faea2fcde9d7666ef"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/product-rules",
+      "source": "src/admin/product-rules-routes.ts",
+      "handler": "productRulesController.getAllProductRules",
+      "contractHash": "902b4ad79b774b420de9ccf51ac5a69edfb3f539a59a5092326893e7bd18d23e"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/product-rules/{ruleId}",
+      "source": "src/admin/product-rules-routes.ts",
+      "handler": "productRulesController.getProductRuleById",
+      "contractHash": "b91646ac998abf7a3177ed3dba93841ca01e069e521f1792046d241cb937b3b4"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/product-rules",
+      "source": "src/admin/product-rules-routes.ts",
+      "handler": "productRulesController.createProductRule",
+      "contractHash": "dc0d4a5c897a6478cbe16cbf3bf523c030ef804e4c871fb77e8a2f90de3e3e63"
+    },
+    {
+      "method": "put",
+      "path": "/api/admin/product-rules/{ruleId}",
+      "source": "src/admin/product-rules-routes.ts",
+      "handler": "productRulesController.updateProductRule",
+      "contractHash": "47ce533f61c28d1e9dc310eeb72e7aa2612f2e1ecb08095e94b2ec446f18bd83"
+    },
+    {
+      "method": "delete",
+      "path": "/api/admin/product-rules/{ruleId}",
+      "source": "src/admin/product-rules-routes.ts",
+      "handler": "productRulesController.deleteProductRule",
+      "contractHash": "b73669d75b92f9ecb8cc888f719db84b35de9ddda561a6e892784ecd75fe2a2b"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/product-rules/{ruleId}/size-options",
+      "source": "src/admin/product-rules-routes.ts",
+      "handler": "productRulesController.addSizeOption",
+      "contractHash": "7fb32a144929d0c1bfc03f65ee25f65960422fd4e2c3808e10b88b73b4c682d2"
+    },
+    {
+      "method": "put",
+      "path": "/api/admin/product-rules/{ruleId}/size-options/{sizeId}",
+      "source": "src/admin/product-rules-routes.ts",
+      "handler": "productRulesController.updateSizeOption",
+      "contractHash": "c3bc6a36614d29630df99852e8a70ef77683f335b6a5ddc97b63e91dbb68bfa1"
+    },
+    {
+      "method": "delete",
+      "path": "/api/admin/product-rules/{ruleId}/size-options/{sizeId}",
+      "source": "src/admin/product-rules-routes.ts",
+      "handler": "productRulesController.deleteSizeOption",
+      "contractHash": "fd090ff32bf6427d0e3bacea74e6c2daa9d32ba06f056b2d52d4c5ddd0c78133"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/product-rules/{ruleId}/cut-types",
+      "source": "src/admin/product-rules-routes.ts",
+      "handler": "productRulesController.assignCutTypes",
+      "contractHash": "ff4390a1be9d35649322d49cc4d70c965c866bbf58cf84090244d0d7d04e30d3"
+    },
+    {
+      "method": "delete",
+      "path": "/api/admin/product-rules/{ruleId}/cut-types/{cutTypeId}",
+      "source": "src/admin/product-rules-routes.ts",
+      "handler": "productRulesController.removeCutType",
+      "contractHash": "50ce582bf944229fe322db4c8787bd53b1cfb2745e5b6fc7e012e99bd12e34d4"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/cut-types",
+      "source": "src/admin/cut-types-routes.ts",
+      "handler": "cutTypesController.getAllCutTypes",
+      "contractHash": "bce5049c3fb5fa1e453e354917d5460e1530c91aee95cbec97de0c70fbc4dee6"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/cut-types/{cutTypeId}",
+      "source": "src/admin/cut-types-routes.ts",
+      "handler": "cutTypesController.getCutTypeById",
+      "contractHash": "8d03f4e7620178afacdf0b64a5d8e0b3f7c0a28fd40b91ea94966ab3b22a3ff0"
+    },
+    {
+      "method": "put",
+      "path": "/api/admin/cut-types/{cutTypeId}",
+      "source": "src/admin/cut-types-routes.ts",
+      "handler": "cutTypesController.updateCutType",
+      "contractHash": "08bcf12346564593404a13e257a3db25d1c780bcd579815fbfa232cd40742504"
+    },
+    {
+      "method": "delete",
+      "path": "/api/admin/cut-types/{cutTypeId}",
+      "source": "src/admin/cut-types-routes.ts",
+      "handler": "cutTypesController.deleteCutType",
+      "contractHash": "5d135c2cd290f3a7407724eaa92a7ed47655a98f62b327933e9b9d7e92944ddd"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/muhasebe-hareketleri",
+      "source": "src/admin/muhasebe-routes.ts",
+      "handler": "muhasebeController.getAllMuhasebeHareketleri",
+      "contractHash": "16d06046986d5f701ae64ee0776d4e0dfdd3a507a1a860f064592bf3895c7219"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/muhasebe-hareketleri",
+      "source": "src/admin/muhasebe-routes.ts",
+      "handler": "muhasebeController.createMuhasebeHareketi",
+      "contractHash": "e96ca77c99900c68f3f1883119fd247e3694910c793a5c791fb6ff4ae0dcd378"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/muhasebe/income-types",
+      "source": "src/admin/muhasebe-routes.ts",
+      "handler": "muhasebeController.getIncomeTypes",
+      "contractHash": "8c4bb47a593eed02b8359ed9b3facb1f7bcf7a1a42ba4122b5fcb4672505b50e"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/muhasebe/expense-types",
+      "source": "src/admin/muhasebe-routes.ts",
+      "handler": "muhasebeController.getExpenseTypes",
+      "contractHash": "8c4bb47a593eed02b8359ed9b3facb1f7bcf7a1a42ba4122b5fcb4672505b50e"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/muhasebe/store/{storeId}",
+      "source": "src/admin/muhasebe-routes.ts",
+      "handler": "muhasebeController.getMuhasebeHareketleriByStore",
+      "contractHash": "681f760cceff031891c57a4a650814177a8acc051f5ad42fa1a43ad1ebeba040"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/cart/add-to-admin-cart",
+      "source": "src/admin/admin-cart-routes.ts",
+      "handler": "adminCartController.addToAdminCart",
+      "contractHash": "02e9592d8e8569659abe40d3b6a7cb487c6828758ae0cc0b2d34266c107996f2"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/cart/{targetUserId}/{storeId}",
+      "source": "src/admin/admin-cart-routes.ts",
+      "handler": "adminCartController.getAdminCart",
+      "contractHash": "1039f689164c10940f8dfa9852e97410d952e9547de8ebe5eb4b099bf7eed795"
+    },
+    {
+      "method": "delete",
+      "path": "/api/admin/cart/{targetUserId}/{storeId}/clear",
+      "source": "src/admin/admin-cart-routes.ts",
+      "handler": "adminCartController.clearAdminCart",
+      "contractHash": "f99eba49e293c7f7b5151592554ea9bb85b139c6c684d85366a9dc7634c9230f"
+    },
+    {
+      "method": "delete",
+      "path": "/api/admin/cart/{targetUserId}/{storeId}/item/{adminCartItemId}",
+      "source": "src/admin/admin-cart-routes.ts",
+      "handler": "adminCartController.removeFromAdminCart",
+      "contractHash": "6a6029effb4937d416d0d76165ff508b66ecf753090c5ac5bdcca9bb7068b28d"
+    },
+    {
+      "method": "put",
+      "path": "/api/admin/cart/{targetUserId}/{storeId}/item/{adminCartItemId}",
+      "source": "src/admin/admin-cart-routes.ts",
+      "handler": "adminCartController.updateAdminCartItem",
+      "contractHash": "578be877a72bccd968d38e05366f0ddc0c647d0351549f20cfe4164f2ac2c28f"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/cart/create-order-from-admin-cart",
+      "source": "src/admin/admin-cart-routes.ts",
+      "handler": "adminCartController.createOrderFromAdminCart",
+      "contractHash": "8a7dab82cbca35df7916b8fab634ffb911343115ef05319a658aa3a7c3221e08"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/orders",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminOrderController.getAllOrders",
+      "contractHash": "ada03acdfc41f108b22e198abf8004d7bc068205321742805a86f5a9847e3cc8"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/orders/{orderId}",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminOrderController.getOrderById",
+      "contractHash": "de56c092ff5c7a6246272726902f27f0360a8c60eee0eba2a6c646af305de8d1"
+    },
+    {
+      "method": "put",
+      "path": "/api/admin/orders/{orderId}/cancel",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "cancelOrder",
+      "contractHash": "f9397e3545c8d98bd15f6cf17edb15fefb030b9215035559e24fb176711a5c30"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/orders/bulk-confirm",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminOrderController.bulkConfirmOrders",
+      "contractHash": "343496ed794983ea67e2d15f1b863627d38d1f96665d9619bcd6856f2b01bfbd"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/orders/create-for-store",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminOrderController.createOrderForStore",
+      "contractHash": "3927994ff68b45323b302e72d36222d5c977ecfb2ec3d5c2a08501cfbccbaef7"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/orders/{orderId}/generate-qr-images",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminOrderController.generateQRCodeImages",
+      "contractHash": "cca9ff25d568eb07af54f9fb7120938ca3d1acb905dc50a7d9a27ea3008868b3"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/barcode/scan",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminOrderController.scanBarcode",
+      "contractHash": "18be3efec12419cff69426ff0c1cf6057ccfd10e2b67366240b59cc38cad7f81"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/barcode/scan-multiple",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminOrderController.scanMultipleBarcodes",
+      "contractHash": "e25dbfab5ced32781a697cfb96b7fbd29b143463ec17bec15dc2602ab7ef986e"
+    },
+    {
+      "method": "put",
+      "path": "/api/admin/orders/{orderId}/status",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminOrderController.updateOrderStatus",
+      "contractHash": "07c774849e2dc12547e3556cb358448b15e6d511e4f9df23e1896c563422bb4f"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/orders/{orderId}/advance",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "advanceOrder",
+      "contractHash": "00e3799dee1a81c24f2d38f3e467b3f6c8391137a05211ee6aabeda906782e13"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/statistics/top-stores",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminStatisticsController.getTopStores",
+      "contractHash": "4c5d534bb2bfc38d8f23193e0a13cdfeb81e4ad393771ea82863169b9e9db8e0"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/statistics/top-products",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminStatisticsController.getTopProducts",
+      "contractHash": "10ced1b71396c09cdcb491e1abc8a213cefa48244f02fd2d4836c5f0fc5bc8d3"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/statistics/orders-over-time",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminStatisticsController.getOrdersOverTime",
+      "contractHash": "0c381299d822a788b9473685d3ec2fd4da14f274a80e5bc956f0ab411145f6fc"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/statistics/totals",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminStatisticsController.getTotalStatistics",
+      "contractHash": "31c186348e5d3e621dcd53eafaef4b04f988723ef94628441525adaee409945a"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/users",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminController.getAllUsers",
+      "contractHash": "89c0eeb5dc49581a4be3b58d29e45aab7f7912bfa5a34228bc25a5a2a768f872"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/users/{userId}",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminController.getUserById",
+      "contractHash": "075736a8043b3369e11af50c62fe54b9b53392ab890e5b70482bdc74165881af"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/users",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminController.createUser",
+      "contractHash": "e9326c9d01ef435c2ec4502b98a421bb404667ff5f5c9b122e5d8fd260bcd5dd"
+    },
+    {
+      "method": "put",
+      "path": "/api/admin/users/{userId}",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminController.updateUser",
+      "contractHash": "d6cdb08508324045166902c32d5328e89cb204870c02c913853a25bb4c2ee64c"
+    },
+    {
+      "method": "delete",
+      "path": "/api/admin/users/{userId}",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminController.deleteUser",
+      "contractHash": "07b27e1bcfe23bb71ef4bb1b2565c7e64c742422edde7d869c3a7a942cfab570"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/users/{userId}/assign-store",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminController.assignUserToStore",
+      "contractHash": "8ccd3db7508410d114fdfb793610fcd03a844dfd56366ab96095d343a82b9e86"
+    },
+    {
+      "method": "delete",
+      "path": "/api/admin/users/{userId}/remove-store",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminController.removeUserFromStore",
+      "contractHash": "5074dca02485207e2d571530ad07b4a6e765de6fac6d023d95ac43f20310695d"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/payments",
+      "source": "src/admin/admin-routes.ts",
+      "handler": "adminPaymentController.getAllPayments",
+      "contractHash": "b67f4fe5610ea524857f67ddc810c7e3cf91ee7a8e8668f5b33082c9a277771b"
+    },
+    {
+      "method": "post",
+      "path": "/api/auth/login",
+      "source": "src/auth/auth-routes.ts",
+      "handler": "function(req, res) {",
+      "contractHash": "891be1c8fbcaf0822f3a859be0c15597e58098a34968bc0e7f4229f4dc6b2143"
+    },
+    {
+      "method": "post",
+      "path": "/api/auth/logout",
+      "source": "src/auth/auth-routes.ts",
+      "handler": "function(req, res) {",
+      "contractHash": "6223efef9fff0eaa8b8803eab435c3cb7530c7f78b4e338721451d7fdce50b81"
+    },
+    {
+      "method": "post",
+      "path": "/api/auth/forgot-password",
+      "source": "src/auth/password-reset-routes.ts",
+      "handler": "passwordResetController.requestPasswordReset",
+      "contractHash": "692e581fd4fea44434063224f058795d2123052c4fb90b95bcfe569226a331e8"
+    },
+    {
+      "method": "get",
+      "path": "/api/auth/validate-reset-token/{token}",
+      "source": "src/auth/password-reset-routes.ts",
+      "handler": "passwordResetController.validateResetToken",
+      "contractHash": "1a032f1f8d615b8cae40a7055ec29b9aeca82e91a0471ae02d7049184eb97c29"
+    },
+    {
+      "method": "post",
+      "path": "/api/auth/reset-password",
+      "source": "src/auth/password-reset-routes.ts",
+      "handler": "passwordResetController.resetPassword",
+      "contractHash": "c0b3e5dd76b2a339b13a6807c52cc856241bc77558dc153d150fc11907710920"
+    },
+    {
+      "method": "get",
+      "path": "/api/stores",
+      "source": "src/admin/store-routes.ts",
+      "handler": "storeController.getAllStores",
+      "contractHash": "779ac22e7dd5319d25023bb0f38aa83ab6974ec9971b5e9c3ef97a55c6bd7943"
+    },
+    {
+      "method": "post",
+      "path": "/api/stores",
+      "source": "src/admin/store-routes.ts",
+      "handler": "storeController.createStore",
+      "contractHash": "7de38b4c1f1b6bfb9055ef87a3a7dd2e334341e3dd8eefddf5055d20e9de57bd"
+    },
+    {
+      "method": "put",
+      "path": "/api/stores/{storeId}",
+      "source": "src/admin/store-routes.ts",
+      "handler": "storeController.updateStore",
+      "contractHash": "dc0d7721a8f604611e0f4fb9fd06684dfd7160176f8b9c480df8d20f0e429d26"
+    },
+    {
+      "method": "delete",
+      "path": "/api/stores/{storeId}",
+      "source": "src/admin/store-routes.ts",
+      "handler": "storeController.deleteStore",
+      "contractHash": "727e24f9b46740233fcbe9365d377bff3bed1ff9c2f5d3aac9ba77d319d79e5a"
+    },
+    {
+      "method": "get",
+      "path": "/api/stores/{storeId}/users",
+      "source": "src/admin/store-routes.ts",
+      "handler": "storeController.getStoreUsers",
+      "contractHash": "6e9d17aa7af78e74a20e060d58f0d476e68a0f52b285905faea2fcde9d7666ef"
+    },
+    {
+      "method": "get",
+      "path": "/api/profile/me",
+      "source": "src/routes/userProfileRoutes.ts",
+      "handler": "userProfileController.getMyProfile",
+      "contractHash": "b42e333d6816924bca9c1173deed1b97532a8fdb4ad2f60a6cbbd28bb65a0125"
+    },
+    {
+      "method": "put",
+      "path": "/api/profile/store",
+      "source": "src/routes/userProfileRoutes.ts",
+      "handler": "userProfileController.updateStoreProfile",
+      "contractHash": "2e615a6cc7cdf7bddfc8c7138743e785e16bc78e5777a832fcb1068126273597"
+    },
+    {
+      "method": "put",
+      "path": "/api/profile/me",
+      "source": "src/routes/userProfileRoutes.ts",
+      "handler": "userProfileController.updateMyProfile",
+      "contractHash": "763c4dcaf1accf07a19a585fd45f3369a7dfa6484ba8f0656ee87349a46df573"
+    },
+    {
+      "method": "put",
+      "path": "/api/profile/change-password",
+      "source": "src/routes/userProfileRoutes.ts",
+      "handler": "userProfileController.changePassword",
+      "contractHash": "0452c52172e5aa49d0605943907e01e04f865036ed894df25479c46943fc2e50"
+    },
+    {
+      "method": "get",
+      "path": "/api/profile/accounting",
+      "source": "src/routes/userProfileRoutes.ts",
+      "handler": "userProfileController.getAccountingDetails",
+      "contractHash": "678ef235af0b33b61e65e5ef25605dfcec3f0e839e6ea161a85cbd3a3a979bb0"
+    },
+    {
+      "method": "get",
+      "path": "/api/store-addresses",
+      "source": "src/routes/storeAddressRoutes.ts",
+      "handler": "storeAddressController.getStoreAddresses",
+      "contractHash": "0edd37652c62d81e21828da1c5af81b70b2b940d6b00af51cf0dbb05f649f960"
+    },
+    {
+      "method": "post",
+      "path": "/api/store-addresses",
+      "source": "src/routes/storeAddressRoutes.ts",
+      "handler": "storeAddressController.createStoreAddress",
+      "contractHash": "bb97967a3a01b14df6123f123270e7ed07b3f491580d46ebaa6670557e1941c1"
+    },
+    {
+      "method": "put",
+      "path": "/api/store-addresses/{addressId}",
+      "source": "src/routes/storeAddressRoutes.ts",
+      "handler": "storeAddressController.updateStoreAddress",
+      "contractHash": "61c9c89eb4ccac59610f02391aa71ee0c58927856c8d8883fffb3634aae7415f"
+    },
+    {
+      "method": "put",
+      "path": "/api/store-addresses/{addressId}/set-default",
+      "source": "src/routes/storeAddressRoutes.ts",
+      "handler": "storeAddressController.setDefaultAddress",
+      "contractHash": "9cb237661cba4fecf059607a3d789677abdb434cad43ee57c8501593492cf4f2"
+    },
+    {
+      "method": "delete",
+      "path": "/api/store-addresses/{addressId}",
+      "source": "src/routes/storeAddressRoutes.ts",
+      "handler": "storeAddressController.deleteStoreAddress",
+      "contractHash": "a5046fec7a5ab920336ce19e5296559501c1c8ae1fb0c138f360215a0653ce2c"
+    },
+    {
+      "method": "get",
+      "path": "/api/my-statistics/balance",
+      "source": "src/routes/storeStatisticsRoutes.ts",
+      "handler": "storeStatisticsController.getMyStoreBalance",
+      "contractHash": "e78488141d1d2f6c05faa037a5d7b808ee8e0a5c66bf42f852aa38dfa52266c6"
+    },
+    {
+      "method": "get",
+      "path": "/api/my-statistics/user-stats",
+      "source": "src/routes/storeStatisticsRoutes.ts",
+      "handler": "storeStatisticsController.getMyUserStatistics",
+      "contractHash": "fc6407ce86e9053010e4b105418d9dd503edffb430261c1d3d5c327edcfd6cc5"
+    },
+    {
+      "method": "post",
+      "path": "/api/payments/process",
+      "source": "src/routes/paymentRoutes.ts",
+      "handler": "paymentController.processPayment.bind(paymentController)",
+      "contractHash": "6d2b2fef77efe1d284d3cb236d643a5850f4107ed95e4fae25c75644dce63325"
+    },
+    {
+      "method": "post",
+      "path": "/api/payments/webhook/dbye",
+      "source": "src/routes/paymentRoutes.ts",
+      "handler": "webhookController.handleDbyeWebhook.bind(webhookController)",
+      "contractHash": "9ad1058462573738bece1baf0d0318868d76a4abc9834754c0072747da3c52b7"
+    },
+    {
+      "method": "get",
+      "path": "/api/payments/mobile/3ds/callback",
+      "source": "src/routes/paymentRoutes.ts",
+      "handler": "webhookController.handleMobile3dsCallback.bind(webhookController)",
+      "contractHash": "85956fd615a9fe4f80fba0bdc4408f5b9f791b2ea63379069441b9650223f968"
+    },
+    {
+      "method": "post",
+      "path": "/api/payments/mobile/3ds/callback",
+      "source": "src/routes/paymentRoutes.ts",
+      "handler": "webhookController.handleMobile3dsCallback.bind(webhookController)",
+      "contractHash": "f53eae3404271b1628ddf5dab486702f79f12cdfa24b55aa6b26e48d560e68bd"
+    },
+    {
+      "method": "get",
+      "path": "/api/payments/web/callback",
+      "source": "src/routes/paymentRoutes.ts",
+      "handler": "webhookController.handleWebCallback.bind(webhookController)",
+      "contractHash": "510201e3f7b352d9c488259794904a85126f368a2b5ea270527a1d978d12868d"
+    },
+    {
+      "method": "post",
+      "path": "/api/payments/web/callback",
+      "source": "src/routes/paymentRoutes.ts",
+      "handler": "webhookController.handleWebCallback.bind(webhookController)",
+      "contractHash": "89bcebb1f18d08de329bfb56ab07a3fb2f862d41df8a5382ae5e13fe94a000fc"
+    },
+    {
+      "method": "get",
+      "path": "/api/payments/webhook/success",
+      "source": "src/routes/paymentRoutes.ts",
+      "handler": "webhookController.handleSuccessWebhookLegacy.bind(webhookController)",
+      "contractHash": "2c7e66f79d8102fee5462edd9c92b500da58ca6fdcbfc95bf9f4b82e522640bf"
+    },
+    {
+      "method": "post",
+      "path": "/api/payments/webhook/success",
+      "source": "src/routes/paymentRoutes.ts",
+      "handler": "webhookController.handleSuccessWebhookLegacy.bind(webhookController)",
+      "contractHash": "e1977d99321e14938b621ed94c826d136b1724eb2051c1b8253eae80a3f74254"
+    },
+    {
+      "method": "get",
+      "path": "/api/payments/webhook/failure",
+      "source": "src/routes/paymentRoutes.ts",
+      "handler": "webhookController.handleFailureWebhookLegacy.bind(webhookController)",
+      "contractHash": "2c7e66f79d8102fee5462edd9c92b500da58ca6fdcbfc95bf9f4b82e522640bf"
+    },
+    {
+      "method": "post",
+      "path": "/api/payments/webhook/failure",
+      "source": "src/routes/paymentRoutes.ts",
+      "handler": "webhookController.handleFailureWebhookLegacy.bind(webhookController)",
+      "contractHash": "e1977d99321e14938b621ed94c826d136b1724eb2051c1b8253eae80a3f74254"
+    },
+    {
+      "method": "get",
+      "path": "/api/payments/my-store-payments",
+      "source": "src/routes/paymentRoutes.ts",
+      "handler": "adminPaymentController.getStorePayments.bind(adminPaymentController)",
+      "contractHash": "f500cc45c896c73e38ebd60518dbb3a09692b2deb9af1bda39c0d5f5306d33a8"
+    },
+    {
+      "method": "get",
+      "path": "/api/employee-assignment/form",
+      "source": "src/routes/employeeAssignmentRoutes.ts",
+      "handler": "(req, res) => {",
+      "contractHash": "3b66f2a0cd677747cc337acdd0257858732b422c6d338bdadd729edf760f7a5a"
+    },
+    {
+      "method": "post",
+      "path": "/api/employee-assignment/assign",
+      "source": "src/routes/employeeAssignmentRoutes.ts",
+      "handler": "employeeAssignmentController.assignEmployeeToOrder",
+      "contractHash": "19c9fe6b05379995de06dfe4d44e9bfbb6b3b143d8799786348ef887979eccdf"
+    },
+    {
+      "method": "get",
+      "path": "/api/employee-stats/{employeeId}",
+      "source": "src/routes/employeeStatsRoutes.ts",
+      "handler": "employeeStatsController.getEmployeeStats",
+      "contractHash": "920947a197c3df6766639cb8d97ad7ff9140c9780d32c707fe373238b482d338"
+    },
+    {
+      "method": "get",
+      "path": "/api/login-assets/random",
+      "source": "src/routes/loginAssetsRoutes.ts",
+      "handler": "loginAssetsController.getRandomCarpetStoreImage.bind(loginAssetsController)",
+      "contractHash": "b557fb0d2d8c21a3a5092f6cd78e1aa7a4c261f5beb52e4f6acd355967a797c8"
+    },
+    {
+      "method": "get",
+      "path": "/api/site-settings",
+      "source": "src/routes/siteSettingsRoutes.ts",
+      "handler": "wrap(async (_req, res) => {",
+      "contractHash": "d135e6baa1513ef372a2593d01400c6cc4ac6af8aff3276f09b7c4682d0be731"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/site-settings",
+      "source": "src/routes/siteSettingsRoutes.ts",
+      "handler": "wrap(async (_req, res) => {",
+      "contractHash": "7e010b114db798a9f620aa22c205b75016af5113d5b3b6571155eecbed9cdb43"
+    },
+    {
+      "method": "patch",
+      "path": "/api/admin/site-settings",
+      "source": "src/routes/siteSettingsRoutes.ts",
+      "handler": "wrap(async (req, res) => {",
+      "contractHash": "da9e4c1f7014b2d4969af3ce464d38d05b435e77ba4ef74d7a21232fce97a55b"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/site-settings/banners",
+      "source": "src/routes/siteSettingsRoutes.ts",
+      "handler": "wrap(async (_req, res) => {",
+      "contractHash": "704497c3a58354fd204faaacbbc8deb7cf2ccb4b018cd25a70cebb3d76340b10"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/site-settings/banners",
+      "source": "src/routes/siteSettingsRoutes.ts",
+      "handler": "wrap(async (req, res) => {",
+      "contractHash": "48e94fcbc8219cc83a8bbb45bc92fdbc04262ea056c47d17005fcbc912eff959"
+    },
+    {
+      "method": "patch",
+      "path": "/api/admin/site-settings/banners/{id}",
+      "source": "src/routes/siteSettingsRoutes.ts",
+      "handler": "wrap(async (req, res) => {",
+      "contractHash": "ea446f8e99a83e7d61fea75578a1d23ba9a24b0692237bdfd78ff7da10e18298"
+    },
+    {
+      "method": "delete",
+      "path": "/api/admin/site-settings/banners/{id}",
+      "source": "src/routes/siteSettingsRoutes.ts",
+      "handler": "wrap(async (req, res) => {",
+      "contractHash": "a28454e679958e8982f18b4d4aa0211d5aea670170602a4415dac28bb0b2f198"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/site-settings/banner-image",
+      "source": "src/routes/siteSettingsRoutes.ts",
+      "handler": "(req, res) => {",
+      "contractHash": "b6488f9f13f7158aa2f3e2931b5451d09a3253f8d7bb62276addfd01ec1b83f4"
+    },
+    {
+      "method": "get",
+      "path": "/api/notifications/user/{userId}",
+      "source": "src/routes/notificationRoutes.ts",
+      "handler": "notificationController.getUserNotifications.bind(notificationController)",
+      "contractHash": "5b466d463843dbcc84161ca4d8955af7445723562c5b2e51a3ef955a884f431d"
+    },
+    {
+      "method": "get",
+      "path": "/api/notifications/user/{userId}/unread-count",
+      "source": "src/routes/notificationRoutes.ts",
+      "handler": "notificationController.getUnreadCount.bind(notificationController)",
+      "contractHash": "ebc77fd006b89fccb598fa04f234318e10ae738930292b418f5dc2de6323dbd2"
+    },
+    {
+      "method": "put",
+      "path": "/api/notifications/read/{notificationId}",
+      "source": "src/routes/notificationRoutes.ts",
+      "handler": "notificationController.markAsRead.bind(notificationController)",
+      "contractHash": "4ad8e8cfed87e32057b0ea1d6196ac7a1679929740b30ad6322eaf843499863e"
+    },
+    {
+      "method": "put",
+      "path": "/api/notifications/read-all/{userId}",
+      "source": "src/routes/notificationRoutes.ts",
+      "handler": "notificationController.markAllAsRead.bind(notificationController)",
+      "contractHash": "eed06505067de35533f19e2fd8f558148d4978d18bfd8c2f08fa0dda7bb6f577"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/usd-muhasebe/hareketler",
+      "source": "src/routes/usdMuhasebeRoutes.ts",
+      "handler": "usdMuhasebeController.getAllUsdMuhasebeHareketleri",
+      "contractHash": "7868019a2b10aec1f1d2c5c92bf21ae030967f437534565e2e92ec3ff78515fb"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/usd-muhasebe/store/{storeId}",
+      "source": "src/routes/usdMuhasebeRoutes.ts",
+      "handler": "usdMuhasebeController.getUsdMuhasebeHareketleriByStore",
+      "contractHash": "681f760cceff031891c57a4a650814177a8acc051f5ad42fa1a43ad1ebeba040"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/usd-muhasebe/hareketler",
+      "source": "src/routes/usdMuhasebeRoutes.ts",
+      "handler": "usdMuhasebeController.createUsdMuhasebeHareketi",
+      "contractHash": "fb5005612425241dea58b468664e201fa66e89e892141d345a229a2c954e06f2"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/usd-muhasebe/income-types",
+      "source": "src/routes/usdMuhasebeRoutes.ts",
+      "handler": "usdMuhasebeController.getUsdIncomeTypes",
+      "contractHash": "c85dae9ea50b75e285c8c8a51e1ca427d1383325387aece5c32f6dec4914647a"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/usd-muhasebe/expense-types",
+      "source": "src/routes/usdMuhasebeRoutes.ts",
+      "handler": "usdMuhasebeController.getUsdExpenseTypes",
+      "contractHash": "c85dae9ea50b75e285c8c8a51e1ca427d1383325387aece5c32f6dec4914647a"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/purchase-management/suppliers",
+      "source": "src/routes/purchasePriceListRoutes.ts",
+      "handler": "getAllSuppliers",
+      "contractHash": "570f8c2d4edb280f1718f8aaa4e0f27719406c9a9e2a2c94c5dbb4e8446f178a"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/purchase-management/suppliers/balance-summary",
+      "source": "src/routes/purchasePriceListRoutes.ts",
+      "handler": "getSupplierBalanceSummary",
+      "contractHash": "dcf293df643727e62c3cc54b24472700af95a8f24d20a443466804203c6e3d67"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/purchase-management/suppliers",
+      "source": "src/routes/purchasePriceListRoutes.ts",
+      "handler": "createSupplier",
+      "contractHash": "89460f9a074a25f4dfec395675bc02c09814d37ace8be0b0c61729403105fd3e"
+    },
+    {
+      "method": "put",
+      "path": "/api/admin/purchase-management/suppliers/{id}",
+      "source": "src/routes/purchasePriceListRoutes.ts",
+      "handler": "updateSupplier",
+      "contractHash": "ef63872344df2b01f62a013ea16cdd16b842458204cb0400dfceddbaae58b846"
+    },
+    {
+      "method": "put",
+      "path": "/api/admin/purchase-management/suppliers/{id}/balance",
+      "source": "src/routes/purchasePriceListRoutes.ts",
+      "handler": "updateSupplierBalance",
+      "contractHash": "ce04af2a434ba07ecc91f4f6e14811c341ecbc0452c23ab104392be748e321a5"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/purchase-management/suppliers/{supplier_id}/purchase-product",
+      "source": "src/routes/purchasePriceListRoutes.ts",
+      "handler": "purchaseProductFromSupplier",
+      "contractHash": "36416320adb7882da9b0c89caa49cd1811f15a155e1bf0515f3a0ce28b1a8865"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/purchase-management/suppliers/{id}/balance-history",
+      "source": "src/routes/purchasePriceListRoutes.ts",
+      "handler": "getSupplierBalanceHistory",
+      "contractHash": "46ffaaf774ae1136f069857a1f0bab0448434fafb03433f1479d7dafb74464ed"
+    },
+    {
+      "method": "delete",
+      "path": "/api/admin/purchase-management/suppliers/{id}",
+      "source": "src/routes/purchasePriceListRoutes.ts",
+      "handler": "deactivateSupplier",
+      "contractHash": "083afcdfd3516785a6ffac69276c6ff08e18776c461727d7e4f5024bf5562c18"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/purchase-management/purchase-price-lists",
+      "source": "src/routes/purchasePriceListRoutes.ts",
+      "handler": "getAllPurchasePriceLists",
+      "contractHash": "fcfc37d1551bc3b6c0001577d57b2ccb3054b001f630760e61e571de31023664"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/purchase-management/purchase-price-lists/default",
+      "source": "src/routes/purchasePriceListRoutes.ts",
+      "handler": "getDefaultPurchasePriceList",
+      "contractHash": "1bf684e1a47a424552050ec6b95229bbe3007b82027ce378a849ae849e6f955b"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/purchase-management/purchase-price-lists/{id}",
+      "source": "src/routes/purchasePriceListRoutes.ts",
+      "handler": "getPurchasePriceListById",
+      "contractHash": "405a82bd77e97a4741d52bee7017f8d4dcfb3a9055cb496cbc3557b5990f9ca3"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/purchase-management/purchase-price-lists",
+      "source": "src/routes/purchasePriceListRoutes.ts",
+      "handler": "createPurchasePriceList",
+      "contractHash": "56e23491c8b97b66103b8097ebed56edad743ec4803921aa79c597663bcd861d"
+    },
+    {
+      "method": "put",
+      "path": "/api/admin/purchase-management/purchase-price-lists/{id}",
+      "source": "src/routes/purchasePriceListRoutes.ts",
+      "handler": "updatePurchasePriceList",
+      "contractHash": "19282666c48d50de5f19483b73616ea6dbf01e723047a0bb3a8b7ae874ab42da"
+    },
+    {
+      "method": "put",
+      "path": "/api/admin/purchase-management/purchase-price-lists/{listId}/collections/{collectionId}",
+      "source": "src/routes/purchasePriceListRoutes.ts",
+      "handler": "updateCollectionPrice",
+      "contractHash": "bbfac890a9ddbd85d64882574560415f3e16da830295dbb314a08f9c79b7f837"
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/purchase-management/suppliers/{supplier_id}/purchase-cart/items",
+      "source": "src/routes/purchasePriceListRoutes.ts",
+      "handler": "addToPurchaseCart",
+      "contractHash": "1d7133ff4911ff5f911f8d790946564bb29e77f64b584f735f99cd36d18956d0"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/purchase-management/suppliers/{supplier_id}/purchase-cart",
+      "source": "src/routes/purchasePriceListRoutes.ts",
+      "handler": "getPurchaseCart",
+      "contractHash": "fe00e06ed9b7478aa23f0030e518363c2bf1382883761788c87b799ef3c35765"
+    },
+    {
+      "method": "put",
+      "path": "/api/admin/purchase-management/suppliers/{supplier_id}/purchase-cart/items/{item_id}",
+      "source": "src/routes/purchasePriceListRoutes.ts",
+      "handler": "updatePurchaseCartItem",
+      "contractHash": "f597f11810720f8d7b05073c87df3be7eec2749d3c8dac7eb6cb6108aa798d2a"
+    },
+    {
+      "method": "delete",
+      "path": "/api/admin/purchase-management/suppliers/{supplier_id}/purchase-cart/items/{item_id}",
+      "source": "src/routes/purchasePriceListRoutes.ts",
+      "handler": "removePurchaseCartItem",
+      "contractHash": "3f5266d140f68a9bdd0264f55c501fc3edcd9a7f7d26bf8f265305fedaf21848"
+    },
+    {
+      "method": "put",
+      "path": "/api/admin/purchase-management/suppliers/{supplier_id}/purchase-from-cart",
+      "source": "src/routes/purchasePriceListRoutes.ts",
+      "handler": "purchaseFromCart",
+      "contractHash": "8a3919ae7cb090c9406ac5662cd2d8109fbc2181edea56265f62ce3c5cabbe89"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/purchase-management/purchases",
+      "source": "src/routes/purchasePriceListRoutes.ts",
+      "handler": "getAllPurchases",
+      "contractHash": "35f15ab4b49f9b0201f9772707506e038bb35d6159175a1898ab79519dd00856"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/purchase-management/suppliers/{supplier_id}/purchase-summary",
+      "source": "src/routes/purchasePriceListRoutes.ts",
+      "handler": "getSupplierPurchaseSummary",
+      "contractHash": "02471a66a7537c7a52f286ba02d100229ae6dfbf81e5c864ca83a11669d99d8f"
+    },
+    {
+      "method": "get",
+      "path": "/api/public/catalog/collections",
+      "source": "src/routes/publicCatalogRoutes.ts",
+      "handler": "publicCatalogController.getPublicCollections.bind(publicCatalogController)",
+      "contractHash": "670e30f3f4a865676bd428f65b182ef1accffae80aa44c8899a5efb68629fb72"
+    },
+    {
+      "method": "post",
+      "path": "/api/contact/submit",
+      "source": "src/routes/contactFormRoutes.ts",
+      "handler": "contactFormController.submitContactForm.bind(contactFormController)",
+      "contractHash": "15ab2d8c6e180848af0e3951ae5fac1c076553c305603cc3dbbd6f96a3775d06"
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/contact-forms",
+      "source": "src/admin/contact-form-routes.ts",
+      "handler": "contactFormController.getContactForms.bind(contactFormController)",
+      "contractHash": "eb6e1e4d00f9acb91e39ce09bfbd8bc0156700561684235abbe4634fa4e46ea3"
+    },
+    {
+      "method": "put",
+      "path": "/api/admin/contact-forms/{id}",
+      "source": "src/admin/contact-form-routes.ts",
+      "handler": "contactFormController.updateContactForm.bind(contactFormController)",
+      "contractHash": "92c72a76f77f623f10dd4c1f23993de7f7cb19dab8d36efee5b007de454de7a1"
+    },
+    {
+      "method": "delete",
+      "path": "/api/admin/contact-forms/{id}",
+      "source": "src/admin/contact-form-routes.ts",
+      "handler": "contactFormController.deleteContactForm.bind(contactFormController)",
+      "contractHash": "c6f7e2a41e6ef2f6105fd0a4bb297a70edbb723ff57218231f08acb5d86d76c0"
+    },
+    {
+      "method": "get",
+      "path": "/",
+      "source": "src/server.ts",
+      "handler": "(req, res) => {",
+      "contractHash": "fce9c0c64a5e60f23feb5b5365b6f799ff7267c38fa243c052f733ed139e944b"
+    },
+    {
+      "method": "get",
+      "path": "/healthz",
+      "source": "src/server.ts",
+      "handler": "(req, res) => {",
+      "contractHash": "63e905da4310b58e9c42f8b5d36506cb30be4b16055064d84a455984ca6e4bac"
+    },
+    {
+      "method": "get",
+      "path": "/api",
+      "source": "src/server.ts",
+      "handler": "(req, res) => {",
+      "contractHash": "fce9c0c64a5e60f23feb5b5365b6f799ff7267c38fa243c052f733ed139e944b"
+    }
+  ]
+}

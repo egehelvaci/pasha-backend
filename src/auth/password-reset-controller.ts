@@ -129,28 +129,6 @@ export class PasswordResetController {
       }
     }
   }
-
-  /**
-   * Süresi dolmuş token'ları temizle (Admin endpoint)
-   * DELETE /api/auth/cleanup-tokens
-   */
-  async cleanupExpiredTokens(req: Request, res: Response) {
-    try {
-      const count = await passwordResetService.cleanupExpiredTokens()
-
-      res.status(200).json({
-        success: true,
-        message: `${count} adet süresi dolmuş token temizlendi`,
-        count
-      })
-    } catch (error) {
-      console.error('Token temizleme hatası:', error)
-      res.status(500).json({
-        success: false,
-        message: 'Sunucu hatası oluştu'
-      })
-    }
-  }
 }
 
 export const passwordResetController = new PasswordResetController() 

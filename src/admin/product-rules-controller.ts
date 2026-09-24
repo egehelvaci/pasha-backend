@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
-import prisma from '../utils/prisma'
 import { Prisma } from '../../generated/prisma'
 import { ProductService } from '../product-service'
+import prisma from '../utils/prisma'
 
 export class ProductRulesController {
   private productService: ProductService
@@ -18,7 +18,6 @@ export class ProductRulesController {
     this.deleteSizeOption = this.deleteSizeOption.bind(this)
     this.assignCutTypes = this.assignCutTypes.bind(this)
     this.removeCutType = this.removeCutType.bind(this)
-    this.regenerateVariationsForRule = this.regenerateVariationsForRule.bind(this)
   }
 
   /**
@@ -801,50 +800,6 @@ export class ProductRulesController {
     } catch (error) {
       console.error('Kesim türü atama kaldırma hatası:', error)
       const errorMessage = error instanceof Error ? error.message : 'Kesim türü ataması kaldırılırken bir hata oluştu'
-      
-      return res.status(500).json({
-        success: false,
-        message: errorMessage
-      })
-    }
-  }
-
-  /**
-   * Belirli bir kurala sahip tüm ürünlerin varyasyonlarını yeniden oluştur
-   */
-  async regenerateVariationsForRule(req: Request, res: Response) {
-    try {
-      const { ruleId } = req.params
-      
-      if (!ruleId || isNaN(parseInt(ruleId))) {
-        return res.status(400).json({
-          success: false,
-          message: 'Geçerli bir kural ID gönderilmelidir'
-        })
-      }
-      
-      // Kuralın var olup olmadığını kontrol et
-      const rule = await prisma.productrules.findUnique({
-        where: { id: parseInt(ruleId) }
-      })
-      
-      if (!rule) {
-        return res.status(404).json({
-          success: false,
-          message: 'Kural bulunamadı'
-        })
-      }
-      
-      const result = await this.productService.regenerateVariationsForRule(parseInt(ruleId))
-      
-      return res.status(200).json({
-        success: true,
-        message: `${result.processedProducts} ürünün varyasyonları başarıyla yeniden oluşturuldu`,
-        data: result
-      })
-    } catch (error) {
-      console.error('Kural bazlı varyasyon güncelleme hatası:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Kural bazlı varyasyon güncelleme başarısız'
       
       return res.status(500).json({
         success: false,

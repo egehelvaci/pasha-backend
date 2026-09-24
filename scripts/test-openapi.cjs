@@ -47,6 +47,7 @@ async function main() {
   try { app = require('../src/server').default; }
   finally { express.application.listen = originalListen; }
   const actual = [];
+  const dispatchRouter = express.Router();
   function expand(path) {
     if (!path.includes('?')) return [path];
     const match = path.match(/\/(:\w+)\?/);
@@ -59,13 +60,24 @@ async function main() {
         for (const route of expand(prefix + (layer.route.path === '/' ? '' : layer.route.path))) {
           const path = (route || '/').replace(/\/{2,}/g, '/').replace(/:(\w+)/g, '{$1}');
           if (path === '/api/openapi.json') continue;
-          for (const method of Object.keys(layer.route.methods)) actual.push(`${method} ${path}`);
+          for (const method of Object.keys(layer.route.methods)) {
+            actual.push(`${method} ${path}`);
+            dispatchRouter[method](path.replace(/\{([^}]+)\}/g, ':$1'), (_req, res) => res.end());
+          }
         }
       } else if (layer.handle?.stack) walk(layer.handle.stack, prefix + (layer.testMountPath || ''));
     }
   }
   walk(app._router.stack);
   assert.deepEqual([...new Set(actual)].sort(), documented.sort(), 'Runtime routes differ from OpenAPI');
+  // Check actual registration order for shadowing without invoking business handlers.
+  for (const operation of actual) {
+    const [method, pattern] = operation.split(' ');
+    const concrete = pattern.replace(/\{[^}]+\}/g, '00000000-0000-4000-8000-000000000001');
+    const selected = dispatchRouter.stack.find(layer => layer.route.methods[method] && layer.match(concrete));
+    assert(selected, `Unreachable route: ${operation}`);
+    assert.equal(selected.route.path, pattern.replace(/\{([^}]+)\}/g, ':$1'), `Shadowed route: ${operation}`);
+  }
 
   const server = originalListen.call(app, 0, '127.0.0.1');
   await new Promise(resolve => server.once('listening', resolve));

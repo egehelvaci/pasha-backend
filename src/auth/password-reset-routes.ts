@@ -1,6 +1,5 @@
 import { Router } from 'express'
 import { passwordResetController } from './password-reset-controller'
-import { authMiddleware, authorizeRoles } from './auth-middleware'
 
 const router = Router()
 
@@ -23,12 +22,5 @@ router.get('/validate-reset-token/:token', passwordResetController.validateReset
  * Body: { token: string, newPassword: string, confirmPassword: string }
  */
 router.post('/reset-password', passwordResetController.resetPassword)
-
-/**
- * Süresi dolmuş token'ları temizle (Admin endpoint)
- * DELETE /api/auth/cleanup-tokens
- * Requires authentication
- */
-router.delete('/cleanup-tokens', authMiddleware, authorizeRoles('admin'), passwordResetController.cleanupExpiredTokens)
 
 export default router 

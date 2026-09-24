@@ -1,24 +1,17 @@
 import express from 'express';
+import { authMiddleware, authorizeRoles } from '../auth/auth-middleware';
 import {
+  createProduct,
+  deleteProduct,
   getAllProducts,
   getAllProductsWithoutPagination,
   getProductById,
-  getProductsByCollection,
-  createProduct,
-  createProductSimple,
+  getProductVariationOptions,
   updateProduct,
-  deleteProduct,
-  uploadProductImage,
   updateProductStock,
   updateProductStockAreaM2,
-  updateProductStockHybrid,
-  getAllProductRules,
-  getProductVariationOptions,
-  regenerateProductVariations,
-  regenerateVariationsForRule,
-  regenerateAllVariations
+  uploadProductImage
 } from '../controllers/productController';
-import { authMiddleware, authorizeRoles } from '../auth/auth-middleware';
 
 const router = express.Router();
 
@@ -28,29 +21,11 @@ router.get('/', authMiddleware, getAllProducts);
 // Sadece giriş yapmış kullanıcılar - Tüm ürünleri getir (pagination olmadan)
 router.get('/all', authMiddleware, getAllProductsWithoutPagination);
 
-// Herkes erişebilir - Tüm ürün kurallarını getir (dropdown için)
-router.get('/rules', getAllProductRules);
-
-// Sadece giriş yapmış kullanıcılar - Koleksiyona göre ürünleri getir
-router.get('/by-collection/:collectionId', authMiddleware, getProductsByCollection);
-
 // Admin ve editör erişebilir - Ürünün stok varyasyon seçeneklerini getir
 router.get('/:id/variations', authMiddleware, authorizeRoles('admin', 'editor'), getProductVariationOptions);
 
-// Admin ve editör erişebilir - Ürünün varyasyonlarını yeniden oluştur
-router.post('/:id/regenerate-variations', authMiddleware, authorizeRoles('admin', 'editor'), regenerateProductVariations);
-
-// Admin ve editör erişebilir - Belirli kurala sahip ürünlerin varyasyonlarını yeniden oluştur
-router.post('/regenerate-variations/rule/:ruleId', authMiddleware, authorizeRoles('admin', 'editor'), regenerateVariationsForRule);
-
-// Admin ve editör erişebilir - Tüm ürünlerin varyasyonlarını yeniden oluştur
-router.post('/regenerate-variations/all', authMiddleware, authorizeRoles('admin', 'editor'), regenerateAllVariations);
-
 // Sadece giriş yapmış kullanıcılar - ID'ye göre ürün getir
 router.get('/:id', authMiddleware, getProductById);
-
-// Admin ve editör erişebilir - Test amaçlı basit ürün oluşturma endpoint'i
-router.post('/test-create', authMiddleware, authorizeRoles('admin', 'editor'), uploadProductImage, createProductSimple);
 
 // Admin ve editör erişebilir - Yeni ürün oluştur (görsel yükleme ile)
 router.post('/', authMiddleware, authorizeRoles('admin', 'editor'), uploadProductImage, createProduct);
@@ -66,8 +41,5 @@ router.patch('/:id/stock', authMiddleware, authorizeRoles('admin', 'editor'), up
 
 // Admin ve editör erişebilir - M² bazlı stok güncelle
 router.patch('/:id/stock-area', authMiddleware, authorizeRoles('admin', 'editor'), updateProductStockAreaM2);
-
-// Admin ve editör erişebilir - Hibrit stok güncelle
-router.patch('/:id/stock-hybrid', authMiddleware, authorizeRoles('admin', 'editor'), updateProductStockHybrid);
 
 export default router; 

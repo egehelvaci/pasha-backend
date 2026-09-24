@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import prisma from '../utils/prisma';
 import nodemailer from 'nodemailer';
+import prisma from '../utils/prisma';
 
 export class ContactFormController {
 
@@ -456,59 +456,6 @@ export class ContactFormController {
     } catch (error) {
       console.error('❌ E-posta gönderme hatası detayı:', error);
       throw error; // Hatayı üst seviyeye ilet
-    }
-  }
-
-  /**
-   * SMTP bağlantısını test et (geliştirme amaçlı)
-   * GET /api/contact/test-smtp
-   */
-  async testSMTP(req: Request, res: Response) {
-    try {
-      console.log('🔧 SMTP Test başlatılıyor...');
-      
-      // SMTP ayarları kontrol et
-      console.log('🔍 SMTP Ayarları:');
-      console.log('SMTP_HOST:', process.env.SMTP_HOST || 'YOK');
-      console.log('SMTP_PORT:', process.env.SMTP_PORT || 'YOK');
-      console.log('SMTP_USER:', process.env.SMTP_USER || 'YOK');
-      console.log('SMTP_PASS:', process.env.SMTP_PASS ? 'Mevcut (gizli)' : 'YOK');
-      
-      if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-        return res.status(400).json({
-          success: false,
-          message: 'SMTP ayarları eksik',
-          details: {
-            SMTP_USER: process.env.SMTP_USER ? 'Mevcut' : 'YOK',
-            SMTP_PASS: process.env.SMTP_PASS ? 'Mevcut' : 'YOK'
-          }
-        });
-      }
-
-      // Test e-postası gönder
-      await this.sendConfirmationEmail({
-        companyName: 'SMTP Test Firması',
-        authorityName: 'Test Kullanıcı',
-        email: process.env.SMTP_USER, // Kendi adresine gönder
-        phone: '05551234567',
-        address: 'Test Adresi',
-        notes: 'Bu bir SMTP test mesajıdır.'
-      });
-
-      return res.status(200).json({
-        success: true,
-        message: 'SMTP test e-postası başarıyla gönderildi',
-        testEmail: process.env.SMTP_USER
-      });
-
-    } catch (error: any) {
-      console.error('❌ SMTP Test hatası:', error);
-      return res.status(500).json({
-        success: false,
-        message: 'SMTP test başarısız',
-        error: error.message,
-        details: error
-      });
     }
   }
 }
