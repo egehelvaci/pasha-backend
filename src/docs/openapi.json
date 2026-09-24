@@ -506,33 +506,87 @@
                       "type": "boolean"
                     },
                     "data": {
-                      "type": "object",
-                      "properties": {
-                        "sizeOptions": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": true
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "sizeOptions": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "cutTypes": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "canHaveFringe": {
+                              "type": "boolean"
+                            },
+                            "variations": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "stock": {
+                              "type": "object",
+                              "additionalProperties": true
+                            }
                           }
                         },
-                        "cutTypes": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": true
-                          }
-                        },
-                        "canHaveFringe": {
-                          "type": "boolean"
-                        },
-                        "variations": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": true
+                        {
+                          "type": "object",
+                          "properties": {
+                            "sizeOptions": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "cutTypes": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "canHaveFringe": {
+                              "type": "boolean"
+                            },
+                            "stock": {
+                              "type": "object",
+                              "properties": {
+                                "enabled": {
+                                  "type": "boolean"
+                                },
+                                "availableAreaM2": {
+                                  "type": "number"
+                                },
+                                "reservedAreaM2": {
+                                  "type": "number"
+                                },
+                                "consumableAreaM2": {
+                                  "type": "number"
+                                }
+                              }
+                            },
+                            "variations": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            }
                           }
                         }
-                      }
+                      ]
                     }
                   }
                 }
@@ -655,6 +709,23 @@
                         },
                         "canHaveFringe": {
                           "type": "boolean"
+                        },
+                        "stock": {
+                          "type": "object",
+                          "properties": {
+                            "enabled": {
+                              "type": "boolean"
+                            },
+                            "availableAreaM2": {
+                              "type": "number"
+                            },
+                            "reservedAreaM2": {
+                              "type": "number"
+                            },
+                            "consumableAreaM2": {
+                              "type": "number"
+                            }
+                          }
                         },
                         "name": {
                           "type": "string"
@@ -817,6 +888,23 @@
                         },
                         "canHaveFringe": {
                           "type": "boolean"
+                        },
+                        "stock": {
+                          "type": "object",
+                          "properties": {
+                            "enabled": {
+                              "type": "boolean"
+                            },
+                            "availableAreaM2": {
+                              "type": "number"
+                            },
+                            "reservedAreaM2": {
+                              "type": "number"
+                            },
+                            "consumableAreaM2": {
+                              "type": "number"
+                            }
+                          }
                         },
                         "name": {
                           "type": "string"
@@ -1034,94 +1122,216 @@
                       "type": "boolean"
                     },
                     "data": {
-                      "type": "object",
-                      "properties": {
-                        "variations": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": true
-                          }
-                        },
-                        "pricing": {
+                      "anyOf": [
+                        {
                           "type": "object",
                           "properties": {
-                            "price": {
-                              "type": "number",
+                            "pricing": {
+                              "type": "object",
+                              "properties": {
+                                "price": {
+                                  "type": "number",
+                                  "nullable": true
+                                },
+                                "currency": {
+                                  "type": "string"
+                                },
+                                "userTypeId": {
+                                  "type": "number"
+                                }
+                              }
+                            },
+                            "purchasePricing": {
+                              "type": "object",
+                              "properties": {
+                                "price_per_square_meter": {
+                                  "type": "number"
+                                },
+                                "currency": {
+                                  "type": "string"
+                                },
+                                "list_name": {
+                                  "type": "string"
+                                }
+                              },
                               "nullable": true
                             },
-                            "currency": {
+                            "sizeOptions": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "cutTypes": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "hasFringe": {
+                              "type": "boolean"
+                            },
+                            "canHaveFringe": {
+                              "type": "boolean"
+                            },
+                            "stock": {
+                              "type": "object",
+                              "properties": {
+                                "enabled": {
+                                  "type": "boolean"
+                                },
+                                "availableAreaM2": {
+                                  "type": "number"
+                                },
+                                "reservedAreaM2": {
+                                  "type": "number"
+                                },
+                                "consumableAreaM2": {
+                                  "type": "number"
+                                }
+                              }
+                            },
+                            "name": {
                               "type": "string"
                             },
-                            "userTypeId": {
-                              "type": "number"
+                            "updatedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "description": {
+                              "type": "string"
+                            },
+                            "collectionId": {
+                              "type": "string"
+                            },
+                            "productId": {
+                              "type": "string"
+                            },
+                            "productImage": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "rule_id": {
+                              "type": "number",
+                              "nullable": true
                             }
                           }
                         },
-                        "purchasePricing": {
+                        {
                           "type": "object",
                           "properties": {
-                            "price_per_square_meter": {
-                              "type": "number"
+                            "variations": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
                             },
-                            "currency": {
+                            "pricing": {
+                              "type": "object",
+                              "properties": {
+                                "price": {
+                                  "type": "number",
+                                  "nullable": true
+                                },
+                                "currency": {
+                                  "type": "string"
+                                },
+                                "userTypeId": {
+                                  "type": "number"
+                                }
+                              }
+                            },
+                            "purchasePricing": {
+                              "type": "object",
+                              "properties": {
+                                "price_per_square_meter": {
+                                  "type": "number"
+                                },
+                                "currency": {
+                                  "type": "string"
+                                },
+                                "list_name": {
+                                  "type": "string"
+                                }
+                              },
+                              "nullable": true
+                            },
+                            "sizeOptions": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "cutTypes": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "hasFringe": {
+                              "type": "boolean"
+                            },
+                            "canHaveFringe": {
+                              "type": "boolean"
+                            },
+                            "stock": {
+                              "type": "object",
+                              "properties": {
+                                "enabled": {
+                                  "type": "boolean"
+                                },
+                                "availableAreaM2": {
+                                  "type": "number"
+                                },
+                                "reservedAreaM2": {
+                                  "type": "number"
+                                },
+                                "consumableAreaM2": {
+                                  "type": "number"
+                                }
+                              }
+                            },
+                            "name": {
                               "type": "string"
                             },
-                            "list_name": {
+                            "updatedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "description": {
                               "type": "string"
+                            },
+                            "collectionId": {
+                              "type": "string"
+                            },
+                            "productId": {
+                              "type": "string"
+                            },
+                            "productImage": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "rule_id": {
+                              "type": "number",
+                              "nullable": true
                             }
-                          },
-                          "nullable": true
-                        },
-                        "sizeOptions": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": true
                           }
-                        },
-                        "cutTypes": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": true
-                          }
-                        },
-                        "hasFringe": {
-                          "type": "boolean"
-                        },
-                        "canHaveFringe": {
-                          "type": "boolean"
-                        },
-                        "name": {
-                          "type": "string"
-                        },
-                        "updatedAt": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "createdAt": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "description": {
-                          "type": "string"
-                        },
-                        "collectionId": {
-                          "type": "string"
-                        },
-                        "productId": {
-                          "type": "string"
-                        },
-                        "productImage": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "rule_id": {
-                          "type": "number",
-                          "nullable": true
                         }
-                      }
+                      ],
+                      "nullable": true
                     }
                   }
                 }
@@ -1235,94 +1445,216 @@
                       "type": "boolean"
                     },
                     "data": {
-                      "type": "object",
-                      "properties": {
-                        "variations": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": true
-                          }
-                        },
-                        "pricing": {
+                      "anyOf": [
+                        {
                           "type": "object",
                           "properties": {
-                            "price": {
-                              "type": "number",
+                            "pricing": {
+                              "type": "object",
+                              "properties": {
+                                "price": {
+                                  "type": "number",
+                                  "nullable": true
+                                },
+                                "currency": {
+                                  "type": "string"
+                                },
+                                "userTypeId": {
+                                  "type": "number"
+                                }
+                              }
+                            },
+                            "purchasePricing": {
+                              "type": "object",
+                              "properties": {
+                                "price_per_square_meter": {
+                                  "type": "number"
+                                },
+                                "currency": {
+                                  "type": "string"
+                                },
+                                "list_name": {
+                                  "type": "string"
+                                }
+                              },
                               "nullable": true
                             },
-                            "currency": {
+                            "sizeOptions": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "cutTypes": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "hasFringe": {
+                              "type": "boolean"
+                            },
+                            "canHaveFringe": {
+                              "type": "boolean"
+                            },
+                            "stock": {
+                              "type": "object",
+                              "properties": {
+                                "enabled": {
+                                  "type": "boolean"
+                                },
+                                "availableAreaM2": {
+                                  "type": "number"
+                                },
+                                "reservedAreaM2": {
+                                  "type": "number"
+                                },
+                                "consumableAreaM2": {
+                                  "type": "number"
+                                }
+                              }
+                            },
+                            "name": {
                               "type": "string"
                             },
-                            "userTypeId": {
-                              "type": "number"
+                            "updatedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "description": {
+                              "type": "string"
+                            },
+                            "collectionId": {
+                              "type": "string"
+                            },
+                            "productId": {
+                              "type": "string"
+                            },
+                            "productImage": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "rule_id": {
+                              "type": "number",
+                              "nullable": true
                             }
                           }
                         },
-                        "purchasePricing": {
+                        {
                           "type": "object",
                           "properties": {
-                            "price_per_square_meter": {
-                              "type": "number"
+                            "variations": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
                             },
-                            "currency": {
+                            "pricing": {
+                              "type": "object",
+                              "properties": {
+                                "price": {
+                                  "type": "number",
+                                  "nullable": true
+                                },
+                                "currency": {
+                                  "type": "string"
+                                },
+                                "userTypeId": {
+                                  "type": "number"
+                                }
+                              }
+                            },
+                            "purchasePricing": {
+                              "type": "object",
+                              "properties": {
+                                "price_per_square_meter": {
+                                  "type": "number"
+                                },
+                                "currency": {
+                                  "type": "string"
+                                },
+                                "list_name": {
+                                  "type": "string"
+                                }
+                              },
+                              "nullable": true
+                            },
+                            "sizeOptions": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "cutTypes": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "hasFringe": {
+                              "type": "boolean"
+                            },
+                            "canHaveFringe": {
+                              "type": "boolean"
+                            },
+                            "stock": {
+                              "type": "object",
+                              "properties": {
+                                "enabled": {
+                                  "type": "boolean"
+                                },
+                                "availableAreaM2": {
+                                  "type": "number"
+                                },
+                                "reservedAreaM2": {
+                                  "type": "number"
+                                },
+                                "consumableAreaM2": {
+                                  "type": "number"
+                                }
+                              }
+                            },
+                            "name": {
                               "type": "string"
                             },
-                            "list_name": {
+                            "updatedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "description": {
                               "type": "string"
+                            },
+                            "collectionId": {
+                              "type": "string"
+                            },
+                            "productId": {
+                              "type": "string"
+                            },
+                            "productImage": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "rule_id": {
+                              "type": "number",
+                              "nullable": true
                             }
-                          },
-                          "nullable": true
-                        },
-                        "sizeOptions": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": true
                           }
-                        },
-                        "cutTypes": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": true
-                          }
-                        },
-                        "hasFringe": {
-                          "type": "boolean"
-                        },
-                        "canHaveFringe": {
-                          "type": "boolean"
-                        },
-                        "name": {
-                          "type": "string"
-                        },
-                        "updatedAt": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "createdAt": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "description": {
-                          "type": "string"
-                        },
-                        "collectionId": {
-                          "type": "string"
-                        },
-                        "productId": {
-                          "type": "string"
-                        },
-                        "productImage": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "rule_id": {
-                          "type": "number",
-                          "nullable": true
                         }
-                      }
+                      ],
+                      "nullable": true
                     },
                     "message": {
                       "type": "string"

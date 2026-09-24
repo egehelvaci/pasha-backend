@@ -102,6 +102,83 @@ model Product {
   manuelSatisDetay       ManuelSatisDetay[]
   purchaseCartItems      PurchaseCartItems[]
   supplierPurchaseItems  SupplierPurchaseItems[]
+  productStock           ProductStock?
+}
+
+/// Canonical product-level stock. Measurements and cut/fringe selections are
+/// order attributes; this table is the single source of truth for stock area.
+model ProductStock {
+  id               String                    @id @default(uuid())
+  productId        String                    @unique @map("product_id") @db.VarChar(36)
+  availableAreaM2  Decimal                   @default(0) @map("available_area_m2") @db.Decimal(14, 4)
+  reservedAreaM2   Decimal                   @default(0) @map("reserved_area_m2") @db.Decimal(14, 4)
+  createdAt        DateTime                  @default(now()) @map("created_at")
+  updatedAt        DateTime                  @updatedAt @map("updated_at")
+  product          Product                   @relation(fields: [productId], references: [productId], onDelete: Cascade)
+  lots             ProductStockLot[]
+  movements        ProductStockMovement[]
+  reservations     ProductStockReservation[]
+
+  @@map("product_stocks")
+}
+
+model ProductStockLot {
+  id               String                    @id @default(uuid())
+  productStockId   String                    @map("product_stock_id")
+  sourceType       String                    @map("source_type") @db.VarChar(40)
+  sourceReference  String?                   @map("source_reference") @db.VarChar(255)
+  originalAreaM2   Decimal                   @map("original_area_m2") @db.Decimal(14, 4)
+  remainingAreaM2  Decimal                   @map("remaining_area_m2") @db.Decimal(14, 4)
+  receivedAt       DateTime                  @default(now()) @map("received_at")
+  createdAt        DateTime                  @default(now()) @map("created_at")
+  productStock     ProductStock              @relation(fields: [productStockId], references: [id], onDelete: Cascade)
+  movements        ProductStockMovement[]
+
+  @@index([productStockId, receivedAt], map: "idx_product_stock_lot_fifo")
+  @@map("product_stock_lots")
+}
+
+model ProductStockMovement {
+  id              String            @id @default(uuid())
+  productStockId  String            @map("product_stock_id")
+  lotId           String?           @map("lot_id")
+  productId       String            @map("product_id") @db.VarChar(36)
+  orderId         String?           @map("order_id") @db.VarChar(36)
+  orderItemId     String?           @map("order_item_id") @db.VarChar(36)
+  movementType    String            @map("movement_type") @db.VarChar(40)
+  areaM2          Decimal           @map("area_m2") @db.Decimal(14, 4)
+  quantity        Int?
+  width           Decimal?          @db.Decimal(8, 2)
+  height          Decimal?          @db.Decimal(8, 2)
+  referenceKey    String?           @unique @map("reference_key") @db.VarChar(255)
+  metadata        Json?
+  createdAt       DateTime          @default(now()) @map("created_at")
+  productStock    ProductStock      @relation(fields: [productStockId], references: [id], onDelete: Cascade)
+  lot             ProductStockLot?  @relation(fields: [lotId], references: [id], onDelete: SetNull)
+
+  @@index([productId, createdAt], map: "idx_product_stock_movement_product_created")
+  @@index([orderId], map: "idx_product_stock_movement_order")
+  @@index([orderItemId], map: "idx_product_stock_movement_order_item")
+  @@map("product_stock_movements")
+}
+
+model ProductStockReservation {
+  id              String       @id @default(uuid())
+  productStockId  String       @map("product_stock_id")
+  cartId          Int?         @map("cart_id")
+  orderId         String?      @map("order_id") @db.VarChar(36)
+  areaM2          Decimal      @map("area_m2") @db.Decimal(14, 4)
+  status          String       @default("ACTIVE") @db.VarChar(20)
+  expiresAt       DateTime?    @map("expires_at")
+  referenceKey    String       @unique @map("reference_key") @db.VarChar(255)
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+  productStock    ProductStock @relation(fields: [productStockId], references: [id], onDelete: Cascade)
+
+  @@index([productStockId, status], map: "idx_product_stock_reservation_status")
+  @@index([cartId], map: "idx_product_stock_reservation_cart")
+  @@index([orderId], map: "idx_product_stock_reservation_order")
+  @@map("product_stock_reservations")
 }
 
 model PriceList {

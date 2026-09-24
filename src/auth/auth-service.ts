@@ -23,6 +23,8 @@ interface TokenPayload {
 export class AuthService {
   private readonly jwtSecret: string
   private readonly jwtExpiresIn: number
+  private readonly loginRestrictionEnabled: boolean
+  private readonly restrictedLoginUsername: string
   // Logout olan tokenları takip etmek için blacklist
   // NOT: In-memory blacklist kullanımı sunucu yeniden başlatıldığında sıfırlanır
   // Gerçek bir üretim ortamında Redis veya veritabanı gibi kalıcı bir depolama kullanılmalıdır
@@ -32,6 +34,8 @@ export class AuthService {
     // .env dosyasından JWT yapılandırmaları
     this.jwtSecret = process.env.JWT_SECRET || 'c7fc1c9b27f84a9a9b74c78a5d3f9e72a3db1d19aef63bcb6bdf9f2c9e091d13'
     this.jwtExpiresIn = process.env.JWT_EXPIRES_IN ? parseInt(process.env.JWT_EXPIRES_IN) : 60 * 60 * 6 // 6 saat
+    this.loginRestrictionEnabled = process.env.LOGIN_RESTRICTION_ENABLED !== 'false'
+    this.restrictedLoginUsername = process.env.LOGIN_RESTRICTED_USERNAME?.trim() || 'egeadmin'
     this.tokenBlacklist = new Set<string>()
     
     console.log(`AuthService başlatıldı, JWT süresi: ${this.jwtExpiresIn} saniye (${this.jwtExpiresIn / 60} dakika)`)
@@ -49,6 +53,12 @@ export class AuthService {
    */
   async login(credentials: LoginCredentials) {
     try {
+      // Geçici bakım kısıtı: parola doğrulaması yalnızca izin verilen yönetici
+      // hesabı için devam eder. Kısıt env ile açıkça kapatılabilir.
+      if (this.loginRestrictionEnabled && credentials.username !== this.restrictedLoginUsername) {
+        throw new Error('Sistem geçici olarak yalnızca egeadmin hesabına açıktır')
+      }
+
       // Kullanıcıyı bul (şifre kontrolü olmadan)
       const user = await prisma.user.findFirst({
         where: {

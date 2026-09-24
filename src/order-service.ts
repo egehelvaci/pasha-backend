@@ -4,6 +4,7 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { roundCurrency, addCurrency } from './utils/number-utils';
 import { $Enums } from '../generated/prisma';
 import { qrCodeService } from './services/qr-code-service';
+import { commonStockService, calculateAreaM2 } from './services/common-stock-service';
 import { notificationService } from './services/notification-service';
 import prisma from './utils/prisma';
 
@@ -387,8 +388,13 @@ export class OrderService {
         console.log(`✅ Sipariş ${order.id} oluşturuldu ve stok düşürüldü`);
       } catch (stockError) {
         console.warn('⚠️ Stok düşürme sırasında uyarı:', stockError);
-        // Stok 0 veya negatif olsa bile sipariş devam etsin
-        console.log(`✅ Sipariş ${order.id} oluşturuldu (stok durumu: negatif/sıfır)`);
+        const stockSnapshots = await commonStockService.getSnapshots(order.items.map(item => item.product_id));
+        if (order.items.some(item => stockSnapshots.get(item.product_id)?.enabled)) {
+          await prisma.order.delete({ where: { id: order.id } }).catch(() => undefined);
+          throw stockError;
+        }
+        // Legacy products keep their previous behavior during the trial rollout.
+        console.log(`✅ Sipariş ${order.id} oluşturuldu (legacy stok akışı)`);
       }
 
       // Sipariş sonrası işlemleri gerçekleştir (bakiye düşürme vs.)
@@ -570,8 +576,12 @@ export class OrderService {
         console.log(`✅ Admin sepetinden sipariş ${order.id} oluşturuldu ve stok düşürüldü`);
       } catch (stockError) {
         console.warn('⚠️ Admin sepetinden stok düşürme sırasında uyarı:', stockError);
-        // Stok 0 veya negatif olsa bile sipariş devam etsin
-        console.log(`✅ Admin sepetinden sipariş ${order.id} oluşturuldu (stok durumu: negatif/sıfır)`);
+        const stockSnapshots = await commonStockService.getSnapshots(order.items.map(item => item.product_id));
+        if (order.items.some(item => stockSnapshots.get(item.product_id)?.enabled)) {
+          await prisma.order.delete({ where: { id: order.id } }).catch(() => undefined);
+          throw stockError;
+        }
+        console.log(`✅ Admin sepetinden sipariş ${order.id} oluşturuldu (legacy stok akışı)`);
       }
 
       // Admin sipariş sonrası işlemleri gerçekleştir (bakiye düşürme vs.)
@@ -788,8 +798,12 @@ export class OrderService {
         console.log(`✅ Admin siparişi ${order.id} oluşturuldu ve stok düşürüldü`);
       } catch (stockError) {
         console.warn('⚠️ Admin siparişi stok düşürme sırasında uyarı:', stockError);
-        // Stok 0 veya negatif olsa bile sipariş devam etsin
-        console.log(`✅ Admin siparişi ${order.id} oluşturuldu (stok durumu: negatif/sıfır)`);
+        const stockSnapshots = await commonStockService.getSnapshots(order.items.map(item => item.product_id));
+        if (order.items.some(item => stockSnapshots.get(item.product_id)?.enabled)) {
+          await prisma.order.delete({ where: { id: order.id } }).catch(() => undefined);
+          throw stockError;
+        }
+        console.log(`✅ Admin siparişi ${order.id} oluşturuldu (legacy stok akışı)`);
       }
 
       // Admin siparişi için özel işlemler - AÇIK HESAP LİMİTİ KONTROLÜ YOK
@@ -1717,6 +1731,23 @@ export class OrderService {
         console.log(`📦 Sipariş iptal ediliyor: ${orderId} - Durum: ${order.status}`);
         
         for (const item of order.items) {
+          const canonicalStock = await commonStockService.getSnapshot(item.product_id, tx);
+          if (canonicalStock.enabled) {
+            await commonStockService.addStock({
+              productId: item.product_id,
+              areaM2: calculateAreaM2(Number(item.width), Number(item.height), item.quantity),
+              movementType: 'ORDER_RETURN',
+              referenceKey: `order:${orderId}:item:${item.id}:return`,
+              orderId,
+              orderItemId: item.id,
+              quantity: item.quantity,
+              width: Number(item.width || 0),
+              height: Number(item.height || 0),
+              metadata: { hasFringe: item.has_fringe, cutType: item.cut_type }
+            }, tx);
+            continue;
+          }
+
           const itemWidth = item.width ? Math.round(Number(item.width)) : 0
           const itemHeight = item.height ? Math.round(Number(item.height)) : 0
           const itemHasFringe = item.has_fringe || false
@@ -2206,4 +2237,4 @@ export class OrderService {
 
 }
 
-export const orderService = new OrderService(); 
+export const orderService = new OrderService();

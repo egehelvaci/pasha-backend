@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { PurchaseCartService } from '../purchase-cart-service';
 import { MissingPurchasePriceError, includeMissingPurchaseCollections } from '../purchase-price-service';
 import prisma from '../utils/prisma';
+import { commonStockService, calculateAreaM2 } from '../services/common-stock-service';
 
 // Tüm satıcıları getir
 export const getAllSuppliers = async (req: Request, res: Response) => {
@@ -1394,6 +1395,20 @@ export const purchaseFromCart = async (req: Request, res: Response) => {
             where: { id: variation.id },
             data: updateData
           });
+
+          const canonicalStock = await commonStockService.getSnapshot(item.product_id, tx);
+          if (canonicalStock.enabled) {
+            await commonStockService.addStock({
+              productId: item.product_id,
+              areaM2: calculateAreaM2(itemWidth, itemHeight, item.quantity),
+              movementType: 'PURCHASE_RECEIPT',
+              referenceKey: `purchase:${transaction.id}:item:${item.id}`,
+              quantity: item.quantity,
+              width: itemWidth,
+              height: itemHeight,
+              metadata: { hasFringe: itemHasFringe, cutType: item.cut_type }
+            }, tx);
+          }
 
           console.log(`✅ Varyasyon ${variation.id} güncellendi`);
         } else {

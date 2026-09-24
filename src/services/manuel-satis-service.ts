@@ -1,6 +1,7 @@
 import prisma from '../utils/prisma'
 import { Decimal } from '@prisma/client/runtime/library'
 import { getDefaultPriceList } from '../utils/priceListUtils'
+import { commonStockService, calculateAreaM2 } from './common-stock-service'
 
 export interface ManuelSatisItem {
   productId: string;
@@ -136,11 +137,27 @@ export class ManuelSatisService {
   private async checkAndUpdateStock(
     tx: any,
     product: any,
-    item: ManuelSatisItem
+    item: ManuelSatisItem,
+    referenceKey?: string
   ): Promise<{ success: boolean; message?: string }> {
     try {
       if (!item.width || !item.height) {
         // Boyutsuz ürün - genel stok kontrolü yapılabilir
+        return { success: true };
+      }
+
+      const canonicalStock = await commonStockService.getSnapshot(product.productId, tx);
+      if (canonicalStock.enabled) {
+        await commonStockService.consumeProductArea({
+          productId: product.productId,
+          areaM2: calculateAreaM2(item.width, item.height, item.quantity),
+          movementType: 'MANUAL_SALE',
+          referenceKey,
+          quantity: item.quantity,
+          width: item.width,
+          height: item.height,
+          metadata: { hasFringe: item.hasFringe, cutType: item.cutType }
+        }, tx);
         return { success: true };
       }
 
@@ -395,7 +412,7 @@ export class ManuelSatisService {
 
         // 2. Her ürün için detay ekle ve stok kontrol et
         const createdDetails = [];
-        for (const item of itemsWithTotal) {
+        for (const [itemIndex, item] of itemsWithTotal.entries()) {
           // Ürün kontrolü
           const product = await tx.product.findUnique({
             where: { productId: item.productId },
@@ -415,7 +432,12 @@ export class ManuelSatisService {
           }
 
           // Stok kontrolü ve güncelleme
-          const stockResult = await this.checkAndUpdateStock(tx, product, item);
+          const stockResult = await this.checkAndUpdateStock(
+            tx,
+            product,
+            item,
+            `manual-sale:${muhasebeHareketi.id}:item:${itemIndex}`
+          );
           if (!stockResult.success) {
             throw new Error(stockResult.message);
           }

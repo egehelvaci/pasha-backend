@@ -1,0 +1,405 @@
+import { Prisma } from '../../generated/prisma';
+import prisma from '../utils/prisma';
+
+type DbClient = Prisma.TransactionClient | typeof prisma;
+
+export interface StockSnapshot {
+  enabled: boolean;
+  availableAreaM2: number;
+  reservedAreaM2: number;
+  consumableAreaM2: number;
+}
+
+export interface StockMovementInput {
+  productId: string;
+  areaM2: number;
+  movementType: string;
+  referenceKey?: string;
+  orderId?: string;
+  orderItemId?: string;
+  quantity?: number;
+  width?: number;
+  height?: number;
+  metadata?: Prisma.InputJsonValue;
+}
+
+const STOCK_EPSILON = 0.0001;
+
+function roundArea(value: number): number {
+  return Math.round((value + Number.EPSILON) * 10000) / 10000;
+}
+
+export function calculateAreaM2(width?: number | null, height?: number | null, quantity = 1): number {
+  if (!width || !height || quantity <= 0) return 0;
+  return roundArea((Number(width) * Number(height) * quantity) / 10000);
+}
+
+/**
+ * Product-level stock service. A product opts into this service by having a
+ * ProductStock row. Legacy products without a row continue using their old
+ * variation stock until an audited migration explicitly opts them in.
+ */
+class CommonStockService {
+  async ensureProductStock(productId: string, client: DbClient = prisma) {
+    return client.productStock.upsert({
+      where: { productId },
+      update: {},
+      create: { productId }
+    });
+  }
+
+  async getSnapshot(productId: string, client: DbClient = prisma): Promise<StockSnapshot> {
+    const stock = await client.productStock.findUnique({ where: { productId } });
+    if (!stock) {
+      return {
+        enabled: false,
+        availableAreaM2: 0,
+        reservedAreaM2: 0,
+        consumableAreaM2: 0
+      };
+    }
+
+    const availableAreaM2 = Number(stock.availableAreaM2 || 0);
+    const reservedAreaM2 = Number(stock.reservedAreaM2 || 0);
+    return {
+      enabled: true,
+      availableAreaM2,
+      reservedAreaM2,
+      consumableAreaM2: roundArea(availableAreaM2 - reservedAreaM2)
+    };
+  }
+
+  async getSnapshots(productIds: string[], client: DbClient = prisma): Promise<Map<string, StockSnapshot>> {
+    const uniqueIds = [...new Set(productIds)];
+    if (uniqueIds.length === 0) return new Map();
+
+    const rows = await client.productStock.findMany({ where: { productId: { in: uniqueIds } } });
+    const byId = new Map(rows.map(row => {
+      const availableAreaM2 = Number(row.availableAreaM2 || 0);
+      const reservedAreaM2 = Number(row.reservedAreaM2 || 0);
+      return [row.productId, {
+        enabled: true,
+        availableAreaM2,
+        reservedAreaM2,
+        consumableAreaM2: roundArea(availableAreaM2 - reservedAreaM2)
+      } as StockSnapshot];
+    }));
+
+    for (const productId of uniqueIds) {
+      if (!byId.has(productId)) {
+        byId.set(productId, {
+          enabled: false,
+          availableAreaM2: 0,
+          reservedAreaM2: 0,
+          consumableAreaM2: 0
+        });
+      }
+    }
+    return byId;
+  }
+
+  /** Add a FIFO lot and increase the product's canonical area. */
+  async addStock(input: StockMovementInput, client: DbClient = prisma): Promise<any> {
+    if (client === prisma) {
+      return prisma.$transaction(tx => this.addStock(input, tx));
+    }
+    if (input.areaM2 <= 0) return { enabled: false, areaM2: 0 };
+    const stock = await this.lockStock(input.productId, client, true);
+    if (!stock) return { enabled: false, areaM2: 0 };
+
+    if (input.referenceKey) {
+      const existing = await client.productStockMovement.findUnique({
+        where: { referenceKey: input.referenceKey }
+      });
+      if (existing) return { enabled: true, areaM2: Math.abs(Number(existing.areaM2)) };
+    }
+
+    const areaM2 = roundArea(input.areaM2);
+    const currentAvailableAreaM2 = Number(stock.availableAreaM2 || 0);
+    // Incoming stock first closes an existing negative balance. Only the
+    // surplus becomes a new FIFO lot.
+    const lotAreaM2 = roundArea(areaM2 + Math.min(0, currentAvailableAreaM2));
+    const lot = lotAreaM2 > STOCK_EPSILON
+      ? await client.productStockLot.create({
+          data: {
+            productStockId: stock.id,
+            sourceType: input.movementType,
+            sourceReference: input.referenceKey,
+            originalAreaM2: lotAreaM2,
+            remainingAreaM2: lotAreaM2
+          }
+        })
+      : null;
+
+    await client.productStock.update({
+      where: { id: stock.id },
+      data: { availableAreaM2: { increment: areaM2 } }
+    });
+
+    await client.productStockMovement.create({
+      data: {
+        productStockId: stock.id,
+        lotId: lot?.id,
+        productId: input.productId,
+        movementType: input.movementType,
+        areaM2,
+        referenceKey: input.referenceKey,
+        orderId: input.orderId,
+        orderItemId: input.orderItemId,
+        quantity: input.quantity,
+        width: input.width,
+        height: input.height,
+        metadata: input.metadata
+      }
+    });
+
+    return { enabled: true, areaM2 };
+  }
+
+  /**
+   * Set canonical area for an opted-in product. Increases create a FIFO lot;
+   * decreases consume existing lots, so every change remains auditable.
+   */
+  async setStockArea(productId: string, areaM2: number, referenceKey: string, client: DbClient = prisma): Promise<any> {
+    if (client === prisma) {
+      return prisma.$transaction(tx => this.setStockArea(productId, areaM2, referenceKey, tx));
+    }
+    const stock = await this.lockStock(productId, client, true);
+    if (!stock) return { enabled: false, availableAreaM2: 0 };
+
+    const target = roundArea(Math.max(0, areaM2));
+    const current = Number(stock.availableAreaM2 || 0);
+    const delta = roundArea(target - current);
+    if (Math.abs(delta) <= STOCK_EPSILON) {
+      return { enabled: true, availableAreaM2: current };
+    }
+
+    if (delta > 0) {
+      await this.addStock({
+        productId,
+        areaM2: delta,
+        movementType: 'ADMIN_ADJUSTMENT',
+        referenceKey,
+        metadata: { targetAreaM2: target, previousAreaM2: current }
+      }, client);
+    } else {
+      await this.consumeProductArea({
+        productId,
+        areaM2: Math.abs(delta),
+        movementType: 'ADMIN_ADJUSTMENT',
+        referenceKey,
+        metadata: { targetAreaM2: target, previousAreaM2: current }
+      }, client);
+    }
+    return { enabled: true, availableAreaM2: target };
+  }
+
+  /** Consume area from the oldest remaining lots under a product row lock. */
+  async consumeProductArea(input: StockMovementInput, client: DbClient = prisma): Promise<any> {
+    if (client === prisma) {
+      return prisma.$transaction(tx => this.consumeProductArea(input, tx));
+    }
+    const requestedArea = roundArea(input.areaM2);
+    if (requestedArea <= 0) return { enabled: false, areaM2: 0 };
+
+    const stock = await this.lockStock(input.productId, client, false);
+    if (!stock) return { enabled: false, areaM2: 0 };
+
+    const referencePrefix = input.referenceKey ? `${input.referenceKey}:lot:` : undefined;
+    if (referencePrefix) {
+      const existing = await client.productStockMovement.findFirst({
+        where: { referenceKey: { startsWith: referencePrefix } }
+      });
+      if (existing) return { enabled: true, areaM2: requestedArea, idempotent: true };
+    }
+
+    const availableAreaM2 = Number(stock.availableAreaM2 || 0);
+    const reservedAreaM2 = Number(stock.reservedAreaM2 || 0);
+    // Orders are allowed to consume beyond available stock. The canonical
+    // balance may therefore become negative and remains auditable.
+
+    const lots = await client.productStockLot.findMany({
+      where: { productStockId: stock.id, remainingAreaM2: { gt: 0 } },
+      orderBy: [{ receivedAt: 'asc' }, { createdAt: 'asc' }]
+    });
+
+    let remaining = requestedArea;
+    for (const lot of lots) {
+      if (remaining <= STOCK_EPSILON) break;
+      const lotRemaining = Number(lot.remainingAreaM2 || 0);
+      const consumed = roundArea(Math.min(lotRemaining, remaining));
+      if (consumed <= 0) continue;
+
+      await client.productStockLot.update({
+        where: { id: lot.id },
+        data: { remainingAreaM2: { decrement: consumed } }
+      });
+      await client.productStockMovement.create({
+        data: {
+          productStockId: stock.id,
+          lotId: lot.id,
+          productId: input.productId,
+          movementType: input.movementType,
+          areaM2: -consumed,
+          referenceKey: input.referenceKey ? `${input.referenceKey}:lot:${lot.id}` : undefined,
+          orderId: input.orderId,
+          orderItemId: input.orderItemId,
+          quantity: input.quantity,
+          width: input.width,
+          height: input.height,
+          metadata: input.metadata
+        }
+      });
+      remaining = roundArea(remaining - consumed);
+    }
+
+    if (remaining > STOCK_EPSILON) {
+      await client.productStockMovement.create({
+        data: {
+          productStockId: stock.id,
+          productId: input.productId,
+          movementType: input.movementType,
+          areaM2: -remaining,
+          referenceKey: input.referenceKey ? `${input.referenceKey}:shortage` : undefined,
+          orderId: input.orderId,
+          orderItemId: input.orderItemId,
+          quantity: input.quantity,
+          width: input.width,
+          height: input.height,
+          metadata: {
+            ...(input.metadata && typeof input.metadata === 'object' ? input.metadata : {}),
+            negativeStockAreaM2: remaining
+          } as Prisma.InputJsonValue
+        }
+      });
+    }
+
+    await client.productStock.update({
+      where: { id: stock.id },
+      data: { availableAreaM2: { decrement: requestedArea } }
+    });
+    return { enabled: true, areaM2: requestedArea };
+  }
+
+  async consumeOrder(orderId: string) {
+    return prisma.$transaction(async tx => {
+      const order = await tx.order.findUnique({ where: { id: orderId }, include: { items: true } });
+      if (!order) throw new Error('Sipariş bulunamadı');
+
+      const results = [] as Array<{ itemId: string; enabled: boolean; areaM2: number }>;
+      for (const item of order.items) {
+        const areaM2 = calculateAreaM2(Number(item.width), Number(item.height), item.quantity);
+        const result = await this.consumeProductArea({
+          productId: item.product_id,
+          areaM2,
+          movementType: 'ORDER_CONSUMPTION',
+          referenceKey: `order:${orderId}:item:${item.id}`,
+          orderId,
+          orderItemId: item.id,
+          quantity: item.quantity,
+          width: Number(item.width || 0),
+          height: Number(item.height || 0),
+          metadata: { hasFringe: item.has_fringe, cutType: item.cut_type }
+        }, tx);
+        results.push({ itemId: item.id, enabled: result.enabled, areaM2 });
+      }
+      return { success: true, results };
+    });
+  }
+
+  async restoreOrder(orderId: string, client: DbClient = prisma) {
+    const run = async (tx: DbClient) => {
+      const order = await tx.order.findUnique({ where: { id: orderId }, include: { items: true } });
+      if (!order) throw new Error('Sipariş bulunamadı');
+      const results = [] as Array<{ itemId: string; enabled: boolean; areaM2: number }>;
+
+      for (const item of order.items) {
+        const areaM2 = calculateAreaM2(Number(item.width), Number(item.height), item.quantity);
+        if (areaM2 <= 0) {
+          results.push({ itemId: item.id, enabled: false, areaM2: 0 });
+          continue;
+        }
+
+        const stock = await tx.productStock.findUnique({ where: { productId: item.product_id } });
+        if (!stock) {
+          results.push({ itemId: item.id, enabled: false, areaM2 });
+          continue;
+        }
+
+        const referenceKey = `order:${orderId}:item:${item.id}:return`;
+        const existing = await tx.productStockMovement.findUnique({ where: { referenceKey } });
+        if (existing) {
+          results.push({ itemId: item.id, enabled: true, areaM2, idempotent: true } as any);
+          continue;
+        }
+
+        await this.addStock({
+          productId: item.product_id,
+          areaM2,
+          movementType: 'ORDER_RETURN',
+          referenceKey,
+          orderId,
+          orderItemId: item.id,
+          quantity: item.quantity,
+          width: Number(item.width || 0),
+          height: Number(item.height || 0),
+          metadata: { hasFringe: item.has_fringe, cutType: item.cut_type }
+        }, tx);
+        results.push({ itemId: item.id, enabled: true, areaM2 });
+      }
+      return { success: true, results };
+    };
+
+    if (client === prisma) return prisma.$transaction(tx => run(tx));
+    return run(client);
+  }
+
+  async reserve(productId: string, areaM2: number, referenceKey: string, options?: { cartId?: number; orderId?: string; expiresAt?: Date }, client: DbClient = prisma) {
+    const stock = await this.lockStock(productId, client, false);
+    if (!stock) return { enabled: false, reservedAreaM2: 0 };
+    const existing = await client.productStockReservation.findUnique({ where: { referenceKey } });
+    if (existing) return { enabled: true, reservedAreaM2: Number(existing.areaM2) };
+
+    const requested = roundArea(areaM2);
+    const available = Number(stock.availableAreaM2 || 0) - Number(stock.reservedAreaM2 || 0);
+    if (available + STOCK_EPSILON < requested) {
+      throw new Error(`Yetersiz ortak stok rezervasyonu: mevcut ${Math.max(0, available).toFixed(4)} m², istenen ${requested.toFixed(4)} m²`);
+    }
+
+    await client.productStockReservation.create({
+      data: {
+        productStockId: stock.id,
+        cartId: options?.cartId,
+        orderId: options?.orderId,
+        areaM2: requested,
+        referenceKey,
+        expiresAt: options?.expiresAt
+      }
+    });
+    await client.productStock.update({ where: { id: stock.id }, data: { reservedAreaM2: { increment: requested } } });
+    return { enabled: true, reservedAreaM2: requested };
+  }
+
+  async releaseReservation(referenceKey: string, client: DbClient = prisma) {
+    const reservation = await client.productStockReservation.findUnique({ where: { referenceKey } });
+    if (!reservation || reservation.status !== 'ACTIVE') return { released: false };
+    await client.productStockReservation.update({ where: { id: reservation.id }, data: { status: 'RELEASED' } });
+    await client.productStock.update({ where: { id: reservation.productStockId }, data: { reservedAreaM2: { decrement: reservation.areaM2 } } });
+    return { released: true, areaM2: Number(reservation.areaM2) };
+  }
+
+  private async lockStock(productId: string, client: DbClient, createIfMissing: boolean) {
+    let stock = await client.productStock.findUnique({ where: { productId } });
+    if (!stock && createIfMissing) {
+      stock = await client.productStock.create({ data: { productId } });
+    }
+    if (!stock) return null;
+
+    // PostgreSQL row lock serializes stock reads/updates across concurrent orders.
+    await client.$queryRaw`SELECT id FROM "product_stocks" WHERE id = ${stock.id} FOR UPDATE`;
+    stock = await client.productStock.findUnique({ where: { id: stock.id } });
+    return stock;
+  }
+}
+
+export const commonStockService = new CommonStockService();

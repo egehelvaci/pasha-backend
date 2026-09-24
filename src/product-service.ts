@@ -2,6 +2,7 @@ import { Prisma } from '../generated/prisma';
 import { TebiService } from './utils/tebi-service';
 import prisma from './utils/prisma';
 import { cacheService, CacheService } from './utils/cache-service';
+import { commonStockService } from './services/common-stock-service';
 
 // Kesim türleri için tip tanımı
 export interface CutType {
@@ -36,6 +37,12 @@ interface ExtendedProduct extends Prisma.ProductGetPayload<{include: {collection
   cutTypes?: CutType[];
   hasFringe?: boolean;
   canHaveFringe?: boolean;
+  stock?: {
+    enabled: boolean;
+    availableAreaM2: number;
+    reservedAreaM2: number;
+    consumableAreaM2: number;
+  };
 }
 
 const tebiService = new TebiService();
@@ -76,6 +83,10 @@ export class ProductService {
           collection: true // Ürün ile birlikte koleksiyon bilgilerini de getir
         }
       });
+
+      // New products opt into the common product-level stock model. Existing
+      // products without this row continue using their legacy variation stock.
+      await commonStockService.ensureProductStock(product.productId);
 
       // Kurala göre varyasyonları oluştur
       try {
@@ -254,7 +265,8 @@ export class ProductService {
                 }
               }
             },
-            productvariations: true
+            productvariations: true,
+            productStock: true
           },
           orderBy: { createdAt: 'desc' }
         });
@@ -276,7 +288,8 @@ export class ProductService {
                 }
               }
             },
-            productvariations: true
+            productvariations: true,
+            productStock: true
           },
           skip,
           take: limit,
@@ -340,6 +353,19 @@ export class ProductService {
       // Ürünleri optimize edilmiş şekilde işle
       const processedProducts = products.map(product => {
         const extendedProduct = product as any;
+        const canonicalStock = (product as any).productStock;
+        if (canonicalStock) {
+          const availableAreaM2 = Number(canonicalStock.availableAreaM2 || 0);
+          const reservedAreaM2 = Number(canonicalStock.reservedAreaM2 || 0);
+          extendedProduct.stock = {
+            enabled: true,
+            availableAreaM2,
+            reservedAreaM2,
+            consumableAreaM2: availableAreaM2 - reservedAreaM2
+          };
+          extendedProduct.availableAreaM2 = availableAreaM2;
+          delete extendedProduct.productStock;
+        }
         
         // Fiyat bilgisini ekle
         if (userPriceInfo?.priceList) {
@@ -376,14 +402,21 @@ export class ProductService {
             const stockForSize = product.productvariations?.find(v => 
               v.width === so.width && v.height === so.height
             );
+            const canonicalArea = canonicalStock ? Number(canonicalStock.availableAreaM2 || 0) : null;
+            const pieceAreaM2 = (so.width * so.height) / 10000;
             
             return {
               id: so.id,
               width: so.width,
               height: so.height,
               is_optional_height: so.is_optional_height || false,
-              stockQuantity: stockForSize ? stockForSize.stock_quantity : 0,
-              stockAreaM2: stockForSize ? Number(stockForSize.stock_area_m2 || 0) : 0
+              stockQuantity: canonicalArea !== null
+                ? Math.floor(canonicalArea / pieceAreaM2)
+                : (stockForSize ? stockForSize.stock_quantity : 0),
+              stockAreaM2: canonicalArea !== null
+                ? canonicalArea
+                : (stockForSize ? Number(stockForSize.stock_area_m2 || 0) : 0),
+              pieceAreaM2
             };
           }) || [];
         } else {
@@ -464,12 +497,27 @@ export class ProductService {
       const product = await prisma.product.findUnique({
         where: { productId },
         include: {
-          collection: true
+          collection: true,
+          productStock: true
         }
       }) as ExtendedProduct | null;
 
       if (!product) {
         return null;
+      }
+
+      const canonicalStock = (product as any).productStock;
+      if (canonicalStock) {
+        const availableAreaM2 = Number(canonicalStock.availableAreaM2 || 0);
+        const reservedAreaM2 = Number(canonicalStock.reservedAreaM2 || 0);
+        (product as any).stock = {
+          enabled: true,
+          availableAreaM2,
+          reservedAreaM2,
+          consumableAreaM2: availableAreaM2 - reservedAreaM2
+        };
+        (product as any).availableAreaM2 = availableAreaM2;
+        delete (product as any).productStock;
       }
 
       // Eğer kullanıcı ID'si belirtilmişse fiyat bilgisini ekle
@@ -618,13 +666,18 @@ export class ProductService {
                 );
                 
                 const pieceAreaM2 = (so.width * so.height) / 10000;
+                const canonicalArea = canonicalStock ? Number(canonicalStock.availableAreaM2 || 0) : null;
                 return {
                   id: so.id,
                   width: so.width,
                   height: so.height,
                   is_optional_height: so.is_optional_height || false,
-                  stockQuantity: stockForSize ? stockForSize.stock_quantity : 0,
-                  stockAreaM2: stockForSize ? Number(stockForSize.stock_area_m2 || 0) : 0,
+                  stockQuantity: canonicalArea !== null
+                    ? Math.floor(canonicalArea / pieceAreaM2)
+                    : (stockForSize ? stockForSize.stock_quantity : 0),
+                  stockAreaM2: canonicalArea !== null
+                    ? canonicalArea
+                    : (stockForSize ? Number(stockForSize.stock_area_m2 || 0) : 0),
                   pieceAreaM2: pieceAreaM2
                 };
               });
@@ -658,12 +711,26 @@ export class ProductService {
       const products = await prisma.product.findMany({
         where: { collectionId },
         include: {
-          collection: true
+          collection: true,
+          productStock: true
         }
       });
       
       // Ürünlere fiyat bilgisi ekle
       for (const product of products as ExtendedProduct[]) {
+        const canonicalStock = (product as any).productStock;
+        if (canonicalStock) {
+          const availableAreaM2 = Number(canonicalStock.availableAreaM2 || 0);
+          const reservedAreaM2 = Number(canonicalStock.reservedAreaM2 || 0);
+          (product as any).stock = {
+            enabled: true,
+            availableAreaM2,
+            reservedAreaM2,
+            consumableAreaM2: availableAreaM2 - reservedAreaM2
+          };
+          (product as any).availableAreaM2 = availableAreaM2;
+          delete (product as any).productStock;
+        }
         // Eğer kullanıcı ID'si belirtilmişse fiyat bilgisini ekle
         if (userId) {
           try {
@@ -792,13 +859,18 @@ export class ProductService {
                   );
                   
                   const pieceAreaM2 = (so.width * so.height) / 10000;
+                  const canonicalArea = canonicalStock ? Number(canonicalStock.availableAreaM2 || 0) : null;
                   return {
                     id: so.id,
                     width: so.width,
                     height: so.height,
                     is_optional_height: so.is_optional_height || false,
-                    stockQuantity: stockForSize ? stockForSize.stock_quantity : 0,
-                    stockAreaM2: stockForSize ? Number(stockForSize.stock_area_m2 || 0) : 0,
+                    stockQuantity: canonicalArea !== null
+                      ? Math.floor(canonicalArea / pieceAreaM2)
+                      : (stockForSize ? stockForSize.stock_quantity : 0),
+                    stockAreaM2: canonicalArea !== null
+                      ? canonicalArea
+                      : (stockForSize ? Number(stockForSize.stock_area_m2 || 0) : 0),
                     pieceAreaM2: pieceAreaM2
                   };
                 });
@@ -1186,6 +1258,17 @@ export class ProductService {
           throw new Error(`Belirtilen ölçüler (${stockData.width}x${stockData.height}) bu ürün için geçerli değil`);
         }
       }
+
+      const commonStock = await commonStockService.getSnapshot(productId);
+      if (commonStock.enabled) {
+        const areaM2 = (stockData.width * stockData.height * stockData.quantity) / 10000;
+        await commonStockService.setStockArea(
+          productId,
+          areaM2,
+          `admin-stock-quantity:${productId}:${Date.now()}`
+        );
+        return await this.getProductById(productId);
+      }
       
       // Kullanılacak yükseklik değerini belirle - artık bu değer kesinlikle veritabanındaki değer olacak
       let heightToUse = stockData.height; // Bu zaten doğrulanmış bir değer
@@ -1303,6 +1386,16 @@ export class ProductService {
         if (!sizeOption) {
           throw new Error(`Belirtilen ölçüler (${stockData.width}x${stockData.height}) bu ürün için geçerli değil`);
         }
+      }
+
+      const commonStock = await commonStockService.getSnapshot(productId);
+      if (commonStock.enabled) {
+        await commonStockService.setStockArea(
+          productId,
+          stockData.areaM2,
+          `admin-stock-area:${productId}:${Date.now()}`
+        );
+        return await this.getProductById(productId);
       }
       
       // Ürünün opsiyonel yükseklik olup olmadığını kontrol et
@@ -1624,6 +1717,7 @@ export class ProductService {
       const variations = await prisma.productvariations.findMany({
         where: { product_id: productId }
       });
+      const canonicalStock = await commonStockService.getSnapshot(productId);
       
       // Her bir boyut seçeneği için stok miktarını hesapla
       const sizeOptionsWithStock = sizeOptions.map(so => {
@@ -1632,12 +1726,19 @@ export class ProductService {
           v.width === so.width && v.height === so.height
         );
         
+        const pieceAreaM2 = (so.width * so.height) / 10000;
         return {
           id: so.id,
           width: so.width,
           height: so.height,
           is_optional_height: so.is_optional_height || false,
-          stockQuantity: stockForSize ? stockForSize.stock_quantity : 0
+          stockQuantity: canonicalStock.enabled
+            ? Math.floor(canonicalStock.availableAreaM2 / pieceAreaM2)
+            : (stockForSize ? stockForSize.stock_quantity : 0),
+          stockAreaM2: canonicalStock.enabled
+            ? canonicalStock.availableAreaM2
+            : (stockForSize ? Number(stockForSize.stock_area_m2 || 0) : 0),
+          pieceAreaM2
         };
       });
       
@@ -1648,6 +1749,7 @@ export class ProductService {
           name: ct.cuttypes.name
         })),
         canHaveFringe: rule.can_have_fringe || false,
+        stock: canonicalStock,
         variations: variations.map(v => {
           return {
             width: v.width,
@@ -1671,6 +1773,10 @@ export class ProductService {
    * 3. Hiçbiri yoksa false döndür (legacy stock field Product modelinde yok)
    */
   private checkProductHasStock(product: any): boolean {
+    if (product.stock?.enabled) {
+      return product.stock.consumableAreaM2 > 0;
+    }
+
     // 1. sizeOptions varsa, is_optional_height'a göre kontrol et
     if (product.sizeOptions && product.sizeOptions.length > 0) {
       const hasStock = product.sizeOptions.some((sizeOption: any) => {
@@ -1713,4 +1819,4 @@ export class ProductService {
     // 3. Hiçbiri yoksa stok yok kabul et
     return false;
   }
-} 
+}
