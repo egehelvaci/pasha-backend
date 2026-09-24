@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import { Prisma } from '../../generated/prisma'
 import { ProductService } from '../product-service'
 import prisma from '../utils/prisma'
+import { normalizeSizeOption } from '../utils/product-size-option'
 
 export class ProductRulesController {
   private productService: ProductService
@@ -207,6 +208,16 @@ export class ProductRulesController {
         })
       }
       
+      let normalizedSizes: ReturnType<typeof normalizeSizeOption>[] = []
+      try {
+        if (sizeOptions !== undefined && !Array.isArray(sizeOptions)) throw new Error('sizeOptions bir liste olmalıdır')
+        normalizedSizes = (sizeOptions || []).map((size: any) => normalizeSizeOption(size))
+        const keys = normalizedSizes.map(size => JSON.stringify(size))
+        if (new Set(keys).size !== keys.length) throw new Error('Aynı boyut seçeneği birden fazla eklenemez')
+      } catch (error) {
+        return res.status(400).json({ success: false, message: (error as Error).message })
+      }
+
       // Aynı isimde kural var mı kontrol et
       const existingRule = await prisma.productrules.findUnique({
         where: { name: name.trim() }
@@ -232,18 +243,14 @@ export class ProductRulesController {
         })
         
         // Boyut seçeneklerini ekle
-        if (sizeOptions && Array.isArray(sizeOptions) && sizeOptions.length > 0) {
-          for (const size of sizeOptions) {
-            if (size.width && size.height && size.width > 0 && size.height > 0) {
-              await tx.productsizeoptions.create({
-                data: {
-                  rule_id: newRule.id,
-                  width: parseInt(size.width),
-                  height: parseInt(size.height),
-                  is_optional_height: size.isOptionalHeight === true
-                }
-              })
-            }
+        if (normalizedSizes.length > 0) {
+          for (const size of normalizedSizes) {
+            await tx.productsizeoptions.create({
+              data: {
+                rule_id: newRule.id,
+                ...size
+              }
+            })
           }
         }
         
@@ -475,12 +482,9 @@ export class ProductRulesController {
         })
       }
       
-      if (!width || !height || width <= 0 || height <= 0) {
-        return res.status(400).json({
-          success: false,
-          message: 'Geçerli genişlik ve yükseklik değerleri gönderilmelidir'
-        })
-      }
+      let normalizedSize: ReturnType<typeof normalizeSizeOption>
+      try { normalizedSize = normalizeSizeOption({ width, height, isOptionalHeight }) }
+      catch (error) { return res.status(400).json({ success: false, message: (error as Error).message }) }
       
       // Kuralın var olup olmadığını kontrol et
       const rule = await prisma.productrules.findUnique({
@@ -498,9 +502,9 @@ export class ProductRulesController {
       const existingSize = await prisma.productsizeoptions.findFirst({
         where: {
           rule_id: parseInt(ruleId),
-          width: parseInt(width),
-          height: parseInt(height),
-          is_optional_height: isOptionalHeight === true
+          width: normalizedSize.width,
+          ...(normalizedSize.is_optional_height ? {} : { height: normalizedSize.height }),
+          is_optional_height: normalizedSize.is_optional_height
         }
       })
       
@@ -515,9 +519,7 @@ export class ProductRulesController {
       const newSizeOption = await prisma.productsizeoptions.create({
         data: {
           rule_id: parseInt(ruleId),
-          width: parseInt(width),
-          height: parseInt(height),
-          is_optional_height: isOptionalHeight === true
+          ...normalizedSize
         }
       })
       
@@ -568,22 +570,21 @@ export class ProductRulesController {
       }
       
       // Güncellenecek verileri hazırla
-      const updateData: any = {}
-      if (width !== undefined && width > 0) updateData.width = parseInt(width)
-      if (height !== undefined && height > 0) updateData.height = parseInt(height)
-      if (isOptionalHeight !== undefined) updateData.is_optional_height = isOptionalHeight === true
+      let updateData: ReturnType<typeof normalizeSizeOption>
+      try { updateData = normalizeSizeOption({ width, height, isOptionalHeight }, existingSize) }
+      catch (error) { return res.status(400).json({ success: false, message: (error as Error).message }) }
       
       // Eğer boyut değerleri güncelleniyorsa, aynı boyutun zaten var olup olmadığını kontrol et
       if (updateData.width || updateData.height) {
         const finalWidth = updateData.width || existingSize.width
-        const finalHeight = updateData.height || existingSize.height
+        const finalHeight = updateData.height
         const finalOptional = updateData.is_optional_height !== undefined ? updateData.is_optional_height : existingSize.is_optional_height
         
         const duplicateSize = await prisma.productsizeoptions.findFirst({
           where: {
             rule_id: parseInt(ruleId),
             width: finalWidth,
-            height: finalHeight,
+            ...(finalOptional ? {} : { height: finalHeight }),
             is_optional_height: finalOptional,
             id: { not: parseInt(sizeId) }
           }
@@ -807,4 +808,4 @@ export class ProductRulesController {
       })
     }
   }
-} 
+}

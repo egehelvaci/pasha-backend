@@ -136,17 +136,13 @@ export class CartService {
 
       if (!sizeOption) {
         const availableSizes = productDetails.sizeOptions.map(s => 
-          `${s.width}cm${s.is_optional_height ? ` (max height: ${s.height}cm)` : `x${s.height}cm`}`
+          `${s.width}cm${s.is_optional_height ? ' (özel yükseklik)' : `x${s.height}cm`}`
         ).join(', ');
         throw new Error(`Seçilen boyut (${data.width}x${data.height}cm) bu ürün için geçerli değil. Mevcut boyutlar: ${availableSizes}`);
       }
 
       if (!sizeOption.is_optional_height && sizeOption.height !== data.height) {
         throw new Error(`Bu boyut için yükseklik ${sizeOption.height}cm olarak sabitdir`);
-      }
-
-      if (sizeOption.is_optional_height && data.height > sizeOption.height) {
-        throw new Error(`Maksimum yükseklik ${sizeOption.height}cm'dir`);
       }
 
       // Cut type kontrolü ve mapping
@@ -305,7 +301,7 @@ export class CartService {
 
       if (!sizeOption) {
         const availableSizes = productDetails.sizeOptions.map(s => 
-          `${s.width}cm${s.is_optional_height ? ` (max height: ${s.height}cm)` : `x${s.height}cm`}`
+          `${s.width}cm${s.is_optional_height ? ' (özel yükseklik)' : `x${s.height}cm`}`
         ).join(', ');
         throw new Error(`Seçilen boyut (${data.width}x${data.height}cm) bu ürün için geçerli değil. Mevcut boyutlar: ${availableSizes}`);
       }
@@ -313,11 +309,6 @@ export class CartService {
       // Height kontrolü - eğer optional değilse exact match olmalı
       if (!sizeOption.is_optional_height && sizeOption.height !== data.height) {
         throw new Error(`Bu boyut için yükseklik ${sizeOption.height}cm olarak sabitdir`);
-      }
-
-      // Optional height ise maximum değeri aşmamalı
-      if (sizeOption.is_optional_height && data.height > sizeOption.height) {
-        throw new Error(`Maksimum yükseklik ${sizeOption.height}cm'dir`);
       }
 
       // Cut type kontrolü ve mapping
@@ -481,7 +472,7 @@ export class CartService {
 
         if (!sizeOption) {
           const availableSizes = productDetails.sizeOptions?.map(s => 
-            `${s.width}cm${s.is_optional_height ? ` (max height: ${s.height}cm)` : `x${s.height}cm`}`
+            `${s.width}cm${s.is_optional_height ? ' (özel yükseklik)' : `x${s.height}cm`}`
           ).join(', ') || 'Tanımsız';
           throw new Error(`Seçilen boyut (${width}x${height}cm) bu ürün için geçerli değil. Mevcut boyutlar: ${availableSizes}`);
         }
@@ -489,10 +480,6 @@ export class CartService {
         // Height kontrolü
         if (!sizeOption.is_optional_height && sizeOption.height !== height) {
           throw new Error(`Bu boyut için yükseklik ${sizeOption.height}cm olarak sabitdir`);
-        }
-
-        if (sizeOption.is_optional_height && height > sizeOption.height) {
-          throw new Error(`Maksimum yükseklik ${sizeOption.height}cm'dir`);
         }
       } else {
         // Boyut değişikliği yoksa mevcut boyut için size option'ı bul
@@ -1239,7 +1226,7 @@ export class CartService {
 
         if (!sizeOption) {
           const availableSizes = productDetails.sizeOptions?.map(s => 
-            `${s.width}cm${s.is_optional_height ? ` (max height: ${s.height}cm)` : `x${s.height}cm`}`
+            `${s.width}cm${s.is_optional_height ? ' (özel yükseklik)' : `x${s.height}cm`}`
           ).join(', ') || 'Tanımsız';
           throw new Error(`Seçilen boyut (${width}x${height}cm) bu ürün için geçerli değil. Mevcut boyutlar: ${availableSizes}`);
         }
@@ -1247,10 +1234,6 @@ export class CartService {
         // Height kontrolü
         if (!sizeOption.is_optional_height && sizeOption.height !== height) {
           throw new Error(`Bu boyut için yükseklik ${sizeOption.height}cm olarak sabitdir`);
-        }
-
-        if (sizeOption.is_optional_height && height > sizeOption.height) {
-          throw new Error(`Maksimum yükseklik ${sizeOption.height}cm'dir`);
         }
       } else {
         // Boyut değişikliği yoksa mevcut boyut için size option'ı bul

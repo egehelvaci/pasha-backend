@@ -14,6 +14,17 @@ module.exports = function applyOverrides(spec) {
   const item = object({ productId: string, quantity: { type: 'integer', minimum: 1 }, width: number, height: number, hasFringe: boolean, cutType: string, notes: string }, ['productId', 'quantity', 'width', 'height', 'hasFringe', 'cutType']);
   spec.components.schemas.OrderStatus = status;
   spec.components.schemas.CartItemInput = item;
+  const sizeDimension = { type: 'integer', minimum: 1, maximum: 2147483647 };
+  const ruleSize = { oneOf: [
+    object({ width: sizeDimension, isOptionalHeight: { type: 'boolean', enum: [true] }, height: { type: 'integer', description: 'Özel yükseklikte gönderilmez; eski istemciler gönderirse yok sayılır.' } }, ['width', 'isOptionalHeight']),
+    object({ width: sizeDimension, height: sizeDimension, isOptionalHeight: { type: 'boolean', enum: [false], default: false } }, ['width', 'height'])
+  ] };
+  body('/api/admin/product-rules', 'post', object({ name: string, description: string, canHaveFringe: boolean, sizeOptions: array(ruleSize), cutTypeIds: array({ type: 'integer' }) }, ['name']), { name: 'Hazır ve özel kesim', sizeOptions: [{ width: 100, height: 200, isOptionalHeight: false }, { width: 100, isOptionalHeight: true }] });
+  body('/api/admin/product-rules/{ruleId}/size-options', 'post', ruleSize, { width: 100, isOptionalHeight: true });
+  body('/api/admin/product-rules/{ruleId}/size-options/{sizeId}', 'put', object({ width: sizeDimension, height: sizeDimension, isOptionalHeight: boolean }), { isOptionalHeight: true });
+  for (const [path, method] of [['/api/admin/product-rules', 'post'], ['/api/admin/product-rules/{ruleId}/size-options', 'post'], ['/api/admin/product-rules/{ruleId}/size-options/{sizeId}', 'put']]) {
+    get(path, method).description += '\n\nisOptionalHeight=true olduğunda yalnızca genişlik tanımlanır; height gönderilmez ve üst sınır uygulanmaz. Yanıtta height=0 depolama göstergesidir. Sabit ebata geçerken pozitif height gönderin. Siparişte gerçek boy zorunludur.';
+  }
   const banner = object({ title: { type: 'string', maxLength: 200 }, imageUrl: { type: 'string', format: 'uri' }, mobileImageUrl: { type: 'string', nullable: true }, linkUrl: { type: 'string', nullable: true }, altText: { type: 'string', maxLength: 300 }, sortOrder: { type: 'integer', minimum: 0, default: 0 }, isActive: { type: 'boolean', default: true } });
   spec.components.schemas.BannerInput = banner;
   body('/api/admin/site-settings', 'patch', { ...object({ hideBalance: boolean, hideStock: boolean }), minProperties: 1, additionalProperties: false }, { hideBalance: true, hideStock: false });

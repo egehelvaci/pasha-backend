@@ -6648,7 +6648,7 @@
         ],
         "operationId": "post_api_admin_product_rules",
         "summary": "Yeni ürün kuralı oluştur",
-        "description": "Bearer JWT gerektirir. Roller: admin, editor.\n\nKaynak: src/admin/product-rules-routes.ts; handler: productRulesController.createProductRule.",
+        "description": "Bearer JWT gerektirir. Roller: admin, editor.\n\nKaynak: src/admin/product-rules-routes.ts; handler: productRulesController.createProductRule.\n\nisOptionalHeight=true olduğunda yalnızca genişlik tanımlanır; height gönderilmez ve üst sınır uygulanmaz. Yanıtta height=0 depolama göstergesidir. Sabit ebata geçerken pozitif height gönderin. Siparişte gerçek boy zorunludur.",
         "security": [
           {
             "bearerAuth": []
@@ -6773,19 +6773,83 @@
                   "sizeOptions": {
                     "type": "array",
                     "items": {
-                      "type": "object",
-                      "additionalProperties": true
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "width": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 2147483647
+                            },
+                            "isOptionalHeight": {
+                              "type": "boolean",
+                              "enum": [
+                                true
+                              ]
+                            },
+                            "height": {
+                              "type": "integer",
+                              "description": "Özel yükseklikte gönderilmez; eski istemciler gönderirse yok sayılır."
+                            }
+                          },
+                          "required": [
+                            "width",
+                            "isOptionalHeight"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "width": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 2147483647
+                            },
+                            "height": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 2147483647
+                            },
+                            "isOptionalHeight": {
+                              "type": "boolean",
+                              "enum": [
+                                false
+                              ],
+                              "default": false
+                            }
+                          },
+                          "required": [
+                            "width",
+                            "height"
+                          ]
+                        }
+                      ]
                     }
                   },
                   "cutTypeIds": {
                     "type": "array",
                     "items": {
-                      "type": "string"
+                      "type": "integer"
                     }
                   }
                 },
                 "required": [
                   "name"
+                ]
+              },
+              "example": {
+                "name": "Hazır ve özel kesim",
+                "sizeOptions": [
+                  {
+                    "width": 100,
+                    "height": 200,
+                    "isOptionalHeight": false
+                  },
+                  {
+                    "width": 100,
+                    "isOptionalHeight": true
+                  }
                 ]
               }
             }
@@ -7235,7 +7299,7 @@
         ],
         "operationId": "post_api_admin_product_rules_ruleId_size_options",
         "summary": "=========== SIZE OPTIONS MANAGEMENT =========== Boyut seçeneği ekle",
-        "description": "Bearer JWT gerektirir. Roller: admin, editor.\n\nKaynak: src/admin/product-rules-routes.ts; handler: productRulesController.addSizeOption.",
+        "description": "Bearer JWT gerektirir. Roller: admin, editor.\n\nKaynak: src/admin/product-rules-routes.ts; handler: productRulesController.addSizeOption.\n\nisOptionalHeight=true olduğunda yalnızca genişlik tanımlanır; height gönderilmez ve üst sınır uygulanmaz. Yanıtta height=0 depolama göstergesidir. Sabit ebata geçerken pozitif height gönderin. Siparişte gerçek boy zorunludur.",
         "security": [
           {
             "bearerAuth": []
@@ -7373,22 +7437,62 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "width": {
-                    "type": "number"
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "width": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 2147483647
+                      },
+                      "isOptionalHeight": {
+                        "type": "boolean",
+                        "enum": [
+                          true
+                        ]
+                      },
+                      "height": {
+                        "type": "integer",
+                        "description": "Özel yükseklikte gönderilmez; eski istemciler gönderirse yok sayılır."
+                      }
+                    },
+                    "required": [
+                      "width",
+                      "isOptionalHeight"
+                    ]
                   },
-                  "height": {
-                    "type": "number"
-                  },
-                  "isOptionalHeight": {
-                    "type": "boolean"
+                  {
+                    "type": "object",
+                    "properties": {
+                      "width": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 2147483647
+                      },
+                      "height": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 2147483647
+                      },
+                      "isOptionalHeight": {
+                        "type": "boolean",
+                        "enum": [
+                          false
+                        ],
+                        "default": false
+                      }
+                    },
+                    "required": [
+                      "width",
+                      "height"
+                    ]
                   }
-                },
-                "required": [
-                  "width",
-                  "height"
                 ]
+              },
+              "example": {
+                "width": 100,
+                "isOptionalHeight": true
               }
             }
           }
@@ -7402,7 +7506,7 @@
         ],
         "operationId": "put_api_admin_product_rules_ruleId_size_options_sizeId",
         "summary": "Boyut seçeneğini güncelle",
-        "description": "Bearer JWT gerektirir. Roller: admin, editor.\n\nKaynak: src/admin/product-rules-routes.ts; handler: productRulesController.updateSizeOption.",
+        "description": "Bearer JWT gerektirir. Roller: admin, editor.\n\nKaynak: src/admin/product-rules-routes.ts; handler: productRulesController.updateSizeOption.\n\nisOptionalHeight=true olduğunda yalnızca genişlik tanımlanır; height gönderilmez ve üst sınır uygulanmaz. Yanıtta height=0 depolama göstergesidir. Sabit ebata geçerken pozitif height gönderin. Siparişte gerçek boy zorunludur.",
         "security": [
           {
             "bearerAuth": []
@@ -7544,22 +7648,29 @@
           "editor"
         ],
         "requestBody": {
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
                 "properties": {
                   "width": {
-                    "type": "number"
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 2147483647
                   },
                   "height": {
-                    "type": "number"
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 2147483647
                   },
                   "isOptionalHeight": {
                     "type": "boolean"
                   }
                 }
+              },
+              "example": {
+                "isOptionalHeight": true
               }
             }
           }

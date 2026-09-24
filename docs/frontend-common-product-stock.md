@@ -197,19 +197,27 @@ Frontend sadece `80x150` seçeneğini göstermeli; bu seçenek için yüksekliğ
 
 ### Opsiyonel yükseklik
 
-`is_optional_height: true` ise `width` sabittir, `height` üst sınıra kadar kullanıcı tarafından girilebilir.
+`is_optional_height: true` ise yalnızca `width` sabittir. Kural oluştururken boy veya maksimum boy girilmez; gerçek boy sipariş sırasında girilir.
 
 Örnek:
 
 ```json
 {
   "width": 80,
-  "height": 300,
+  "height": 0,
   "is_optional_height": true
 }
 ```
 
-Bu seçenek için frontend `80x1` ile `80x300` arasındaki geçerli yüksekliği kabul edebilir. Backend maksimum yüksekliği tekrar doğrular.
+Yanıttaki `height: 0` depolama göstergesidir; sipariş boyu veya üst sınır değildir. Eski özel kesim kurallarındaki pozitif `height` değerleri de üst sınır olarak kullanılmaz. Sepete gerçek, pozitif boy gönderilir; m² ve fiyat bu boyla hesaplanır.
+
+Kural oluşturma `sizeOptions` girdisi ve `POST /api/admin/product-rules/{ruleId}/size-options` için örnek:
+
+```json
+{ "width": 80, "isOptionalHeight": true }
+```
+
+Frontend özel yükseklik seçildiğinde boy alanını gizlemeli, zorunluluk kontrolünden çıkarmalı ve isteğe eklememelidir. Sabit ebatta pozitif `height` zorunludur. Özelden sabite geçerken boy yeniden girilmelidir. Kural yönetimi isteklerinde `isOptionalHeight`, ürün detaylarında `is_optional_height` kullanılır.
 
 ## 7. Kesim ve saçak seçimi
 
@@ -559,7 +567,7 @@ Bu uyarı kullanıcıya gösterilebilir ancak submit işlemi durdurulmamalıdır
 - Ürün listeleri yalnızca ana ürünleri döndürür. Hazır/kesme kartları ayrı gösterilmez.
 - Eski bir ürün ID’siyle detay istendiğinde ana ürünün cevabı gelir. Frontend cevapta dönen `productId` değerini kullanmalı ve eski ID ile tuttuğu detay önbelleğini yenilemelidir.
 - Eski siparişler ve QR/barkod kayıtları kendi ürün ID’lerini korur. Bu ID üzerinden stok tüketimi veya iadesi ana stok havuzuna yönlenir.
-- `sizeOptions.filter(s => !s.is_optional_height)` hazır ebat listesidir. `is_optional_height=true` kayıtları özel kesim için izin verilen genişlik ve maksimum yüksekliği tanımlar. Bunları hazır ebat kartına çevirmeyin.
+- `sizeOptions.filter(s => !s.is_optional_height)` hazır ebat listesidir. `is_optional_height=true` kayıtları özel kesim için yalnızca izin verilen genişliği tanımlar. Bunları hazır ebat kartına çevirmeyin; yükseklik üst sınırı uygulamayın.
 - Aktif sepetler rezervasyon oluşturur. Seçilen ölçü alanı × adet kadar rezervasyon vardır; aynı ürünün farklı ebatları ortak havuzu paylaşır.
 - Stok yetersizliği sepeti veya siparişi engellemez. Rezervasyon kullanılabilir stoğu aşabilir; `consumableAreaM2` negatif olabilir. Negatif değeri stok uyarısı olarak gösterin, butonları kapatmayın.
 - Sepet kapanınca rezervasyon çözülür. Sipariş oluşunca fiziksel m² stok düşer; aynı alan ikinci kez stoktan düşülmez.

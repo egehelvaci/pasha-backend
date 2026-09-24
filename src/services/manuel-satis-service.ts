@@ -931,7 +931,7 @@ export class ManuelSatisService {
               optionalHeightOptions: optionalHeightOptions.map(so => ({
                 id: so.id,
                 width: so.width,
-                maxHeight: so.height, // Maksimum yükseklik
+                maxHeight: null, // Özel kesimde üst sınır yok
                 isOptionalHeight: true
               })),
               

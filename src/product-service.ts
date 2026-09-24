@@ -1242,13 +1242,6 @@ export class ProductService {
               is_optional_height: true
             }
           });
-          
-          if (sizeOption) {
-            // Opsiyonel yükseklik bulundu, maksimum değer kontrolü yap
-            if (stockData.height > sizeOption.height) {
-              throw new Error(`Bu genişlik (${stockData.width}) için maksimum yükseklik değeri: ${sizeOption.height}cm'dir`);
-            }
-          }
         }
         
         if (!sizeOption) {
@@ -1371,13 +1364,6 @@ export class ProductService {
               is_optional_height: true
             }
           });
-          
-          if (sizeOption) {
-            // Opsiyonel yükseklik bulundu, maksimum değer kontrolü yap
-            if (stockData.height > sizeOption.height) {
-              throw new Error(`Bu genişlik (${stockData.width}) için maksimum yükseklik değeri: ${sizeOption.height}cm'dir`);
-            }
-          }
         }
         
         if (!sizeOption) {
