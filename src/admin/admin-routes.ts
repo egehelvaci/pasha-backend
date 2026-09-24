@@ -11,6 +11,7 @@ import productRulesRoutes from './product-rules-routes'
 import cutTypesRoutes from './cut-types-routes'
 import muhasebeRoutes from './muhasebe-routes'
 import adminCartRoutes from './admin-cart-routes'
+import orderListV2Routes from './order-list-v2-routes'
 
 import { excelExportController } from './excel-export-controller'
 
@@ -25,6 +26,7 @@ router.post('/orders/:orderId/assign-employee', adminOrderController.assignEmplo
 
 // Tüm diğer admin rotaları için önce kimlik doğrulama gerekiyor
 router.use(authMiddleware)
+router.use('/orders-v2', orderListV2Routes)
 
 // Editör ve admin için ayrı yetkilendirme gerektiren rotalar
 
@@ -98,4 +100,4 @@ router.get('/export/orders', authorizeRoles('admin', 'editor'), excelExportContr
 // Payment API'leri - Editör ve Admin erişimi
 router.get('/payments', authorizeRoles('admin', 'editor'), adminPaymentController.getAllPayments)
 
-export default router 
+export default router
