@@ -56,7 +56,7 @@ export class AuthService {
       // Geçici bakım kısıtı: parola doğrulaması yalnızca izin verilen yönetici
       // hesabı için devam eder. Kısıt env ile açıkça kapatılabilir.
       if (this.loginRestrictionEnabled && credentials.username !== this.restrictedLoginUsername) {
-        throw new Error('Sistem geçici olarak yalnızca egeadmin hesabına açıktır')
+        throw new Error('Sistemimizde bakım çalışması yapılmaktadır. En kısa sürede tekrar hizmetinizde olacağız.')
       }
 
       // Kullanıcıyı bul (şifre kontrolü olmadan)
