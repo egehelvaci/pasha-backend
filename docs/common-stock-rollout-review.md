@@ -22,7 +22,22 @@
 7. `npm run stock:verify -- --compare`: kullanıcı/koleksiyon/mağaza/sipariş/kalem içeriklerinin ve toplam stokun korunduğunu karşılaştırır.
 8. Eski ID detayını, ana ürün listesini ve hazır/özel ölçü seçeneklerini canlı API'den doğrula.
 
-## Testler
+## 24 Eylül 2026 canlı geçiş sonucu
+
+- Backend: `https://pashahomeapps.up.railway.app`; yeni sürümün alias alanını döndürdüğü doğrulandıktan sonra veri geçişi uygulandı.
+- Üç SİSAL PLUS hazır/kesme çifti birleştirildi. Fiziksel Product kayıt sayısı 169 kaldı; görünür ana ürün sayısı 166, eski ID yönlendirmesi sayısı 3 oldu.
+- Toplam stok geçiş öncesi ve sonrası `762290.64 m²`. Stok hareketi, FIFO lotu ve aktif rezervasyon eşitliği kontrolünde hata bulunmadı.
+- 208 kullanıcı, 35 koleksiyon, 190 mağaza, 223 sipariş ve 445 sipariş kaleminin satır içerik özetleri başlangıç kaydıyla aynı kaldı.
+- Veritabanı resetlenmedi; eski ürün ve geçmiş işlem kayıtları silinmedi. `.env` commitlenmedi.
+
+PowerShell/npm sürümüne göre `npm run ... -- --apply` parametreleri aktarılmayabilir. Çıktıdaki `apply` alanını mutlaka kontrol edin. Doğrudan çalıştırma:
+
+```powershell
+node node_modules/ts-node/dist/bin.js src/scripts/merge-common-products.ts --apply --expected-hash=<dry-run-hash>
+node scripts/verify-common-rollout.cjs --compare
+```
+
+## Test kapsamı
 
 `scripts/test-stock-migrations.cjs` migration ve normal sepet rezervasyonlarını transaction içinde deneyip rollback eder. `scripts/test-common-stock.cjs` yalnızca kendisinin UUID ile oluşturduğu geçici ürünlerde shortage tekrarını, negatif bakiye sonrası satın almayı, eş zamanlı tüketimi, FIFO iadesini ve hata halinde transaction rollback'ini sınar; sonunda bu geçici ürünleri kaldırır. `scripts/test-order-stock.cjs` normal/admin sepet ve doğrudan admin siparişlerini, rezervasyon çözülmesini, bakiye değişimini, iptal ve tekrar iptali sınar; tüm verisini geri alır.
 
