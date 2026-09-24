@@ -3,6 +3,7 @@ import { barcodeService } from '../services/barcode-service'
 import { notificationService } from '../services/notification-service'
 import { qrCodeService } from '../services/qr-code-service'
 import prisma from '../utils/prisma'
+import { orderService } from '../order-service'
 
 // Store type display helper fonksiyonu
 function getStoreTypeDisplay(storeType: string): string {
@@ -940,74 +941,16 @@ export class AdminOrderController {
         }
       }
 
-      // İptal durumunda açık hesap bakiyesini, fiyat listesi limitini geri ekle ve stokları geri ekle
-      // NOT: Sadece PENDING durumdaki siparişler iptal edilebilir
-      if (status === 'CANCELED' && existingOrder.status !== 'CANCELED') {
-        // PENDING durumu dışındaki siparişlerin iptal edilmesini engelle
-        if (existingOrder.status !== 'PENDING') {
-          return res.status(400).json({
-            success: false,
-            message: `${existingOrder.status} durumundaki siparişler iptal edilemez. Sadece PENDING durumdaki siparişler iptal edilebilir.`
-          })
-        }
-
-        const store = existingOrder.user.Store
-        const orderTotal = Number(existingOrder.total_price)
-        
-        // 1. Bakiyeye iade et - Admin siparişleri için özel işlem
-        if (store) {
-          const currentBalance = Number(store.bakiye || 0)
-          
-          // Admin siparişleri için: Doğrudan bakiyeye iade et (açık hesap kontrolü yok)
-          // Normal siparişler için: Sadece sınırsız olmayan mağazalar için iade et
-          const isAdminOrder = existingOrder.admin_cart_id != null && existingOrder.admin_cart_id > 0 // Admin sepet ID'si varsa admin siparişi
-          
-          if (isAdminOrder || !store.limitsiz_acik_hesap) {
-            await prisma.store.update({
-              where: { store_id: store.store_id },
-              data: { 
-                bakiye: currentBalance + orderTotal,
-                // Açık hesap limiti değişmez
-              }
-            })
-
-            console.log(`💰 ${isAdminOrder ? 'ADMİN SİPARİŞİ' : 'Normal Sipariş'} İptal iadesi yapıldı:`)
-            console.log(`  - Önceki bakiye: ${currentBalance} TL`)
-            console.log(`  - İade tutarı: ${orderTotal} TL`)
-            console.log(`  - Yeni bakiye: ${currentBalance + orderTotal} TL`)
-            console.log(`  - Açık hesap limiti değişmez`)
-          }
-        }
-
-        // 2. Fiyat listesi limitini iade et
-        if (store) {
-          // Mağazanın fiyat listesini bul
-          const storePriceList = await prisma.storePriceList.findFirst({
-            where: { store_id: store.store_id },
-            include: { PriceList: true }
-          })
-          
-          if (storePriceList && storePriceList.PriceList && storePriceList.PriceList.limit_amount) {
-            const currentLimit = Number(storePriceList.PriceList.limit_amount)
-            const newLimit = currentLimit + orderTotal
-            
-            await prisma.priceList.update({
-              where: { price_list_id: storePriceList.PriceList.price_list_id },
-              data: { limit_amount: newLimit }
-            })
-            
-            console.log(`💰 Fiyat listesi limiti iade edildi: ${currentLimit} → ${newLimit} TL`)
-          }
-        }
-
-        // 3. YENİ EKLENDİ: Stokları geri ekle
-        try {
-          await qrCodeService.restoreStockForOrder(orderId)
-          console.log(`📦 Sipariş ${orderId} iptal edildi - Stok geri eklendi`)
-        } catch (stockError) {
-          console.error('❌ Stok geri ekleme hatası:', stockError)
-          // Stok hatası logs olarak tutulacak ama işlem devam edecek
-        }
+      if (status === 'CANCELED') {
+        const result = await orderService.cancelOrder(orderId, existingOrder.user_id, req.body.reason, true);
+        if (!result.success) return res.status(result.statusCode || 400).json(result);
+        const canceled = await prisma.order.findUnique({ where: { id: orderId }, include: {
+          user: { include: { Store: true, userType: true } }, items: { include: { product: true } }
+        } });
+        return res.status(result.success ? 200 : result.statusCode || 400).json({
+          success: result.success, message: result.message,
+          data: canceled ? { ...canceled, items: canceled.items.map(item => ({ ...item, cut_type: item.cut_type === 'rectangle' ? 'standart' : item.cut_type })) } : result.order
+        });
       }
 
       // Sipariş durumunu güncelle
@@ -1228,6 +1171,7 @@ export class AdminOrderController {
           }
         }),
         prisma.product.findMany({
+          where: { canonicalProductId: null },
           include: {
             collection: true,
             productrules: {

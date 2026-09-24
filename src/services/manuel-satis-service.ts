@@ -711,6 +711,7 @@ export class ManuelSatisService {
       const skip = (page - 1) * limit;
 
       const whereCondition: any = {
+        canonicalProductId: null,
         isManuelSatis: true
       };
 
@@ -805,6 +806,7 @@ export class ManuelSatisService {
       const products = await prisma.product.findMany({
         where: whereCondition,
         include: {
+          productStock: true,
           collection: true,
           productvariations: {
             include: {
@@ -857,7 +859,9 @@ export class ManuelSatisService {
           }
 
           // Varyasyonları düzenle ve stok durumunu kontrol et
-          const availableVariations = product.productvariations.filter(v => 
+          const common = product.productStock;
+          const area = common ? Number(common.availableAreaM2) : null;
+          const availableVariations = product.productvariations.filter(v => common ||
             (v.stock_quantity && v.stock_quantity > 0) || 
             (v.stock_area_m2 && Number(v.stock_area_m2) > 0)
           );
@@ -886,7 +890,8 @@ export class ManuelSatisService {
               code: product.collection.code
             },
             rule_id: product.rule_id,
-            hasStock: availableVariations.length > 0,
+            hasStock: area !== null ? area - Number(common?.reservedAreaM2 || 0) > 0 : availableVariations.length > 0,
+            stock: common ? { enabled: true, availableAreaM2: area, reservedAreaM2: Number(common.reservedAreaM2), consumableAreaM2: Number(area) - Number(common.reservedAreaM2) } : { enabled: false },
             priceInfo,
             
             // Varyasyon bilgileri
@@ -894,8 +899,8 @@ export class ManuelSatisService {
               id: v.id,
               width: Number(v.width),
               height: Number(v.height),
-              stockQuantity: v.stock_quantity || 0,
-              stockAreaM2: Number(v.stock_area_m2 || 0),
+              stockQuantity: area !== null ? Math.floor(area / (v.width * v.height / 10000)) : v.stock_quantity || 0,
+              stockAreaM2: area !== null ? area : Number(v.stock_area_m2 || 0),
               hasFringe: v.has_fringe || false,
               cutType: v.cuttypes ? {
                 id: v.cuttypes.id,
@@ -948,8 +953,8 @@ export class ManuelSatisService {
             stockInfo: availableVariations.map(v => ({
               width: Number(v.width),
               height: Number(v.height),
-              stockQuantity: v.stock_quantity || 0,
-              stockAreaM2: Number(v.stock_area_m2 || 0),
+              stockQuantity: area !== null ? Math.floor(area / (v.width * v.height / 10000)) : v.stock_quantity || 0,
+              stockAreaM2: area !== null ? area : Number(v.stock_area_m2 || 0),
               hasFringe: v.has_fringe || false,
               estimatedPrice: priceInfo ? 
                 priceInfo.pricePerSquareMeter * ((Number(v.width) * Number(v.height)) / 10000) : null

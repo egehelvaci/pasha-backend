@@ -915,7 +915,16 @@ export const purchaseProductFromSupplier = async (req: Request, res: Response) =
         where: { product_id: product_id }
       });
 
-      if (existingVariations.length > 0) {
+      const commonStock = await commonStockService.getSnapshot(product_id, tx);
+      if (commonStock.enabled) {
+        await commonStockService.addStock({
+          productId: product_id,
+          areaM2: Number(quantity_m2),
+          movementType: 'PURCHASE_RECEIPT',
+          referenceKey: `purchase:${transaction.id}:direct`,
+          metadata: { supplierId: supplier_id }
+        }, tx);
+      } else if (existingVariations.length > 0) {
         // Mevcut varyasyonlar varsa, ilk varyasyona stok ekle
         const firstVariation = existingVariations[0];
         await tx.productvariations.update({
@@ -1253,6 +1262,22 @@ export const purchaseFromCart = async (req: Request, res: Response) => {
         const itemHasFringe = item.has_fringe || false;
 
         console.log(`📏 Alınan ürün ölçüleri: ${itemWidth}x${itemHeight}cm, Saçak: ${itemHasFringe}`);
+
+        const common = await commonStockService.getSnapshot(item.product_id, tx);
+        if (common.enabled) {
+          const added = calculateAreaM2(itemWidth, itemHeight, item.quantity);
+          await commonStockService.addStock({
+            productId: item.product_id, areaM2: added, movementType: 'PURCHASE_RECEIPT',
+            referenceKey: `purchase:${transaction.id}:item:${item.id}`,
+            quantity: item.quantity, width: itemWidth, height: itemHeight,
+            metadata: { hasFringe: itemHasFringe, cutType: item.cut_type }
+          }, tx);
+          stockUpdates.push({ product_id: item.product_id, variation_match: 'common_stock',
+            size: `${itemWidth}x${itemHeight}cm`, has_fringe: itemHasFringe, cut_type: item.cut_type,
+            added_m2: added, added_quantity: item.quantity,
+            old_area_m2: common.availableAreaM2, new_area_m2: common.availableAreaM2 + added });
+          continue;
+        }
 
         // Cut type mapping
         const cutTypeMapping: { [key: string]: number } = {

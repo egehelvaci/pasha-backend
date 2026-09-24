@@ -78,15 +78,11 @@ export class ProductService {
       };
       
       const product = await prisma.product.create({
-        data: productData,
+        data: { ...productData, productStock: { create: {} } },
         include: {
           collection: true // Ürün ile birlikte koleksiyon bilgilerini de getir
         }
       });
-
-      // New products opt into the common product-level stock model. Existing
-      // products without this row continue using their legacy variation stock.
-      await commonStockService.ensureProductStock(product.productId);
 
       // Kurala göre varyasyonları oluştur
       try {
@@ -229,7 +225,7 @@ export class ProductService {
       const skip = (page - 1) * limit;
 
       // Temel sorgu koşulları
-      const whereCondition: any = {};
+      const whereCondition: any = { canonicalProductId: null };
       
       if (options?.collectionId) {
         whereCondition.collectionId = options.collectionId;
@@ -491,6 +487,7 @@ export class ProductService {
    */
   async getProductById(productId: string, userId?: string) {
     try {
+      productId = await commonStockService.resolveProductId(productId);
       // Alış fiyat listesini getir
       const purchasePriceList = await this.getDefaultPurchasePriceList();
 
@@ -709,7 +706,7 @@ export class ProductService {
   async getProductsByCollection(collectionId: string, userId?: string) {
     try {
       const products = await prisma.product.findMany({
-        where: { collectionId },
+        where: { collectionId, canonicalProductId: null },
         include: {
           collection: true,
           productStock: true
@@ -1551,6 +1548,12 @@ export class ProductService {
       }
 
       // Normal updateStock mantığını kullan ama ek alan bilgisini de güncelle
+      if ((await commonStockService.getSnapshot(productId)).enabled) {
+        return this.updateStockAreaM2(productId, {
+          width: stockData.width, height: stockData.height,
+          areaM2: stockData.updateMode === 'quantity' ? finalQuantity * singlePieceAreaM2 : finalAreaM2
+        });
+      }
       const result = await this.updateStock(productId, {
         width: stockData.width,
         height: stockData.height,
@@ -1672,6 +1675,7 @@ export class ProductService {
    */
   async getProductVariationOptions(productId: string) {
     try {
+      productId = await commonStockService.resolveProductId(productId);
       // Ürünün var olup olmadığını kontrol et
       const product = await prisma.product.findUnique({
         where: { productId }
@@ -1754,7 +1758,7 @@ export class ProductService {
           return {
             width: v.width,
             height: v.height,
-            stockQuantity: v.stock_quantity
+            stockQuantity: canonicalStock.enabled ? Math.floor(canonicalStock.availableAreaM2 / (v.width * v.height / 10000)) : v.stock_quantity
           };
         })
       };

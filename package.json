@@ -12,7 +12,10 @@
     "docs:generate": "node scripts/generate-openapi.cjs",
     "docs:check": "node scripts/generate-openapi.cjs --check && node scripts/test-openapi.cjs",
     "test:api-cleanup": "npm run docs:check && node scripts/test-api-cleanup.cjs",
-    "stock:audit": "ts-node src/scripts/audit-common-product-stock.ts"
+    "stock:audit": "ts-node src/scripts/audit-common-product-stock.ts",
+    "stock:merge": "ts-node src/scripts/merge-common-products.ts",
+    "test:common-stock": "npm run api:build && node scripts/test-common-stock.cjs && node scripts/test-order-stock.cjs",
+    "stock:verify": "node scripts/verify-common-rollout.cjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.496.0",

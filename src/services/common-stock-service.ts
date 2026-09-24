@@ -40,7 +40,19 @@ export function calculateAreaM2(width?: number | null, height?: number | null, q
  * variation stock until an audited migration explicitly opts them in.
  */
 class CommonStockService {
+  async resolveProductId(productId: string, client: DbClient = prisma): Promise<string> {
+    const visited = new Set<string>();
+    while (true) {
+      if (visited.has(productId)) throw new Error('Ürün yönlendirme döngüsü');
+      visited.add(productId);
+      const product = await client.product.findUnique({ where: { productId }, select: { canonicalProductId: true } });
+      if (!product?.canonicalProductId) return productId;
+      productId = product.canonicalProductId;
+    }
+  }
+
   async ensureProductStock(productId: string, client: DbClient = prisma) {
+    productId = await this.resolveProductId(productId, client);
     return client.productStock.upsert({
       where: { productId },
       update: {},
@@ -49,6 +61,7 @@ class CommonStockService {
   }
 
   async getSnapshot(productId: string, client: DbClient = prisma): Promise<StockSnapshot> {
+    productId = await this.resolveProductId(productId, client);
     const stock = await client.productStock.findUnique({ where: { productId } });
     if (!stock) {
       return {
@@ -73,7 +86,8 @@ class CommonStockService {
     const uniqueIds = [...new Set(productIds)];
     if (uniqueIds.length === 0) return new Map();
 
-    const rows = await client.productStock.findMany({ where: { productId: { in: uniqueIds } } });
+    const resolved = await Promise.all(uniqueIds.map(id => this.resolveProductId(id, client)));
+    const rows = await client.productStock.findMany({ where: { productId: { in: resolved } } });
     const byId = new Map(rows.map(row => {
       const availableAreaM2 = Number(row.availableAreaM2 || 0);
       const reservedAreaM2 = Number(row.reservedAreaM2 || 0);
@@ -85,7 +99,9 @@ class CommonStockService {
       } as StockSnapshot];
     }));
 
-    for (const productId of uniqueIds) {
+    for (const [index, productId] of uniqueIds.entries()) {
+      const canonical = byId.get(resolved[index]);
+      if (canonical) byId.set(productId, canonical);
       if (!byId.has(productId)) {
         byId.set(productId, {
           enabled: false,
@@ -101,7 +117,7 @@ class CommonStockService {
   /** Add a FIFO lot and increase the product's canonical area. */
   async addStock(input: StockMovementInput, client: DbClient = prisma): Promise<any> {
     if (client === prisma) {
-      return prisma.$transaction(tx => this.addStock(input, tx));
+      return prisma.$transaction(tx => this.addStock(input, tx), { maxWait: 15000, timeout: 30000 });
     }
     if (input.areaM2 <= 0) return { enabled: false, areaM2: 0 };
     const stock = await this.lockStock(input.productId, client, true);
@@ -114,11 +130,27 @@ class CommonStockService {
       if (existing) return { enabled: true, areaM2: Math.abs(Number(existing.areaM2)) };
     }
 
-    const areaM2 = roundArea(input.areaM2);
+    const consumed = input.movementType === 'ORDER_RETURN' && input.orderItemId
+      ? await client.productStockMovement.findMany({
+          where: { productStockId: stock.id, orderItemId: input.orderItemId, movementType: 'ORDER_CONSUMPTION' },
+          orderBy: { createdAt: 'asc' }
+        })
+      : [];
+    const areaM2 = roundArea(consumed.length
+      ? -consumed.reduce((sum, movement) => sum + Number(movement.areaM2), 0)
+      : input.areaM2);
     const currentAvailableAreaM2 = Number(stock.availableAreaM2 || 0);
     // Incoming stock first closes an existing negative balance. Only the
     // surplus becomes a new FIFO lot.
-    const lotAreaM2 = roundArea(areaM2 + Math.min(0, currentAvailableAreaM2));
+    let lotAreaM2 = roundArea(areaM2 + Math.min(0, currentAvailableAreaM2));
+    // Restore the original FIFO lots for returns, after covering any current
+    // deficit. Shortage-only consumption has no original lot to restore.
+    for (const movement of consumed) {
+      if (!movement.lotId || lotAreaM2 <= STOCK_EPSILON) continue;
+      const restored = roundArea(Math.min(-Number(movement.areaM2), lotAreaM2));
+      await client.productStockLot.update({ where: { id: movement.lotId }, data: { remainingAreaM2: { increment: restored } } });
+      lotAreaM2 = roundArea(lotAreaM2 - restored);
+    }
     const lot = lotAreaM2 > STOCK_EPSILON
       ? await client.productStockLot.create({
           data: {
@@ -162,7 +194,7 @@ class CommonStockService {
    */
   async setStockArea(productId: string, areaM2: number, referenceKey: string, client: DbClient = prisma): Promise<any> {
     if (client === prisma) {
-      return prisma.$transaction(tx => this.setStockArea(productId, areaM2, referenceKey, tx));
+      return prisma.$transaction(tx => this.setStockArea(productId, areaM2, referenceKey, tx), { maxWait: 15000, timeout: 30000 });
     }
     const stock = await this.lockStock(productId, client, true);
     if (!stock) return { enabled: false, availableAreaM2: 0 };
@@ -197,7 +229,7 @@ class CommonStockService {
   /** Consume area from the oldest remaining lots under a product row lock. */
   async consumeProductArea(input: StockMovementInput, client: DbClient = prisma): Promise<any> {
     if (client === prisma) {
-      return prisma.$transaction(tx => this.consumeProductArea(input, tx));
+      return prisma.$transaction(tx => this.consumeProductArea(input, tx), { maxWait: 15000, timeout: 30000 });
     }
     const requestedArea = roundArea(input.areaM2);
     if (requestedArea <= 0) return { enabled: false, areaM2: 0 };
@@ -208,7 +240,10 @@ class CommonStockService {
     const referencePrefix = input.referenceKey ? `${input.referenceKey}:lot:` : undefined;
     if (referencePrefix) {
       const existing = await client.productStockMovement.findFirst({
-        where: { referenceKey: { startsWith: referencePrefix } }
+        where: { OR: [
+          { referenceKey: { startsWith: referencePrefix } },
+          { referenceKey: `${input.referenceKey}:shortage` }
+        ] }
       });
       if (existing) return { enabled: true, areaM2: requestedArea, idempotent: true };
     }
@@ -281,8 +316,9 @@ class CommonStockService {
     return { enabled: true, areaM2: requestedArea };
   }
 
-  async consumeOrder(orderId: string) {
-    return prisma.$transaction(async tx => {
+  async consumeOrder(orderId: string, client: DbClient = prisma): Promise<any> {
+    if (client === prisma) return prisma.$transaction(tx => this.consumeOrder(orderId, tx));
+    const tx = client;
       const order = await tx.order.findUnique({ where: { id: orderId }, include: { items: true } });
       if (!order) throw new Error('Sipariş bulunamadı');
 
@@ -301,10 +337,10 @@ class CommonStockService {
           height: Number(item.height || 0),
           metadata: { hasFringe: item.has_fringe, cutType: item.cut_type }
         }, tx);
+        if (!result.enabled) throw new Error(`Ürün için geçerli ortak stok kaydı veya ölçü bulunamadı: ${item.product_id}`);
         results.push({ itemId: item.id, enabled: result.enabled, areaM2 });
       }
       return { success: true, results };
-    });
   }
 
   async restoreOrder(orderId: string, client: DbClient = prisma) {
@@ -354,17 +390,15 @@ class CommonStockService {
     return run(client);
   }
 
-  async reserve(productId: string, areaM2: number, referenceKey: string, options?: { cartId?: number; orderId?: string; expiresAt?: Date }, client: DbClient = prisma) {
+  async reserve(productId: string, areaM2: number, referenceKey: string, options?: { cartId?: number; orderId?: string; expiresAt?: Date }, client: DbClient = prisma): Promise<any> {
+    if (client === prisma) return prisma.$transaction(tx => this.reserve(productId, areaM2, referenceKey, options, tx), { maxWait: 15000, timeout: 30000 });
     const stock = await this.lockStock(productId, client, false);
     if (!stock) return { enabled: false, reservedAreaM2: 0 };
     const existing = await client.productStockReservation.findUnique({ where: { referenceKey } });
-    if (existing) return { enabled: true, reservedAreaM2: Number(existing.areaM2) };
+    if (existing) return { enabled: true, reservedAreaM2: existing.status === 'ACTIVE' ? Number(existing.areaM2) : 0 };
 
     const requested = roundArea(areaM2);
-    const available = Number(stock.availableAreaM2 || 0) - Number(stock.reservedAreaM2 || 0);
-    if (available + STOCK_EPSILON < requested) {
-      throw new Error(`Yetersiz ortak stok rezervasyonu: mevcut ${Math.max(0, available).toFixed(4)} m², istenen ${requested.toFixed(4)} m²`);
-    }
+    if (!Number.isFinite(requested) || requested <= 0) throw new Error('Rezervasyon alanı pozitif olmalıdır');
 
     await client.productStockReservation.create({
       data: {
@@ -380,15 +414,23 @@ class CommonStockService {
     return { enabled: true, reservedAreaM2: requested };
   }
 
-  async releaseReservation(referenceKey: string, client: DbClient = prisma) {
+  async releaseReservation(referenceKey: string, client: DbClient = prisma): Promise<any> {
+    if (client === prisma) return prisma.$transaction(tx => this.releaseReservation(referenceKey, tx), { maxWait: 15000, timeout: 30000 });
     const reservation = await client.productStockReservation.findUnique({ where: { referenceKey } });
     if (!reservation || reservation.status !== 'ACTIVE') return { released: false };
-    await client.productStockReservation.update({ where: { id: reservation.id }, data: { status: 'RELEASED' } });
-    await client.productStock.update({ where: { id: reservation.productStockId }, data: { reservedAreaM2: { decrement: reservation.areaM2 } } });
-    return { released: true, areaM2: Number(reservation.areaM2) };
+    await client.$queryRaw`SELECT id FROM product_stocks WHERE id = ${reservation.productStockId} FOR UPDATE`;
+    const current = await client.productStockReservation.findUnique({ where: { id: reservation.id } });
+    if (!current || current.status !== 'ACTIVE') return { released: false };
+    const released = await client.productStockReservation.updateMany({ where: { id: reservation.id, status: 'ACTIVE' }, data: { status: 'RELEASED' } });
+    if (!released.count) return { released: false };
+    await client.productStock.update({ where: { id: current.productStockId }, data: { reservedAreaM2: { decrement: current.areaM2 } } });
+    return { released: true, areaM2: Number(current.areaM2) };
   }
 
   private async lockStock(productId: string, client: DbClient, createIfMissing: boolean) {
+    // Keep the alias mapping stable until this stock transaction commits.
+    await client.$queryRaw`SELECT product_id FROM "Product" WHERE product_id = ${productId} FOR SHARE`;
+    productId = await this.resolveProductId(productId, client);
     let stock = await client.productStock.findUnique({ where: { productId } });
     if (!stock && createIfMissing) {
       stock = await client.productStock.create({ data: { productId } });

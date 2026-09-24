@@ -219,7 +219,7 @@ export class CartService {
         // Mevcut öğeyi güncelle
         const newQuantity = existingItem.quantity + data.quantity;
         
-        if (newQuantity > availableStock) {
+        if (!canonicalStock.enabled && newQuantity > availableStock) {
           throw new Error(`Toplam miktar stok miktarını aşıyor. Admin sepette zaten ${existingItem.quantity} adet var. Maksimum eklenebilir: ${availableStock - existingItem.quantity}`);
         }
 
@@ -393,7 +393,7 @@ export class CartService {
         // Mevcut öğeyi güncelle - toplam miktar stok kontrolü
         const newQuantity = existingItem.quantity + data.quantity;
         
-        if (newQuantity > availableStock) {
+        if (!canonicalStock.enabled && newQuantity > availableStock) {
           throw new Error(`Toplam miktar stok miktarını aşıyor. Sepette zaten ${existingItem.quantity} adet var. Maksimum eklenebilir: ${availableStock - existingItem.quantity}`);
         }
 

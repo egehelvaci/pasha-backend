@@ -91,6 +91,9 @@ model Product {
   createdAt              DateTime                @default(now()) @map("created_at")
   updatedAt              DateTime                @updatedAt @map("updated_at")
   rule_id                Int?
+  canonicalProductId     String?                 @map("canonical_product_id")
+  canonicalProduct       Product?                @relation("ProductAliases", fields: [canonicalProductId], references: [productId], onDelete: Restrict)
+  aliases                Product[]               @relation("ProductAliases")
   orderItems             OrderItem[]
   collection             Collection              @relation(fields: [collectionId], references: [collectionId])
   productrules           productrules?           @relation(fields: [rule_id], references: [id], onDelete: NoAction, onUpdate: NoAction)

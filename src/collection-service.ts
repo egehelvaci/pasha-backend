@@ -46,7 +46,7 @@ export class CollectionService {
         where: onlyActive ? { isActive: true } : undefined,
         orderBy: { createdAt: 'asc' },
         include: {
-          products: includeProducts // Koleksiyona ait ürünleri de getir
+          products: includeProducts ? { where: { canonicalProductId: null } } : false
         }
       })
     } catch (error) {
@@ -63,7 +63,7 @@ export class CollectionService {
       return await prisma.collection.findUnique({
         where: { collectionId },
         include: {
-          products: includeProducts // Koleksiyona ait ürünleri de getir
+          products: includeProducts ? { where: { canonicalProductId: null } } : false
         }
       })
     } catch (error) {
@@ -80,7 +80,7 @@ export class CollectionService {
       return await prisma.collection.findUnique({
         where: { code },
         include: {
-          products: includeProducts // Koleksiyona ait ürünleri de getir
+          products: includeProducts ? { where: { canonicalProductId: null } } : false
         }
       })
     } catch (error) {
@@ -132,7 +132,7 @@ export class CollectionService {
       const collection = await prisma.collection.findUnique({
         where: { collectionId },
         include: {
-          products: true
+          products: { where: { canonicalProductId: null } }
         }
       })
       
@@ -153,11 +153,11 @@ export class CollectionService {
   async getCollectionProductCount(collectionId: string) {
     try {
       return await prisma.product.count({
-        where: { collectionId }
+        where: { collectionId, canonicalProductId: null }
       })
     } catch (error) {
       console.error('Koleksiyon ürün sayısı getirme hatası:', error)
       throw new Error('Koleksiyon ürün sayısı getirilemedi')
     }
   }
-} 
+}

@@ -74,13 +74,42 @@ export interface OrderValidationResult {
 }
 
 export class OrderService {
+  constructor(private readonly db: Prisma.TransactionClient = prisma, private readonly inTransaction = false) {}
+
+  private async atomic<T extends { success: boolean; message: string; order?: any }>(
+    action: (service: OrderService) => Promise<T>
+  ): Promise<T> {
+    let failure: T | undefined;
+    try {
+      const result = await prisma.$transaction(async tx => {
+        // Serialize order/accounting mutations until every ledger uses the same
+        // row-lock ordering. This also protects shared price-list limits.
+        await tx.$queryRaw`SELECT pg_advisory_xact_lock(724091)::text`;
+        const value = await action(new OrderService(tx, true));
+        if (!value.success) { failure = value; throw new Error(value.message); }
+        return value;
+      }, { maxWait: 15000, timeout: 60000 });
+      return result;
+    } catch (error) {
+      if (failure) return failure;
+      throw error;
+    }
+  }
+
+  private async notifyCreated(order: any) {
+    try {
+      const user = await prisma.user.findUnique({ where: { userId: order.user_id } });
+      await notificationService.notifyNewOrder(order.id, order.user_id, Number(order.total_price), user ? `${user.name} ${user.surname}` : '');
+    } catch (error) { console.error('Sipariş bildirimi oluşturulamadı:', error); }
+  }
+
 
   /**
    * Address ID'den adres bilgisini alır ve delivery_address formatında döndürür
    */
   private async getDeliveryAddressFromId(addressId: string): Promise<string | null> {
     try {
-      const address = await prisma.storeAddress.findUnique({
+      const address = await this.db.storeAddress.findUnique({
         where: { 
           id: addressId,
           is_active: true 
@@ -109,7 +138,7 @@ export class OrderService {
    */
   private async getDefaultStoreAddress(storeId: string): Promise<{ id: string; address: string } | null> {
     try {
-      const defaultAddress = await prisma.storeAddress.findFirst({
+      const defaultAddress = await this.db.storeAddress.findFirst({
         where: { 
           store_id: storeId,
           is_default: true,
@@ -119,7 +148,7 @@ export class OrderService {
 
       if (!defaultAddress) {
         // Default adres yoksa, ilk aktif adresi al
-        const firstAddress = await prisma.storeAddress.findFirst({
+        const firstAddress = await this.db.storeAddress.findFirst({
           where: { 
             store_id: storeId,
             is_active: true 
@@ -132,7 +161,7 @@ export class OrderService {
         }
 
         // İlk adresi default yap
-        await prisma.storeAddress.update({
+        await this.db.storeAddress.update({
           where: { id: firstAddress.id },
           data: { is_default: true }
         });
@@ -174,7 +203,7 @@ export class OrderService {
   }> {
     try {
       // Kullanıcı ve mağaza bilgilerini al
-      const user = await prisma.user.findUnique({
+      const user = await this.db.user.findUnique({
         where: { userId: userId },
         include: {
           Store: {
@@ -194,7 +223,7 @@ export class OrderService {
       }
 
       // Sepeti kontrol et
-      const cart = await prisma.carts.findUnique({
+      const cart = await this.db.carts.findUnique({
         where: { 
           id: cartId,
           user_id: userId,
@@ -257,8 +286,15 @@ export class OrderService {
     minimumPayment?: number;
   }> {
     try {
+
+      if (!this.inTransaction) {
+        const result = await this.atomic(service => service.createOrderFromCart(orderData));
+        if (result.success && result.order) await this.notifyCreated(result.order);
+        return result;
+      }
+      await this.db.$queryRaw`SELECT id FROM carts WHERE id = ${orderData.cart_id} FOR UPDATE`;
       // Kullanıcı ve mağaza bilgilerini al
-      const user = await prisma.user.findUnique({
+      const user = await this.db.user.findUnique({
         where: { userId: orderData.user_id },
         include: {
           Store: {
@@ -278,7 +314,7 @@ export class OrderService {
       }
 
       // Sepeti kontrol et
-      const cart = await prisma.carts.findUnique({
+      const cart = await this.db.carts.findUnique({
         where: { 
           id: orderData.cart_id,
           user_id: orderData.user_id,
@@ -330,7 +366,7 @@ export class OrderService {
       }
 
       // Sipariş oluştur
-      const order = await prisma.order.create({
+      const order = await this.db.order.create({
         data: {
           user_id: orderData.user_id,
           cart_id: orderData.cart_id,
@@ -383,25 +419,13 @@ export class OrderService {
       });
 
       // YENİ MANTIK: Sipariş oluşturulduğunda stok düşür
-      try {
-        await qrCodeService.reduceStockForOrder(order.id);
-        console.log(`✅ Sipariş ${order.id} oluşturuldu ve stok düşürüldü`);
-      } catch (stockError) {
-        console.warn('⚠️ Stok düşürme sırasında uyarı:', stockError);
-        const stockSnapshots = await commonStockService.getSnapshots(order.items.map(item => item.product_id));
-        if (order.items.some(item => stockSnapshots.get(item.product_id)?.enabled)) {
-          await prisma.order.delete({ where: { id: order.id } }).catch(() => undefined);
-          throw stockError;
-        }
-        // Legacy products keep their previous behavior during the trial rollout.
-        console.log(`✅ Sipariş ${order.id} oluşturuldu (legacy stok akışı)`);
-      }
+      await commonStockService.consumeOrder(order.id, this.db);
 
       // Sipariş sonrası işlemleri gerçekleştir (bakiye düşürme vs.)
       await this.processPostOrderOperations(user, cartTotal, order.id);
 
       // Sepeti pasif hale getir
-      await prisma.carts.update({
+      await this.db.carts.update({
         where: { id: orderData.cart_id },
         data: { is_active: false }
       });
@@ -409,7 +433,7 @@ export class OrderService {
       // Admin'e yeni sipariş bildirimi gönder
       try {
         const customerName = `${user.name} ${user.surname}`;
-        await notificationService.notifyNewOrder(order.id, orderData.user_id, cartTotal, customerName);
+        if (!this.inTransaction) await this.notifyCreated(order);
         console.log('✅ Admin\'e yeni sipariş bildirimi gönderildi');
       } catch (notificationError) {
         console.error('❌ Admin sipariş bildirim hatası:', notificationError);
@@ -436,8 +460,15 @@ export class OrderService {
     minimumPayment?: number;
   }> {
     try {
+
+      if (!this.inTransaction) {
+        const result = await this.atomic(service => service.createOrderFromAdminCart(orderData));
+        if (result.success && result.order) await this.notifyCreated(result.order);
+        return result;
+      }
+      await this.db.$queryRaw`SELECT id FROM admin_carts WHERE id = ${orderData.admin_cart_id} FOR UPDATE`;
       // Kullanıcı ve mağaza bilgilerini al
-      const user = await prisma.user.findUnique({
+      const user = await this.db.user.findUnique({
         where: { userId: orderData.user_id },
         include: {
           Store: {
@@ -457,7 +488,7 @@ export class OrderService {
       }
 
       // Admin sepeti kontrol et
-      const adminCart = await prisma.admin_carts.findUnique({
+      const adminCart = await this.db.admin_carts.findUnique({
         where: { 
           id: orderData.admin_cart_id,
           is_active: true
@@ -476,7 +507,7 @@ export class OrderService {
       }
 
       // Bu admin sepet ID'si ile daha önce sipariş oluşturulmuş mu kontrol et
-      const existingOrder = await prisma.order.findFirst({
+      const existingOrder = await this.db.order.findFirst({
         where: { admin_cart_id: orderData.admin_cart_id }
       });
 
@@ -518,7 +549,7 @@ export class OrderService {
       }
 
       // Sipariş oluşturr
-      const order = await prisma.order.create({
+      const order = await this.db.order.create({
         data: {
           user_id: orderData.user_id,
           admin_cart_id: orderData.admin_cart_id, // Admin sepet ID'sini admin_cart_id alanında kullan
@@ -571,31 +602,20 @@ export class OrderService {
       });
 
       // YENİ MANTIK: Sipariş oluşturulduğunda stok düşür
-      try {
-        await qrCodeService.reduceStockForOrder(order.id);
-        console.log(`✅ Admin sepetinden sipariş ${order.id} oluşturuldu ve stok düşürüldü`);
-      } catch (stockError) {
-        console.warn('⚠️ Admin sepetinden stok düşürme sırasında uyarı:', stockError);
-        const stockSnapshots = await commonStockService.getSnapshots(order.items.map(item => item.product_id));
-        if (order.items.some(item => stockSnapshots.get(item.product_id)?.enabled)) {
-          await prisma.order.delete({ where: { id: order.id } }).catch(() => undefined);
-          throw stockError;
-        }
-        console.log(`✅ Admin sepetinden sipariş ${order.id} oluşturuldu (legacy stok akışı)`);
-      }
+      await commonStockService.consumeOrder(order.id, this.db);
 
       // Admin sipariş sonrası işlemleri gerçekleştir (bakiye düşürme vs.)
       await this.processAdminOrderOperations(user, cartTotal, order.id);
 
       // Admin sepeti pasif hale getir ve yeni aktif sepet oluştur
-      await prisma.admin_carts.update({
+      await this.db.admin_carts.update({
         where: { id: orderData.admin_cart_id },
         data: { is_active: false }
       });
 
       // Yeni aktif admin sepet oluştur (sonraki siparişler için)
       try {
-        await prisma.admin_carts.create({
+        await this.db.admin_carts.create({
           data: {
             target_user_id: orderData.user_id,
             admin_user_id: adminCart.admin_user_id,
@@ -606,13 +626,13 @@ export class OrderService {
         console.log(`✅ Yeni aktif admin sepet oluşturuldu (kullanıcı: ${orderData.user_id})`);
       } catch (newCartError) {
         console.error('❌ Yeni admin sepet oluşturma hatası:', newCartError);
-        // Bu hata ana işlemi etkilemesin
+        throw newCartError;
       }
 
       // Admin'e yeni sipariş bildirimi gönder
       try {
         const customerName = `${user.name} ${user.surname}`;
-        await notificationService.notifyNewOrder(order.id, orderData.user_id, cartTotal, customerName);
+        if (!this.inTransaction) await this.notifyCreated(order);
         console.log('✅ Admin\'e yeni sipariş bildirimi gönderildi (Admin sepeti)');
       } catch (notificationError) {
         console.error('❌ Admin sipariş bildirim hatası (Admin sepeti):', notificationError);
@@ -644,8 +664,14 @@ export class OrderService {
     order?: Order;
   }> {
     try {
+
+      if (!this.inTransaction) {
+        const result = await this.atomic(service => service.createAdminOrder(orderData));
+        if (result.success && result.order) await this.notifyCreated(result.order);
+        return result;
+      }
       // Kullanıcı ve mağaza bilgilerini al
-      const user = await prisma.user.findUnique({
+      const user = await this.db.user.findUnique({
         where: { userId: orderData.user_id },
         include: {
           Store: {
@@ -705,7 +731,7 @@ export class OrderService {
       const orderTotal = orderItems.reduce((total, item) => total + item.total_price, 0);
 
       // Geçici bir sepet oluştur (admin siparişi için)
-      const tempCart = await prisma.carts.create({
+      const tempCart = await this.db.carts.create({
         data: {
           user_id: orderData.user_id,
           is_active: false // Admin siparişi için hemen pasif
@@ -713,7 +739,7 @@ export class OrderService {
       });
 
       // Sepet öğelerini oluştur - cut_type mapping ile
-      await prisma.cart_items.createMany({
+      await this.db.cart_items.createMany({
         data: orderItems.map(item => {
           const mappedCutType = cutTypeMapping[item.cut_type?.toLowerCase() || 'standart'] || $Enums.cut_type_enum.rectangle;
           
@@ -740,7 +766,7 @@ export class OrderService {
       }
 
       // Sipariş oluştur
-      const order = await prisma.order.create({
+      const order = await this.db.order.create({
         data: {
           user_id: orderData.user_id,
           cart_id: tempCart.id,
@@ -793,18 +819,7 @@ export class OrderService {
       });
 
       // YENİ MANTIK: Admin siparişi oluşturulduğunda stok düşür
-      try {
-        await qrCodeService.reduceStockForOrder(order.id);
-        console.log(`✅ Admin siparişi ${order.id} oluşturuldu ve stok düşürüldü`);
-      } catch (stockError) {
-        console.warn('⚠️ Admin siparişi stok düşürme sırasında uyarı:', stockError);
-        const stockSnapshots = await commonStockService.getSnapshots(order.items.map(item => item.product_id));
-        if (order.items.some(item => stockSnapshots.get(item.product_id)?.enabled)) {
-          await prisma.order.delete({ where: { id: order.id } }).catch(() => undefined);
-          throw stockError;
-        }
-        console.log(`✅ Admin siparişi ${order.id} oluşturuldu (legacy stok akışı)`);
-      }
+      await commonStockService.consumeOrder(order.id, this.db);
 
       // Admin siparişi için özel işlemler - AÇIK HESAP LİMİTİ KONTROLÜ YOK
       await this.processAdminOrderOperations(user, orderTotal, order.id);
@@ -812,7 +827,7 @@ export class OrderService {
       // Admin'e yeni sipariş bildirimi gönder
       try {
         const customerName = `${user.name} ${user.surname}`;
-        await notificationService.notifyNewOrder(order.id, orderData.user_id, orderTotal, customerName);
+        if (!this.inTransaction) await this.notifyCreated(order);
         console.log('✅ Admin\'e yeni sipariş bildirimi gönderildi (Direct admin sipariş)');
       } catch (notificationError) {
         console.error('❌ Admin sipariş bildirim hatası (Direct admin sipariş):', notificationError);
@@ -906,7 +921,7 @@ export class OrderService {
     let total = 0;
 
     for (const item of items) {
-      const product = await prisma.product.findUnique({
+      const product = await this.db.product.findUnique({
         where: { productId: item.product_id },
         include: {
           collection: {
@@ -960,7 +975,7 @@ export class OrderService {
     const orderItems = [];
 
     for (const item of items) {
-      const product = await prisma.product.findUnique({
+      const product = await this.db.product.findUnique({
         where: { productId: item.product_id },
         include: {
           collection: {
@@ -1014,7 +1029,7 @@ export class OrderService {
 
   // Mağazanın mevcut toplam sipariş tutarını getir
   private async getStoreCurrentOrdersTotal(storeId: string): Promise<number> {
-    const result = await prisma.order.aggregate({
+    const result = await this.db.order.aggregate({
       where: {
         user: {
           store_id: storeId
@@ -1034,7 +1049,7 @@ export class OrderService {
   // Sipariş detayını getir
   async getOrderById(orderId: string): Promise<{ success: boolean; order?: Order; message?: string }> {
     try {
-      const order = await prisma.order.findUnique({
+      const order = await this.db.order.findUnique({
         where: { id: orderId },
         include: {
           items: {
@@ -1072,7 +1087,7 @@ export class OrderService {
       const skip = (page - 1) * limit;
       
       // Önce kullanıcının mağaza bilgisini al
-      const user = await prisma.user.findUnique({
+      const user = await this.db.user.findUnique({
         where: { userId },
         select: { store_id: true, userType: { select: { name: true } } }
       });
@@ -1107,7 +1122,7 @@ export class OrderService {
       
       // Liste ve toplam sayıyı paralel çek
       const [orders, totalCount] = await Promise.all([
-        prisma.order.findMany({
+        this.db.order.findMany({
           where: whereCondition,
           include: {
             items: {
@@ -1133,7 +1148,7 @@ export class OrderService {
           skip,
           take: limit
         }),
-        prisma.order.count({
+        this.db.order.count({
           where: whereCondition
         })
       ]);
@@ -1161,7 +1176,7 @@ export class OrderService {
       const where = status ? { status } : {};
       
       const [orders, total] = await Promise.all([
-        prisma.order.findMany({
+        this.db.order.findMany({
           where,
           include: {
             user: {
@@ -1188,7 +1203,7 @@ export class OrderService {
           skip,
           take: limit
         }),
-        prisma.order.count({ where })
+        this.db.order.count({ where })
       ]);
 
       return {
@@ -1214,7 +1229,7 @@ export class OrderService {
       const skip = (page - 1) * limit;
       
       const [orders, total] = await Promise.all([
-        prisma.order.findMany({
+        this.db.order.findMany({
           where: { user_id: userId },
           include: {
             items: {
@@ -1234,7 +1249,7 @@ export class OrderService {
           skip,
           take: limit
         }),
-        prisma.order.count({ where: { user_id: userId } })
+        this.db.order.count({ where: { user_id: userId } })
       ]);
 
       return {
@@ -1257,7 +1272,7 @@ export class OrderService {
   // Mağaza limitini artır (ödeme sonrası)
   async increaseStoreLimit(storeId: string, amount: number): Promise<{ success: boolean; message: string }> {
     try {
-      await prisma.store.update({
+      await this.db.store.update({
         where: { store_id: storeId },
         data: {
           acik_hesap_tutari: {
@@ -1301,10 +1316,10 @@ export class OrderService {
           newBalance = Math.max(currentBalance - orderTotal, -currentOpenAccountLimit);
         }
         
-        await prisma.store.update({
+        await this.db.store.update({
           where: { store_id: store.store_id },
           data: {
-            bakiye: newBalance
+            bakiye: { decrement: orderTotal }
             // açık hesap limiti değişmez
           }
         });
@@ -1319,19 +1334,19 @@ export class OrderService {
         // Currency'e göre admin kasa bakiyesini güncelle
         if (currency === 'USD') {
           // USD mağazalar için ayrı admin varlıkları yönetimi
-          const usdAdminVarliklar = await prisma.adminVarliklari.findFirst({
+          const usdAdminVarliklar = await this.db.adminVarliklari.findFirst({
             where: { id: 2 } // USD için ID 2
           });
           
           if (!usdAdminVarliklar) {
-            await prisma.adminVarliklari.create({
+            await this.db.adminVarliklari.create({
               data: {
                 id: 2,
                 kasaBakiyesi: orderTotal
               }
             });
           } else {
-            await prisma.adminVarliklari.update({
+            await this.db.adminVarliklari.update({
               where: { id: 2 },
               data: {
                 kasaBakiyesi: {
@@ -1344,19 +1359,19 @@ export class OrderService {
           console.log(`💰 USD Admin kasa bakiyesi güncellendi: +${orderTotal} USD`);
         } else {
           // TRY mağazalar için mevcut sistem
-          const adminVarliklar = await prisma.adminVarliklari.findFirst({
+          const adminVarliklar = await this.db.adminVarliklari.findFirst({
             where: { id: 1 }
           });
           
           if (!adminVarliklar) {
-            await prisma.adminVarliklari.create({
+            await this.db.adminVarliklari.create({
               data: {
                 id: 1,
                 kasaBakiyesi: orderTotal
               }
             });
           } else {
-            await prisma.adminVarliklari.update({
+            await this.db.adminVarliklari.update({
               where: { id: 1 },
               data: {
                 kasaBakiyesi: {
@@ -1370,7 +1385,7 @@ export class OrderService {
         }
         
         // Muhasebe hareketi oluştur
-        await prisma.muhasebeHareketleri.create({
+        await this.db.muhasebeHareketleri.create({
           data: {
             storeId: store.store_id,
             islemTuru: 'Satış',
@@ -1395,7 +1410,7 @@ export class OrderService {
         const newLimit = currentLimit - orderTotal;
 
         // Fiyat listesi limitini güncelle
-        await prisma.priceList.update({
+        await this.db.priceList.update({
           where: { price_list_id: storePriceList.PriceList.price_list_id },
           data: {
             limit_amount: Math.max(0, newLimit) // Negatif olmayacak şekilde
@@ -1408,14 +1423,14 @@ export class OrderService {
           console.log(`📋 Fiyat listesi limiti tamamen bitti (${newLimit} TL) - Varsayılan fiyat listesine geçiliyor`);
           
           // Mevcut fiyat listesi atamasını kaldır
-          await prisma.storePriceList.delete({
+          await this.db.storePriceList.delete({
             where: {
               store_price_list_id: storePriceList.store_price_list_id
             }
           });
 
           // Varsayılan fiyat listesini bul ve ata
-          const defaultPriceList = await prisma.priceList.findFirst({
+          const defaultPriceList = await this.db.priceList.findFirst({
             where: { 
               is_default: true,
               is_active: true 
@@ -1423,7 +1438,7 @@ export class OrderService {
           });
 
           if (defaultPriceList) {
-            await prisma.storePriceList.create({
+            await this.db.storePriceList.create({
               data: {
                 store_id: store.store_id,
                 price_list_id: defaultPriceList.price_list_id
@@ -1436,14 +1451,14 @@ export class OrderService {
           console.log(`📋 Kalan limit çok düşük olduğu için varsayılan fiyat listesine geçiliyor`);
           
           // Mevcut fiyat listesi atamasını kaldır
-          await prisma.storePriceList.delete({
+          await this.db.storePriceList.delete({
             where: {
               store_price_list_id: storePriceList.store_price_list_id
             }
           });
 
           // Varsayılan fiyat listesini bul ve ata
-          const defaultPriceList = await prisma.priceList.findFirst({
+          const defaultPriceList = await this.db.priceList.findFirst({
             where: { 
               is_default: true,
               is_active: true 
@@ -1451,7 +1466,7 @@ export class OrderService {
           });
 
           if (defaultPriceList) {
-            await prisma.storePriceList.create({
+            await this.db.storePriceList.create({
               data: {
                 store_id: store.store_id,
                 price_list_id: defaultPriceList.price_list_id
@@ -1466,7 +1481,7 @@ export class OrderService {
 
     } catch (error) {
       console.error('Sipariş sonrası işlemler hatası:', error);
-      // Bu hata sipariş oluşumunu engellemeyecek, sadece log tutulacak
+      throw error;
     }
   }
 
@@ -1487,10 +1502,10 @@ export class OrderService {
       const currentBalance = Number(store.bakiye || 0);
       const newBalance = currentBalance - orderTotal;
       
-      await prisma.store.update({
+      await this.db.store.update({
         where: { store_id: store.store_id },
         data: {
-          bakiye: newBalance
+          bakiye: { decrement: orderTotal }
           // açık hesap limiti değişmez
         }
       });
@@ -1504,19 +1519,19 @@ export class OrderService {
       // Currency'e göre admin kasa bakiyesini güncelle
       if (currency === 'USD') {
         // USD mağazalar için ayrı admin varlıkları yönetimi
-        const usdAdminVarliklar = await prisma.adminVarliklari.findFirst({
+        const usdAdminVarliklar = await this.db.adminVarliklari.findFirst({
           where: { id: 2 } // USD için ID 2
         });
         
         if (!usdAdminVarliklar) {
-          await prisma.adminVarliklari.create({
+          await this.db.adminVarliklari.create({
             data: {
               id: 2,
               kasaBakiyesi: orderTotal
             }
           });
         } else {
-          await prisma.adminVarliklari.update({
+          await this.db.adminVarliklari.update({
             where: { id: 2 },
             data: {
               kasaBakiyesi: {
@@ -1529,19 +1544,19 @@ export class OrderService {
         console.log(`💰 USD Admin kasa bakiyesi güncellendi: +${orderTotal} USD`);
       } else {
         // TRY mağazalar için mevcut sistem
-        const adminVarliklar = await prisma.adminVarliklari.findFirst({
+        const adminVarliklar = await this.db.adminVarliklari.findFirst({
           where: { id: 1 }
         });
         
         if (!adminVarliklar) {
-          await prisma.adminVarliklari.create({
+          await this.db.adminVarliklari.create({
             data: {
               id: 1,
               kasaBakiyesi: orderTotal
             }
           });
         } else {
-          await prisma.adminVarliklari.update({
+          await this.db.adminVarliklari.update({
             where: { id: 1 },
             data: {
               kasaBakiyesi: {
@@ -1555,7 +1570,7 @@ export class OrderService {
       }
       
       // Muhasebe hareketi oluştur
-      await prisma.muhasebeHareketleri.create({
+      await this.db.muhasebeHareketleri.create({
         data: {
           storeId: store.store_id,
           islemTuru: 'Satış',
@@ -1579,7 +1594,7 @@ export class OrderService {
         const newLimit = currentLimit - orderTotal;
 
         // Fiyat listesi limitini güncelle
-        await prisma.priceList.update({
+        await this.db.priceList.update({
           where: { price_list_id: storePriceList.PriceList.price_list_id },
           data: {
             limit_amount: Math.max(0, newLimit) // Negatif olmayacak şekilde
@@ -1593,14 +1608,14 @@ export class OrderService {
           console.log(`📋 ADMİN SİPARİŞİ: Fiyat listesi limiti bitti - Varsayılan fiyat listesine geçiliyor`);
           
           // Mevcut fiyat listesi atamasını kaldır
-          await prisma.storePriceList.delete({
+          await this.db.storePriceList.delete({
             where: {
               store_price_list_id: storePriceList.store_price_list_id
             }
           });
 
           // Varsayılan fiyat listesini bul ve ata
-          const defaultPriceList = await prisma.priceList.findFirst({
+          const defaultPriceList = await this.db.priceList.findFirst({
             where: { 
               is_default: true,
               is_active: true 
@@ -1608,7 +1623,7 @@ export class OrderService {
           });
 
           if (defaultPriceList) {
-            await prisma.storePriceList.create({
+            await this.db.storePriceList.create({
               data: {
                 store_id: store.store_id,
                 price_list_id: defaultPriceList.price_list_id
@@ -1621,7 +1636,7 @@ export class OrderService {
 
     } catch (error) {
       console.error('Admin sipariş sonrası işlemler hatası:', error);
-      // Bu hata sipariş oluşumunu engellemeyecek, sadece log tutulacak
+      throw error;
     }
   }
 
@@ -1635,8 +1650,17 @@ export class OrderService {
     order?: any;
   }> {
     try {
+
+      if (!this.inTransaction) {
+        const result = await this.atomic(service => service.cancelOrder(orderId, userId, reason, isAdmin));
+        if (result.success) {
+          try { await notificationService.notifyOrderCanceled(orderId, userId, orderId.substring(0, 8), reason); }
+          catch (error) { console.error('İptal bildirimi oluşturulamadı:', error); }
+        }
+        return result;
+      }
       // Siparişi bul
-      const order = await prisma.order.findUnique({
+      const order = await this.db.order.findUnique({
         where: { id: orderId },
         include: {
           user: {
@@ -1717,7 +1741,7 @@ export class OrderService {
       const store = order.user.Store;
 
       // Transaction içinde tüm işlemleri yap
-      const result = await prisma.$transaction(async (tx) => {
+      const result = await (async (tx: Prisma.TransactionClient) => {
         // 1. Siparişi iptal et
         const canceledOrder = await tx.order.update({
           where: { id: orderId },
@@ -1819,7 +1843,7 @@ export class OrderService {
           await tx.store.update({
             where: { store_id: store.store_id },
             data: {
-              bakiye: newBalance
+              bakiye: { increment: orderTotal }
             }
           });
 
@@ -1883,11 +1907,11 @@ export class OrderService {
         }
 
         return canceledOrder;
-      });
+      })(this.db);
 
       // 6. Bildirim oluştur (transaction dışında: bildirim hatası iptali geri almasın)
       try {
-        await notificationService.notifyOrderCanceled(
+        if (!this.inTransaction) await notificationService.notifyOrderCanceled(
           orderId,
           userId,
           orderId.substring(0, 8),
@@ -2156,7 +2180,7 @@ export class OrderService {
   async markReceiptPrinted(orderId: string, userId: string, isAdmin: boolean = false) {
     try {
       // Siparişi kontrol et
-      const order = await prisma.order.findUnique({
+      const order = await this.db.order.findUnique({
         where: { id: orderId },
         select: {
           id: true,
@@ -2203,7 +2227,7 @@ export class OrderService {
       }
 
       // Fiş yazdırma durumunu güncelle
-      const updatedOrder = await prisma.order.update({
+      const updatedOrder = await this.db.order.update({
         where: { id: orderId },
         data: {
           receipt_printed: true,

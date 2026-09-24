@@ -2,7 +2,7 @@
 
 Bu doküman, ürün detayında hazır ebatların gösterilmesi, özel ölçü seçimi, ortak m² stok hesabı, sepete ekleme ve sipariş oluşturma akışlarının frontend entegrasyonunu açıklar.
 
-Backend değişikliği `codex/common-product-stock` branch’inde uygulanmıştır. Mevcut ürünler geçiş tamamlanana kadar eski stok modelini kullanır. Yeni oluşturulan ürünler ortak ürün stoğu modeline otomatik olarak dahil olur.
+Ortak stok değişikliği `master` branch’ine alınmıştır. Eski ürünler de ortak m² stok modeline aktarılmıştır. Hazır/kesme olarak ayrı açılmış, doğrulanmış ürün çiftleri tek ana ürüne yönlendirilir; eski ID’ler geçmiş siparişlerin bağlantılarını korur.
 
 ## 1. Kullanıcıya gösterilecek ürün modeli
 
@@ -123,7 +123,7 @@ Bu endpoint mevcut yetkilendirme kuralları nedeniyle admin/editor erişimine a�
 |---|---|---|
 | `stock.enabled` | Ürün ortak stok modeline dahil mi? | Ortak stok davranışını seçmek için kullanılır. |
 | `stock.availableAreaM2` | Siparişlerden sonra kalan fiziksel/hesapsal m² | Ürün stok özetinde gösterilebilir. Negatif olabilir. |
-| `stock.reservedAreaM2` | Rezervasyonlara ayrılmış m² | Şimdilik bilgi amaçlıdır; frontend’den doğrudan rezervasyon endpoint’i yoktur. |
+| `stock.reservedAreaM2` | Aktif normal/admin sepetlerde ayrılmış m² | Sepet ekleme, güncelleme, silme ve kapatma ile atomik güncellenir. Ayrı endpoint çağırmayın. |
 | `stock.consumableAreaM2` | Kullanılabilir hesaplanan m² (`available - reserved`) | Stok uyarısı için kullanılır. Negatif olabilir. |
 | `availableAreaM2` | `stock.availableAreaM2` için kısa uyumluluk alanı | Yeni frontend’de `stock.availableAreaM2` tercih edilir. |
 | `sizeOptions[].pieceAreaM2` | Seçilen hazır ebatın tek parça m² değeri | Adet hesabında kullanılır. |
@@ -552,4 +552,16 @@ Bu uyarı kullanıcıya gösterilebilir ancak submit işlemi durdurulmamalıdır
 - Frontend `productvariations` içindeki stok değerlerini ortak ürünler için kaynak kabul etmemelidir.
 - Sepette stok rezervasyonu yapılmamaktadır; kesin stok hareketi sipariş oluşturulurken yapılır.
 - Stok yetersizliği siparişi engellemez; finansal limit ve ödeme kuralları yine siparişi engelleyebilir.
-- Mevcut ürünlerin ortak modele geçirilmesi ayrı ve denetimli bir geçiş çalışmasıdır.
+- Eski ürünler ortak modele aktarılmıştır. Ürün birleşimleri denetimli eşleştirme ile uygulanır; eski ID’ler korunur.
+
+## Ürün birleştirme ve rezervasyon güncellemesi
+
+- Ürün listeleri yalnızca ana ürünleri döndürür. Hazır/kesme kartları ayrı gösterilmez.
+- Eski bir ürün ID’siyle detay istendiğinde ana ürünün cevabı gelir. Frontend cevapta dönen `productId` değerini kullanmalı ve eski ID ile tuttuğu detay önbelleğini yenilemelidir.
+- Eski siparişler ve QR/barkod kayıtları kendi ürün ID’lerini korur. Bu ID üzerinden stok tüketimi veya iadesi ana stok havuzuna yönlenir.
+- `sizeOptions.filter(s => !s.is_optional_height)` hazır ebat listesidir. `is_optional_height=true` kayıtları özel kesim için izin verilen genişlik ve maksimum yüksekliği tanımlar. Bunları hazır ebat kartına çevirmeyin.
+- Aktif sepetler rezervasyon oluşturur. Seçilen ölçü alanı × adet kadar rezervasyon vardır; aynı ürünün farklı ebatları ortak havuzu paylaşır.
+- Stok yetersizliği sepeti veya siparişi engellemez. Rezervasyon kullanılabilir stoğu aşabilir; `consumableAreaM2` negatif olabilir. Negatif değeri stok uyarısı olarak gösterin, butonları kapatmayın.
+- Sepet kapanınca rezervasyon çözülür. Sipariş oluşunca fiziksel m² stok düşer; aynı alan ikinci kez stoktan düşülmez.
+- Sipariş ve finansal kayıtlar aynı transaction içinde tamamlanır. Başarısız cevapta işlem tamamlanmış kabul edilmemelidir.
+- Admin hibrit stok güncellemesinde `area` ve `both` modları tam m² değerini korur; adet hesabına yuvarlanarak alan kaybedilmez.
