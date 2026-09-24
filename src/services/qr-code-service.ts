@@ -4,6 +4,7 @@ import { UploadService } from '../utils/upload-service'
 import { EmployeeAssignmentService } from './employee-assignment-service'
 import { notificationService } from './notification-service'
 import { barcodeService } from './barcode-service'
+import { commonStockService, calculateAreaM2 } from './common-stock-service'
 
 const employeeAssignmentService = new EmployeeAssignmentService()
 
@@ -240,9 +241,39 @@ export class QRCodeService {
         throw new Error('Sipariş bulunamadı')
       }
 
+      const canonicalItems = [] as typeof order.items
+      for (const item of order.items) {
+        if ((await commonStockService.getSnapshot(item.product_id)).enabled) {
+          canonicalItems.push(item)
+        }
+      }
+      if (canonicalItems.length > 0) {
+        await prisma.$transaction(async tx => {
+          for (const item of canonicalItems) {
+            await commonStockService.consumeProductArea({
+              productId: item.product_id,
+              areaM2: calculateAreaM2(Number(item.width), Number(item.height), item.quantity),
+              movementType: 'ORDER_CONSUMPTION',
+              referenceKey: `order:${orderId}:item:${item.id}`,
+              orderId,
+              orderItemId: item.id,
+              quantity: item.quantity,
+              width: Number(item.width || 0),
+              height: Number(item.height || 0),
+              metadata: { hasFringe: item.has_fringe, cutType: item.cut_type }
+            }, tx)
+          }
+        })
+      }
+      const canonicalItemIds = new Set(canonicalItems.map(item => item.id))
+
       // Her sipariş öğesi için stok düşür
       for (const item of order.items) {
         console.log(`🔍 Stok düşürme: ${item.product_id} - ${item.width}x${item.height} - Saçak: ${item.has_fringe} - Adet: ${item.quantity}`)
+
+        if (canonicalItemIds.has(item.id)) {
+          continue
+        }
         
         const itemWidth = item.width ? Math.round(Number(item.width)) : 0
         const itemHeight = item.height ? Math.round(Number(item.height)) : 0
@@ -725,6 +756,24 @@ export class QRCodeService {
       // Her sipariş öğesi için stok geri ekle
       for (const item of order.items) {
         console.log(`🔄 Stok geri ekleme: ${item.product_id} - ${item.width}x${item.height} - Saçak: ${item.has_fringe} - Adet: ${item.quantity}`)
+
+        const canonicalStock = await commonStockService.getSnapshot(item.product_id)
+        if (canonicalStock.enabled) {
+          const areaM2 = calculateAreaM2(Number(item.width), Number(item.height), item.quantity)
+          await commonStockService.addStock({
+            productId: item.product_id,
+            areaM2,
+            movementType: 'ORDER_RETURN',
+            referenceKey: `order:${orderId}:item:${item.id}:return`,
+            orderId,
+            orderItemId: item.id,
+            quantity: item.quantity,
+            width: Number(item.width || 0),
+            height: Number(item.height || 0),
+            metadata: { hasFringe: item.has_fringe, cutType: item.cut_type }
+          })
+          continue
+        }
         
         const itemWidth = item.width ? Math.round(Number(item.width)) : 0
         const itemHeight = item.height ? Math.round(Number(item.height)) : 0
@@ -816,4 +865,4 @@ export class QRCodeService {
   }
 }
 
-export const qrCodeService = new QRCodeService() 
+export const qrCodeService = new QRCodeService()

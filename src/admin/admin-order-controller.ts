@@ -1240,7 +1240,8 @@ export class AdminOrderController {
                 }
               }
             },
-            productvariations: true
+            productvariations: true,
+            productStock: true
           }
         })
       ])
@@ -1287,14 +1288,23 @@ export class AdminOrderController {
             const stockForSize = product.productvariations?.find(v => 
               v.width === so.width && v.height === so.height
             )
+            const canonicalArea = product.productStock
+              ? Number(product.productStock.availableAreaM2 || 0)
+              : null
+            const pieceAreaM2 = (so.width * so.height) / 10000
             
             return {
               id: so.id,
               width: so.width,
               height: so.height,
               is_optional_height: so.is_optional_height || false,
-              stockQuantity: stockForSize ? stockForSize.stock_quantity : 0,
-              stockAreaM2: stockForSize ? Number(stockForSize.stock_area_m2 || 0) : 0
+              stockQuantity: canonicalArea !== null
+                ? Math.floor(canonicalArea / pieceAreaM2)
+                : (stockForSize ? stockForSize.stock_quantity : 0),
+              stockAreaM2: canonicalArea !== null
+                ? canonicalArea
+                : (stockForSize ? Number(stockForSize.stock_area_m2 || 0) : 0),
+              pieceAreaM2
             }
           }) || []
 
@@ -1325,6 +1335,12 @@ export class AdminOrderController {
           canHaveFringe: canHaveFringe,
           sizeOptions: sizeOptions,
           cutTypes: cutTypes,
+          stock: product.productStock ? {
+            enabled: true,
+            availableAreaM2: Number(product.productStock.availableAreaM2 || 0),
+            reservedAreaM2: Number(product.productStock.reservedAreaM2 || 0),
+            consumableAreaM2: Number(product.productStock.availableAreaM2 || 0) - Number(product.productStock.reservedAreaM2 || 0)
+          } : { enabled: false },
           createdAt: product.createdAt,
           updatedAt: product.updatedAt
         })
@@ -1649,4 +1665,4 @@ export class AdminOrderController {
 
 }
 
-export const adminOrderController = new AdminOrderController() 
+export const adminOrderController = new AdminOrderController()

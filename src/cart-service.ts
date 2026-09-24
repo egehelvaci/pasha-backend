@@ -3,6 +3,7 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { ProductService, CutType, SizeOption } from './product-service';
 import { TebiService } from './utils/tebi-service';
 import prisma from './utils/prisma';
+import { commonStockService, calculateAreaM2 } from './services/common-stock-service';
 
 const productService = new ProductService();
 
@@ -207,6 +208,13 @@ export class CartService {
         }
       });
 
+      const canonicalStock = await commonStockService.getSnapshot(data.productId);
+      if (canonicalStock.enabled) {
+        const requestedQuantity = (existingItem?.quantity || 0) + data.quantity;
+        const requestedAreaM2 = calculateAreaM2(data.width, data.height, requestedQuantity);
+        console.warn(`📦 Ortak stok önizleme: mevcut ${canonicalStock.consumableAreaM2.toFixed(2)} m², sepet ihtiyacı ${requestedAreaM2.toFixed(2)} m²; sipariş eksi stoğa izinli`);
+      }
+
       if (existingItem) {
         // Mevcut öğeyi güncelle
         const newQuantity = existingItem.quantity + data.quantity;
@@ -374,6 +382,13 @@ export class CartService {
         }
       });
 
+      const canonicalStock = await commonStockService.getSnapshot(data.productId);
+      if (canonicalStock.enabled) {
+        const requestedQuantity = (existingItem?.quantity || 0) + data.quantity;
+        const requestedAreaM2 = calculateAreaM2(data.width, data.height, requestedQuantity);
+        console.warn(`📦 Admin ortak stok önizleme: mevcut ${canonicalStock.consumableAreaM2.toFixed(2)} m², sepet ihtiyacı ${requestedAreaM2.toFixed(2)} m²; sipariş eksi stoğa izinli`);
+      }
+
       if (existingItem) {
         // Mevcut öğeyi güncelle - toplam miktar stok kontrolü
         const newQuantity = existingItem.quantity + data.quantity;
@@ -496,6 +511,12 @@ export class CartService {
       } else {
         // Size option bulunamazsa uyar ama hata verme
         console.warn(`⚠️ Bu boyut (${width}x${height}cm) için stok bilgisi bulunamadı - İşlem devam ediyor`);
+      }
+
+      const canonicalStock = await commonStockService.getSnapshot(cartItem.product_id);
+      if (canonicalStock.enabled) {
+        const requestedAreaM2 = calculateAreaM2(width, height, data.quantity);
+        console.warn(`📦 Ortak stok güncelleme önizleme: mevcut ${canonicalStock.consumableAreaM2.toFixed(2)} m², sepet ihtiyacı ${requestedAreaM2.toFixed(2)} m²; sipariş eksi stoğa izinli`);
       }
 
       // Saçak kontrolü
@@ -1249,6 +1270,12 @@ export class CartService {
         console.warn(`⚠️ Bu boyut (${width}x${height}cm) için stok bilgisi bulunamadı - İşlem devam ediyor`);
       }
 
+      const canonicalStock = await commonStockService.getSnapshot(adminCartItem.product_id);
+      if (canonicalStock.enabled) {
+        const requestedAreaM2 = calculateAreaM2(width, height, data.quantity);
+        console.warn(`📦 Admin ortak stok güncelleme önizleme: mevcut ${canonicalStock.consumableAreaM2.toFixed(2)} m², sepet ihtiyacı ${requestedAreaM2.toFixed(2)} m²; sipariş eksi stoğa izinli`);
+      }
+
       // Saçak kontrolü
       if (data.hasFringe !== undefined && !productDetails.canHaveFringe && hasFringe) {
         throw new Error('Bu ürün saçaklı olamaz');
@@ -1325,4 +1352,4 @@ export class CartService {
       throw error;
     }
   }
-} 
+}
