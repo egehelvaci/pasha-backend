@@ -13,7 +13,8 @@ const rollback=new Error('TEST_ROLLBACK');
    const userType=await tx.userType.findFirst();
    const user=await tx.user.create({data:{email:`${tag}@example.invalid`,username:tag,password:'unused-test-only',name:'TEST',surname:'TEST',store_id:store.store_id,userTypeId:userType.id}});
    const collection=await tx.collection.create({data:{name:`TEST-${tag}`,code:tag}});
-   const product=await tx.product.create({data:{name:`TEST-${tag}`,description:'rollback-only fixture',collectionId:collection.collectionId}});
+   const rule=await tx.productrules.create({data:{name:`TEST-${tag}`,can_have_fringe:false,productsizeoptions:{create:{width:100,height:0,is_optional_height:true}}}});
+   const product=await tx.product.create({data:{name:`TEST-${tag}`,description:'rollback-only fixture',collectionId:collection.collectionId,rule_id:rule.id}});
    await stock.ensureProductStock(product.productId,tx);
    const list=await tx.priceList.create({data:{name:`TEST-${tag}`,currency:'TRY'}});
    await tx.priceListDetail.create({data:{price_list_id:list.price_list_id,collection_id:collection.collectionId,price_per_square_meter:10}});
@@ -25,15 +26,16 @@ const rollback=new Error('TEST_ROLLBACK');
     if(flow==='direct') result=await service.createAdminOrder({user_id:user.userId,store_id:store.store_id,items:[line]});
     else if(flow==='cart') {
      const cart=await tx.carts.create({data:{user_id:user.userId,cart_items:{create:line}}});
-     assert.equal((await stock.getSnapshot(product.productId,tx)).reservedAreaM2,4);
+     assert.equal((await stock.getSnapshot(product.productId,tx,100)).reservedAreaM2,4);
      result=await service.createOrderFromCart({user_id:user.userId,cart_id:cart.id});
     } else {
      const cart=await tx.admin_carts.create({data:{admin_user_id:user.userId,target_user_id:user.userId,store_id:store.store_id,admin_cart_items:{create:line}}});
-     assert.equal((await stock.getSnapshot(product.productId,tx)).reservedAreaM2,4);
+     assert.equal((await stock.getSnapshot(product.productId,tx,100)).reservedAreaM2,4);
      result=await service.createOrderFromAdminCart({user_id:user.userId,admin_cart_id:cart.id});
     }
     assert.equal(result.success,true,result.message);
     assert.equal((await stock.getSnapshot(product.productId,tx)).availableAreaM2,-4);
+    assert.equal((await stock.getSnapshot(product.productId,tx,100)).availableAreaM2,-4);
     assert.equal((await stock.getSnapshot(product.productId,tx)).reservedAreaM2,0);
     assert.equal(Number((await tx.store.findUnique({where:{store_id:store.store_id}})).bakiye),960);
     const canceled=await service.cancelOrder(result.order.id,user.userId,'integration test',true);

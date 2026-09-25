@@ -1,8 +1,8 @@
-# Frontend Entegrasyon Dokümanı: Ortak Ürün Stoğu
+# Frontend Entegrasyon Dokümanı: En Bazlı Ortak Ürün Stoğu
 
-Bu doküman, ürün detayında hazır ebatların gösterilmesi, özel ölçü seçimi, ortak m² stok hesabı, sepete ekleme ve sipariş oluşturma akışlarının frontend entegrasyonunu açıklar.
+Bu doküman, ürün detayında hazır ebatların gösterilmesi, özel ölçü seçimi, en bazlı m² stok hesabı, sepete ekleme ve sipariş oluşturma akışlarının frontend entegrasyonunu açıklar.
 
-Ortak stok değişikliği `master` branch’ine alınmıştır. Eski ürünler de ortak m² stok modeline aktarılmıştır. Hazır/kesme olarak ayrı açılmış, doğrulanmış ürün çiftleri tek ana ürüne yönlendirilir; eski ID’ler geçmiş siparişlerin bağlantılarını korur.
+Eski ve yeni ürünler aynı modele dahildir. Stok havuzları kodda yazılmış `80/100/120/200` listelerinden üretilmez; her ürünün `productrules.productsizeoptions` kayıtlarındaki genişliklerden dinamik oluşturulur. Aynı ene sahip hazır ebat ile özel boy aynı m² havuzunu paylaşır. Farklı enler bağımsızdır. Hazır/kesme olarak ayrı açılmış, doğrulanmış ürün çiftleri tek ana ürüne yönlendirilir; eski ID’ler geçmiş siparişlerin bağlantılarını korur.
 
 ## 1. Kullanıcıya gösterilecek ürün modeli
 
@@ -59,7 +59,11 @@ Başarılı cevap:
         "enabled": true,
         "availableAreaM2": 12.5,
         "reservedAreaM2": 0,
-        "consumableAreaM2": 12.5
+        "consumableAreaM2": 12.5,
+        "widths": [
+          { "width": 80, "availableAreaM2": 8, "reservedAreaM2": 0, "consumableAreaM2": 8 },
+          { "width": 120, "availableAreaM2": 4.5, "reservedAreaM2": 0, "consumableAreaM2": 4.5 }
+        ]
       },
       "availableAreaM2": 12.5,
       "canHaveFringe": true,
@@ -74,17 +78,17 @@ Başarılı cevap:
           "height": 150,
           "is_optional_height": false,
           "pieceAreaM2": 1.2,
-          "stockQuantity": 10,
-          "stockAreaM2": 12.5
+          "stockQuantity": 6,
+          "stockAreaM2": 8
         },
         {
           "id": 11,
           "width": 80,
-          "height": 300,
+          "height": 0,
           "is_optional_height": true,
-          "pieceAreaM2": 2.4,
-          "stockQuantity": 5,
-          "stockAreaM2": 12.5
+          "pieceAreaM2": 0,
+          "stockQuantity": 0,
+          "stockAreaM2": 8
         }
       ]
     }
@@ -125,10 +129,15 @@ Bu endpoint mevcut yetkilendirme kuralları nedeniyle admin/editor erişimine a�
 | `stock.availableAreaM2` | Siparişlerden sonra kalan fiziksel/hesapsal m² | Ürün stok özetinde gösterilebilir. Negatif olabilir. |
 | `stock.reservedAreaM2` | Aktif normal/admin sepetlerde ayrılmış m² | Sepet ekleme, güncelleme, silme ve kapatma ile atomik güncellenir. Ayrı endpoint çağırmayın. |
 | `stock.consumableAreaM2` | Kullanılabilir hesaplanan m² (`available - reserved`) | Stok uyarısı için kullanılır. Negatif olabilir. |
+| `stock.widths[]` | Her ürün kuralı eni için bağımsız stok özeti | Seçilen enin gerçek stok kaynağıdır. |
+| `stock.widths[].width` | Ürün kuralından gelen en (cm) | Seçilen `sizeOptions[].width` ile eşleştirilir. |
+| `stock.widths[].availableAreaM2` | Bu endeki mevcut m² | En bazlı stok görünümünde kullanılır. Negatif olabilir. |
+| `stock.widths[].reservedAreaM2` | Bu endeki aktif sepet rezervasyonu | Kullanılabilir alan hesabında düşülür. |
+| `stock.widths[].consumableAreaM2` | Bu en için `available - reserved` | Stok açığı uyarısının kaynağıdır. |
 | `availableAreaM2` | `stock.availableAreaM2` için kısa uyumluluk alanı | Yeni frontend’de `stock.availableAreaM2` tercih edilir. |
 | `sizeOptions[].pieceAreaM2` | Seçilen hazır ebatın tek parça m² değeri | Adet hesabında kullanılır. |
 | `sizeOptions[].stockQuantity` | Ortak stoktan hesaplanan yaklaşık adet | Ortak ürünlerde bilgi amaçlıdır; kaynak stok değildir. |
-| `sizeOptions[].stockAreaM2` | Ortak ürünün aynı toplam m² stoğu | Ortak ürünlerde her ebat için aynı değeri görebilirsiniz. |
+| `sizeOptions[].stockAreaM2` | Seçeneğin en havuzundaki m² | Aynı ene sahip hazır ve özel seçeneklerde aynıdır; farklı enlerde farklı olabilir. |
 
 ### Negatif stok
 
@@ -195,6 +204,8 @@ const displayArea = totalAreaM2.toFixed(2);
 
 Frontend sadece `80x150` seçeneğini göstermeli; bu seçenek için yüksekliği serbest metin olarak değiştirmemelidir.
 
+Aynı kuralda `80x150` hazır ebat ve `80xÖzel` bulunursa ikisi de `stock.widths.find(x => x.width === 80)` havuzunu tüketir. Örneğin 80 en stoğu 12 m² ise hazır üründen 2 adet `80x150` sipariş edilmesi 2.4 m² düşürür ve özel boy için de 9.6 m² kalır. `120xÖzel` seçeneği varsa kendi 120 en havuzunu kullanır ve bu işlemden etkilenmez.
+
 ### Opsiyonel yükseklik
 
 `is_optional_height: true` ise yalnızca `width` sabittir. Kural oluştururken boy veya maksimum boy girilmez; gerçek boy sipariş sırasında girilir.
@@ -242,7 +253,7 @@ Backend bazı Türkçe eş anlamlıları da eşleyebilir; frontend’in sabit ve
 }
 ```
 
-Kesim ve saçak stok çeşidi değildir. Aynı ürünün ortak m² stoğu kullanılır.
+Kesim ve saçak stok çeşidi değildir. Havuzu yalnızca ürün ve en belirler; aynı endeki tüm boylar, kesim tipleri ve saçak seçimleri aynı m² bakiyesini kullanır.
 
 ## 8. Sepet entegrasyonu
 
@@ -464,32 +475,50 @@ Ortak stok etkin yeni üründe hedef toplam alan şu şekilde hesaplanır:
 80 × 150 × 10 / 10000 = 12 m²
 ```
 
-Bu endpoint ortak üründe seçilen ebat için ayrı stok açmaz; ürünün toplam ortak alanını hedeflenen değere getirir.
+Bu endpoint seçilen hazır ebatın **en havuzunu** hedeflenen alana getirir. Aynı endeki diğer hazır ebat ve özel boy da yeni bakiyeyi görür. Farklı en havuzları değişmez.
 
 ### m² üzerinden güncelleme
 
 ```json
 {
   "width": 80,
-  "height": 150,
   "areaM2": 12
 }
 ```
 
-Ortak ürünlerde `areaM2`, ürünün toplam ortak stok alanıdır. Mevcut ürünler de migration ile ortak stok modeline aktarıldığı için ürün detayındaki `stock.enabled` alanı ortak stok kaynağını gösterir.
+`height` bu endpoint için gerekli değildir; eski istemciler gönderirse uyumluluk amacıyla kabul edilir. `areaM2`, yalnızca `width` ile seçilen en havuzunun hedef toplamıdır. `width`, ürün kuralındaki `productsizeoptions` kayıtlarından birinde bulunmalıdır. Mevcut ürünler de migration ile en havuzlarına aktarılır.
+
+### Doğrudan satın alma
+
+```http
+POST /api/admin/purchase-management/suppliers/:supplierId/purchase-product
+```
+
+```json
+{
+  "product_id": "product-uuid",
+  "width": 80,
+  "quantity_m2": 25,
+  "description": "Ürün alımı",
+  "reference_number": "IRS-2026-42"
+}
+```
+
+`width` zorunludur ve ürün kuralında tanımlı olmalıdır. Alınan alan yalnızca bu en havuzuna ve onun FIFO lotlarına eklenir.
 
 ## 12. Legacy ürünlerle uyumluluk
 
 Migration tamamlandıktan sonra mevcut ürünlerde de:
 
 - `stock.enabled` ortak stok kaynağının aktif olduğunu gösterir.
-- `stock.availableAreaM2`, `stock.reservedAreaM2` ve `stock.consumableAreaM2` ürün seviyesinde döner.
+- `stock.availableAreaM2`, `stock.reservedAreaM2` ve `stock.consumableAreaM2` tüm enlerin geriye dönük uyumlu toplamı olarak döner.
+- `stock.widths` gerçek en bazlı bakiyeleri döner.
 - `productvariations` ölçü, fiyat ve eski istemci uyumluluğu için cevapta kalır; stok kaynağı değildir.
 
 Yeni ürünlerde:
 
 - `stock.enabled: true` olur.
-- Kaynak stok `stock.availableAreaM2` alanıdır.
+- Kaynak stok seçilen ene karşılık gelen `stock.widths[]` satırıdır.
 - `sizeOptions[].stockQuantity` yalnızca ortak m²’den hesaplanan uyumluluk değeridir.
 
 Frontend stok kararında şu sırayı kullanmalıdır:
@@ -497,7 +526,7 @@ Frontend stok kararında şu sırayı kullanmalıdır:
 ```ts
 const commonStockEnabled = product.stock?.enabled === true;
 const availableAreaM2 = commonStockEnabled
-  ? Number(product.stock.consumableAreaM2)
+  ? Number(product.stock.widths?.find((row: any) => Number(row.width) === Number(selectedSize.width))?.consumableAreaM2 || 0)
   : getLegacySizeStock(product, selectedSize);
 ```
 
@@ -511,6 +540,12 @@ type ProductStock = {
   availableAreaM2: number;
   reservedAreaM2: number;
   consumableAreaM2: number;
+  widths: Array<{
+    width: number;
+    availableAreaM2: number;
+    reservedAreaM2: number;
+    consumableAreaM2: number;
+  }>;
 };
 
 function calculateAreaM2(width: number, height: number, quantity = 1) {
@@ -521,7 +556,10 @@ function getStockWarning(product: any, width: number, height: number, quantity: 
   if (product.stock?.enabled !== true) return null;
 
   const requestedAreaM2 = calculateAreaM2(width, height, quantity);
-  const consumableAreaM2 = Number(product.stock.consumableAreaM2 || 0);
+  const widthStock = product.stock.widths?.find(
+    (row: any) => Number(row.width) === Number(width)
+  );
+  const consumableAreaM2 = Number(widthStock?.consumableAreaM2 || 0);
 
   if (consumableAreaM2 < requestedAreaM2) {
     return {
@@ -545,7 +583,9 @@ Bu uyarı kullanıcıya gösterilebilir ancak submit işlemi durdurulmamalıdır
 - Ürün detayında hazır ebatlar `sizeOptions` üzerinden listeleniyor.
 - `is_optional_height` hazır ve özel ölçü akışını doğru ayırıyor.
 - Seçilen ölçünün m² değeri doğru hesaplanıyor.
-- Ortak stoklu ürünlerde tüm ebatlar aynı `stock.consumableAreaM2` değerini paylaşıyor.
+- Aynı ene sahip hazır ebat ve özel boy aynı `sizeOptions[].stockAreaM2` ile `stock.widths[]` bakiyesini paylaşıyor.
+- Farklı enlerin bakiyeleri birbirinden bağımsız güncelleniyor.
+- En seçenekleri sabit bir frontend listesinden değil `sizeOptions` içinden geliyor.
 - Negatif stokta butonlar kapanmıyor; kullanıcıya anlaşılır uyarı gösteriliyor.
 - Sepete ekleme isteğinde `productId`, `quantity`, `width`, `height`, `hasFringe` ve `cutType` gönderiliyor.
 - Sipariş sonrası ürün stok bilgisi yeniden alınıyor.
@@ -558,7 +598,7 @@ Bu uyarı kullanıcıya gösterilebilir ancak submit işlemi durdurulmamalıdır
 
 - Frontend’den migration çalıştırılmamalıdır.
 - Frontend `productvariations` içindeki stok değerlerini ortak ürünler için kaynak kabul etmemelidir.
-- Sepette stok rezervasyonu yapılmamaktadır; kesin stok hareketi sipariş oluşturulurken yapılır.
+- Aktif normal ve admin sepetlerinde seçilen en havuzuna rezervasyon yapılır; kesin stok hareketi sipariş oluşturulurken yapılır.
 - Stok yetersizliği siparişi engellemez; finansal limit ve ödeme kuralları yine siparişi engelleyebilir.
 - Eski ürünler ortak modele aktarılmıştır. Ürün birleşimleri denetimli eşleştirme ile uygulanır; eski ID’ler korunur.
 
@@ -568,7 +608,7 @@ Bu uyarı kullanıcıya gösterilebilir ancak submit işlemi durdurulmamalıdır
 - Eski bir ürün ID’siyle detay istendiğinde ana ürünün cevabı gelir. Frontend cevapta dönen `productId` değerini kullanmalı ve eski ID ile tuttuğu detay önbelleğini yenilemelidir.
 - Eski siparişler ve QR/barkod kayıtları kendi ürün ID’lerini korur. Bu ID üzerinden stok tüketimi veya iadesi ana stok havuzuna yönlenir.
 - `sizeOptions.filter(s => !s.is_optional_height)` hazır ebat listesidir. `is_optional_height=true` kayıtları özel kesim için yalnızca izin verilen genişliği tanımlar. Bunları hazır ebat kartına çevirmeyin; yükseklik üst sınırı uygulamayın.
-- Aktif sepetler rezervasyon oluşturur. Seçilen ölçü alanı × adet kadar rezervasyon vardır; aynı ürünün farklı ebatları ortak havuzu paylaşır.
+- Aktif sepetler rezervasyon oluşturur. Seçilen ölçü alanı × adet kadar rezervasyon vardır; aynı ürünün aynı endeki farklı boyları ortak havuzu paylaşır, farklı enler paylaşmaz.
 - Stok yetersizliği sepeti veya siparişi engellemez. Rezervasyon kullanılabilir stoğu aşabilir; `consumableAreaM2` negatif olabilir. Negatif değeri stok uyarısı olarak gösterin, butonları kapatmayın.
 - Sepet kapanınca rezervasyon çözülür. Sipariş oluşunca fiziksel m² stok düşer; aynı alan ikinci kez stoktan düşülmez.
 - Sipariş ve finansal kayıtlar aynı transaction içinde tamamlanır. Başarısız cevapta işlem tamamlanmış kabul edilmemelidir.

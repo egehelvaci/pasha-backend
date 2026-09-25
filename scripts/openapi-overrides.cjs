@@ -57,6 +57,19 @@ module.exports = function applyOverrides(spec) {
   ];
   body('/api/auth/login', 'post', object({ username: string, password: { type: 'string', format: 'password', writeOnly: true } }, ['username', 'password']));
   body('/api/admin/purchase-management/suppliers/{supplier_id}/purchase-cart/items', 'post', item);
+  body('/api/admin/purchase-management/suppliers/{supplier_id}/purchase-product', 'post', object({
+    product_id: string,
+    width: { type: 'number', minimum: 0, exclusiveMinimum: true, description: 'Ürün kuralında tanımlı en (cm). Stok bu en havuzuna eklenir.' },
+    quantity_m2: { type: 'number', minimum: 0, exclusiveMinimum: true },
+    description: string,
+    reference_number: string
+  }, ['product_id', 'width', 'quantity_m2']), { product_id: 'product-uuid', width: 80, quantity_m2: 25, description: 'Ürün alımı' });
+  body('/api/products/{id}/stock-area', 'patch', object({
+    width: { type: 'integer', minimum: 1, description: 'Ürün kuralında tanımlı en (cm). Yalnızca bu en havuzunun hedef stoğunu değiştirir.' },
+    height: { type: 'integer', minimum: 0, deprecated: true, description: 'Uyumluluk alanı. Özel boy için gönderilmeyebilir veya 0 olabilir; stok havuzu seçiminde kullanılmaz.' },
+    areaM2: { type: 'number', minimum: 0, description: 'Seçilen en havuzunun yeni toplam m² değeri.' }
+  }, ['width', 'areaM2']), { width: 80, areaM2: 25 });
+  get('/api/products/{id}/stock-area', 'patch').description += '\n\nStok en bazlıdır. Aynı ene sahip hazır ebat ve özel boy aynı m² havuzunu paylaşır; farklı enler bağımsızdır. En değeri ürünün productsizeoptions kuralında bulunmalıdır.';
   for (const method of ['post', 'put']) {
     const route = method === 'post' ? '/api/products' : '/api/products/{id}';
     const op = get(route, method);

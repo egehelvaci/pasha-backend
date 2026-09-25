@@ -77,8 +77,18 @@ export class ProductService {
         rule_id: data.rule_id
       };
       
+      const configuredWidths = data.rule_id
+        ? [...new Set((await prisma.productsizeoptions.findMany({ where: { rule_id: data.rule_id }, select: { width: true } })).map(row => row.width))]
+        : [];
       const product = await prisma.product.create({
-        data: { ...productData, productStock: { create: {} } },
+        data: {
+          ...productData,
+          productStock: {
+            create: configuredWidths.length
+              ? { widthStocks: { create: configuredWidths.map(width => ({ width })) } }
+              : {}
+          }
+        },
         include: {
           collection: true // Ürün ile birlikte koleksiyon bilgilerini de getir
         }
@@ -90,21 +100,7 @@ export class ProductService {
         console.log('Ürün varyasyonları kurala göre başarıyla oluşturuldu');
       } catch (variationError) {
         console.error('Ürün varyasyonu oluşturulurken hata:', variationError);
-        // Fallback olarak temel varyasyon oluştur
-        try {
-          await prisma.productvariations.create({
-            data: {
-              product_id: product.productId,
-              width: 100,
-              height: 100,
-              stock_quantity: 0,
-              has_fringe: false
-            }
-          });
-          console.log('Fallback varyasyon oluşturuldu');
-        } catch (fallbackError) {
-          console.error('Fallback varyasyon hatası:', fallbackError);
-        }
+        // Ürün kuralında bulunmayan ezbere bir ölçü oluşturmuyoruz.
       }
       
       return product;
@@ -262,7 +258,7 @@ export class ProductService {
               }
             },
             productvariations: true,
-            productStock: true
+            productStock: { include: { widthStocks: true } }
           },
           orderBy: { createdAt: 'desc' }
         });
@@ -285,7 +281,7 @@ export class ProductService {
               }
             },
             productvariations: true,
-            productStock: true
+            productStock: { include: { widthStocks: true } }
           },
           skip,
           take: limit,
@@ -350,6 +346,7 @@ export class ProductService {
       const processedProducts = products.map(product => {
         const extendedProduct = product as any;
         const canonicalStock = (product as any).productStock;
+        const widthAreas = new Map<number, { available: number; reserved: number }>((canonicalStock?.widthStocks || []).map((row: any) => [Number(row.width), { available: Number(row.availableAreaM2), reserved: Number(row.reservedAreaM2) }]));
         if (canonicalStock) {
           const availableAreaM2 = Number(canonicalStock.availableAreaM2 || 0);
           const reservedAreaM2 = Number(canonicalStock.reservedAreaM2 || 0);
@@ -357,7 +354,8 @@ export class ProductService {
             enabled: true,
             availableAreaM2,
             reservedAreaM2,
-            consumableAreaM2: availableAreaM2 - reservedAreaM2
+            consumableAreaM2: availableAreaM2 - reservedAreaM2,
+            widths: [...widthAreas].map(([width, value]) => ({ width, availableAreaM2: value.available, reservedAreaM2: value.reserved, consumableAreaM2: value.available - value.reserved }))
           };
           extendedProduct.availableAreaM2 = availableAreaM2;
           delete extendedProduct.productStock;
@@ -398,7 +396,8 @@ export class ProductService {
             const stockForSize = product.productvariations?.find(v => 
               v.width === so.width && v.height === so.height
             );
-            const canonicalArea = canonicalStock ? Number(canonicalStock.availableAreaM2 || 0) : null;
+            const widthArea = widthAreas.get(so.width);
+            const canonicalArea = canonicalStock ? (widthArea?.available || 0) : null;
             const pieceAreaM2 = (so.width * so.height) / 10000;
             
             return {
@@ -407,7 +406,7 @@ export class ProductService {
               height: so.height,
               is_optional_height: so.is_optional_height || false,
               stockQuantity: canonicalArea !== null
-                ? Math.floor(canonicalArea / pieceAreaM2)
+                ? (so.is_optional_height || pieceAreaM2 <= 0 ? 0 : Math.floor(canonicalArea / pieceAreaM2))
                 : (stockForSize ? stockForSize.stock_quantity : 0),
               stockAreaM2: canonicalArea !== null
                 ? canonicalArea
@@ -495,7 +494,7 @@ export class ProductService {
         where: { productId },
         include: {
           collection: true,
-          productStock: true
+          productStock: { include: { widthStocks: true } }
         }
       }) as ExtendedProduct | null;
 
@@ -504,6 +503,7 @@ export class ProductService {
       }
 
       const canonicalStock = (product as any).productStock;
+      const widthAreas = new Map<number, { available: number; reserved: number }>((canonicalStock?.widthStocks || []).map((row: any) => [Number(row.width), { available: Number(row.availableAreaM2), reserved: Number(row.reservedAreaM2) }]));
       if (canonicalStock) {
         const availableAreaM2 = Number(canonicalStock.availableAreaM2 || 0);
         const reservedAreaM2 = Number(canonicalStock.reservedAreaM2 || 0);
@@ -511,7 +511,8 @@ export class ProductService {
           enabled: true,
           availableAreaM2,
           reservedAreaM2,
-          consumableAreaM2: availableAreaM2 - reservedAreaM2
+          consumableAreaM2: availableAreaM2 - reservedAreaM2,
+          widths: [...widthAreas].map(([width, value]) => ({ width, availableAreaM2: value.available, reservedAreaM2: value.reserved, consumableAreaM2: value.available - value.reserved }))
         };
         (product as any).availableAreaM2 = availableAreaM2;
         delete (product as any).productStock;
@@ -663,14 +664,14 @@ export class ProductService {
                 );
                 
                 const pieceAreaM2 = (so.width * so.height) / 10000;
-                const canonicalArea = canonicalStock ? Number(canonicalStock.availableAreaM2 || 0) : null;
+                const canonicalArea = canonicalStock ? (widthAreas.get(so.width)?.available || 0) : null;
                 return {
                   id: so.id,
                   width: so.width,
                   height: so.height,
                   is_optional_height: so.is_optional_height || false,
                   stockQuantity: canonicalArea !== null
-                    ? Math.floor(canonicalArea / pieceAreaM2)
+                    ? (so.is_optional_height || pieceAreaM2 <= 0 ? 0 : Math.floor(canonicalArea / pieceAreaM2))
                     : (stockForSize ? stockForSize.stock_quantity : 0),
                   stockAreaM2: canonicalArea !== null
                     ? canonicalArea
@@ -709,13 +710,14 @@ export class ProductService {
         where: { collectionId, canonicalProductId: null },
         include: {
           collection: true,
-          productStock: true
+          productStock: { include: { widthStocks: true } }
         }
       });
       
       // Ürünlere fiyat bilgisi ekle
       for (const product of products as ExtendedProduct[]) {
         const canonicalStock = (product as any).productStock;
+        const widthAreas = new Map<number, { available: number; reserved: number }>((canonicalStock?.widthStocks || []).map((row: any) => [Number(row.width), { available: Number(row.availableAreaM2), reserved: Number(row.reservedAreaM2) }]));
         if (canonicalStock) {
           const availableAreaM2 = Number(canonicalStock.availableAreaM2 || 0);
           const reservedAreaM2 = Number(canonicalStock.reservedAreaM2 || 0);
@@ -723,7 +725,8 @@ export class ProductService {
             enabled: true,
             availableAreaM2,
             reservedAreaM2,
-            consumableAreaM2: availableAreaM2 - reservedAreaM2
+            consumableAreaM2: availableAreaM2 - reservedAreaM2,
+            widths: [...widthAreas].map(([width, value]) => ({ width, availableAreaM2: value.available, reservedAreaM2: value.reserved, consumableAreaM2: value.available - value.reserved }))
           };
           (product as any).availableAreaM2 = availableAreaM2;
           delete (product as any).productStock;
@@ -856,14 +859,14 @@ export class ProductService {
                   );
                   
                   const pieceAreaM2 = (so.width * so.height) / 10000;
-                  const canonicalArea = canonicalStock ? Number(canonicalStock.availableAreaM2 || 0) : null;
+                  const canonicalArea = canonicalStock ? (widthAreas.get(so.width)?.available || 0) : null;
                   return {
                     id: so.id,
                     width: so.width,
                     height: so.height,
                     is_optional_height: so.is_optional_height || false,
                     stockQuantity: canonicalArea !== null
-                      ? Math.floor(canonicalArea / pieceAreaM2)
+                      ? (so.is_optional_height || pieceAreaM2 <= 0 ? 0 : Math.floor(canonicalArea / pieceAreaM2))
                       : (stockForSize ? stockForSize.stock_quantity : 0),
                     stockAreaM2: canonicalArea !== null
                       ? canonicalArea
@@ -1032,7 +1035,8 @@ export class ProductService {
     try {
       // Mevcut ürün bilgisini al
       const currentProduct = await prisma.product.findUnique({
-        where: { productId }
+        where: { productId },
+        include: { productStock: { include: { widthStocks: true } } }
       });
 
       if (!currentProduct) {
@@ -1062,14 +1066,43 @@ export class ProductService {
       
       // Kural değişip değişmediğini kontrol et
       const ruleChanged = data.rule_id !== undefined && data.rule_id !== currentProduct.rule_id;
-      
-      const updatedProduct = await prisma.product.update({
-        where: { productId },
-        data: updateData,
-        include: {
-          collection: true
+      const nextWidths = ruleChanged && data.rule_id
+        ? [...new Set((await prisma.productsizeoptions.findMany({ where: { rule_id: data.rule_id }, select: { width: true } })).map(row => row.width))]
+        : [];
+      if (ruleChanged && currentProduct.productStock) {
+        const removedWithBalance = currentProduct.productStock.widthStocks.find(row =>
+          !nextWidths.includes(Number(row.width)) &&
+          (Number(row.availableAreaM2) !== 0 || Number(row.reservedAreaM2) !== 0)
+        );
+        if (removedWithBalance) {
+          throw new Error(`${Number(removedWithBalance.width)} cm stok havuzunda bakiye veya rezervasyon bulunduğu için ürün kuralı değiştirilemez`);
         }
-      }) as ExtendedProduct;
+      }
+      
+      const updatedProduct = await prisma.$transaction(async tx => {
+        const updated = await tx.product.update({
+          where: { productId },
+          data: updateData,
+          include: { collection: true }
+        }) as ExtendedProduct;
+        if (ruleChanged && currentProduct.productStock) {
+          if (nextWidths.length) {
+            await tx.productStockWidth.createMany({
+              data: nextWidths.map(width => ({ productStockId: currentProduct.productStock!.id, width })),
+              skipDuplicates: true
+            });
+          }
+          await tx.productStockWidth.deleteMany({
+            where: {
+              productStockId: currentProduct.productStock.id,
+              ...(nextWidths.length ? { width: { notIn: nextWidths } } : {}),
+              availableAreaM2: 0,
+              reservedAreaM2: 0
+            }
+          });
+        }
+        return updated;
+      });
 
       // Eğer kural değiştiyse varyasyonları yeniden oluştur
       if (ruleChanged) {
@@ -1254,6 +1287,7 @@ export class ProductService {
         const areaM2 = (stockData.width * stockData.height * stockData.quantity) / 10000;
         await commonStockService.setStockArea(
           productId,
+          stockData.width,
           areaM2,
           `admin-stock-quantity:${productId}:${Date.now()}`
         );
@@ -1375,6 +1409,7 @@ export class ProductService {
       if (commonStock.enabled) {
         await commonStockService.setStockArea(
           productId,
+          stockData.width,
           stockData.areaM2,
           `admin-stock-area:${productId}:${Date.now()}`
         );
@@ -1708,6 +1743,7 @@ export class ProductService {
         where: { product_id: productId }
       });
       const canonicalStock = await commonStockService.getSnapshot(productId);
+      const widthStocks = new Map((await commonStockService.getWidthSnapshots(productId)).map(row => [row.width, row]));
       
       // Her bir boyut seçeneği için stok miktarını hesapla
       const sizeOptionsWithStock = sizeOptions.map(so => {
@@ -1717,16 +1753,17 @@ export class ProductService {
         );
         
         const pieceAreaM2 = (so.width * so.height) / 10000;
+        const widthStock = widthStocks.get(so.width);
         return {
           id: so.id,
           width: so.width,
           height: so.height,
           is_optional_height: so.is_optional_height || false,
           stockQuantity: canonicalStock.enabled
-            ? Math.floor(canonicalStock.availableAreaM2 / pieceAreaM2)
+            ? (so.is_optional_height || pieceAreaM2 <= 0 ? 0 : Math.floor((widthStock?.availableAreaM2 || 0) / pieceAreaM2))
             : (stockForSize ? stockForSize.stock_quantity : 0),
           stockAreaM2: canonicalStock.enabled
-            ? canonicalStock.availableAreaM2
+            ? (widthStock?.availableAreaM2 || 0)
             : (stockForSize ? Number(stockForSize.stock_area_m2 || 0) : 0),
           pieceAreaM2
         };
@@ -1739,12 +1776,12 @@ export class ProductService {
           name: ct.cuttypes.name
         })),
         canHaveFringe: rule.can_have_fringe || false,
-        stock: canonicalStock,
+        stock: { ...canonicalStock, widths: [...widthStocks.values()] },
         variations: variations.map(v => {
           return {
             width: v.width,
             height: v.height,
-            stockQuantity: canonicalStock.enabled ? Math.floor(canonicalStock.availableAreaM2 / (v.width * v.height / 10000)) : v.stock_quantity
+            stockQuantity: canonicalStock.enabled ? Math.floor((widthStocks.get(v.width)?.availableAreaM2 || 0) / (v.width * v.height / 10000)) : v.stock_quantity
           };
         })
       };

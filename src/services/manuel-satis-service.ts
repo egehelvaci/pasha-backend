@@ -146,7 +146,7 @@ export class ManuelSatisService {
         return { success: true };
       }
 
-      const canonicalStock = await commonStockService.getSnapshot(product.productId, tx);
+      const canonicalStock = await commonStockService.getSnapshot(product.productId, tx, item.width);
       if (canonicalStock.enabled) {
         await commonStockService.consumeProductArea({
           productId: product.productId,
@@ -806,7 +806,7 @@ export class ManuelSatisService {
       const products = await prisma.product.findMany({
         where: whereCondition,
         include: {
-          productStock: true,
+          productStock: { include: { widthStocks: true } },
           collection: true,
           productvariations: {
             include: {
@@ -861,6 +861,7 @@ export class ManuelSatisService {
           // Varyasyonları düzenle ve stok durumunu kontrol et
           const common = product.productStock;
           const area = common ? Number(common.availableAreaM2) : null;
+          const widthAreas = new Map((common?.widthStocks || []).map(row => [Number(row.width), Number(row.availableAreaM2)]));
           const availableVariations = product.productvariations.filter(v => common ||
             (v.stock_quantity && v.stock_quantity > 0) || 
             (v.stock_area_m2 && Number(v.stock_area_m2) > 0)
@@ -891,7 +892,7 @@ export class ManuelSatisService {
             },
             rule_id: product.rule_id,
             hasStock: area !== null ? area - Number(common?.reservedAreaM2 || 0) > 0 : availableVariations.length > 0,
-            stock: common ? { enabled: true, availableAreaM2: area, reservedAreaM2: Number(common.reservedAreaM2), consumableAreaM2: Number(area) - Number(common.reservedAreaM2) } : { enabled: false },
+            stock: common ? { enabled: true, availableAreaM2: area, reservedAreaM2: Number(common.reservedAreaM2), consumableAreaM2: Number(area) - Number(common.reservedAreaM2), widths: common.widthStocks.map(row => ({ width: Number(row.width), availableAreaM2: Number(row.availableAreaM2), reservedAreaM2: Number(row.reservedAreaM2), consumableAreaM2: Number(row.availableAreaM2) - Number(row.reservedAreaM2) })) } : { enabled: false },
             priceInfo,
             
             // Varyasyon bilgileri
@@ -899,8 +900,8 @@ export class ManuelSatisService {
               id: v.id,
               width: Number(v.width),
               height: Number(v.height),
-              stockQuantity: area !== null ? Math.floor(area / (v.width * v.height / 10000)) : v.stock_quantity || 0,
-              stockAreaM2: area !== null ? area : Number(v.stock_area_m2 || 0),
+              stockQuantity: area !== null ? Math.floor((widthAreas.get(v.width) || 0) / (v.width * v.height / 10000)) : v.stock_quantity || 0,
+              stockAreaM2: area !== null ? (widthAreas.get(v.width) || 0) : Number(v.stock_area_m2 || 0),
               hasFringe: v.has_fringe || false,
               cutType: v.cuttypes ? {
                 id: v.cuttypes.id,
@@ -953,8 +954,8 @@ export class ManuelSatisService {
             stockInfo: availableVariations.map(v => ({
               width: Number(v.width),
               height: Number(v.height),
-              stockQuantity: area !== null ? Math.floor(area / (v.width * v.height / 10000)) : v.stock_quantity || 0,
-              stockAreaM2: area !== null ? area : Number(v.stock_area_m2 || 0),
+              stockQuantity: area !== null ? Math.floor((widthAreas.get(v.width) || 0) / (v.width * v.height / 10000)) : v.stock_quantity || 0,
+              stockAreaM2: area !== null ? (widthAreas.get(v.width) || 0) : Number(v.stock_area_m2 || 0),
               hasFringe: v.has_fringe || false,
               estimatedPrice: priceInfo ? 
                 priceInfo.pricePerSquareMeter * ((Number(v.width) * Number(v.height)) / 10000) : null

@@ -820,14 +820,15 @@ export const purchaseProductFromSupplier = async (req: Request, res: Response) =
     const { 
       product_id, 
       quantity_m2, 
+      width,
       description = 'Ürün alımı',
       reference_number 
     } = req.body;
 
-    if (!product_id || !quantity_m2 || quantity_m2 <= 0) {
+    if (!product_id || !quantity_m2 || quantity_m2 <= 0 || !width || Number(width) <= 0) {
       return res.status(400).json({
         success: false,
-        message: 'Ürün ID ve geçerli m² miktarı zorunludur'
+        message: 'Ürün ID, ürün kuralında tanımlı genişlik ve geçerli m² miktarı zorunludur'
       });
     }
 
@@ -915,10 +916,11 @@ export const purchaseProductFromSupplier = async (req: Request, res: Response) =
         where: { product_id: product_id }
       });
 
-      const commonStock = await commonStockService.getSnapshot(product_id, tx);
+      const commonStock = await commonStockService.getSnapshot(product_id, tx, Number(width));
       if (commonStock.enabled) {
         await commonStockService.addStock({
           productId: product_id,
+          width: Number(width),
           areaM2: Number(quantity_m2),
           movementType: 'PURCHASE_RECEIPT',
           referenceKey: `purchase:${transaction.id}:direct`,
@@ -955,6 +957,7 @@ export const purchaseProductFromSupplier = async (req: Request, res: Response) =
         product: product,
         transaction: transaction,
         purchase_details: {
+          width: Number(width),
           quantity_m2: quantity_m2,
           unit_price_usd: unitPriceUSD,
           total_usd: totalUSD
@@ -1263,7 +1266,7 @@ export const purchaseFromCart = async (req: Request, res: Response) => {
 
         console.log(`📏 Alınan ürün ölçüleri: ${itemWidth}x${itemHeight}cm, Saçak: ${itemHasFringe}`);
 
-        const common = await commonStockService.getSnapshot(item.product_id, tx);
+        const common = await commonStockService.getSnapshot(item.product_id, tx, itemWidth);
         if (common.enabled) {
           const added = calculateAreaM2(itemWidth, itemHeight, item.quantity);
           await commonStockService.addStock({
@@ -1421,7 +1424,7 @@ export const purchaseFromCart = async (req: Request, res: Response) => {
             data: updateData
           });
 
-          const canonicalStock = await commonStockService.getSnapshot(item.product_id, tx);
+          const canonicalStock = await commonStockService.getSnapshot(item.product_id, tx, itemWidth);
           if (canonicalStock.enabled) {
             await commonStockService.addStock({
               productId: item.product_id,

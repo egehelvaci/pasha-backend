@@ -5,9 +5,14 @@ type DbClient = Prisma.TransactionClient | typeof prisma;
 
 export interface StockSnapshot {
   enabled: boolean;
+  width?: number;
   availableAreaM2: number;
   reservedAreaM2: number;
   consumableAreaM2: number;
+}
+
+export interface ProductWidthStockSnapshot extends StockSnapshot {
+  width: number;
 }
 
 export interface StockMovementInput {
@@ -29,15 +34,21 @@ function roundArea(value: number): number {
   return Math.round((value + Number.EPSILON) * 10000) / 10000;
 }
 
+function normalizeWidth(width?: number | null): number {
+  const value = Number(width);
+  if (!Number.isFinite(value) || value <= 0) throw new Error('Stok işlemi için geçerli bir genişlik gereklidir');
+  return Math.round(value * 100) / 100;
+}
+
 export function calculateAreaM2(width?: number | null, height?: number | null, quantity = 1): number {
   if (!width || !height || quantity <= 0) return 0;
   return roundArea((Number(width) * Number(height) * quantity) / 10000);
 }
 
 /**
- * Product-level stock service. A product opts into this service by having a
- * ProductStock row. Legacy products without a row continue using their old
- * variation stock until an audited migration explicitly opts them in.
+ * Width-based stock service. ProductStock keeps the compatibility total while
+ * ProductStockWidth is the source of truth for each width defined by the
+ * product rule. Fixed and custom heights under the same width share one pool.
  */
 class CommonStockService {
   async resolveProductId(productId: string, client: DbClient = prisma): Promise<string> {
@@ -60,7 +71,7 @@ class CommonStockService {
     });
   }
 
-  async getSnapshot(productId: string, client: DbClient = prisma): Promise<StockSnapshot> {
+  async getSnapshot(productId: string, client: DbClient = prisma, width?: number): Promise<StockSnapshot> {
     productId = await this.resolveProductId(productId, client);
     const stock = await client.productStock.findUnique({ where: { productId } });
     if (!stock) {
@@ -72,14 +83,31 @@ class CommonStockService {
       };
     }
 
-    const availableAreaM2 = Number(stock.availableAreaM2 || 0);
-    const reservedAreaM2 = Number(stock.reservedAreaM2 || 0);
+    const normalizedWidth = width === undefined ? undefined : normalizeWidth(width);
+    const widthStock = normalizedWidth === undefined ? null : await client.productStockWidth.findUnique({
+      where: { productStockId_width: { productStockId: stock.id, width: normalizedWidth } }
+    });
+    const balance = normalizedWidth === undefined ? stock : widthStock;
+    const availableAreaM2 = Number(balance?.availableAreaM2 || 0);
+    const reservedAreaM2 = Number(balance?.reservedAreaM2 || 0);
     return {
       enabled: true,
+      ...(normalizedWidth === undefined ? {} : { width: normalizedWidth }),
       availableAreaM2,
       reservedAreaM2,
       consumableAreaM2: roundArea(availableAreaM2 - reservedAreaM2)
     };
+  }
+
+  async getWidthSnapshots(productId: string, client: DbClient = prisma): Promise<ProductWidthStockSnapshot[]> {
+    productId = await this.resolveProductId(productId, client);
+    const stock = await client.productStock.findUnique({ where: { productId }, include: { widthStocks: { orderBy: { width: 'asc' } } } });
+    if (!stock) return [];
+    return stock.widthStocks.map(row => {
+      const availableAreaM2 = Number(row.availableAreaM2);
+      const reservedAreaM2 = Number(row.reservedAreaM2);
+      return { enabled: true, width: Number(row.width), availableAreaM2, reservedAreaM2, consumableAreaM2: roundArea(availableAreaM2 - reservedAreaM2) };
+    });
   }
 
   async getSnapshots(productIds: string[], client: DbClient = prisma): Promise<Map<string, StockSnapshot>> {
@@ -120,8 +148,10 @@ class CommonStockService {
       return prisma.$transaction(tx => this.addStock(input, tx), { maxWait: 15000, timeout: 30000 });
     }
     if (input.areaM2 <= 0) return { enabled: false, areaM2: 0 };
-    const stock = await this.lockStock(input.productId, client, true);
-    if (!stock) return { enabled: false, areaM2: 0 };
+    const width = normalizeWidth(input.width);
+    const locked = await this.lockWidthStock(input.productId, width, client, true);
+    if (!locked) return { enabled: false, areaM2: 0 };
+    const { stock, widthStock } = locked;
 
     if (input.referenceKey) {
       const existing = await client.productStockMovement.findUnique({
@@ -132,14 +162,14 @@ class CommonStockService {
 
     const consumed = input.movementType === 'ORDER_RETURN' && input.orderItemId
       ? await client.productStockMovement.findMany({
-          where: { productStockId: stock.id, orderItemId: input.orderItemId, movementType: 'ORDER_CONSUMPTION' },
+            where: { productStockId: stock.id, orderItemId: input.orderItemId, movementType: 'ORDER_CONSUMPTION', width },
           orderBy: { createdAt: 'asc' }
         })
       : [];
     const areaM2 = roundArea(consumed.length
       ? -consumed.reduce((sum, movement) => sum + Number(movement.areaM2), 0)
       : input.areaM2);
-    const currentAvailableAreaM2 = Number(stock.availableAreaM2 || 0);
+    const currentAvailableAreaM2 = Number(widthStock.availableAreaM2 || 0);
     // Incoming stock first closes an existing negative balance. Only the
     // surplus becomes a new FIFO lot.
     let lotAreaM2 = roundArea(areaM2 + Math.min(0, currentAvailableAreaM2));
@@ -148,8 +178,8 @@ class CommonStockService {
     for (const movement of consumed) {
       if (!movement.lotId || lotAreaM2 <= STOCK_EPSILON) continue;
       const restored = roundArea(Math.min(-Number(movement.areaM2), lotAreaM2));
-      await client.productStockLot.update({ where: { id: movement.lotId }, data: { remainingAreaM2: { increment: restored } } });
-      lotAreaM2 = roundArea(lotAreaM2 - restored);
+      const updated = await client.productStockLot.updateMany({ where: { id: movement.lotId, width }, data: { remainingAreaM2: { increment: restored } } });
+      if (updated.count) lotAreaM2 = roundArea(lotAreaM2 - restored);
     }
     const lot = lotAreaM2 > STOCK_EPSILON
       ? await client.productStockLot.create({
@@ -158,7 +188,8 @@ class CommonStockService {
             sourceType: input.movementType,
             sourceReference: input.referenceKey,
             originalAreaM2: lotAreaM2,
-            remainingAreaM2: lotAreaM2
+            remainingAreaM2: lotAreaM2,
+            width
           }
         })
       : null;
@@ -167,6 +198,7 @@ class CommonStockService {
       where: { id: stock.id },
       data: { availableAreaM2: { increment: areaM2 } }
     });
+    await client.productStockWidth.update({ where: { id: widthStock.id }, data: { availableAreaM2: { increment: areaM2 } } });
 
     await client.productStockMovement.create({
       data: {
@@ -179,7 +211,7 @@ class CommonStockService {
         orderId: input.orderId,
         orderItemId: input.orderItemId,
         quantity: input.quantity,
-        width: input.width,
+        width,
         height: input.height,
         metadata: input.metadata
       }
@@ -192,15 +224,16 @@ class CommonStockService {
    * Set canonical area for an opted-in product. Increases create a FIFO lot;
    * decreases consume existing lots, so every change remains auditable.
    */
-  async setStockArea(productId: string, areaM2: number, referenceKey: string, client: DbClient = prisma): Promise<any> {
+  async setStockArea(productId: string, width: number, areaM2: number, referenceKey: string, client: DbClient = prisma): Promise<any> {
     if (client === prisma) {
-      return prisma.$transaction(tx => this.setStockArea(productId, areaM2, referenceKey, tx), { maxWait: 15000, timeout: 30000 });
+      return prisma.$transaction(tx => this.setStockArea(productId, width, areaM2, referenceKey, tx), { maxWait: 15000, timeout: 30000 });
     }
-    const stock = await this.lockStock(productId, client, true);
-    if (!stock) return { enabled: false, availableAreaM2: 0 };
+    width = normalizeWidth(width);
+    const locked = await this.lockWidthStock(productId, width, client, true);
+    if (!locked) return { enabled: false, availableAreaM2: 0 };
 
     const target = roundArea(Math.max(0, areaM2));
-    const current = Number(stock.availableAreaM2 || 0);
+    const current = Number(locked.widthStock.availableAreaM2 || 0);
     const delta = roundArea(target - current);
     if (Math.abs(delta) <= STOCK_EPSILON) {
       return { enabled: true, availableAreaM2: current };
@@ -209,6 +242,7 @@ class CommonStockService {
     if (delta > 0) {
       await this.addStock({
         productId,
+        width,
         areaM2: delta,
         movementType: 'ADMIN_ADJUSTMENT',
         referenceKey,
@@ -217,6 +251,7 @@ class CommonStockService {
     } else {
       await this.consumeProductArea({
         productId,
+        width,
         areaM2: Math.abs(delta),
         movementType: 'ADMIN_ADJUSTMENT',
         referenceKey,
@@ -234,8 +269,10 @@ class CommonStockService {
     const requestedArea = roundArea(input.areaM2);
     if (requestedArea <= 0) return { enabled: false, areaM2: 0 };
 
-    const stock = await this.lockStock(input.productId, client, false);
-    if (!stock) return { enabled: false, areaM2: 0 };
+    const width = normalizeWidth(input.width);
+    const locked = await this.lockWidthStock(input.productId, width, client, true);
+    if (!locked) return { enabled: false, areaM2: 0 };
+    const { stock, widthStock } = locked;
 
     const referencePrefix = input.referenceKey ? `${input.referenceKey}:lot:` : undefined;
     if (referencePrefix) {
@@ -248,13 +285,11 @@ class CommonStockService {
       if (existing) return { enabled: true, areaM2: requestedArea, idempotent: true };
     }
 
-    const availableAreaM2 = Number(stock.availableAreaM2 || 0);
-    const reservedAreaM2 = Number(stock.reservedAreaM2 || 0);
     // Orders are allowed to consume beyond available stock. The canonical
     // balance may therefore become negative and remains auditable.
 
     const lots = await client.productStockLot.findMany({
-      where: { productStockId: stock.id, remainingAreaM2: { gt: 0 } },
+      where: { productStockId: stock.id, width, remainingAreaM2: { gt: 0 } },
       orderBy: [{ receivedAt: 'asc' }, { createdAt: 'asc' }]
     });
 
@@ -280,7 +315,7 @@ class CommonStockService {
           orderId: input.orderId,
           orderItemId: input.orderItemId,
           quantity: input.quantity,
-          width: input.width,
+          width,
           height: input.height,
           metadata: input.metadata
         }
@@ -299,7 +334,7 @@ class CommonStockService {
           orderId: input.orderId,
           orderItemId: input.orderItemId,
           quantity: input.quantity,
-          width: input.width,
+          width,
           height: input.height,
           metadata: {
             ...(input.metadata && typeof input.metadata === 'object' ? input.metadata : {}),
@@ -313,6 +348,7 @@ class CommonStockService {
       where: { id: stock.id },
       data: { availableAreaM2: { decrement: requestedArea } }
     });
+    await client.productStockWidth.update({ where: { id: widthStock.id }, data: { availableAreaM2: { decrement: requestedArea } } });
     return { enabled: true, areaM2: requestedArea };
   }
 
@@ -356,8 +392,8 @@ class CommonStockService {
           continue;
         }
 
-        const stock = await tx.productStock.findUnique({ where: { productId: item.product_id } });
-        if (!stock) {
+        const snapshot = await this.getSnapshot(item.product_id, tx, Number(item.width));
+        if (!snapshot.enabled) {
           results.push({ itemId: item.id, enabled: false, areaM2 });
           continue;
         }
@@ -390,10 +426,12 @@ class CommonStockService {
     return run(client);
   }
 
-  async reserve(productId: string, areaM2: number, referenceKey: string, options?: { cartId?: number; orderId?: string; expiresAt?: Date }, client: DbClient = prisma): Promise<any> {
-    if (client === prisma) return prisma.$transaction(tx => this.reserve(productId, areaM2, referenceKey, options, tx), { maxWait: 15000, timeout: 30000 });
-    const stock = await this.lockStock(productId, client, false);
-    if (!stock) return { enabled: false, reservedAreaM2: 0 };
+  async reserve(productId: string, width: number, areaM2: number, referenceKey: string, options?: { cartId?: number; orderId?: string; expiresAt?: Date }, client: DbClient = prisma): Promise<any> {
+    if (client === prisma) return prisma.$transaction(tx => this.reserve(productId, width, areaM2, referenceKey, options, tx), { maxWait: 15000, timeout: 30000 });
+    width = normalizeWidth(width);
+    const locked = await this.lockWidthStock(productId, width, client, false);
+    if (!locked) return { enabled: false, reservedAreaM2: 0 };
+    const { stock, widthStock } = locked;
     const existing = await client.productStockReservation.findUnique({ where: { referenceKey } });
     if (existing) return { enabled: true, reservedAreaM2: existing.status === 'ACTIVE' ? Number(existing.areaM2) : 0 };
 
@@ -406,11 +444,13 @@ class CommonStockService {
         cartId: options?.cartId,
         orderId: options?.orderId,
         areaM2: requested,
+        width,
         referenceKey,
         expiresAt: options?.expiresAt
       }
     });
     await client.productStock.update({ where: { id: stock.id }, data: { reservedAreaM2: { increment: requested } } });
+    await client.productStockWidth.update({ where: { id: widthStock.id }, data: { reservedAreaM2: { increment: requested } } });
     return { enabled: true, reservedAreaM2: requested };
   }
 
@@ -419,15 +459,19 @@ class CommonStockService {
     const reservation = await client.productStockReservation.findUnique({ where: { referenceKey } });
     if (!reservation || reservation.status !== 'ACTIVE') return { released: false };
     await client.$queryRaw`SELECT id FROM product_stocks WHERE id = ${reservation.productStockId} FOR UPDATE`;
+    if (reservation.width === null) throw new Error('Rezervasyon genişliği bulunamadı');
+    const width = Number(reservation.width);
+    await client.$queryRaw`SELECT id FROM product_stock_widths WHERE product_stock_id = ${reservation.productStockId} AND width = ${width} FOR UPDATE`;
     const current = await client.productStockReservation.findUnique({ where: { id: reservation.id } });
     if (!current || current.status !== 'ACTIVE') return { released: false };
     const released = await client.productStockReservation.updateMany({ where: { id: reservation.id, status: 'ACTIVE' }, data: { status: 'RELEASED' } });
     if (!released.count) return { released: false };
     await client.productStock.update({ where: { id: current.productStockId }, data: { reservedAreaM2: { decrement: current.areaM2 } } });
+    await client.productStockWidth.update({ where: { productStockId_width: { productStockId: current.productStockId, width } }, data: { reservedAreaM2: { decrement: current.areaM2 } } });
     return { released: true, areaM2: Number(current.areaM2) };
   }
 
-  private async lockStock(productId: string, client: DbClient, createIfMissing: boolean) {
+  private async lockWidthStock(productId: string, width: number, client: DbClient, createIfMissing: boolean) {
     // Keep the alias mapping stable until this stock transaction commits.
     await client.$queryRaw`SELECT product_id FROM "Product" WHERE product_id = ${productId} FOR SHARE`;
     productId = await this.resolveProductId(productId, client);
@@ -440,7 +484,19 @@ class CommonStockService {
     // PostgreSQL row lock serializes stock reads/updates across concurrent orders.
     await client.$queryRaw`SELECT id FROM "product_stocks" WHERE id = ${stock.id} FOR UPDATE`;
     stock = await client.productStock.findUnique({ where: { id: stock.id } });
-    return stock;
+    if (!stock) return null;
+    let widthStock = await client.productStockWidth.findUnique({ where: { productStockId_width: { productStockId: stock.id, width } } });
+    if (!widthStock && createIfMissing) {
+      const configured = await client.productsizeoptions.findFirst({
+        where: { productrules: { Product: { some: { productId } } }, width: Math.round(width) }
+      });
+      if (!configured || Number(configured.width) !== width) throw new Error(`${width} cm genişlik ürün kuralında tanımlı değil`);
+      widthStock = await client.productStockWidth.create({ data: { productStockId: stock.id, width } });
+    }
+    if (!widthStock) return null;
+    await client.$queryRaw`SELECT id FROM product_stock_widths WHERE id = ${widthStock.id} FOR UPDATE`;
+    widthStock = await client.productStockWidth.findUnique({ where: { id: widthStock.id } });
+    return widthStock ? { stock, widthStock } : null;
   }
 }
 

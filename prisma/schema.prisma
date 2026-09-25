@@ -19,16 +19,16 @@ model SiteSettings {
 }
 
 model SiteBanner {
-  id          String   @id @default(uuid())
-  title       String   @db.VarChar(200)
-  imageUrl    String   @map("image_url")
-  mobileImageUrl String? @map("mobile_image_url")
-  linkUrl     String?  @map("link_url")
-  altText     String   @default("") @map("alt_text") @db.VarChar(300)
-  sortOrder   Int      @default(0) @map("sort_order")
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id             String   @id @default(uuid())
+  title          String   @db.VarChar(200)
+  imageUrl       String   @map("image_url")
+  mobileImageUrl String?  @map("mobile_image_url")
+  linkUrl        String?  @map("link_url")
+  altText        String   @default("") @map("alt_text") @db.VarChar(300)
+  sortOrder      Int      @default(0) @map("sort_order")
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
   @@index([isActive, sortOrder], map: "idx_site_banner_active_sort")
   @@map("site_banners")
@@ -69,95 +69,114 @@ model User {
 }
 
 model Collection {
-  collectionId              String                      @id @default(uuid()) @map("collection_id")
-  name                      String
-  description               String?
-  code                      String                      @unique
-  isActive                  Boolean                     @default(true) @map("is_active")
-  createdAt                 DateTime                    @default(now()) @map("created_at")
-  updatedAt                 DateTime                    @updatedAt @map("updated_at")
-  PriceListDetail           PriceListDetail[]
-  PurchasePriceListDetail   PurchasePriceListDetail[]
-  products                  Product[]
+  collectionId            String                    @id @default(uuid()) @map("collection_id")
+  name                    String
+  description             String?
+  code                    String                    @unique
+  isActive                Boolean                   @default(true) @map("is_active")
+  createdAt               DateTime                  @default(now()) @map("created_at")
+  updatedAt               DateTime                  @updatedAt @map("updated_at")
+  PriceListDetail         PriceListDetail[]
+  PurchasePriceListDetail PurchasePriceListDetail[]
+  products                Product[]
 }
 
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model Product {
-  productId              String                  @id @default(uuid()) @map("product_id")
-  name                   String
-  description            String
-  productImage           String?                 @map("product_imageurl")
-  collectionId           String                  @map("collection_id")
-  createdAt              DateTime                @default(now()) @map("created_at")
-  updatedAt              DateTime                @updatedAt @map("updated_at")
-  rule_id                Int?
-  canonicalProductId     String?                 @map("canonical_product_id")
-  canonicalProduct       Product?                @relation("ProductAliases", fields: [canonicalProductId], references: [productId], onDelete: Restrict)
-  aliases                Product[]               @relation("ProductAliases")
-  orderItems             OrderItem[]
-  collection             Collection              @relation(fields: [collectionId], references: [collectionId])
-  productrules           productrules?           @relation(fields: [rule_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  qr_codes               QRCode[]
-  barcodes               Barcode[]
-  admin_cart_items       admin_cart_items[]
-  cart_items             cart_items[]
-  productvariations      productvariations[]
-  manuelSatisDetay       ManuelSatisDetay[]
-  purchaseCartItems      PurchaseCartItems[]
-  supplierPurchaseItems  SupplierPurchaseItems[]
-  productStock           ProductStock?
+  productId             String                  @id @default(uuid()) @map("product_id")
+  name                  String
+  description           String
+  productImage          String?                 @map("product_imageurl")
+  collectionId          String                  @map("collection_id")
+  createdAt             DateTime                @default(now()) @map("created_at")
+  updatedAt             DateTime                @updatedAt @map("updated_at")
+  rule_id               Int?
+  canonicalProductId    String?                 @map("canonical_product_id")
+  canonicalProduct      Product?                @relation("ProductAliases", fields: [canonicalProductId], references: [productId], onDelete: Restrict)
+  aliases               Product[]               @relation("ProductAliases")
+  orderItems            OrderItem[]
+  collection            Collection              @relation(fields: [collectionId], references: [collectionId])
+  productrules          productrules?           @relation(fields: [rule_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  qr_codes              QRCode[]
+  barcodes              Barcode[]
+  admin_cart_items      admin_cart_items[]
+  cart_items            cart_items[]
+  productvariations     productvariations[]
+  manuelSatisDetay      ManuelSatisDetay[]
+  purchaseCartItems     PurchaseCartItems[]
+  supplierPurchaseItems SupplierPurchaseItems[]
+  productStock          ProductStock?
 }
 
 /// Canonical product-level stock. Measurements and cut/fringe selections are
 /// order attributes; this table is the single source of truth for stock area.
 model ProductStock {
-  id               String                    @id @default(uuid())
-  productId        String                    @unique @map("product_id") @db.VarChar(36)
-  availableAreaM2  Decimal                   @default(0) @map("available_area_m2") @db.Decimal(14, 4)
-  reservedAreaM2   Decimal                   @default(0) @map("reserved_area_m2") @db.Decimal(14, 4)
-  createdAt        DateTime                  @default(now()) @map("created_at")
-  updatedAt        DateTime                  @updatedAt @map("updated_at")
-  product          Product                   @relation(fields: [productId], references: [productId], onDelete: Cascade)
-  lots             ProductStockLot[]
-  movements        ProductStockMovement[]
-  reservations     ProductStockReservation[]
+  id              String                    @id @default(uuid())
+  productId       String                    @unique @map("product_id") @db.VarChar(36)
+  availableAreaM2 Decimal                   @default(0) @map("available_area_m2") @db.Decimal(14, 4)
+  reservedAreaM2  Decimal                   @default(0) @map("reserved_area_m2") @db.Decimal(14, 4)
+  createdAt       DateTime                  @default(now()) @map("created_at")
+  updatedAt       DateTime                  @updatedAt @map("updated_at")
+  product         Product                   @relation(fields: [productId], references: [productId], onDelete: Cascade)
+  lots            ProductStockLot[]
+  movements       ProductStockMovement[]
+  reservations    ProductStockReservation[]
+  widthStocks     ProductStockWidth[]
 
   @@map("product_stocks")
 }
 
+/// Independent inventory pool for one physical roll width. Fixed sizes and
+/// custom cuts with the same width consume this shared m² balance.
+model ProductStockWidth {
+  id              String       @id @default(uuid())
+  productStockId  String       @map("product_stock_id")
+  width           Decimal      @db.Decimal(8, 2)
+  availableAreaM2 Decimal      @default(0) @map("available_area_m2") @db.Decimal(14, 4)
+  reservedAreaM2  Decimal      @default(0) @map("reserved_area_m2") @db.Decimal(14, 4)
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+  productStock    ProductStock @relation(fields: [productStockId], references: [id], onDelete: Cascade)
+
+  @@unique([productStockId, width])
+  @@index([productStockId], map: "idx_product_stock_width_product")
+  @@map("product_stock_widths")
+}
+
 model ProductStockLot {
-  id               String                    @id @default(uuid())
-  productStockId   String                    @map("product_stock_id")
-  sourceType       String                    @map("source_type") @db.VarChar(40)
-  sourceReference  String?                   @map("source_reference") @db.VarChar(255)
-  originalAreaM2   Decimal                   @map("original_area_m2") @db.Decimal(14, 4)
-  remainingAreaM2  Decimal                   @map("remaining_area_m2") @db.Decimal(14, 4)
-  receivedAt       DateTime                  @default(now()) @map("received_at")
-  createdAt        DateTime                  @default(now()) @map("created_at")
-  productStock     ProductStock              @relation(fields: [productStockId], references: [id], onDelete: Cascade)
-  movements        ProductStockMovement[]
+  id              String                 @id @default(uuid())
+  productStockId  String                 @map("product_stock_id")
+  sourceType      String                 @map("source_type") @db.VarChar(40)
+  sourceReference String?                @map("source_reference") @db.VarChar(255)
+  originalAreaM2  Decimal                @map("original_area_m2") @db.Decimal(14, 4)
+  remainingAreaM2 Decimal                @map("remaining_area_m2") @db.Decimal(14, 4)
+  width           Decimal?               @db.Decimal(8, 2)
+  receivedAt      DateTime               @default(now()) @map("received_at")
+  createdAt       DateTime               @default(now()) @map("created_at")
+  productStock    ProductStock           @relation(fields: [productStockId], references: [id], onDelete: Cascade)
+  movements       ProductStockMovement[]
 
   @@index([productStockId, receivedAt], map: "idx_product_stock_lot_fifo")
   @@map("product_stock_lots")
 }
 
 model ProductStockMovement {
-  id              String            @id @default(uuid())
-  productStockId  String            @map("product_stock_id")
-  lotId           String?           @map("lot_id")
-  productId       String            @map("product_id") @db.VarChar(36)
-  orderId         String?           @map("order_id") @db.VarChar(36)
-  orderItemId     String?           @map("order_item_id") @db.VarChar(36)
-  movementType    String            @map("movement_type") @db.VarChar(40)
-  areaM2          Decimal           @map("area_m2") @db.Decimal(14, 4)
-  quantity        Int?
-  width           Decimal?          @db.Decimal(8, 2)
-  height          Decimal?          @db.Decimal(8, 2)
-  referenceKey    String?           @unique @map("reference_key") @db.VarChar(255)
-  metadata        Json?
-  createdAt       DateTime          @default(now()) @map("created_at")
-  productStock    ProductStock      @relation(fields: [productStockId], references: [id], onDelete: Cascade)
-  lot             ProductStockLot?  @relation(fields: [lotId], references: [id], onDelete: SetNull)
+  id             String           @id @default(uuid())
+  productStockId String           @map("product_stock_id")
+  lotId          String?          @map("lot_id")
+  productId      String           @map("product_id") @db.VarChar(36)
+  orderId        String?          @map("order_id") @db.VarChar(36)
+  orderItemId    String?          @map("order_item_id") @db.VarChar(36)
+  movementType   String           @map("movement_type") @db.VarChar(40)
+  areaM2         Decimal          @map("area_m2") @db.Decimal(14, 4)
+  quantity       Int?
+  width          Decimal?         @db.Decimal(8, 2)
+  height         Decimal?         @db.Decimal(8, 2)
+  referenceKey   String?          @unique @map("reference_key") @db.VarChar(255)
+  metadata       Json?
+  createdAt      DateTime         @default(now()) @map("created_at")
+  productStock   ProductStock     @relation(fields: [productStockId], references: [id], onDelete: Cascade)
+  lot            ProductStockLot? @relation(fields: [lotId], references: [id], onDelete: SetNull)
 
   @@index([productId, createdAt], map: "idx_product_stock_movement_product_created")
   @@index([orderId], map: "idx_product_stock_movement_order")
@@ -166,17 +185,18 @@ model ProductStockMovement {
 }
 
 model ProductStockReservation {
-  id              String       @id @default(uuid())
-  productStockId  String       @map("product_stock_id")
-  cartId          Int?         @map("cart_id")
-  orderId         String?      @map("order_id") @db.VarChar(36)
-  areaM2          Decimal      @map("area_m2") @db.Decimal(14, 4)
-  status          String       @default("ACTIVE") @db.VarChar(20)
-  expiresAt       DateTime?    @map("expires_at")
-  referenceKey    String       @unique @map("reference_key") @db.VarChar(255)
-  createdAt       DateTime     @default(now()) @map("created_at")
-  updatedAt       DateTime     @updatedAt @map("updated_at")
-  productStock    ProductStock @relation(fields: [productStockId], references: [id], onDelete: Cascade)
+  id             String       @id @default(uuid())
+  productStockId String       @map("product_stock_id")
+  cartId         Int?         @map("cart_id")
+  orderId        String?      @map("order_id") @db.VarChar(36)
+  areaM2         Decimal      @map("area_m2") @db.Decimal(14, 4)
+  width          Decimal?     @db.Decimal(8, 2)
+  status         String       @default("ACTIVE") @db.VarChar(20)
+  expiresAt      DateTime?    @map("expires_at")
+  referenceKey   String       @unique @map("reference_key") @db.VarChar(255)
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  productStock   ProductStock @relation(fields: [productStockId], references: [id], onDelete: Cascade)
 
   @@index([productStockId, status], map: "idx_product_stock_reservation_status")
   @@index([cartId], map: "idx_product_stock_reservation_cart")
@@ -405,39 +425,39 @@ model admin_cart_items {
 }
 
 model Order {
-  id                 String              @id @default(uuid())
+  id                 String      @id @default(uuid())
   user_id            String
-  cart_id            Int?                @unique  // Normal sepet için, admin sepetler için null
-  admin_cart_id      Int?                // Admin sepet için, normal sepetler için null
-  total_price        Decimal             @db.Decimal(12, 2)
-  status             OrderStatus         @default(PENDING)
-  address_id         String?             // StoreAddress ID'si
+  cart_id            Int?        @unique // Normal sepet için, admin sepetler için null
+  admin_cart_id      Int? // Admin sepet için, normal sepetler için null
+  total_price        Decimal     @db.Decimal(12, 2)
+  status             OrderStatus @default(PENDING)
+  address_id         String? // StoreAddress ID'si
   store_name         String?
   store_tax_number   String?
   store_tax_office   String?
   store_phone        String?
   store_email        String?
   store_fax          String?
-  notes              String?             // Sipariş notları
-  receipt_printed    Boolean             @default(false) @map("receipt_printed")
-  receipt_printed_at DateTime?           @map("receipt_printed_at")
-  
+  notes              String? // Sipariş notları
+  receipt_printed    Boolean     @default(false) @map("receipt_printed")
+  receipt_printed_at DateTime?   @map("receipt_printed_at")
+
   // YENI ALANLAR - Currency tracking
-  order_currency     Currency?           @default(TRY) @map("order_currency")
-  payment_currency   Currency?           @default(TRY) @map("payment_currency")
-  exchange_rate      Decimal?            @db.Decimal(10, 4) @map("exchange_rate")
-  original_amount    Decimal?            @db.Decimal(12, 2) @map("original_amount")
-  converted_amount   Decimal?            @db.Decimal(12, 2) @map("converted_amount")
-  created_at         DateTime            @default(now())
-  updated_at         DateTime            @updatedAt
-  cart               carts?              @relation(fields: [cart_id], references: [id])
-  user               User                @relation(fields: [user_id], references: [userId])
-  address            StoreAddress?       @relation("OrderAddress", fields: [address_id], references: [id])
-  items              OrderItem[]
-  qr_codes           QRCode[]
-  barcodes           Barcode[]
-  employeeOrderStats EmployeeOrderStats? @relation("OrderEmployeeStats")
-  fulfillmentActions OrderFulfillmentAction[]
+  order_currency      Currency?                @default(TRY) @map("order_currency")
+  payment_currency    Currency?                @default(TRY) @map("payment_currency")
+  exchange_rate       Decimal?                 @map("exchange_rate") @db.Decimal(10, 4)
+  original_amount     Decimal?                 @map("original_amount") @db.Decimal(12, 2)
+  converted_amount    Decimal?                 @map("converted_amount") @db.Decimal(12, 2)
+  created_at          DateTime                 @default(now())
+  updated_at          DateTime                 @updatedAt
+  cart                carts?                   @relation(fields: [cart_id], references: [id])
+  user                User                     @relation(fields: [user_id], references: [userId])
+  address             StoreAddress?            @relation("OrderAddress", fields: [address_id], references: [id])
+  items               OrderItem[]
+  qr_codes            QRCode[]
+  barcodes            Barcode[]
+  employeeOrderStats  EmployeeOrderStats?      @relation("OrderEmployeeStats")
+  fulfillmentActions  OrderFulfillmentAction[]
   muhasebeHareketleri MuhasebeHareketleri[]
 
   @@index([user_id, created_at], map: "idx_order_user_created")
@@ -447,34 +467,34 @@ model Order {
 }
 
 model OrderFulfillmentAction {
-  id             String      @id
-  orderId        String      @map("order_id")
-  actorId        String      @map("actor_id")
-  fromStatus     OrderStatus @map("from_status")
-  targetStatus   OrderStatus @map("target_status")
-  reason         String?     @db.VarChar(500)
-  result         Json
-  createdAt      DateTime    @default(now()) @map("created_at")
-  order          Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id           String      @id
+  orderId      String      @map("order_id")
+  actorId      String      @map("actor_id")
+  fromStatus   OrderStatus @map("from_status")
+  targetStatus OrderStatus @map("target_status")
+  reason       String?     @db.VarChar(500)
+  result       Json
+  createdAt    DateTime    @default(now()) @map("created_at")
+  order        Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId, createdAt], map: "idx_order_fulfillment_order_created")
   @@map("order_fulfillment_actions")
 }
 
 model OrderItem {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   order_id    String
-  product_id  String   @db.VarChar(36)
+  product_id  String    @db.VarChar(36)
   quantity    Int
-  unit_price  Decimal  @db.Decimal(10, 2)
-  total_price Decimal  @db.Decimal(12, 2)
+  unit_price  Decimal   @db.Decimal(10, 2)
+  total_price Decimal   @db.Decimal(12, 2)
   has_fringe  Boolean?
-  width       Decimal? @db.Decimal(8, 2)
-  height      Decimal? @db.Decimal(8, 2)
+  width       Decimal?  @db.Decimal(8, 2)
+  height      Decimal?  @db.Decimal(8, 2)
   cut_type    String?
-  notes       String?  // Ürün notları
-  order       Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
-  product     Product  @relation(fields: [product_id], references: [productId])
+  notes       String? // Ürün notları
+  order       Order     @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  product     Product   @relation(fields: [product_id], references: [productId])
   qr_codes    QRCode[]
   barcodes    Barcode[]
 
@@ -509,24 +529,24 @@ model QRCode {
 }
 
 model Barcode {
-  id              String     @id @default(uuid())
-  order_id        String
-  order_item_id   String
-  product_id      String?    @db.VarChar(36)
-  barcode         String     @unique
-  barcode_type    String     @default("CODE128") // CODE128, QR, EAN13, etc.
-  barcode_image_url String?  @map("barcode_image_url") // Barkod görseli URL'si
-  is_scanned      Boolean    @default(false)
-  scanned_at      DateTime?
-  scanned_by      String?    @db.VarChar(36) // User ID of who scanned
-  created_at      DateTime   @default(now())
-  quantity        Int        @default(1) // How many items this barcode represents
-  scan_count      Int        @default(0) // Kaç kez okutuldu
-  required_scans  Int        @default(1) // Kaç kez okutulması gerekiyor (quantity ile aynı)
-  last_scan_at    DateTime?  @map("last_scan_at") // Son okutma zamanı
-  order           Order      @relation(fields: [order_id], references: [id], onDelete: Cascade)
-  order_item      OrderItem  @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
-  product         Product?   @relation(fields: [product_id], references: [productId], onDelete: Cascade)
+  id                String    @id @default(uuid())
+  order_id          String
+  order_item_id     String
+  product_id        String?   @db.VarChar(36)
+  barcode           String    @unique
+  barcode_type      String    @default("CODE128") // CODE128, QR, EAN13, etc.
+  barcode_image_url String?   @map("barcode_image_url") // Barkod görseli URL'si
+  is_scanned        Boolean   @default(false)
+  scanned_at        DateTime?
+  scanned_by        String?   @db.VarChar(36) // User ID of who scanned
+  created_at        DateTime  @default(now())
+  quantity          Int       @default(1) // How many items this barcode represents
+  scan_count        Int       @default(0) // Kaç kez okutuldu
+  required_scans    Int       @default(1) // Kaç kez okutulması gerekiyor (quantity ile aynı)
+  last_scan_at      DateTime? @map("last_scan_at") // Son okutma zamanı
+  order             Order     @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  order_item        OrderItem @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  product           Product?  @relation(fields: [product_id], references: [productId], onDelete: Cascade)
 
   @@index([order_id], map: "idx_barcode_order_id")
   @@index([order_item_id], map: "idx_barcode_order_item_id")
@@ -560,27 +580,27 @@ model StoreInstallmentLimit {
 }
 
 model MuhasebeHareketleri {
-  id                Int                  @id @default(autoincrement())
-  storeId           String               @map("store_id") @db.Uuid
-  islemTuru         String               @map("islem_turu") @db.VarChar(255)
-  tutar             Decimal              @db.Decimal(10, 2)
-  harcama           Boolean
-  tarih             DateTime
-  aciklama          String?
-  createdAt         DateTime             @default(now()) @map("created_at")
-  isManuelSatis     Boolean?             @default(false) @map("is_manuel_satis")
-  fisNumarasi       String?              @unique @map("fis_numarasi") @db.VarChar(50)
-  
+  id            Int      @id @default(autoincrement())
+  storeId       String   @map("store_id") @db.Uuid
+  islemTuru     String   @map("islem_turu") @db.VarChar(255)
+  tutar         Decimal  @db.Decimal(10, 2)
+  harcama       Boolean
+  tarih         DateTime
+  aciklama      String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  isManuelSatis Boolean? @default(false) @map("is_manuel_satis")
+  fisNumarasi   String?  @unique @map("fis_numarasi") @db.VarChar(50)
+
   // YENI ALANLAR - Currency tracking
-  currency          Currency?            @default(TRY) @map("currency")
-  original_currency Currency?            @default(TRY) @map("original_currency")
-  exchange_rate     Decimal?             @db.Decimal(10, 4) @map("exchange_rate")
-  original_amount   Decimal?             @db.Decimal(10, 2) @map("original_amount")
-  order_id          String?              @map("order_id") // Sipariş ile ilişki
-  
-  store             Store                @relation(fields: [storeId], references: [store_id])
-  order             Order?               @relation(fields: [order_id], references: [id])
-  manuelSatisDetay  ManuelSatisDetay[]
+  currency          Currency? @default(TRY) @map("currency")
+  original_currency Currency? @default(TRY) @map("original_currency")
+  exchange_rate     Decimal?  @map("exchange_rate") @db.Decimal(10, 4)
+  original_amount   Decimal?  @map("original_amount") @db.Decimal(10, 2)
+  order_id          String?   @map("order_id") // Sipariş ile ilişki
+
+  store            Store              @relation(fields: [storeId], references: [store_id])
+  order            Order?             @relation(fields: [order_id], references: [id])
+  manuelSatisDetay ManuelSatisDetay[]
 
   @@index([storeId, tarih], map: "idx_muhasebe_store_tarih")
   @@index([order_id], map: "idx_muhasebe_order_id")
@@ -588,21 +608,21 @@ model MuhasebeHareketleri {
 }
 
 model ManuelSatisDetay {
-  id                Int                    @id @default(autoincrement())
-  muhasebeHareketId Int                    @map("muhasebe_hareket_id")
-  productId         String                 @map("product_id") @db.VarChar(36)
+  id                Int      @id @default(autoincrement())
+  muhasebeHareketId Int      @map("muhasebe_hareket_id")
+  productId         String   @map("product_id") @db.VarChar(36)
   quantity          Int
-  width             Decimal?               @db.Decimal(8, 2)
-  height            Decimal?               @db.Decimal(8, 2)
-  unitPrice         Decimal                @map("unit_price") @db.Decimal(10, 2)
-  totalPrice        Decimal                @map("total_price") @db.Decimal(12, 2)
-  hasFringe         Boolean?               @map("has_fringe")
-  cutType           String?                @map("cut_type") @db.VarChar(100)
+  width             Decimal? @db.Decimal(8, 2)
+  height            Decimal? @db.Decimal(8, 2)
+  unitPrice         Decimal  @map("unit_price") @db.Decimal(10, 2)
+  totalPrice        Decimal  @map("total_price") @db.Decimal(12, 2)
+  hasFringe         Boolean? @map("has_fringe")
+  cutType           String?  @map("cut_type") @db.VarChar(100)
   notes             String?
-  createdAt         DateTime               @default(now()) @map("created_at")
-  
-  muhasebeHareketi  MuhasebeHareketleri    @relation(fields: [muhasebeHareketId], references: [id], onDelete: Cascade)
-  product           Product                @relation(fields: [productId], references: [productId], onDelete: Restrict)
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  muhasebeHareketi MuhasebeHareketleri @relation(fields: [muhasebeHareketId], references: [id], onDelete: Cascade)
+  product          Product             @relation(fields: [productId], references: [productId], onDelete: Restrict)
 
   @@map("manuel_satis_detay")
 }
@@ -640,18 +660,18 @@ model ExchangeRate {
 }
 
 model ContactForm {
-  id           Int      @id @default(autoincrement())
-  companyName  String   @map("company_name") @db.VarChar(200)
-  authorityName String  @map("authority_name") @db.VarChar(100)
-  authoritySurname String @map("authority_surname") @db.VarChar(100)
-  email        String   @db.VarChar(150)
-  phone        String   @db.VarChar(20)
-  address      String   @db.Text
-  isRead       Boolean  @default(false) @map("is_read")
-  isContacted  Boolean  @default(false) @map("is_contacted")
-  notes        String?  @db.Text
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id               Int      @id @default(autoincrement())
+  companyName      String   @map("company_name") @db.VarChar(200)
+  authorityName    String   @map("authority_name") @db.VarChar(100)
+  authoritySurname String   @map("authority_surname") @db.VarChar(100)
+  email            String   @db.VarChar(150)
+  phone            String   @db.VarChar(20)
+  address          String   @db.Text
+  isRead           Boolean  @default(false) @map("is_read")
+  isContacted      Boolean  @default(false) @map("is_contacted")
+  notes            String?  @db.Text
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
 
   @@map("contact_forms")
 }
@@ -695,15 +715,15 @@ model PaymentTransaction {
   paymentDate        DateTime?     @map("payment_date")
   createdAt          DateTime      @default(now()) @map("created_at")
   updatedAt          DateTime      @updatedAt @map("updated_at")
-  
+
   // YENI ALANLAR - Currency tracking
-  store_currency     Currency?     @default(TRY) @map("store_currency")
-  payment_currency   Currency?     @default(TRY) @map("payment_currency")
-  exchange_rate      Decimal?      @db.Decimal(10, 4) @map("exchange_rate")
-  original_amount    Decimal?      @db.Decimal(12, 2) @map("original_amount")
-  converted_amount   Decimal?      @db.Decimal(12, 2) @map("converted_amount")
-  
-  store              Store         @relation(fields: [storeId], references: [store_id])
+  store_currency   Currency? @default(TRY) @map("store_currency")
+  payment_currency Currency? @default(TRY) @map("payment_currency")
+  exchange_rate    Decimal?  @map("exchange_rate") @db.Decimal(10, 4)
+  original_amount  Decimal?  @map("original_amount") @db.Decimal(12, 2)
+  converted_amount Decimal?  @map("converted_amount") @db.Decimal(12, 2)
+
+  store Store @relation(fields: [storeId], references: [store_id])
 
   @@index([storeId, createdAt], map: "idx_payment_tx_store_created")
   @@index([status], map: "idx_payment_tx_status")
@@ -783,18 +803,18 @@ model NotificationHistory {
 model StoreAddress {
   id          String   @id @default(uuid())
   store_id    String   @db.Uuid
-  title       String   // "Ana Mağaza", "Depo", "Şube 1" gibi
-  address     String   // Tam adres
-  city        String?  // Şehir
-  district    String?  // İlçe
-  postal_code String?  // Posta kodu
+  title       String // "Ana Mağaza", "Depo", "Şube 1" gibi
+  address     String // Tam adres
+  city        String? // Şehir
+  district    String? // İlçe
+  postal_code String? // Posta kodu
   is_default  Boolean  @default(false) // Varsayılan adres
   is_active   Boolean  @default(true)
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
-  
-  store       Store    @relation(fields: [store_id], references: [store_id], onDelete: Cascade)
-  orders      Order[]  @relation("OrderAddress")
+
+  store  Store   @relation(fields: [store_id], references: [store_id], onDelete: Cascade)
+  orders Order[] @relation("OrderAddress")
 
   @@map("store_addresses")
 }
@@ -843,77 +863,77 @@ enum SessionStatus {
 }
 
 enum StoreType {
-  KARGO      // Kargo - adres telefon ve ürün bilgileri
-  SERVIS     // Servis - müşteri adı ürün adı ebat kesim türü
+  KARGO // Kargo - adres telefon ve ürün bilgileri
+  SERVIS // Servis - müşteri adı ürün adı ebat kesim türü
   KENDI_ALAN // Kendi alan - müşteri adı ürün adı ebat kesim türü  
-  AMBAR      // Ambar - adres telefon ve ürün bilgileri
+  AMBAR // Ambar - adres telefon ve ürün bilgileri
 }
 
 // YENI TABLO - Currency özet verileri için
 model CurrencySummary {
-  id                String    @id @default(uuid())
-  store_id          String    @db.Uuid
-  currency          Currency
-  period_start      DateTime
-  period_end        DateTime
-  total_revenue     Decimal   @db.Decimal(12, 2)
-  total_orders      Int
-  average_rate      Decimal?  @db.Decimal(10, 4)
-  created_at        DateTime  @default(now())
-  updated_at        DateTime  @updatedAt
-  
-  store             Store     @relation(fields: [store_id], references: [store_id])
-  
+  id            String   @id @default(uuid())
+  store_id      String   @db.Uuid
+  currency      Currency
+  period_start  DateTime
+  period_end    DateTime
+  total_revenue Decimal  @db.Decimal(12, 2)
+  total_orders  Int
+  average_rate  Decimal? @db.Decimal(10, 4)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  store Store @relation(fields: [store_id], references: [store_id])
+
   @@unique([store_id, currency, period_start, period_end])
   @@map("currency_summaries")
 }
 
 // Satıcılar tablosu
 model Supplier {
-  id                    String                      @id @default(uuid())
-  name                  String                      @db.VarChar(255)
-  company_name          String                      @map("company_name") @db.VarChar(255)
-  phone                 String?                     @db.VarChar(20)
-  address               String?
-  notes                 String?
-  balance               Decimal                     @default(0) @db.Decimal(15, 2) // Pozitif: Alacak, Negatif: Borç
-  currency              Currency                    @default(USD)
-  is_active             Boolean                     @default(true) @map("is_active")
-  created_at            DateTime                    @default(now()) @map("created_at")
-  updated_at            DateTime                    @updatedAt @map("updated_at")
-  purchasePriceLists    PurchasePriceList[]
-  balanceTransactions   SupplierBalanceTransaction[]
-  purchaseCarts         PurchaseCarts[]
+  id                  String                       @id @default(uuid())
+  name                String                       @db.VarChar(255)
+  company_name        String                       @map("company_name") @db.VarChar(255)
+  phone               String?                      @db.VarChar(20)
+  address             String?
+  notes               String?
+  balance             Decimal                      @default(0) @db.Decimal(15, 2) // Pozitif: Alacak, Negatif: Borç
+  currency            Currency                     @default(USD)
+  is_active           Boolean                      @default(true) @map("is_active")
+  created_at          DateTime                     @default(now()) @map("created_at")
+  updated_at          DateTime                     @updatedAt @map("updated_at")
+  purchasePriceLists  PurchasePriceList[]
+  balanceTransactions SupplierBalanceTransaction[]
+  purchaseCarts       PurchaseCarts[]
 
   @@map("suppliers")
 }
 
 // Alış fiyat listesi tablosu
 model PurchasePriceList {
-  id              String                      @id @default(uuid())
-  name            String                      @db.VarChar(255)
-  description     String?
-  supplier_id     String?                     @map("supplier_id")
-  currency        Currency                    @default(USD)
-  is_active       Boolean                     @default(true) @map("is_active")
-  created_at      DateTime                    @default(now()) @map("created_at")
-  updated_at      DateTime                    @updatedAt @map("updated_at")
-  supplier        Supplier?                   @relation(fields: [supplier_id], references: [id], onDelete: SetNull)
-  details         PurchasePriceListDetail[]
+  id          String                    @id @default(uuid())
+  name        String                    @db.VarChar(255)
+  description String?
+  supplier_id String?                   @map("supplier_id")
+  currency    Currency                  @default(USD)
+  is_active   Boolean                   @default(true) @map("is_active")
+  created_at  DateTime                  @default(now()) @map("created_at")
+  updated_at  DateTime                  @updatedAt @map("updated_at")
+  supplier    Supplier?                 @relation(fields: [supplier_id], references: [id], onDelete: SetNull)
+  details     PurchasePriceListDetail[]
 
   @@map("purchase_price_lists")
 }
 
 // Alış fiyat listesi detayları
 model PurchasePriceListDetail {
-  id                      String            @id @default(uuid())
-  purchase_price_list_id  String            @map("purchase_price_list_id")
-  collection_id           String            @map("collection_id")
-  price_per_square_meter  Decimal           @db.Decimal(10, 2) @map("price_per_square_meter")
-  created_at              DateTime          @default(now()) @map("created_at")
-  updated_at              DateTime          @updatedAt @map("updated_at")
-  purchasePriceList       PurchasePriceList @relation(fields: [purchase_price_list_id], references: [id], onDelete: Cascade)
-  collection              Collection        @relation(fields: [collection_id], references: [collectionId], onDelete: Cascade)
+  id                     String            @id @default(uuid())
+  purchase_price_list_id String            @map("purchase_price_list_id")
+  collection_id          String            @map("collection_id")
+  price_per_square_meter Decimal           @map("price_per_square_meter") @db.Decimal(10, 2)
+  created_at             DateTime          @default(now()) @map("created_at")
+  updated_at             DateTime          @updatedAt @map("updated_at")
+  purchasePriceList      PurchasePriceList @relation(fields: [purchase_price_list_id], references: [id], onDelete: Cascade)
+  collection             Collection        @relation(fields: [collection_id], references: [collectionId], onDelete: Cascade)
 
   @@unique([purchase_price_list_id, collection_id])
   @@map("purchase_price_list_details")
@@ -921,20 +941,20 @@ model PurchasePriceListDetail {
 
 // Satıcı bakiye işlemleri tablosu
 model SupplierBalanceTransaction {
-  id                String                     @id @default(uuid())
-  supplier_id       String                     @map("supplier_id")
-  transaction_type  String                     @map("transaction_type") @db.VarChar(50) // PAYMENT, PURCHASE, ADJUSTMENT, etc.
-  amount            Decimal                    @db.Decimal(15, 2) // USD cinsinden tutar (amount/exchange_rate)
-  original_amount   Decimal?                   @map("original_amount") @db.Decimal(15, 2) // Orijinal TRY tutar
-  exchange_rate     Decimal?                   @map("exchange_rate") @db.Decimal(10, 4) // Dolar kuru
-  original_currency String?                    @map("original_currency") @db.VarChar(3) @default("TRY") // Orijinal para birimi
-  previous_balance  Decimal                    @map("previous_balance") @db.Decimal(15, 2)
-  new_balance       Decimal                    @map("new_balance") @db.Decimal(15, 2)
+  id                String                  @id @default(uuid())
+  supplier_id       String                  @map("supplier_id")
+  transaction_type  String                  @map("transaction_type") @db.VarChar(50) // PAYMENT, PURCHASE, ADJUSTMENT, etc.
+  amount            Decimal                 @db.Decimal(15, 2) // USD cinsinden tutar (amount/exchange_rate)
+  original_amount   Decimal?                @map("original_amount") @db.Decimal(15, 2) // Orijinal TRY tutar
+  exchange_rate     Decimal?                @map("exchange_rate") @db.Decimal(10, 4) // Dolar kuru
+  original_currency String?                 @default("TRY") @map("original_currency") @db.VarChar(3) // Orijinal para birimi
+  previous_balance  Decimal                 @map("previous_balance") @db.Decimal(15, 2)
+  new_balance       Decimal                 @map("new_balance") @db.Decimal(15, 2)
   description       String?
-  reference_number  String?                    @map("reference_number") @db.VarChar(100)
-  created_by        String                     @map("created_by") @db.VarChar(36) // Admin user ID
-  created_at        DateTime                   @default(now()) @map("created_at")
-  supplier          Supplier                   @relation(fields: [supplier_id], references: [id], onDelete: Cascade)
+  reference_number  String?                 @map("reference_number") @db.VarChar(100)
+  created_by        String                  @map("created_by") @db.VarChar(36) // Admin user ID
+  created_at        DateTime                @default(now()) @map("created_at")
+  supplier          Supplier                @relation(fields: [supplier_id], references: [id], onDelete: Cascade)
   purchaseItems     SupplierPurchaseItems[]
 
   @@map("supplier_balance_transactions")
@@ -942,21 +962,21 @@ model SupplierBalanceTransaction {
 
 // Satıcıdan satın alınan ürünlerin detayları
 model SupplierPurchaseItems {
-  id                 String                      @id @default(uuid())
-  transaction_id     String                      @map("transaction_id")
-  product_id         String                      @map("product_id") @db.VarChar(36)
-  quantity           Int                         @default(1)
-  width              Decimal                     @db.Decimal(8, 2)
-  height             Decimal                     @db.Decimal(8, 2)
-  area_m2            Decimal                     @db.Decimal(10, 2) @map("area_m2")
-  unit_price         Decimal                     @db.Decimal(10, 2) @map("unit_price") // USD cinsinden alış fiyatı
-  total_price        Decimal                     @db.Decimal(12, 2) @map("total_price") // USD cinsinden toplam
-  has_fringe         Boolean?                    @default(false) @map("has_fringe")
-  cut_type           cut_type_enum?              @default(rectangle) @map("cut_type")
-  notes              String?
-  created_at         DateTime                    @default(now()) @map("created_at") @db.Timestamp(6)
-  transaction        SupplierBalanceTransaction  @relation(fields: [transaction_id], references: [id], onDelete: Cascade)
-  product            Product                     @relation(fields: [product_id], references: [productId], onDelete: Cascade)
+  id             String                     @id @default(uuid())
+  transaction_id String                     @map("transaction_id")
+  product_id     String                     @map("product_id") @db.VarChar(36)
+  quantity       Int                        @default(1)
+  width          Decimal                    @db.Decimal(8, 2)
+  height         Decimal                    @db.Decimal(8, 2)
+  area_m2        Decimal                    @map("area_m2") @db.Decimal(10, 2)
+  unit_price     Decimal                    @map("unit_price") @db.Decimal(10, 2) // USD cinsinden alış fiyatı
+  total_price    Decimal                    @map("total_price") @db.Decimal(12, 2) // USD cinsinden toplam
+  has_fringe     Boolean?                   @default(false) @map("has_fringe")
+  cut_type       cut_type_enum?             @default(rectangle) @map("cut_type")
+  notes          String?
+  created_at     DateTime                   @default(now()) @map("created_at") @db.Timestamp(6)
+  transaction    SupplierBalanceTransaction @relation(fields: [transaction_id], references: [id], onDelete: Cascade)
+  product        Product                    @relation(fields: [product_id], references: [productId], onDelete: Cascade)
 
   @@index([transaction_id], map: "idx_supplier_purchase_items_transaction")
   @@index([product_id], map: "idx_supplier_purchase_items_product")
@@ -965,15 +985,15 @@ model SupplierPurchaseItems {
 
 // Satıcı alım sepeti tablosu - Normal sepetlerden ayrı olarak tutulur
 model PurchaseCarts {
-  id           Int                   @id @default(autoincrement())
-  supplier_id  String                @map("supplier_id")
-  user_id      String                @map("user_id") @db.VarChar(36) // Sepeti oluşturan admin kullanıcı
-  is_active    Boolean               @default(true) @map("is_active")
-  created_at   DateTime              @default(now()) @map("created_at") @db.Timestamp(6)
-  updated_at   DateTime              @updatedAt @map("updated_at") @db.Timestamp(6)
-  items        PurchaseCartItems[]
-  supplier     Supplier              @relation(fields: [supplier_id], references: [id], onDelete: Cascade)
-  user         User                  @relation(fields: [user_id], references: [userId], onDelete: Cascade)
+  id          Int                 @id @default(autoincrement())
+  supplier_id String              @map("supplier_id")
+  user_id     String              @map("user_id") @db.VarChar(36) // Sepeti oluşturan admin kullanıcı
+  is_active   Boolean             @default(true) @map("is_active")
+  created_at  DateTime            @default(now()) @map("created_at") @db.Timestamp(6)
+  updated_at  DateTime            @updatedAt @map("updated_at") @db.Timestamp(6)
+  items       PurchaseCartItems[]
+  supplier    Supplier            @relation(fields: [supplier_id], references: [id], onDelete: Cascade)
+  user        User                @relation(fields: [user_id], references: [userId], onDelete: Cascade)
 
   @@index([supplier_id], map: "idx_purchase_carts_supplier")
   @@index([user_id], map: "idx_purchase_carts_user")
@@ -983,22 +1003,22 @@ model PurchaseCarts {
 
 // Satıcı alım sepeti öğeleri
 model PurchaseCartItems {
-  id               Int               @id @default(autoincrement())
-  purchase_cart_id Int               @map("purchase_cart_id")
-  product_id       String            @map("product_id") @db.VarChar(36)
-  quantity         Int               @default(1)
-  width            Decimal           @db.Decimal(8, 2)
-  height           Decimal           @db.Decimal(8, 2)
-  area_m2          Decimal           @db.Decimal(10, 2) @map("area_m2")
-  unit_price       Decimal           @db.Decimal(10, 2) @map("unit_price") // USD cinsinden alış fiyatı
-  total_price      Decimal           @db.Decimal(12, 2) @map("total_price") // USD cinsinden toplam
-  has_fringe       Boolean?          @default(false) @map("has_fringe")
-  cut_type         cut_type_enum?    @default(rectangle) @map("cut_type")
+  id               Int            @id @default(autoincrement())
+  purchase_cart_id Int            @map("purchase_cart_id")
+  product_id       String         @map("product_id") @db.VarChar(36)
+  quantity         Int            @default(1)
+  width            Decimal        @db.Decimal(8, 2)
+  height           Decimal        @db.Decimal(8, 2)
+  area_m2          Decimal        @map("area_m2") @db.Decimal(10, 2)
+  unit_price       Decimal        @map("unit_price") @db.Decimal(10, 2) // USD cinsinden alış fiyatı
+  total_price      Decimal        @map("total_price") @db.Decimal(12, 2) // USD cinsinden toplam
+  has_fringe       Boolean?       @default(false) @map("has_fringe")
+  cut_type         cut_type_enum? @default(rectangle) @map("cut_type")
   notes            String?
-  created_at       DateTime          @default(now()) @map("created_at") @db.Timestamp(6)
-  updated_at       DateTime          @updatedAt @map("updated_at") @db.Timestamp(6)
-  purchaseCart     PurchaseCarts     @relation(fields: [purchase_cart_id], references: [id], onDelete: Cascade)
-  product          Product           @relation(fields: [product_id], references: [productId], onDelete: Cascade)
+  created_at       DateTime       @default(now()) @map("created_at") @db.Timestamp(6)
+  updated_at       DateTime       @updatedAt @map("updated_at") @db.Timestamp(6)
+  purchaseCart     PurchaseCarts  @relation(fields: [purchase_cart_id], references: [id], onDelete: Cascade)
+  product          Product        @relation(fields: [product_id], references: [productId], onDelete: Cascade)
 
   @@index([purchase_cart_id], map: "idx_purchase_cart_items_cart_id")
   @@index([product_id], map: "idx_purchase_cart_items_product_id")

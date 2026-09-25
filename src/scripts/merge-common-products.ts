@@ -68,6 +68,15 @@ async function main() {
       for (const alias of g.aliases) {
         const source = alias.productStock!;
         await tx.productStock.update({where:{id:target.id},data:{availableAreaM2:{increment:source.availableAreaM2},reservedAreaM2:{increment:source.reservedAreaM2}}});
+        const sourceWidths = await tx.productStockWidth.findMany({ where: { productStockId: source.id } });
+        for (const widthStock of sourceWidths) {
+          await tx.productStockWidth.upsert({
+            where: { productStockId_width: { productStockId: target.id, width: widthStock.width } },
+            create: { productStockId: target.id, width: widthStock.width, availableAreaM2: widthStock.availableAreaM2, reservedAreaM2: widthStock.reservedAreaM2 },
+            update: { availableAreaM2: { increment: widthStock.availableAreaM2 }, reservedAreaM2: { increment: widthStock.reservedAreaM2 } }
+          });
+        }
+        await tx.productStockWidth.deleteMany({ where: { productStockId: source.id } });
         await tx.productStockLot.updateMany({where:{productStockId:source.id},data:{productStockId:target.id}});
         await tx.productStockMovement.updateMany({where:{productStockId:source.id},data:{productStockId:target.id}});
         await tx.productStockReservation.updateMany({where:{productStockId:source.id},data:{productStockId:target.id}});

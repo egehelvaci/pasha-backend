@@ -204,7 +204,7 @@ export class CartService {
         }
       });
 
-      const canonicalStock = await commonStockService.getSnapshot(data.productId);
+      const canonicalStock = await commonStockService.getSnapshot(data.productId, prisma, data.width);
       if (canonicalStock.enabled) {
         const requestedQuantity = (existingItem?.quantity || 0) + data.quantity;
         const requestedAreaM2 = calculateAreaM2(data.width, data.height, requestedQuantity);
@@ -373,7 +373,7 @@ export class CartService {
         }
       });
 
-      const canonicalStock = await commonStockService.getSnapshot(data.productId);
+      const canonicalStock = await commonStockService.getSnapshot(data.productId, prisma, data.width);
       if (canonicalStock.enabled) {
         const requestedQuantity = (existingItem?.quantity || 0) + data.quantity;
         const requestedAreaM2 = calculateAreaM2(data.width, data.height, requestedQuantity);
@@ -500,7 +500,7 @@ export class CartService {
         console.warn(`⚠️ Bu boyut (${width}x${height}cm) için stok bilgisi bulunamadı - İşlem devam ediyor`);
       }
 
-      const canonicalStock = await commonStockService.getSnapshot(cartItem.product_id);
+      const canonicalStock = await commonStockService.getSnapshot(cartItem.product_id, prisma, width);
       if (canonicalStock.enabled) {
         const requestedAreaM2 = calculateAreaM2(width, height, data.quantity);
         console.warn(`📦 Ortak stok güncelleme önizleme: mevcut ${canonicalStock.consumableAreaM2.toFixed(2)} m², sepet ihtiyacı ${requestedAreaM2.toFixed(2)} m²; sipariş eksi stoğa izinli`);
@@ -1253,7 +1253,7 @@ export class CartService {
         console.warn(`⚠️ Bu boyut (${width}x${height}cm) için stok bilgisi bulunamadı - İşlem devam ediyor`);
       }
 
-      const canonicalStock = await commonStockService.getSnapshot(adminCartItem.product_id);
+      const canonicalStock = await commonStockService.getSnapshot(adminCartItem.product_id, prisma, width);
       if (canonicalStock.enabled) {
         const requestedAreaM2 = calculateAreaM2(width, height, data.quantity);
         console.warn(`📦 Admin ortak stok güncelleme önizleme: mevcut ${canonicalStock.consumableAreaM2.toFixed(2)} m², sepet ihtiyacı ${requestedAreaM2.toFixed(2)} m²; sipariş eksi stoğa izinli`);

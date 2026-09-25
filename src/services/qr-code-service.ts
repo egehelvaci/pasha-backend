@@ -243,7 +243,7 @@ export class QRCodeService {
 
       const canonicalItems = [] as typeof order.items
       for (const item of order.items) {
-        if ((await commonStockService.getSnapshot(item.product_id)).enabled) {
+        if ((await commonStockService.getSnapshot(item.product_id, prisma, Number(item.width))).enabled) {
           canonicalItems.push(item)
         }
       }
@@ -757,7 +757,7 @@ export class QRCodeService {
       for (const item of order.items) {
         console.log(`🔄 Stok geri ekleme: ${item.product_id} - ${item.width}x${item.height} - Saçak: ${item.has_fringe} - Adet: ${item.quantity}`)
 
-        const canonicalStock = await commonStockService.getSnapshot(item.product_id)
+        const canonicalStock = await commonStockService.getSnapshot(item.product_id, prisma, Number(item.width))
         if (canonicalStock.enabled) {
           const areaM2 = calculateAreaM2(Number(item.width), Number(item.height), item.quantity)
           await commonStockService.addStock({

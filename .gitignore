@@ -76,6 +76,7 @@ $RECYCLE.BIN/
 !prisma/migrations/20260924050000_cart_stock_reservations/migration.sql
 !prisma/migrations/20260924060000_cart_reservation_lock_order/migration.sql
 !prisma/migrations/20260924070000_reservation_alias_lock/migration.sql
+!prisma/migrations/20260924080000_width_based_product_stock/migration.sql
 *.sqlite
 *.sqlite3
 

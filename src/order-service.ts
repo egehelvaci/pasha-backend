@@ -1755,7 +1755,7 @@ export class OrderService {
         console.log(`📦 Sipariş iptal ediliyor: ${orderId} - Durum: ${order.status}`);
         
         for (const item of order.items) {
-          const canonicalStock = await commonStockService.getSnapshot(item.product_id, tx);
+          const canonicalStock = await commonStockService.getSnapshot(item.product_id, tx, Number(item.width));
           if (canonicalStock.enabled) {
             await commonStockService.addStock({
               productId: item.product_id,

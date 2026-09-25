@@ -357,13 +357,13 @@ export const updateProductStock = async (req: Request, res: Response) => {
 export const updateProductStockAreaM2 = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { width, height, areaM2 } = req.body;
+    const { width, height = 0, areaM2 } = req.body;
     
     // Zorunlu alanları kontrol et
-    if (!width || height === undefined || height === null || height === '' || areaM2 === undefined || areaM2 === null || isNaN(parseFloat(areaM2))) {
+    if (!width || areaM2 === undefined || areaM2 === null || isNaN(parseFloat(areaM2))) {
       return res.status(400).json({
         success: false,
-        message: 'Geçerli bir genişlik, yükseklik ve m² değeri gereklidir'
+        message: 'Geçerli bir genişlik ve m² değeri gereklidir'
       });
     }
     
@@ -378,10 +378,10 @@ export const updateProductStockAreaM2 = async (req: Request, res: Response) => {
     
     // Yükseklik değeri kontrolü
     const heightValue = parseInt(height);
-    if (isNaN(heightValue) || heightValue <= 0) {
+    if (isNaN(heightValue) || heightValue < 0) {
       return res.status(400).json({
         success: false,
-        message: 'Yükseklik değeri pozitif bir sayı olmalıdır'
+        message: 'Yükseklik değeri 0 veya pozitif bir sayı olmalıdır'
       });
     }
 
@@ -415,7 +415,7 @@ export const updateProductStockAreaM2 = async (req: Request, res: Response) => {
     return res.status(200).json({
       success: true,
       data: product,
-      message: `${areaValue}m² stok eklendi (${Math.floor(areaValue / ((widthValue * heightValue) / 10000))} adet halıya eşdeğer)`
+      message: `${widthValue} cm en stok havuzu ${areaValue} m² olarak güncellendi`
     });
   } catch (error: any) {
     return res.status(500).json({
@@ -442,4 +442,4 @@ export const getProductVariationOptions = async (req: Request, res: Response) =>
       message: error.message || 'Ürün varyasyon seçenekleri getirilemedi'
     });
   }
-}; 
+};

@@ -36,6 +36,11 @@ const { ProductRulesController } = require('../dist/admin/product-rules-controll
   mock.method(prisma.productrules,'findUnique',async()=>({id:123}));
   mock.method(prisma.productsizeoptions,'findFirst',async()=>null);
   mock.method(prisma.productsizeoptions,'create',async({data})=>data);
+  prisma.productStock={findMany:async()=>[]};
+  prisma.productStockWidth={createMany:async()=>({count:0}),deleteMany:async()=>({count:0}),findFirst:async()=>null};
+  prisma.productsizeoptions.count=async()=>0;
+  prisma.productsizeoptions.delete=async()=>null;
+  mock.method(prisma,'$transaction',async fn=>fn(prisma));
   res=await invoke('addSizeOption',{width:80,isOptionalHeight:true},{ruleId:'123'});
   assert.equal(res.code,201);assert.equal(res.body.data.height,0);
   mock.method(prisma.productsizeoptions,'findFirst',async({where})=>where.id===5 ? {id:5,width:80,height:200,is_optional_height:false} : null);

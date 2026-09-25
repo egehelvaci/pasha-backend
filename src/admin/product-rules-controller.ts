@@ -4,6 +4,41 @@ import { ProductService } from '../product-service'
 import prisma from '../utils/prisma'
 import { normalizeSizeOption } from '../utils/product-size-option'
 
+async function ruleWidthHasBalance(ruleId: number, width: number) {
+  return !!(await prisma.productStockWidth.findFirst({
+    where: {
+      width,
+      productStock: { product: { rule_id: ruleId } },
+      OR: [{ availableAreaM2: { not: 0 } }, { reservedAreaM2: { not: 0 } }]
+    },
+    select: { id: true }
+  }))
+}
+
+async function createRuleWidthPools(ruleId: number, width: number, tx: Prisma.TransactionClient | typeof prisma = prisma) {
+  const stocks = await tx.productStock.findMany({
+    where: { product: { rule_id: ruleId } },
+    select: { id: true }
+  })
+  if (stocks.length) {
+    await tx.productStockWidth.createMany({
+      data: stocks.map(stock => ({ productStockId: stock.id, width })),
+      skipDuplicates: true
+    })
+  }
+}
+
+async function deleteEmptyRuleWidthPools(ruleId: number, width: number, tx: Prisma.TransactionClient | typeof prisma = prisma) {
+  await tx.productStockWidth.deleteMany({
+    where: {
+      productStock: { product: { rule_id: ruleId } },
+      width,
+      availableAreaM2: 0,
+      reservedAreaM2: 0
+    }
+  })
+}
+
 export class ProductRulesController {
   private productService: ProductService
 
@@ -516,11 +551,12 @@ export class ProductRulesController {
       }
       
       // Yeni boyut seçeneği ekle
-      const newSizeOption = await prisma.productsizeoptions.create({
-        data: {
-          rule_id: parseInt(ruleId),
-          ...normalizedSize
-        }
+      const newSizeOption = await prisma.$transaction(async tx => {
+        const created = await tx.productsizeoptions.create({
+          data: { rule_id: parseInt(ruleId), ...normalizedSize }
+        })
+        await createRuleWidthPools(parseInt(ruleId), normalizedSize.width, tx)
+        return created
       })
       
       return res.status(201).json({
@@ -573,6 +609,13 @@ export class ProductRulesController {
       let updateData: ReturnType<typeof normalizeSizeOption>
       try { updateData = normalizeSizeOption({ width, height, isOptionalHeight }, existingSize) }
       catch (error) { return res.status(400).json({ success: false, message: (error as Error).message }) }
+
+      if (updateData.width !== existingSize.width) {
+        const otherSameWidth = await prisma.productsizeoptions.count({ where: { rule_id: parseInt(ruleId), width: existingSize.width, id: { not: existingSize.id } } })
+        if (!otherSameWidth && await ruleWidthHasBalance(parseInt(ruleId), existingSize.width)) {
+          return res.status(409).json({ success: false, message: `${existingSize.width} cm stok havuzunda bakiye veya rezervasyon bulunduğu için genişlik değiştirilemez` })
+        }
+      }
       
       // Eğer boyut değerleri güncelleniyorsa, aynı boyutun zaten var olup olmadığını kontrol et
       if (updateData.width || updateData.height) {
@@ -599,9 +642,14 @@ export class ProductRulesController {
       }
       
       // Boyut seçeneğini güncelle
-      const updatedSizeOption = await prisma.productsizeoptions.update({
-        where: { id: parseInt(sizeId) },
-        data: updateData
+      const updatedSizeOption = await prisma.$transaction(async tx => {
+        const updated = await tx.productsizeoptions.update({ where: { id: parseInt(sizeId) }, data: updateData })
+        await createRuleWidthPools(parseInt(ruleId), updated.width, tx)
+        if (updated.width !== existingSize.width) {
+          const oldWidthStillUsed = await tx.productsizeoptions.count({ where: { rule_id: parseInt(ruleId), width: existingSize.width } })
+          if (!oldWidthStillUsed) await deleteEmptyRuleWidthPools(parseInt(ruleId), existingSize.width, tx)
+        }
+        return updated
       })
       
       return res.status(200).json({
@@ -648,10 +696,16 @@ export class ProductRulesController {
           message: 'Silinecek boyut seçeneği bulunamadı'
         })
       }
+
+      const otherSameWidth = await prisma.productsizeoptions.count({ where: { rule_id: parseInt(ruleId), width: existingSize.width, id: { not: existingSize.id } } })
+      if (!otherSameWidth && await ruleWidthHasBalance(parseInt(ruleId), existingSize.width)) {
+        return res.status(409).json({ success: false, message: `${existingSize.width} cm stok havuzunda bakiye veya rezervasyon bulunduğu için son ölçü seçeneği silinemez` })
+      }
       
       // Boyut seçeneğini sil
-      await prisma.productsizeoptions.delete({
-        where: { id: parseInt(sizeId) }
+      await prisma.$transaction(async tx => {
+        await tx.productsizeoptions.delete({ where: { id: parseInt(sizeId) } })
+        if (!otherSameWidth) await deleteEmptyRuleWidthPools(parseInt(ruleId), existingSize.width, tx)
       })
       
       return res.status(200).json({
