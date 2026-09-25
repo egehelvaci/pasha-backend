@@ -10,6 +10,7 @@
 - Sepet rezervasyonları SQL trigger'larıyla item ve sepet aktifliği değişikliklerine aynı transaction içinde bağlıdır. Eksi stok siparişine izin verildiğinden rezervasyonlar fiziksel stokla sınırlanmaz.
 - Doğrudan satın alma ve satın alma sepeti ortak stoğu artırır. Manuel satış, stok okuma ve hibrit admin stok güncellemesi aynı m² kaynağını kullanır.
 - `20260924080000_width_based_product_stock` ile kaynak m² stok ürün kuralındaki enlere ayrılır. Hazır ve özel boy aynı eni kullanıyorsa aynı FIFO havuzunu tüketir; farklı enler birbirini etkilemez. Eksi stok her en için ayrı izlenir.
+- `20260925070000_normalize_optional_height` eski özel boy kurallarındaki `1000/10000` gibi gösterge değerlerini `0` yapar; gerçek sipariş boyu yalnızca sepet/sipariş kaleminde tutulur.
 - Migration eski ürünleri de dönüştürür, ürün toplamını korur ve toplam ile en havuzları uyuşmazsa rollback olur. Kullanıcı, koleksiyon, mağaza, sipariş ve sipariş kalemi tablolarına yazmaz.
 - Tekrar tüketimde hem FIFO lotu hem shortage referansı kontrol edilir. İade kayıtlı tüketim miktarını ve eski FIFO lotlarını kullanır. Geçişten eski siparişlerde ortak tüketim geçmişi bulunmadığından ölçü/adet alanı iade edilir.
 

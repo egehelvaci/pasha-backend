@@ -220,7 +220,7 @@ Aynı kuralda `80x150` hazır ebat ve `80xÖzel` bulunursa ikisi de `stock.width
 }
 ```
 
-Yanıttaki `height: 0` depolama göstergesidir; sipariş boyu veya üst sınır değildir. Eski özel kesim kurallarındaki pozitif `height` değerleri de üst sınır olarak kullanılmaz. Sepete gerçek, pozitif boy gönderilir; m² ve fiyat bu boyla hesaplanır.
+Yanıttaki `height: 0` depolama göstergesidir; sipariş boyu veya üst sınır değildir. Eski özel kesim kuralları da migration ile `height: 0` değerine normalize edilmiştir. Sepete gerçek, pozitif boy gönderilir; m² ve fiyat bu boyla hesaplanır.
 
 Kural oluşturma `sizeOptions` girdisi ve `POST /api/admin/product-rules/{ruleId}/size-options` için örnek:
 

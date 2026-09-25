@@ -11,12 +11,13 @@ const client=new Client({connectionString:connection.toString(), ...(requireSsl?
 (async()=>{
  await client.connect();await client.query('BEGIN');
  try {
-  for(const name of ['20260924040000_product_aliases','20260924050000_cart_stock_reservations','20260924060000_cart_reservation_lock_order','20260924070000_reservation_alias_lock','20260924080000_width_based_product_stock']) {
+  for(const name of ['20260924040000_product_aliases','20260924050000_cart_stock_reservations','20260924060000_cart_reservation_lock_order','20260924070000_reservation_alias_lock','20260924080000_width_based_product_stock','20260925070000_normalize_optional_height']) {
    const applied=await client.query('SELECT 1 FROM _prisma_migrations WHERE migration_name=$1 AND finished_at IS NOT NULL AND rolled_back_at IS NULL',[name]);
    if(applied.rowCount)continue;
    const sql=fs.readFileSync(`prisma/migrations/${name}/migration.sql`,'utf8').replace(/^BEGIN;\s*$/gm,'').replace(/^COMMIT;\s*$/gm,'');
    await client.query(sql);
   }
+  assert.equal(Number((await client.query('SELECT count(*) count FROM productsizeoptions WHERE is_optional_height=TRUE AND height<>0')).rows[0].count),0);
   const user=(await client.query('SELECT user_id FROM "User" LIMIT 1')).rows[0];
   const product=(await client.query('SELECT ps.product_id,w.width FROM product_stocks ps JOIN product_stock_widths w ON w.product_stock_id=ps.id ORDER BY ps.product_id,w.width LIMIT 1')).rows[0];
   const stock=(await client.query('SELECT reserved_area_m2 FROM product_stocks WHERE product_id=$1',[product.product_id])).rows[0];
