@@ -1493,36 +1493,36 @@ export class AdminOrderController {
         }
       }
 
-      // Her siparişi ayrı ayrı onayla
+      // QR kayıtlarını ve sipariş statülerini tek transaction içinde toplu yaz.
+      // Bu, uzak veritabanına sipariş başına yapılan seri sorguları kaldırır.
+      let bulkResults: Awaited<ReturnType<typeof qrCodeService.generateQRCodesForOrders>> = []
+      let bulkError: string | null = null
+      try {
+        bulkResults = await qrCodeService.generateQRCodesForOrders(foundOrderIds)
+      } catch (error: any) {
+        bulkError = error.message || 'Toplu QR kod oluşturma hatası'
+      }
+
+      const bulkResultByOrderId = new Map(bulkResults.map(result => [result.orderId, result]))
+
       for (const order of orders) {
-        try {
-          // QR kodları oluştur
-          const qrResult = await qrCodeService.generateQRCodesForOrder(order.id)
-          
-          if (qrResult.success) {
-            results.success.push({
-              orderId: order.id,
-              customerName: `${order.user.name} ${order.user.surname}`,
-              storeName: order.user.Store?.kurum_adi || 'Bilinmeyen Mağaza',
-              amount: Number(order.total_price),
-              qrCodeCount: qrResult.totalQRCodes || 0,
-              message: 'Sipariş başarıyla onaylandı ve QR kodları oluşturuldu'
-            })
-            results.summary.successful++
-            results.summary.totalAmount += Number(order.total_price)
-          } else {
-            results.failed.push({
-              orderId: order.id,
-              customerName: `${order.user.name} ${order.user.surname}`,
-              error: qrResult.message || 'QR kod oluşturma hatası'
-            })
-            results.summary.failed++
-          }
-        } catch (error: any) {
+        const confirmation = bulkResultByOrderId.get(order.id)
+        if (confirmation) {
+          results.success.push({
+            orderId: order.id,
+            customerName: `${order.user.name} ${order.user.surname}`,
+            storeName: order.user.Store?.kurum_adi || 'Bilinmeyen Mağaza',
+            amount: Number(order.total_price),
+            qrCodeCount: confirmation.totalQRCodes,
+            message: 'Sipariş başarıyla onaylandı ve QR kodları oluşturuldu'
+          })
+          results.summary.successful++
+          results.summary.totalAmount += Number(order.total_price)
+        } else {
           results.failed.push({
             orderId: order.id,
             customerName: `${order.user.name} ${order.user.surname}`,
-            error: error.message || 'Bilinmeyen hata'
+            error: bulkError || 'Sipariş toplu onay sırasında güncellenemedi'
           })
           results.summary.failed++
         }

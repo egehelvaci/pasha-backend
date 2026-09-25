@@ -214,6 +214,101 @@ export class QRCodeService {
   }
 
   /**
+   * Birden fazla bekleyen siparişi tek transaction içinde onaylar.
+   * Sipariş başına find/create/update yapmak yerine QR kayıtlarını ve statü
+   * değişikliklerini toplu yazar. Advisory lock aynı grubun eş zamanlı iki
+   * istekle onaylanıp mükerrer QR üretmesini engeller.
+   */
+  async generateQRCodesForOrders(orderIds: string[]) {
+    const uniqueOrderIds = [...new Set(orderIds)]
+
+    if (uniqueOrderIds.length === 0) {
+      return []
+    }
+
+    try {
+      return await prisma.$transaction(async tx => {
+        await tx.$queryRaw`SELECT pg_advisory_xact_lock(724092)::text`
+
+        const orders = await tx.order.findMany({
+          where: {
+            id: { in: uniqueOrderIds },
+            status: 'PENDING'
+          },
+          include: {
+            items: true,
+            qr_codes: true
+          }
+        })
+
+        const backendUrl = process.env.PUBLIC_URL || 'https://pasha-backend-production.up.railway.app'
+        const qrRows: Array<{
+          id: string
+          order_id: string
+          order_item_id: string
+          product_id: string
+          qr_code: string
+          is_scanned: boolean
+          scan_count: number
+          required_scans: number
+        }> = []
+
+        const results = orders.map(order => {
+          if (order.qr_codes.length > 0) {
+            return {
+              orderId: order.id,
+              totalQRCodes: order.qr_codes.length,
+              message: `Sipariş için ${order.qr_codes.length} QR kod zaten mevcut`
+            }
+          }
+
+          for (const item of order.items) {
+            const qrCodeString = this.generateUniqueQRCode()
+            qrRows.push({
+              id: crypto.randomUUID(),
+              order_id: order.id,
+              order_item_id: item.id,
+              product_id: item.product_id,
+              qr_code: `${backendUrl}/api/admin/scan-qr?qrCode=${qrCodeString}`,
+              is_scanned: false,
+              scan_count: 0,
+              required_scans: item.quantity
+            })
+          }
+
+          return {
+            orderId: order.id,
+            totalQRCodes: order.items.length,
+            message: `Sipariş için ${order.items.length} QR kod başarıyla oluşturuldu (${order.items.length} farklı ürün tipi)`
+          }
+        })
+
+        if (qrRows.length > 0) {
+          await tx.qRCode.createMany({ data: qrRows })
+        }
+
+        if (orders.length > 0) {
+          await tx.order.updateMany({
+            where: {
+              id: { in: orders.map(order => order.id) },
+              status: 'PENDING'
+            },
+            data: {
+              status: 'CONFIRMED',
+              updated_at: new Date()
+            }
+          })
+        }
+
+        return results
+      }, { maxWait: 10_000, timeout: 30_000 })
+    } catch (error: any) {
+      console.error('Toplu QR kod oluşturma hatası:', error)
+      throw new Error(`Toplu QR kod oluşturma hatası: ${error.message}`)
+    }
+  }
+
+  /**
    * Sipariş için stokları düşür - Opsiyonel yükseklik kuralları destekli
    */
   async reduceStockForOrder(orderId: string) {
