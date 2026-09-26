@@ -34,7 +34,9 @@ export class AuthService {
     // .env dosyasından JWT yapılandırmaları
     this.jwtSecret = process.env.JWT_SECRET || 'c7fc1c9b27f84a9a9b74c78a5d3f9e72a3db1d19aef63bcb6bdf9f2c9e091d13'
     this.jwtExpiresIn = process.env.JWT_EXPIRES_IN ? parseInt(process.env.JWT_EXPIRES_IN) : 60 * 60 * 6 // 6 saat
-    this.loginRestrictionEnabled = process.env.LOGIN_RESTRICTION_ENABLED !== 'false'
+    // Normal durumda tüm aktif kullanıcılar giriş yapabilir. Bakım kısıtı
+    // gerektiğinde yalnızca açıkça LOGIN_RESTRICTION_ENABLED=true verilerek açılır.
+    this.loginRestrictionEnabled = process.env.LOGIN_RESTRICTION_ENABLED === 'true'
     this.restrictedLoginUsername = process.env.LOGIN_RESTRICTED_USERNAME?.trim() || 'egeadmin'
     this.tokenBlacklist = new Set<string>()
     
@@ -53,8 +55,8 @@ export class AuthService {
    */
   async login(credentials: LoginCredentials) {
     try {
-      // Geçici bakım kısıtı: parola doğrulaması yalnızca izin verilen yönetici
-      // hesabı için devam eder. Kısıt env ile açıkça kapatılabilir.
+      // İsteğe bağlı bakım kısıtı: yalnızca env ile açıkça etkinleştirildiğinde
+      // izin verilen yönetici hesabı giriş yapabilir.
       if (this.loginRestrictionEnabled && credentials.username !== this.restrictedLoginUsername) {
         throw new Error('Sistemimizde bakım çalışması yapılmaktadır. En kısa sürede tekrar hizmetinizde olacağız.')
       }
