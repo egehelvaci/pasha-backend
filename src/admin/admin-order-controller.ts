@@ -5,6 +5,9 @@ import { qrCodeService } from '../services/qr-code-service'
 import prisma from '../utils/prisma'
 import { orderService } from '../order-service'
 
+// Siparişleri gönderen ana mağaza; siparişi veren müşterinin mağazasından bağımsızdır.
+const SENDER_STORE_ID = '4fdd87dd-f52a-4f6a-b532-5d707b5eb5e5'
+
 // Store type display helper fonksiyonu
 function getStoreTypeDisplay(storeType: string): string {
   const storeTypeMap: { [key: string]: string } = {
@@ -232,9 +235,36 @@ export class AdminOrderController {
         })
       }
 
+      const senderAddress = await prisma.storeAddress.findFirst({
+        where: {
+          store_id: SENDER_STORE_ID,
+          is_default: true,
+          is_active: true,
+          store: { is_active: true }
+        },
+        orderBy: [{ updated_at: 'desc' }, { id: 'asc' }],
+        include: {
+          store: {
+            select: { kurum_adi: true, telefon: true, eposta: true }
+          }
+        }
+      })
+
       // Order'da cut_type'ları rectangle'dan standart'a dönüştür ve mağaza durumunu ekle
       const processedOrder = {
         ...order,
+        sender_info: senderAddress ? {
+          store_id: senderAddress.store_id,
+          kurum_adi: senderAddress.store.kurum_adi,
+          telefon: senderAddress.store.telefon,
+          eposta: senderAddress.store.eposta,
+          address_id: senderAddress.id,
+          title: senderAddress.title,
+          address: senderAddress.address,
+          city: senderAddress.city,
+          district: senderAddress.district,
+          postal_code: senderAddress.postal_code
+        } : null,
         items: order.items.map(item => ({
           ...item,
           cut_type: item.cut_type === 'rectangle' ? 'standart' : item.cut_type
