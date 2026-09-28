@@ -1733,9 +1733,14 @@ export const getSupplierPurchaseSummary = async (req: Request, res: Response) =>
     // Her sepet alımı için ürün detaylarını bul
     const cartPurchasesWithProducts = await Promise.all(
       cartPurchaseTransactions.map(async (transaction) => {
+        // Kalıcı satın alma satırları, zaman aralığıyla bulunan sepetten önceliklidir.
+        const purchasedItems = await prisma.supplierPurchaseItems.findMany({
+          where: { transaction_id: transaction.id },
+          include: { product: { include: { collection: { select: { name: true, code: true } } } } }
+        });
         // Reference number'dan timestamp'i çıkar (CART-1704895470123 formatında)
         const timestamp = transaction.reference_number?.replace('CART-', '');
-        if (!timestamp) {
+        if (purchasedItems.length === 0 && (!timestamp || !Number.isFinite(Number(timestamp)))) {
           return {
             transaction,
             products: []
@@ -1744,11 +1749,11 @@ export const getSupplierPurchaseSummary = async (req: Request, res: Response) =>
 
         // O zamana yakın oluşturulan ve sonra temizlenen purchase cart'ları bul
         // Timestamp'den 1 dakika öncesi ve sonrası aralığında ara
-        const searchDate = new Date(parseInt(timestamp));
+        const searchDate = new Date(Number(timestamp));
         const beforeDate = new Date(searchDate.getTime() - 60000); // 1 dakika önce
         const afterDate = new Date(searchDate.getTime() + 60000);  // 1 dakika sonra
 
-        const purchaseCarts = await prisma.purchaseCarts.findMany({
+        const purchaseCarts = purchasedItems.length > 0 ? [] : await prisma.purchaseCarts.findMany({
           where: {
             supplier_id: supplier_id,
             is_active: false, // Satın alma tamamlandıktan sonra false yapılır
@@ -1777,7 +1782,7 @@ export const getSupplierPurchaseSummary = async (req: Request, res: Response) =>
           take: 1
         });
 
-        const purchaseCart = purchaseCarts[0];
+        const purchaseCart = purchasedItems.length > 0 ? { items: purchasedItems } : purchaseCarts[0];
         if (!purchaseCart) {
           return {
             transaction,
@@ -1787,7 +1792,8 @@ export const getSupplierPurchaseSummary = async (req: Request, res: Response) =>
 
         // Ürün detaylarını formatla
         const products = purchaseCart.items.map(item => {
-          const singlePieceAreaM2 = parseFloat(item.area_m2.toString()); // Tek parça m²
+          // area_m2 iki ondalıkla saklanır; ölçüler alanın hassasiyetini korur.
+          const singlePieceAreaM2 = Number(item.width) * Number(item.height) / 10000;
           const totalAreaM2 = singlePieceAreaM2 * item.quantity; // Toplam m²
           const unitPrice = parseFloat(item.unit_price.toString());
           const totalPrice = parseFloat(item.total_price.toString());
@@ -1821,14 +1827,13 @@ export const getSupplierPurchaseSummary = async (req: Request, res: Response) =>
             total_price_formatted: `$${totalPrice.toFixed(2)}`,
             
             // M² başına fiyat
-            price_per_m2: singlePieceAreaM2 > 0 ? 
-              parseFloat((unitPrice / singlePieceAreaM2).toFixed(2)) : 0,
-            price_per_m2_formatted: singlePieceAreaM2 > 0 ? 
-              `$${(unitPrice / singlePieceAreaM2).toFixed(2)}/m²` : '$0.00/m²',
+            // PurchaseCartItems.unit_price zaten m² fiyatıdır.
+            price_per_m2: unitPrice,
+            price_per_m2_formatted: `$${unitPrice.toFixed(2)}/m²`,
             
             // Adet başına fiyat
-            price_per_piece: unitPrice,
-            price_per_piece_formatted: `$${unitPrice.toFixed(2)}/adet`,
+            price_per_piece: parseFloat((unitPrice * singlePieceAreaM2).toFixed(2)),
+            price_per_piece_formatted: `$${(unitPrice * singlePieceAreaM2).toFixed(2)}/adet`,
             
             // Ürün özellikleri
             has_fringe: item.has_fringe,
@@ -1845,7 +1850,7 @@ export const getSupplierPurchaseSummary = async (req: Request, res: Response) =>
             
             // Hesaplanan değerler
             total_items_count: item.quantity,
-            average_price_per_m2: singlePieceAreaM2 > 0 ? 
+            average_price_per_m2: totalAreaM2 > 0 ?
               parseFloat((totalPrice / totalAreaM2).toFixed(2)) : 0
           };
         });
@@ -1856,7 +1861,7 @@ export const getSupplierPurchaseSummary = async (req: Request, res: Response) =>
           total_items: purchaseCart.items.length,
           total_quantity: purchaseCart.items.reduce((sum, item) => sum + item.quantity, 0),
           total_area_m2: purchaseCart.items.reduce((sum, item) => 
-            sum + (parseFloat(item.area_m2.toString()) * item.quantity), 0) // Tek parça m² × quantity
+            sum + (Number(item.width) * Number(item.height) / 10000 * item.quantity), 0)
         };
       })
     );
@@ -1958,7 +1963,7 @@ export const getSupplierPurchaseSummary = async (req: Request, res: Response) =>
               
               // Hesaplanan değerler
               total_items_count: quantity,
-              average_price_per_m2: areaPerPiece > 0 ? totalPrice / totalArea : 0
+              average_price_per_m2: totalArea > 0 ? totalPrice / totalArea : 0
             });
           }
         }
@@ -1994,6 +1999,10 @@ export const getSupplierPurchaseSummary = async (req: Request, res: Response) =>
         allPurchasedItems.push(...itemsWithTransactionInfo);
       }
     }
+
+    const purchasedAreaM2 = allPurchasedItems.reduce((sum, item) => sum + item.total_area_m2, 0);
+    const purchasedValue = allPurchasedItems.reduce((sum, item) => sum + item.total_price, 0);
+    const averagePurchasePricePerM2 = purchasedAreaM2 > 0 ? purchasedValue / purchasedAreaM2 : 0;
 
     res.json({
       success: true,
@@ -2039,12 +2048,8 @@ export const getSupplierPurchaseSummary = async (req: Request, res: Response) =>
           total_area_m2_formatted: `${allPurchasedItems.reduce((sum, item) => sum + item.total_area_m2, 0).toFixed(2)} m²`,
           total_value: allPurchasedItems.reduce((sum, item) => sum + item.total_price, 0),
           total_value_formatted: `$${allPurchasedItems.reduce((sum, item) => sum + item.total_price, 0).toFixed(2)}`,
-          average_price_per_m2: allPurchasedItems.length > 0 ? 
-            (allPurchasedItems.reduce((sum, item) => sum + item.total_price, 0) / 
-             allPurchasedItems.reduce((sum, item) => sum + item.total_area_m2, 0)).toFixed(2) : '0.00',
-          average_price_per_m2_formatted: allPurchasedItems.length > 0 ? 
-            `$${(allPurchasedItems.reduce((sum, item) => sum + item.total_price, 0) / 
-                 allPurchasedItems.reduce((sum, item) => sum + item.total_area_m2, 0)).toFixed(2)}/m²` : '$0.00/m²',
+          average_price_per_m2: averagePurchasePricePerM2.toFixed(2),
+          average_price_per_m2_formatted: `$${averagePurchasePricePerM2.toFixed(2)}/m²`,
           average_quantity_per_product: allPurchasedItems.length > 0 ? 
             (allPurchasedItems.reduce((sum, item) => sum + item.quantity, 0) / allPurchasedItems.length).toFixed(1) : '0.0',
           currency: 'USD',
@@ -2098,16 +2103,15 @@ export const getSupplierPurchaseSummary = async (req: Request, res: Response) =>
 
             if (purchaseItems.length > 0) {
               const products = purchaseItems.map(item => {
-                const singlePieceAreaM2 = parseFloat(item.area_m2.toString());
                 const unitPrice = parseFloat(item.unit_price.toString());
                 const totalPrice = parseFloat(item.total_price.toString());
-                const pricePerM2 = singlePieceAreaM2 > 0 ? unitPrice / singlePieceAreaM2 : 0;
                 
                 return {
                   urun_ismi: item.product?.name || 'Bilinmeyen Ürün',
                   en: parseFloat(item.width.toString()),
                   boy: parseFloat(item.height.toString()),
-                  m2_fiyati: parseFloat(pricePerM2.toFixed(2)),
+                  // SupplierPurchaseItems, sepetin m² fiyatını aynen saklar.
+                  m2_fiyati: unitPrice,
                   adet: item.quantity,
                   toplam_tutar: parseFloat(totalPrice.toFixed(2))
                 };

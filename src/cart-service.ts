@@ -225,6 +225,7 @@ export class CartService {
           where: { id: existingItem.id },
           data: {
             quantity: newQuantity,
+            unit_price: unitPrice,
             total_price: newTotalPrice,
             notes: data.notes || existingItem.notes
           },
@@ -394,6 +395,7 @@ export class CartService {
           where: { id: existingItem.id },
           data: {
             quantity: newQuantity,
+            unit_price: unitPrice,
             total_price: newTotalPrice,
             notes: data.notes || existingItem.notes
           },
