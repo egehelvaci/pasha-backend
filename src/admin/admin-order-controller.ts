@@ -4,6 +4,7 @@ import { notificationService } from '../services/notification-service'
 import { qrCodeService } from '../services/qr-code-service'
 import prisma from '../utils/prisma'
 import { orderService } from '../order-service'
+import { OrderStatus, Prisma } from '../../generated/prisma'
 
 // Siparişleri gönderen ana mağaza; siparişi veren müşterinin mağazasından bağımsızdır.
 const SENDER_STORE_ID = '4fdd87dd-f52a-4f6a-b532-5d707b5eb5e5'
@@ -41,7 +42,9 @@ export class AdminOrderController {
       const { 
         page = 1, 
         limit = 1000, // Varsayılan olarak 1000 sipariş
-        status, 
+        status,
+        order_statu,
+        store_id,
         userId,
         sortBy = 'created_at',
         sortOrder = 'desc'
@@ -50,8 +53,28 @@ export class AdminOrderController {
       const skip = (Number(page) - 1) * Number(limit)
       
       // Filtreleme koşulları
-      const where: any = {}
-      if (status) where.status = status
+      const where: Prisma.OrderWhereInput = {}
+      const statuses = Object.values(OrderStatus)
+      for (const value of [status, order_statu]) {
+        if (value !== undefined && (typeof value !== 'string' || !statuses.includes(value.trim().toUpperCase() as OrderStatus))) {
+          return res.status(400).json({ success: false, message: 'Geçerli bir status veya order_statu giriniz', allowedStatuses: statuses })
+        }
+      }
+      const normalizedStatus = typeof status === 'string' ? status.trim().toUpperCase() as OrderStatus : undefined
+      const normalizedOrderStatus = typeof order_statu === 'string' ? order_statu.trim().toUpperCase() as OrderStatus : undefined
+      if (normalizedStatus && normalizedOrderStatus && normalizedStatus !== normalizedOrderStatus) {
+        return res.status(400).json({ success: false, message: 'status ve order_statu aynı durumu belirtmelidir' })
+      }
+      if (store_id !== undefined) {
+        if (typeof store_id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(store_id)) {
+          return res.status(400).json({ success: false, message: 'store_id geçerli bir UUID olmalıdır' })
+        }
+        where.user = { store_id }
+      }
+      if (normalizedStatus || normalizedOrderStatus) where.status = normalizedStatus || normalizedOrderStatus
+      if (userId !== undefined && (typeof userId !== 'string' || !userId.trim())) {
+        return res.status(400).json({ success: false, message: 'Geçerli bir userId giriniz' })
+      }
       if (userId) where.user_id = userId
 
       // Sıralama

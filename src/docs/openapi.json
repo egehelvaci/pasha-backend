@@ -10701,6 +10701,22 @@
             }
           },
           {
+            "name": "order_statu",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "store_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "userId",
             "in": "query",
             "required": false,
@@ -10798,6 +10814,38 @@
               }
             }
           },
+          "400": {
+            "description": "İşlem veya doğrulama hatası",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "allowedStatuses": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "PENDING",
+                          "CONFIRMED",
+                          "SHIPPED",
+                          "DELIVERED",
+                          "CANCELED",
+                          "READY"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -10865,6 +10913,47 @@
                     "data": {
                       "type": "object",
                       "properties": {
+                        "sender_info": {
+                          "type": "object",
+                          "properties": {
+                            "store_id": {
+                              "type": "string"
+                            },
+                            "kurum_adi": {
+                              "type": "string"
+                            },
+                            "telefon": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "eposta": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "address_id": {
+                              "type": "string"
+                            },
+                            "title": {
+                              "type": "string"
+                            },
+                            "address": {
+                              "type": "string"
+                            },
+                            "city": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "district": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "postal_code": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          },
+                          "nullable": true
+                        },
                         "items": {
                           "type": "array",
                           "items": {
