@@ -10701,6 +10701,22 @@
             }
           },
           {
+            "name": "order_statu",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "store_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "userId",
             "in": "query",
             "required": false,
@@ -10791,6 +10807,38 @@
                             }
                           }
                         }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "İşlem veya doğrulama hatası",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "allowedStatuses": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "PENDING",
+                          "CONFIRMED",
+                          "SHIPPED",
+                          "DELIVERED",
+                          "CANCELED",
+                          "READY"
+                        ]
                       }
                     }
                   }
