@@ -1,4 +1,4 @@
-# Admin sipariş ilerletme / teslim tamamlama API'si
+# Admin ve editör sipariş ilerletme / teslim tamamlama API'si
 
 ## Endpoint
 
