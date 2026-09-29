@@ -77,6 +77,11 @@ export class AdminPaymentController {
         sellerReference: payment.sellerReference,
         apiReferenceNumber: payment.apiReferenceNumber,
         amount: Number(payment.amount),
+        store_currency: payment.store_currency,
+        payment_currency: payment.payment_currency,
+        exchange_rate: payment.exchange_rate != null ? Number(payment.exchange_rate) : null,
+        original_amount: payment.original_amount != null ? Number(payment.original_amount) : null,
+        converted_amount: payment.converted_amount != null ? Number(payment.converted_amount) : null,
         description: payment.description,
         status: payment.status,
         paymentDate: payment.paymentDate,
@@ -364,4 +369,4 @@ export class AdminPaymentController {
       })
     }
   }
-} 
+}
