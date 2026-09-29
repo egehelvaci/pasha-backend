@@ -60,7 +60,7 @@ router.post('/barcode/scan-multiple', authorizeRoles('admin', 'editor'), adminOr
 
 // Sipariş durumu güncelleme - Editör ve Admin erişimi
 router.put('/orders/:orderId/status', authorizeRoles('admin', 'editor'), adminOrderController.updateOrderStatus)
-router.post('/orders/:orderId/advance', authorizeRoles('admin'), advanceOrder)
+router.post('/orders/:orderId/advance', authorizeRoles('admin', 'editor'), advanceOrder)
 
 // İstatistik API'leri - Editör ve Admin erişimi
 router.get('/statistics/top-stores', authorizeRoles('admin', 'editor'), adminStatisticsController.getTopStores)

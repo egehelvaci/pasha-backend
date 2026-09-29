@@ -101,7 +101,7 @@ export class OrderFulfillmentService {
 
   async advance(orderId: string, actorId: string, input: FulfillmentRequest) {
     const actor = await this.db.user.findUnique({ where: { userId: actorId }, select: { isActive: true, userType: { select: { name: true } } } });
-    if (!actor?.isActive || actor.userType.name !== 'admin') throw new FulfillmentError(403, 'ADMIN_REQUIRED', 'Aktif admin yetkisi gerekli');
+    if (!actor?.isActive || !['admin', 'editor'].includes(actor.userType.name)) throw new FulfillmentError(403, 'ADMIN_REQUIRED', 'Aktif admin veya editör yetkisi gerekli');
     const previousAction = await this.db.orderFulfillmentAction.findUnique({ where: { id: input.requestId } });
     if (previousAction) return this.replay(previousAction, orderId, actorId, input);
     const snapshot = await this.db.order.findUnique({ where: { id: orderId }, include });

@@ -12448,8 +12448,8 @@
           "Admin · orders"
         ],
         "operationId": "post_api_admin_orders_orderId_advance",
-        "summary": "Siparişi admin onayıyla ilerlet / teslim et",
-        "description": "Aktif admin gerektirir. Eksik QR/barkod ve görseller hazırlanır, fiş verisi döner. Stok/bakiye yeniden değiştirilmez. Aynı requestId ve gövde tekrar gönderilirse önceki sonuç döner. Fiş fiziksel olarak yazdırılmış sayılmaz. İşlem tablosu migration gerektirir. Ayrıntı: docs/order-fulfillment.md.",
+        "summary": "Siparişi admin veya editör onayıyla ilerlet / teslim et",
+        "description": "Aktif admin veya editör gerektirir. Eksik QR/barkod ve görseller hazırlanır, fiş verisi döner. Stok/bakiye yeniden değiştirilmez. Aynı requestId ve gövde tekrar gönderilirse önceki sonuç döner. Fiş fiziksel olarak yazdırılmış sayılmaz. İşlem tablosu migration gerektirir. Ayrıntı: docs/order-fulfillment.md.",
         "security": [
           {
             "bearerAuth": []
@@ -12625,7 +12625,8 @@
         },
         "x-source-file": "src/admin/admin-routes.ts",
         "x-roles": [
-          "admin"
+          "admin",
+          "editor"
         ],
         "requestBody": {
           "required": true,

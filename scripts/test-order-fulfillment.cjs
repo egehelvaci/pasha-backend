@@ -69,7 +69,7 @@ async function run() {
     ] }
   }, include: { items: true } });
   const app = express(); app.use(express.json());
-  app.post('/api/admin/orders/:orderId/advance', authMiddleware, authorizeRoles('admin'), createAdvanceOrderHandler(service));
+  app.post('/api/admin/orders/:orderId/advance', authMiddleware, authorizeRoles('admin', 'editor'), createAdvanceOrderHandler(service));
   server = await new Promise(resolve => { const s = app.listen(0, '127.0.0.1', () => resolve(s)); });
   async function request(orderId, body, expected = 200, role = 'admin') {
     const headers = { 'Content-Type': 'application/json' };
@@ -81,7 +81,7 @@ async function run() {
   const payload = (expectedStatus = 'PENDING', targetStatus = 'DELIVERED') => ({ requestId: randomUUID(), expectedStatus, targetStatus, reason: 'Admin completion test' });
   const order = await newOrder(); const body = payload();
   await request(order.id, body, 401, null);
-  await request(order.id, body, 403, 'editor');
+  await request(order.id, body, 403, 'customer');
   await request(order.id, { targetStatus: 'DELIVERED' }, 400);
   await request(order.id, { ...body, targetStatus: 'CANCELED' }, 400);
   const completed = (await request(order.id, body)).data;

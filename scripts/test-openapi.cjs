@@ -19,7 +19,7 @@ async function main() {
     }
   }
   assert.deepEqual(spec.paths['/api/auth/login'].post.security, []);
-  assert(spec.paths['/api/admin/orders/{orderId}/advance'].post['x-roles'].includes('admin'));
+  assert.deepEqual(spec.paths['/api/admin/orders/{orderId}/advance'].post['x-roles'], ['admin', 'editor']);
   assert(spec.paths['/api/admin/site-settings/banner-image'].post.requestBody.content['multipart/form-data']);
   assert(spec.paths['/api/products'].post.requestBody.content['multipart/form-data']);
 

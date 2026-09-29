@@ -4,11 +4,11 @@
 
 ```http
 POST /api/admin/orders/:orderId/advance
-Authorization: Bearer <ADMIN_TOKEN>
+Authorization: Bearer <ADMIN_OR_EDITOR_TOKEN>
 Content-Type: application/json
 ```
 
-Bu endpoint admin'in QR/barkod okutma yerine siparişi onaylayarak ilerletmesi içindir. Token rolü ve veritabanındaki kullanıcının aktif admin olması kontrol edilir. Editor ve müşteri kullanamaz. Mevcut statü, onaylama, okutma ve fiş endpoint'leri korunmuştur.
+Bu endpoint admin veya editörün QR/barkod okutma yerine siparişi onaylayarak ilerletmesi içindir. Token rolü ve veritabanındaki kullanıcının aktif admin veya editör olması kontrol edilir. Müşteri kullanamaz. Mevcut statü, onaylama, okutma ve fiş endpoint'leri korunmuştur.
 
 ```json
 {
@@ -34,12 +34,12 @@ Sıra `PENDING → CONFIRMED → READY → SHIPPED → DELIVERED` şeklindedir. 
 2. Her sipariş kalemi için eksik QR/barkod ve görseller hazırlanır. Mevcut kod kimlikleri ve dolu görsel URL'leri korunur. Yeni barkodlar geçerli kontrol basamaklı EAN13'tür.
 3. Görseller mevcut Bunny CDN'e yüklenir. Yükleme başarısızsa sipariş/statü/etiket kayıtlarına yazılmaz.
 4. Transaction içinde sipariş, kalem ve mevcut etiket satırları kilitlenir. Hazırlık sırasında sipariş veya etiketler değişmişse 409 döner.
-5. Eksik etiketler kalem bazında eklenir. `READY` ve sonrası için hazırlama alanları tamamlanır; `DELIVERED` için QR/barkod tamamlanma bayrakları ve sayaçları kalem miktarına eşitlenir. Mevcut okutma aktörleri/tarihleri korunur, boş tamamlanma alanlarında admin ve işlem zamanı kullanılır.
+5. Eksik etiketler kalem bazında eklenir. `READY` ve sonrası için hazırlama alanları tamamlanır; `DELIVERED` için QR/barkod tamamlanma bayrakları ve sayaçları kalem miktarına eşitlenir. Mevcut okutma aktörleri/tarihleri korunur, boş tamamlanma alanlarında işlemi yapan kullanıcı ve işlem zamanı kullanılır.
 6. Statü güncellenir. Mevcut çalışan ataması korunur; varsa çalışan istatistiğinin statü/hazırlanan/teslim edilen alanları güncellenir. Otomatik çalışan ataması yapılmaz.
 7. Mevcut fiş formatlayıcısıyla fiş verisi aynı transaction içinde hazırlanır. Fiş hazırlanamazsa statü ve etiket yazımları geri alınır.
-8. İşlemi yapan admin, önceki/hedef statü, açıklama ve yanıt `order_fulfillment_actions` tablosuna kaydedilir.
+8. İşlemi yapan admin veya editör, önceki/hedef statü, açıklama ve yanıt `order_fulfillment_actions` tablosuna kaydedilir.
 
-Tamamlanmış sayaçlar bu endpoint'te fiziksel okutma yapıldığı anlamına gelmez. `manualCompletion: true` ve işlem tablosu admin tamamlamasını belirtir.
+Tamamlanmış sayaçlar bu endpoint'te fiziksel okutma yapıldığı anlamına gelmez. `manualCompletion: true` ve işlem tablosu admin veya editör tamamlamasını belirtir.
 
 ### Stok ve bakiye
 
@@ -85,7 +85,7 @@ HTTP 200. Aşağıda sadece temel alanlar gösterilmiştir; `receipt`, `qr_codes
 
 ## Tekrar istek ve eşzamanlılık
 
-Aynı `requestId`, aynı admin/sipariş ve aynı gövdeyle tekrar çağrılırsa saklanan başarılı sonuç `replayed: true` ile döner. Tekrar stok, bakiye, etiket veya statü işlemi yapılmaz. Aynı ID farklı istek için kullanılırsa HTTP 409 döner. Saklanan sonuç o eylemin sonucudur; sonraki işlemlerden sonra güncel statü için siparişi yeniden okuyun.
+Aynı `requestId`, aynı kullanıcı/sipariş ve aynı gövdeyle tekrar çağrılırsa saklanan başarılı sonuç `replayed: true` ile döner. Tekrar stok, bakiye, etiket veya statü işlemi yapılmaz. Aynı ID farklı istek için kullanılırsa HTTP 409 döner. Saklanan sonuç o eylemin sonucudur; sonraki işlemlerden sonra güncel statü için siparişi yeniden okuyun.
 
 Yeni endpoint'in eşzamanlı çağrıları sipariş kilidiyle sıraya alınır. Etiket hazırlığı sırasında değişiklik olursa işlem reddedilir. Eski statü/okutma API'lerinin tümü bu geçiş kurallarını uygulamaz; aynı sipariş için frontend'in paralel eski ve yeni tamamlama akışları çalıştırmaması gerekir. Bu yeni API eski API'lerin mevcut kusurlarını geriye dönük olarak düzeltmez.
 
@@ -113,7 +113,7 @@ if (!response.ok) throw new Error(result.message);
 | --- | --- |
 | 400 `INVALID_REQUEST` | UUID/statü/alan doğrulaması başarısız. |
 | 401 | Token eksik veya geçersiz. |
-| 403 `ADMIN_REQUIRED` | Kullanıcı aktif admin değil. |
+| 403 `ADMIN_REQUIRED` | Kullanıcı aktif admin veya editör değil (hata kodu geriye uyumluluk için korunur). |
 | 404 `ORDER_NOT_FOUND` | Sipariş yok. |
 | 409 `ORDER_CANCELED` / `BACKWARD_TRANSITION` | İptal edilmiş sipariş veya geriye geçiş. |
 | 409 `STATUS_CONFLICT` / `ORDER_CHANGED` | Veri değişmiş; siparişi yenileyip yeni eylem başlatın. |

@@ -12,7 +12,7 @@ export function createAdvanceOrderHandler(service = new OrderFulfillmentService(
         (body.reason !== undefined && (typeof body.reason !== 'string' || body.reason.length > 500))) {
       return res.status(400).json({ success: false, code: 'INVALID_REQUEST', message: 'Geçerli requestId (UUID), expectedStatus ve targetStatus gereklidir; reason en fazla 500 karakter olabilir' });
     }
-    if (!req.user || req.user.userType !== 'admin') return res.status(403).json({ success: false, message: 'Admin yetkisi gerekli' });
+    if (!req.user || !['admin', 'editor'].includes(req.user.userType)) return res.status(403).json({ success: false, message: 'Admin veya editör yetkisi gerekli' });
     try {
       const data = await service.advance(req.params.orderId, req.user.userId, body);
       return res.json({ success: true, data });

@@ -34,8 +34,8 @@ module.exports = function applyOverrides(spec) {
   const fulfillment = object({ requestId: { type: 'string', format: 'uuid' }, expectedStatus: status, targetStatus: { type: 'string', enum: ['CONFIRMED', 'READY', 'SHIPPED', 'DELIVERED'] }, reason: { type: 'string', maxLength: 500 } }, ['requestId', 'expectedStatus', 'targetStatus']);
   body('/api/admin/orders/{orderId}/advance', 'post', { ...fulfillment, additionalProperties: false }, { requestId: 'c6b52d54-9e57-4b26-a4cd-7199fe33a7d9', expectedStatus: 'PENDING', targetStatus: 'DELIVERED', reason: 'Admin teslim onayı' });
   Object.assign(get('/api/admin/orders/{orderId}/advance', 'post'), {
-    summary: 'Siparişi admin onayıyla ilerlet / teslim et',
-    description: 'Aktif admin gerektirir. Eksik QR/barkod ve görseller hazırlanır, fiş verisi döner. Stok/bakiye yeniden değiştirilmez. Aynı requestId ve gövde tekrar gönderilirse önceki sonuç döner. Fiş fiziksel olarak yazdırılmış sayılmaz. İşlem tablosu migration gerektirir. Ayrıntı: docs/order-fulfillment.md.',
+    summary: 'Siparişi admin veya editör onayıyla ilerlet / teslim et',
+    description: 'Aktif admin veya editör gerektirir. Eksik QR/barkod ve görseller hazırlanır, fiş verisi döner. Stok/bakiye yeniden değiştirilmez. Aynı requestId ve gövde tekrar gönderilirse önceki sonuç döner. Fiş fiziksel olarak yazdırılmış sayılmaz. İşlem tablosu migration gerektirir. Ayrıntı: docs/order-fulfillment.md.',
     responses: {
       200: response(envelope(object({ requestId: string, previousStatus: status, manualCompletion: boolean, stockChanged: boolean, replayed: boolean, order: object({ id: string, status, receipt_printed: boolean, receipt_printed_at: { type: 'string', format: 'date-time', nullable: true }, qr_codes: array({ type: 'object' }), barcodes: array({ type: 'object' }) }), receipt: { type: 'object', additionalProperties: true } }))),
       ...Object.fromEntries([400, 401, 403, 404, 409, 500, 502].map(code => [code, response({ $ref: '#/components/schemas/Error' }, code === 409 ? 'Statü/idempotency/eşzamanlılık veya etiket tutarlılığı hatası' : 'İşlem hatası')]))
