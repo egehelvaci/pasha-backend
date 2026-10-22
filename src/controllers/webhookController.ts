@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { WebhookService } from '../services/webhook-service';
 import prisma from '../utils/prisma';
+import { getPaymentReturnUrl } from '../utils/payment-return-url';
 
 const webhookService = new WebhookService();
 
@@ -252,7 +253,7 @@ export class WebhookController {
             </div>
             <script>
               setTimeout(() => {
-                window.location.href = '${process.env.PRODUCTION_FRONTEND_URL || 'http://localhost:3000'}/dashboard/odemeler';
+                window.location.href = ${JSON.stringify(getPaymentReturnUrl()).replace(/</g, '\\u003c')};
               }, 3000);
             </script>
           </body>
@@ -527,7 +528,7 @@ export class WebhookController {
           </div>
           <script>
             setTimeout(() => {
-              window.location.href = '${process.env.PRODUCTION_FRONTEND_URL || 'http://localhost:3000'}/dashboard/odemeler';
+              window.location.href = ${JSON.stringify(getPaymentReturnUrl()).replace(/</g, '\\u003c')};
             }, 3000);
           </script>
         </body>
@@ -663,8 +664,10 @@ export class WebhookController {
       });
 
       // Web için JSON response döndür veya redirect yap
-      const frontendUrl = process.env.PRODUCTION_FRONTEND_URL || 'http://localhost:3000';
-      return res.redirect(`${frontendUrl}/dashboard/odemeler?status=${paymentStatus}&orderId=${paymentSession.orderId || ''}`);
+      const returnUrl = new URL(getPaymentReturnUrl());
+      returnUrl.searchParams.set('status', paymentStatus);
+      returnUrl.searchParams.set('orderId', paymentSession.orderId || '');
+      return res.redirect(returnUrl.href);
 
     } catch (error) {
       console.error('❌ Web callback hatası:', error);
@@ -724,4 +727,4 @@ export class WebhookController {
   ${errorMessage ? `<p style="color: #d32f2f; font-size: 14px;">${errorMessage}</p>` : ''}
 </body>`;
   }
-} 
+}

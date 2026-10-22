@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
 import { OctetLoginService } from './octet-login-service';
 import { exchangeRateService } from './exchange-rate-service';
+import { getPaymentReturnUrl } from '../utils/payment-return-url';
 
 export interface CreatePaymentRequestInput {
   storeId: string;
@@ -312,8 +313,8 @@ export class PaymentService {
         referenceInformation: input.aciklama || "Ödeme",
         buyerReference: "PASHA-HOME",
         installmentCount: store.maksimum_taksit || 1,
-        okUrl: `${process.env.PRODUCTION_FRONTEND_URL || 'http://localhost:3000'}/dashboard/odemeler`,
-        failUrl: `${process.env.PRODUCTION_FRONTEND_URL || 'http://localhost:3000'}/dashboard/odemeler`
+        okUrl: getPaymentReturnUrl(),
+        failUrl: getPaymentReturnUrl()
       },
       paymentRequestBuyerInformation: {
         identityNumber: store.tckn || store.vergi_numarasi || "11111111111",
@@ -693,4 +694,4 @@ export class PaymentService {
       };
     }
   }
-} 
+}
