@@ -127,7 +127,8 @@ export class UserService {
       userType: user.userType.name
     }
     
-    const secret = process.env.JWT_SECRET || 'default_secret_key'
+    const secret = process.env.JWT_SECRET
+    if (!secret) throw new Error('JWT_SECRET is required')
     const expiresIn = '24h'
     
     return jwt.sign(payload, secret, { expiresIn })
