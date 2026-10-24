@@ -150,3 +150,11 @@ generated/prisma/*
 *.backup
 *-backup.ts
 *-backup.js
+
+# Ignore all local secret variants; keep sanitized examples.
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
+
